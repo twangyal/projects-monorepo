@@ -1,0 +1,195 @@
+{
+  "source": "4ee6370cc86c6c8ab7d332cc7940e68406720e74",
+  "probeSourceSha256": "784c5331d7c8d9285b6e8b9f5f9b3d451f8bbe037a1e8a8e1ed0866559d499ad",
+  "logSha256": "d9bd519bb8f47ddca8f6659e6357231d28295affd67a810b379b23754f6fdfa7",
+  "probeExecutionCount": 10,
+  "qualityAcceptanceClaimed": false,
+  "observations": [
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 125186,
+        "startFrame": 52990,
+        "endFrame": 178176,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 62593,
+        "sha256": "40c9e19234d054bd3aca7e896514f1b47f2db1f6fd012ad4387c3885d87a4e0d",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat1",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 125698,
+        "startFrame": 54270,
+        "endFrame": 179968,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 62849,
+        "sha256": "6b98da67504949d74be4d97189cd85180056b7ad483ec0211ee35283dbda6d84",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat2",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 126594,
+        "startFrame": 54270,
+        "endFrame": 180864,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63297,
+        "sha256": "3cdf9d14812a068d4cd3c014ff6cdab90e0c0332b87e07078828da48ee0a21f1",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat3",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 126082,
+        "startFrame": 53886,
+        "endFrame": 179968,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63041,
+        "sha256": "ff2f20762407cf2a975ee46f033abd3bb43547d1b5478c31a1386c6316d25aa9",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat4",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 127490,
+        "startFrame": 53374,
+        "endFrame": 180864,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63745,
+        "sha256": "2fe1437e79db5139b665c548de0bd472e03e2b7903f8e04482172e5e8f5b7549",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat5",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 125698,
+        "startFrame": 53374,
+        "endFrame": 179072,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 62849,
+        "sha256": "c7ca847f5620ed3176abfb46f95dd9f2da354c1162c00192fa9a29316d3b0a1e",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat6",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 127106,
+        "startFrame": 54270,
+        "endFrame": 181376,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63553,
+        "sha256": "683af985bda744a083016dda904b1dfef76abd916357924eb4c9825776f7e26b",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat7",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 124418,
+        "startFrame": 53374,
+        "endFrame": 177792,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 62209,
+        "sha256": "0380ecf51728767b3310fd017eb371e7ae440185c15a45448a4911b6036b7078",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat8",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 126594,
+        "startFrame": 53374,
+        "endFrame": 179968,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63297,
+        "sha256": "7b83f0c5456becfe509018af7811bfb529012ee4f817e936f820ec40495ea4e6",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    },
+    {
+      "case": "backed-input-diagnostic-ob-647d5-e-normalized-PCM-conversion-repeat9",
+      "raw": {
+        "sampleRate": 44100,
+        "frames": 126978,
+        "startFrame": 53886,
+        "endFrame": 180864,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "normalized": {
+        "sampleRate": 22050,
+        "frames": 63489,
+        "sha256": "ca792a19fac3c86e5613cb94dc6e024fb3fedd985d90bd712babd43f6d2feebc",
+        "originalWindowCrossingHz": 440,
+        "exactZeroRunsAtLeast8Frames": []
+      },
+      "qualityGateClaimed": false
+    }
+  ],
+  "limits": [
+    "This temporary probe repeats the recording path with a passive real-worklet listener; it is a different flow from the original full selected-track assertion case.",
+    "No >=8-frame exact-zero run appeared in the ten raw or normalized summaries. The normalized PCM frequency windows each measured440Hz; raw Float32 frequency was not measured.",
+    "It therefore does not identify the component introducing the earlier gaps, or clear the original failures.",
+    "Physical microphones and the original startup refusal remain unverified."
+  ]
+}
