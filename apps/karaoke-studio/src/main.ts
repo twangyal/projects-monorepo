@@ -7,6 +7,7 @@ import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
+import { findCueIndices, nextCueMatch } from './find-cues.ts';
 import { splitCue, mergeCue, shiftCues, copyCues, type CuePassage } from './cue-edit.ts';
 import { createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
@@ -54,7 +55,7 @@ app.innerHTML = `
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><p class="fine">Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Apply replaces all lines together; Cancel discards reviewed corrections. Split or merge lines in the main editor after applying.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
-        <details class="timing-shift"><summary>Shift lyric timing</summary><p class="fine">Move all current cues or a selected passage by the same number of seconds: positive is later, negative is earlier. Words, line lengths and gaps stay together. The complete result must fit inside this clip without overlapping neighboring lines; nothing is cropped. This makes one unsaved Undo/Redo edit. Unapplied pasted words are not included.</p><label class="field">Timing shift scope<select id="timing-shift-scope" disabled><option value="all">All lines</option><option value="passage">Selected passage</option></select></label><div id="timing-shift-passage" class="practice-selection" hidden><label class="field">First line in passage<select id="timing-shift-first" disabled></select></label><label class="field">Last line in passage<select id="timing-shift-last" disabled></select></label></div><p id="timing-shift-range-summary" class="fine"></p><label class="field">Timing shift (seconds)<input id="timing-shift-seconds" type="text" inputmode="decimal" placeholder="For example +0.25 or -0.5" disabled></label><button id="timing-shift-apply" class="quiet" disabled>Shift all lyric times</button><div id="passage-copy" hidden><p class="fine">Repeat the selected passage in an empty part of this clip. Original lines stay; copied words, lengths and internal gaps stay together.</p><label class="field">Copy passage to (seconds)<input id="passage-copy-seconds" type="text" inputmode="decimal" placeholder="Destination first-line start" disabled></label><button id="passage-copy-apply" class="quiet" disabled>Copy selected passage</button><p id="passage-copy-status" class="fine" role="status" aria-live="polite"></p></div><p id="timing-shift-status" class="fine" role="status" aria-live="polite"></p></details>
+        <details class="timing-shift"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="timing-shift"><summary>Shift lyric timing</summary><p class="fine">Move all current cues or a selected passage by the same number of seconds: positive is later, negative is earlier. Words, line lengths and gaps stay together. The complete result must fit inside this clip without overlapping neighboring lines; nothing is cropped. This makes one unsaved Undo/Redo edit. Unapplied pasted words are not included.</p><label class="field">Timing shift scope<select id="timing-shift-scope" disabled><option value="all">All lines</option><option value="passage">Selected passage</option></select></label><div id="timing-shift-passage" class="practice-selection" hidden><label class="field">First line in passage<select id="timing-shift-first" disabled></select></label><label class="field">Last line in passage<select id="timing-shift-last" disabled></select></label></div><p id="timing-shift-range-summary" class="fine"></p><label class="field">Timing shift (seconds)<input id="timing-shift-seconds" type="text" inputmode="decimal" placeholder="For example +0.25 or -0.5" disabled></label><button id="timing-shift-apply" class="quiet" disabled>Shift all lyric times</button><div id="passage-copy" hidden><p class="fine">Repeat the selected passage in an empty part of this clip. Original lines stay; copied words, lengths and internal gaps stay together.</p><label class="field">Copy passage to (seconds)<input id="passage-copy-seconds" type="text" inputmode="decimal" placeholder="Destination first-line start" disabled></label><button id="passage-copy-apply" class="quiet" disabled>Copy selected passage</button><p id="passage-copy-status" class="fine" role="status" aria-live="polite"></p></div><p id="timing-shift-status" class="fine" role="status" aria-live="polite"></p></details>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
@@ -71,6 +72,7 @@ let working: Project | null = null;
 let lyricHistory: LyricHistory | null = null;
 let shiftIdentities: Project['cues'] = [];
 let shiftLabels = '';
+let findSelected: Project['cues'][number] | null = null;
 let dirty = false;
 let draftDirty = false;
 let saving = false;
@@ -440,6 +442,7 @@ function practiceControls(): void {
   element<HTMLButtonElement>('practice-stop').disabled = !practice.active;
   element('practice-status').textContent = practice.status;
   automaticReviewControls();
+  findControls();
 }
 function startPractice(mode: PracticeMode, singleLine?: number): void {
   if (!practiceMediaReady() || !working) { practiceControls(); return; }
@@ -754,6 +757,43 @@ function editCueStructure(index: number, kind: 'split' | 'merge'): void {
       : 'Lines merged with a newline, including any gap between them. Undo restores both original intervals.');
   } catch (error) { message(error instanceof Error ? error.message : 'Cue edit could not be applied. Current words and timings were kept.', true); }
 }
+function findControls(): void {
+  const query = element<HTMLInputElement>('lyric-find-query'), matches = findCueIndices(working?.cues ?? [], query.value);
+  const selected = findSelected && working ? working.cues.indexOf(findSelected) : -1;
+  if (!matches.includes(selected)) findSelected = null;
+  const busy = timingBusy();
+  query.disabled = !working || busy;
+  element<HTMLButtonElement>('lyric-find-prev').disabled = element<HTMLButtonElement>('lyric-find-next').disabled = !matches.length || busy;
+  element<HTMLButtonElement>('lyric-find-play').disabled = !findSelected || !practiceMediaReady();
+  const text = !query.value.trim() ? 'Enter words from a current lyric line.' : !matches.length ? 'No matching lyric lines.'
+    : findSelected ? `Match ${matches.indexOf(selected) + 1} of ${matches.length} · Line ${selected + 1}: ${Array.from(findSelected.text).slice(0, 60).join('')}`
+      : `${matches.length} matching lyric lines. Choose Next or Previous.`;
+  if (element('lyric-find-status').textContent !== text) element('lyric-find-status').textContent = text;
+}
+function navigateFind(direction: 1 | -1): void {
+  if (!working || timingBusy()) return;
+  const matches = findCueIndices(working.cues, element<HTMLInputElement>('lyric-find-query').value);
+  const current = findSelected ? working.cues.indexOf(findSelected) : null;
+  const index = nextCueMatch(matches, current, direction);
+  if (index === null) { findSelected = null; findControls(); return; }
+  findSelected = working.cues[index];
+  const target = element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${index}"] textarea`);
+  target?.scrollIntoView({ block: 'center' }); target?.focus({ preventScroll: true }); target?.setSelectionRange(0, 0);
+  findControls();
+}
+element('lyric-find-query').addEventListener('input', () => { findSelected = null; findControls(); });
+element('lyric-find-query').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); navigateFind(event.shiftKey ? -1 : 1); }
+});
+element('lyric-find-prev').addEventListener('click', () => navigateFind(-1));
+element('lyric-find-next').addEventListener('click', () => navigateFind(1));
+element('lyric-find-play').addEventListener('click', () => {
+  findControls();
+  if (!working || !findSelected || !practiceMediaReady()) return;
+  const index = working.cues.indexOf(findSelected);
+  if (index >= 0) startPractice('once', index);
+});
+
 function sameShiftLines(): boolean {
   return !!working && shiftIdentities.length === working.cues.length && shiftIdentities.every((cue, index) => cue === working!.cues[index]);
 }
@@ -909,7 +949,7 @@ async function openProject(id: string) {
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
-  if (working?.id !== project.id) { element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
+  if (working?.id !== project.id) { findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;
@@ -1010,7 +1050,7 @@ element('delete-project').addEventListener('click', async () => {
     await request(`/api/projects/${working.id}`, json('DELETE', {}));
     timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; loadedProjectGeneration++; mediaGeneration++;
     ++projectGeneration; audio.pause(); audio.removeAttribute('src'); audio.load();
-    working = null; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
+    working = null; findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
     archiveInfoEpoch++; archiveInfo = null; archiveInfoState = 'none';
     element('clip-details').hidden = true; element<HTMLInputElement>('title').value = '';
     element<HTMLTextAreaElement>('lyric-draft').value = ''; history.replaceState(null, '', location.pathname);

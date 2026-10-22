@@ -634,3 +634,10 @@ This is manual passage correction, not automatic delay detection or an evaluated
 Open **Shift lyric timing**, choose **Selected passage**, and select the first and last lines. Enter the new first-line start under **Copy passage to (seconds)** and choose **Copy selected passage**. This adds a literal copy while keeping the originals, line durations and internal gaps. The entire destination span must be empty and fit within the clip; existing 200-line/20,000-character limits still apply. Nothing is cropped or overwritten.
 
 The copy is one unsaved Undo/Redo edit. Untouched raw timing fields, title and unapplied pasted words stay intact. A successful copy stops practice and retires pending timing/import reviews; a refused copy leaves them alone. Structural changes and Undo/Redo clear passage selection so another copy requires a fresh range. Use **Save lyrics** before exporting timed lyrics or video. The utility destination resets on another clip; it is not saved song metadata. This supports manual correction reuse and does not establish automatic transcription/alignment quality (#241).
+
+
+### Find a line for correction or practice
+
+Open **Find lyric line** and enter words from the current lyric cues. Matching is literal and case-insensitive, including Unicode text and punctuation; unapplied pasted words and pending imported/recognized reviews are not searched. **Next lyric match** / **Previous lyric match** wrap through matching lines. Enter goes forward and Shift+Enter goes backward from the search field. The matching textarea receives focus without rebuilding cue rows or changing raw timings, title, drafts, history or playback.
+
+**Play lyric match** deliberately plays the chosen line through the existing practice controls and readiness checks. Searching or moving to a different result does not seek or restart audio. Invalid timings/title can still be found and corrected, but playback retains the ordinary whole-project validation. Edits recompute matches; replacing cue objects clears the chosen result until you navigate again. Opening another clip clears the query. No query is saved into the song.

@@ -372,3 +372,65 @@ test('phone keyboard copies a multi-line chorus with internal gaps and only vali
   await expect(page.getByLabel('Lyric line 5', { exact: true })).toHaveValue('Verse B');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('find navigation preserves raw drafts nodes review and history while focusing repeated Unicode lyrics', async ({ page }) => {
+  await open(page, 'Café 🌓\n[chorus]\ncAFÉ 🌓 again');
+  await page.getByLabel('Clip title', { exact: true }).fill('');
+  await page.getByLabel('Start line 1', { exact: true }).fill('');
+  await page.getByLabel('End line 3', { exact: true }).fill('6.000');
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied words');
+  await page.getByLabel('Import timed lyrics (SRT)', { exact: true }).setInputFiles({ name: 'pending.srt', mimeType: 'application/x-subrip', buffer: Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nPending words\n') });
+  await expect(page.locator('#srt-review')).toBeVisible();
+  const before = await timingEditor(page), node = await page.getByLabel('Lyric line 1', { exact: true }).elementHandle();
+  const undo = await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).isEnabled();
+  await page.getByText('Find lyric line', { exact: true }).click();
+  const query = page.getByLabel('Find words in lyrics', { exact: true }); await query.fill('café 🌓');
+  await expect(page.locator('#lyric-find-status')).toContainText('2 matching');
+  await query.press('Enter'); await expect(page.getByLabel('Lyric line 1', { exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Next lyric match', exact: true }).click(); await expect(page.getByLabel('Lyric line 3', { exact: true })).toBeFocused();
+  await query.focus(); await query.press('Shift+Enter'); await expect(page.getByLabel('Lyric line 1', { exact: true })).toBeFocused();
+  expect(await timingEditor(page)).toEqual(before); expect(await node!.evaluate(e => e.isConnected)).toBe(true);
+  expect(await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).isEnabled()).toBe(undo);
+  await expect(page.locator('#srt-review')).toBeVisible(); await expect(page.getByRole('button', { name: 'Play lyric match', exact: true })).toBeDisabled();
+  await query.fill('.*'); await expect(page.locator('#lyric-find-status')).toContainText('No matching');
+  await expect(page.getByRole('button', { name: 'Next lyric match', exact: true })).toBeDisabled();
+  await query.fill('[chorus]'); await query.press('Enter'); await expect(page.getByLabel('Lyric line 2', { exact: true })).toBeFocused();
+});
+
+test('phone lyric find only starts native practice through explicit Play and tracks live corrections', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 740 }); await open(page, 'First\nMiddle\nFinal chorus');
+  await page.getByText('Find lyric line', { exact: true }).click();
+  const query = page.getByLabel('Find words in lyrics', { exact: true }); await query.fill('FINAL'); await query.press('Enter');
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toBeFocused();
+  expect(await page.locator('audio').evaluate(e => ({ paused: (e as HTMLAudioElement).paused, time: (e as HTMLAudioElement).currentTime }))).toEqual({ paused: true, time: 0 });
+  await page.getByRole('button', { name: 'Play lyric match', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(e => (e as HTMLAudioElement).paused)).toBe(false);
+  expect(await page.locator('audio').evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThanOrEqual(4);
+  await query.fill('not present'); await expect(page.locator('#lyric-find-status')).toContainText('No matching');
+  await expect(page.getByRole('button', { name: 'Pause practice', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Stop practice', exact: true }).click();
+  await query.fill('FINAL'); await query.press('Enter'); await page.getByLabel('Lyric line 3', { exact: true }).fill('Changed words');
+  await expect(page.locator('#lyric-find-status')).toContainText('No matching');
+  await expect(page.getByRole('button', { name: 'Play lyric match', exact: true })).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('find selection retires across Undo Redo and another clip while the same-clip query stays useful', async ({ page }) => {
+  await open(page, 'Chorus first\nOther\nChorus final');
+  const firstId = new URL(page.url()).searchParams.get('project')!;
+  await page.getByText('Find lyric line', { exact: true }).click();
+  const query = page.getByLabel('Find words in lyrics', { exact: true }), play = page.getByRole('button', { name: 'Play lyric match', exact: true });
+  await query.fill('chorus'); await query.press('Enter');
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Changed');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(query).toHaveValue('chorus'); await expect(page.locator('#lyric-find-status')).toContainText('2 matching'); await expect(play).toBeDisabled();
+  await query.press('Enter'); await expect(page.getByLabel('Lyric line 1', { exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click(); await expect(play).toBeDisabled();
+  await page.getByRole('button', { name: 'Next lyric match', exact: true }).click(); await expect(page.getByLabel('Lyric line 3', { exact: true })).toBeFocused();
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByLabel('Upload song clip').setInputFiles({ name: 'another-find-clip.wav', mimeType: 'audio/wav', buffer: audioFixture() });
+  await expect.poll(() => new URL(page.url()).searchParams.get('project')).not.toBe(firstId);
+  await expect(query).toHaveValue(''); await expect(play).toBeDisabled();
+  const session = await (await page.request.get('/api/session')).json();
+  expect((await page.request.delete(`/api/projects/${firstId}`, { headers: { 'X-Karaoke-Token': session.token }, data: {} })).ok()).toBe(true);
+});
