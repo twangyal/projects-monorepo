@@ -1,5 +1,6 @@
 import { backedFramePlan, type BackedFramePlan } from './backing.ts';
 import type { BackedFrameCapture } from './backed-frames.ts';
+import { backedFailureFeedback } from './backed-failure.ts';
 
 export const BACKED_PROCESSOR_NAME = 'melody-backed-capture';
 export async function backedWorkletUrl(): Promise<string> {
@@ -238,7 +239,7 @@ export class BackedRecorder {
         const samples = new Float32Array(message.samples.subarray(0, wanted - session.plan.startFrame));
         this.#checkCapture(session);
         this.#settle(session, { samples, sampleRate: session.plan.sampleRate, channels: session.channels!, startFrame: session.plan.startFrame, endFrame: wanted });
-      } else if (message.type === 'error') throw new Error('The microphone capture failed. Your prior take is unchanged.');
+      } else if (message.type === 'error') throw new Error(backedFailureFeedback(fields(message, ['type', 'reason']) ? message.reason : null));
       else throw malformed();
     } catch (error) { this.#settle(session, null, error instanceof Error ? error : malformed()); }
   }

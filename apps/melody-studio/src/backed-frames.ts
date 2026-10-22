@@ -1,3 +1,5 @@
+import { BackedFrameError, type BackedFailureReason } from './backed-failure.ts';
+
 /** Dry microphone data in one contiguous absolute audio-graph frame interval. */
 export interface BackedFrameCapture {
   samples: Float32Array<ArrayBuffer>;
@@ -10,8 +12,8 @@ export interface BackedFrameCapture {
 function safeFrame(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0;
 }
-function invalid(): never {
-  throw new Error('Microphone frames are missing, changed or outside the supported recording bounds.');
+function invalid(reason: BackedFailureReason = 'invalid-input'): never {
+  throw new BackedFrameError(reason);
 }
 
 /** No synthesis, clocks or project state: the caller supplies real graph blocks. */
@@ -40,7 +42,7 @@ export class BackedFrames {
   arm(startFrame: number, limitFrame: number): void {
     if (this.#terminal || this.#start !== null || !safeFrame(startFrame) || !safeFrame(limitFrame)
       || limitFrame <= startFrame || limitFrame - startFrame > this.#maximum
-      || this.#lastEnd !== null && startFrame < this.#lastEnd) invalid();
+      || this.#lastEnd !== null && startFrame < this.#lastEnd) invalid('invalid-window');
     this.#start = startFrame;
     this.#limit = limitFrame;
   }
@@ -65,15 +67,16 @@ export class BackedFrames {
     const blockEnd = blockStartFrame + length;
     // Readiness may skip graph quanta before scheduling exists; never overlap or
     // move backward. Once armed, count-in and capture share one contiguous clock.
-    if (!safeFrame(blockEnd) || this.#lastEnd !== null
+    if (!safeFrame(blockEnd)) invalid();
+    if (this.#channels !== null && channels.length !== this.#channels) invalid('changed-channels');
+    if (this.#lastEnd !== null
         && (this.#start === null ? blockStartFrame < this.#lastEnd : blockStartFrame !== this.#lastEnd)
-      || this.#channels !== null && channels.length !== this.#channels
-      || this.#start !== null && this.#lastEnd === null && blockStartFrame > this.#start) invalid();
+      || this.#start !== null && this.#lastEnd === null && blockStartFrame > this.#start) invalid('discontinuous-frames');
 
     const cutoff = this.#cutoff ?? this.#limit;
     const from = this.#start === null ? 0 : Math.max(blockStartFrame, this.#start);
     const to = cutoff === null ? 0 : Math.min(blockEnd, cutoff);
-    if (to > from && (this.#start === null || from !== this.#start + this.#captured)) invalid();
+    if (to > from && (this.#start === null || from !== this.#start + this.#captured)) invalid('discontinuous-frames');
     if (to > from) {
       const buffer = this.#buffer!;
       for (let frame = from; frame < to; frame++) {
@@ -90,7 +93,7 @@ export class BackedFrames {
 
   finish(stopFrame: number): BackedFrameCapture | null {
     if (this.#terminal || this.#cutoff !== null) return null;
-    if (!safeFrame(stopFrame)) invalid();
+    if (!safeFrame(stopFrame)) invalid('invalid-window');
     if (this.#start === null || stopFrame <= this.#start) {
       this.cancel();
       return null;

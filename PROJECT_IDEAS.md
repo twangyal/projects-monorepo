@@ -59,6 +59,8 @@ Milestone #298 adds contextual per-track signed pan curves to Melody’s existin
 
 Milestone #299 adds explicit selected-note Major/Minor/Suspended 2/Suspended 4 chord construction in Melody’s contextual Notes tools. Two ordinary editable tones retain root timing/velocity and complete history/reference data; duplicate overlapping tones, range/capacity problems and unapplied drafts refuse atomically. Real MIDI/WAV and recovery verification are tracked in [the integration record](docs/2026-10-21-melody-chord-construction.md). This is authored interval composition, not learned harmony; Melody remains ACTIVE against the full DAW destination.
 
+Ongoing #300 preserves six allowlisted native backed-recording refusal categories in actionable feedback, with unchanged audio/frame acceptance and old-take protection. Intermittent startup refusal and separate synthetic-stream frequency failures remain unresolved; diagnostics and acceptance evidence are tracked in [the recording investigation](docs/2026-10-22-melody-backed-failures.md). A passing unchanged rerun does not establish their cause or physical microphone reliability.
+
 ## 4. Git blame agent
 
 Path: apps/git-history

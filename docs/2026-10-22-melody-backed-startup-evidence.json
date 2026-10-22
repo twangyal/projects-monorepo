@@ -1,0 +1,57 @@
+{
+  "source": "e7145eaea86a67766532631a906bf39f9b26d5a4",
+  "run": 39670574675,
+  "job": 119467059566,
+  "artifact": 12380460611,
+  "artifactSha256": "4528e33837e6cc33758eec4b16ba32c35245a204c064038310e3cf59f587c610",
+  "traceFile": "1-trace.trace",
+  "traceFileSha256": "b4d77f8617ae51e9cc489d47031489bbf9e0345b97d18f2e17dfb4d5430b8b1a",
+  "nativeProbeEvidence": {
+    "callId": "call@248",
+    "traceEndMilliseconds": 16816.809,
+    "probe": {
+      "requests": 1,
+      "stopped": 1,
+      "released": true,
+      "elapsed": -1.0477551020408165
+    },
+    "scheduledSources": [
+      {
+        "frames": 441000,
+        "sampleRate": 22050,
+        "when": 1.2190022675736962,
+        "contextRate": 44100
+      },
+      {
+        "frames": 551,
+        "sampleRate": 22050,
+        "when": 0.21900226757369615,
+        "contextRate": 44100
+      },
+      {
+        "frames": 551,
+        "sampleRate": 22050,
+        "when": 0.4690022675736961,
+        "contextRate": 44100
+      },
+      {
+        "frames": 551,
+        "sampleRate": 22050,
+        "when": 0.7190022675736961,
+        "contextRate": 44100
+      },
+      {
+        "frames": 551,
+        "sampleRate": 22050,
+        "when": 0.9690022675736961,
+        "contextRate": 44100
+      }
+    ]
+  },
+  "limits": [
+    "The probe shows scheduled sources and a released synthetic stream before backed start, not the internal worklet refusal category.",
+    "The original generic notice was microphone capture failed; Finding the notes was inactive progress text.",
+    "This extraction contains no raw audio, secrets, signed download URL or physical-input claim.",
+    "The unchanged canonical rerun passed; that does not explain this first failure."
+  ]
+}

@@ -87,3 +87,29 @@ test('missing native worklet capability refuses before microphone permission or 
   await assert.rejects(h.start(),/AudioWorklet|Record melody/i);
   assert.equal(h.permissionCalls(),0);assert.equal(h.context.state,'suspended');assert.equal(h.sources.length,0);
 });
+
+for (const [reason, feedback] of [
+  ['missing-input', /microphone input stopped/i],
+  ['invalid-input', /invalid audio samples/i],
+  ['changed-channels', /channel count changed/i],
+  ['discontinuous-frames', /audio frames were interrupted/i],
+  ['invalid-window', /recording interval/i],
+  ['invalid-command', /recording setup/i],
+] as const) test(`native ${reason} provides allowlisted guidance and releases all owned audio`, async () => {
+  const h=harness(), pending=h.start(); await h.armed();
+  h.node.emit({type:'error',reason});
+  await assert.rejects(pending, error => error instanceof Error && feedback.test(error.message) && /prior take is unchanged/i.test(error.message) && /try again/i.test(error.message));
+  assert.equal(h.track.stopped,1); assert.equal(h.node.closed,1); assert.equal(h.timers.size,0);
+  assert.ok(h.sources.every(source=>source.disconnected===1 && source.stops.length>0));
+});
+for (const payload of [
+  {type:'error',reason:'invented-native-detail',message:'UNTRUSTED AUDIO DETAIL'},
+  {type:'error',reason:'missing-input',message:'UNTRUSTED AUDIO DETAIL'},
+  {type:'error',reason:'toString'},
+  {type:'error',reason:['missing-input']},
+  {type:'error',message:'UNTRUSTED AUDIO DETAIL'},
+]) test(`untrusted native failure envelope stays generic: ${JSON.stringify(payload)}`, async()=>{
+  const h=harness(),pending=h.start(); await h.armed(); h.node.emit(payload);
+  await assert.rejects(pending, error=>error instanceof Error && error.message==='The microphone capture failed. Your prior take is unchanged.');
+  assert.equal(h.track.stopped,1); assert.equal(h.node.closed,1);
+});

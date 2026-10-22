@@ -1,7 +1,7 @@
 // Test-only entry: genuine graph and production processor, independent input/oracle data.
 import { BACKED_PROCESSOR_NAME, backedWorkletUrl } from '../src/backed-recorder.ts';
 
-type Mode = 'exact' | 'finish' | 'missing' | 'topology' | 'duplicate-arm' | 'cancel' | 'initially-missing' | 'progress';
+type Mode = 'exact' | 'finish' | 'missing' | 'topology' | 'duplicate-arm' | 'cancel' | 'initially-missing' | 'progress' | 'invalid-command';
 type Options = { rate: number; mode: Mode; channels?: number };
 type Message = Record<string, unknown>;
 type Result = {
@@ -88,6 +88,7 @@ async function run(): Promise<void> {
     } else {
       await bounded(acknowledgement);
       if (options.mode === 'missing') source.disconnect();
+      if (options.mode === 'invalid-command') processor.port.postMessage({type: 'unknown-command'});
       if (options.mode === 'topology') {
         source.disconnect(); const mono = context.createBufferSource(); mono.buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
         mono.connect(processor); mono.start(); sources.push(mono);

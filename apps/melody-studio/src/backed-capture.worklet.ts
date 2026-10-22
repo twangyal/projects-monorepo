@@ -1,4 +1,5 @@
 import { BackedFrames, type BackedFrameCapture } from './backed-frames.ts';
+import { BackedFrameError, type BackedFailureReason } from './backed-failure.ts';
 
 declare const sampleRate: number;
 declare const currentFrame: number;
@@ -29,7 +30,7 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
           if (result) this.#complete(result);
           else if (this.#frames.terminal) { this.#terminal = true; this.port.onmessage = null; }
         } else throw new Error();
-      } catch { this.#fail(); }
+      } catch (error) { this.#fail(error instanceof BackedFrameError ? error.reason : 'invalid-command'); }
     };
   }
   process(inputs: Float32Array[][], outputs: Float32Array[][]): boolean {
@@ -38,7 +39,7 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
     try {
       const input = inputs[0];
       if (!input || input.length === 0) {
-        if (this.#ready) throw new Error();
+        if (this.#ready) throw new BackedFrameError('missing-input');
         return true;
       }
       const result = this.#frames.push(currentFrame, input);
@@ -52,16 +53,16 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
         this.port.postMessage({ type: 'progress', phase: currentFrame < this.#startFrame ? 'counting-in' : 'recording', framesCaptured: this.#frames.framesCaptured });
       }
       return !this.#terminal;
-    } catch { this.#fail(); return false; }
+    } catch (error) { this.#fail(error instanceof BackedFrameError ? error.reason : 'invalid-input'); return false; }
   }
   #complete(result: BackedFrameCapture): void {
     this.#terminal = true; this.port.onmessage = null;
     this.port.postMessage({ type: 'complete', ...result }, [result.samples.buffer]);
   }
-  #fail(): void {
+  #fail(reason: BackedFailureReason): void {
     if (this.#terminal) return;
     this.#frames.cancel(); this.#terminal = true; this.port.onmessage = null;
-    this.port.postMessage({ type: 'error', message: 'Microphone frames were missing or invalid. Your prior take is unchanged.' });
+    this.port.postMessage({ type: 'error', reason });
   }
 }
 registerProcessor('melody-backed-capture', BackedCaptureProcessor);

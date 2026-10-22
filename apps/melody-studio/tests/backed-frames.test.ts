@@ -162,3 +162,19 @@ test('thirty-two input channels are finite averaged input, while extra and spars
   const final = capture.push(0, Array.from({ length: 32 }, (_, i) => Float32Array.of(i - 16))); assert.ok(final);
   assert.equal(final.channels, 32); assert.equal(final.samples[0], -.5);
 });
+
+test('frame refusals distinguish invalid input, topology, continuity and interval without mutating retained state', () => {
+  const reason = (expected: string) => (error: unknown) => error instanceof Error && Reflect.get(error, 'reason') === expected;
+  const capture = new BackedFrames(8000);
+  capture.push(100, mono(1, 2));
+  assert.throws(() => capture.push(102, mono(NaN)), reason('invalid-input'));
+  assert.throws(() => capture.push(102, [Float32Array.of(1), Float32Array.of(2)]), reason('changed-channels'));
+  assert.throws(() => capture.push(101, mono(3)), reason('discontinuous-frames'));
+  assert.throws(() => capture.arm(101, 110), reason('invalid-window'));
+  capture.arm(106, 110);
+  assert.throws(() => capture.push(104, mono(3, 4)), reason('discontinuous-frames'));
+  assert.throws(() => capture.finish(NaN), reason('invalid-window'));
+  assert.equal(capture.framesCaptured, 0); assert.equal(capture.channels, 1);
+  capture.push(102, mono(3, 4)); capture.push(104, mono(5, 6));
+  assert.deepEqual([...capture.push(106, mono(7, 8, 9, 10))!.samples], [7, 8, 9, 10]);
+});

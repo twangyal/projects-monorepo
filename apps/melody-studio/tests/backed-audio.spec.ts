@@ -29,8 +29,8 @@ for(const rate of [44100,48000])test(`actual ${rate} Hz worklet keeps exact grap
 });
 test('real worklet delayed Finish trims to requested end without message-delivery tail',async({page})=>{exactSamples(await capture(page,'finish'));});
 test('real worklet waits for initial input, then retains exact mono frames',async({page})=>{const result=await capture(page,'initially-missing',48000,1);expect(result.initialReadyCount).toBe(0);exactSamples(result,1);});
-for(const mode of ['missing','topology','duplicate-arm'])test(`real worklet refuses ${mode} without returning a partial take`,async({page})=>{
-  const result=await capture(page,mode);expect(result.samples).toBeNull();expect(result.messages.filter(m=>m.type==='error')).toHaveLength(1);expect(result.messages.filter(m=>m.type==='complete')).toHaveLength(0);
+for(const mode of ['missing','topology','duplicate-arm','invalid-command'])test(`real worklet refuses ${mode} without returning a partial take`,async({page})=>{
+  const result=await capture(page,mode);expect(result.samples).toBeNull();expect(result.messages.filter(m=>m.type==='error')).toEqual([{type:'error',reason:({'missing':'missing-input','topology':'changed-channels','duplicate-arm':'invalid-window','invalid-command':'invalid-command'} as Record<string,string>)[mode]}]);expect(result.messages.filter(m=>m.type==='complete')).toHaveLength(0);
 });
 test('real worklet Cancel during count-in produces no captured samples',async({page})=>{
   const result=await capture(page,'cancel');expect(result.samples).toBeNull();expect(result.messages.filter(m=>m.type==='complete')).toHaveLength(0);expect(result.maximumOutput).toBe(0);
