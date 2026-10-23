@@ -10,4 +10,6 @@ Architecture: pure validated moveSection in the existing section-arrangement dom
 - [x] Implement validated immutable domain edit.
 - [x] Red native missing-control case, then session destination + guarded Move section integration.
 - [x] Native complete backup/history/reload and independent MIDI/WAV evidence; phone keyboard, raw draft, collision and no-op Redo coverage.
-- [ ] Full checks/browser, independent review, docs/roadmap, connected GitHub commit/CI and issue completion using actual evidence.
+- [x] Full checks/browser, independent review, docs/roadmap, connected GitHub commit/CI and issue completion using actual evidence.
+
+Final acceptance: [canonical/local receipt](../../2026-10-23-melody-section-move-acceptance.md); 463 units and 264 browser cases.

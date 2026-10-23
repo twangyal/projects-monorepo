@@ -359,3 +359,5 @@ Motion #310 canonical acceptance at `8d46fa6` is complete: **279 unit tests and 
 ### 2026-10-23 — Melody all-track section relocation (#311)
 
 Melody at `apps/melody-studio` moves whole note sections to a vacant destination without copying, rippling other notes or changing IDs, dynamics, sounds, references or song-time automation. Atomic boundary/collision/capacity refusal, complete history and existing raw-draft guards apply. This extends explicit composition arrangement toward the DAW destination; audio-clip relocation, broader sound/mixing capabilities and intended-user evaluation remain. Melody stays ACTIVE; project#8 stays skipped. See `apps/melody-studio/docs/2026-10-23-section-move.md` for actual acceptance evidence.
+
+Melody #311 canonical acceptance at `5852d25` is complete: **463 unit tests and 264 browser cases**, plus lint/types/build. [Final receipt](docs/2026-10-23-melody-section-move-acceptance.md) preserves corrected fixture failures and audio/automation alignment limits. Melody remains ACTIVE; #300 recording research remains unresolved.
