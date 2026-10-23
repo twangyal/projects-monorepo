@@ -827,3 +827,6 @@ button {
 .automatic-review-timing input { width: 100%; min-width: 0; min-height: 44px; }
 .automatic-review-timing button { width: 100%; min-height: 44px; white-space: normal; }
 @media (max-width: 600px) { .automatic-review-timing { grid-template-columns: minmax(0, 1fr); } }
+
+.automatic-line-exclusion { display: flex; align-items: center; gap: .65rem; min-height: 44px; cursor: pointer; }
+.automatic-line-exclusion input { width: 1.25rem; min-height: 1.25rem; margin: 0; flex: 0 0 auto; }

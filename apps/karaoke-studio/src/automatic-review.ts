@@ -1,7 +1,7 @@
 import { MAX_CUES, validateCues, type Cue } from './lyrics.ts';
 import { createPracticeRange, type PracticeRange } from './practice.ts';
 
-export interface ReviewedCue { start: string; end: string; text: string }
+export interface ReviewedCue { start: string; end: string; text: string; excluded?: boolean }
 function timing(row: ReviewedCue, index: number): Pick<Cue, 'start' | 'end'> {
   const read = (boundary: 'start' | 'end') => {
     const raw = row?.[boundary]?.trim();
@@ -14,7 +14,18 @@ function timing(row: ReviewedCue, index: number): Pick<Cue, 'start' | 'end'> {
 }
 /** Validate the complete proposal without normalizing or changing the raw drafts. */
 export function reviewedCues(rows: readonly ReviewedCue[], duration: number): Cue[] {
-  return validateCues(Array.from(rows, (row, index) => ({ ...timing(row, index), text: row.text })), duration);
+  if (!Array.isArray(rows) || rows.length > MAX_CUES) throw new Error('Use at most 200 automatic lyric lines.');
+  const indices: number[] = [];
+  const included = rows.flatMap((row, index) => {
+    if (row.excluded !== undefined && typeof row.excluded !== 'boolean') throw new Error(`Line ${index + 1}: exclusion must be boolean.`);
+    if (row.excluded) return [];
+    indices.push(index); return [{ ...timing(row, index), text: row.text }];
+  });
+  try { return validateCues(included, duration); }
+  catch (error) {
+    const message = error instanceof Error ? error.message : 'Check included automatic lyric lines.';
+    throw new Error(message.replace(/Line (\d+)/g, (_, number) => `Line ${(indices[Number(number) - 1] ?? Number(number) - 1) + 1}`));
+  }
 }
 /** Audition a single staged interval even while other lines or words need correction. */
 export function reviewedRange(rows: readonly ReviewedCue[], duration: number, index: number): Readonly<PracticeRange> {

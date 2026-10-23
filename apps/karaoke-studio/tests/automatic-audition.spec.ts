@@ -336,3 +336,94 @@ test('repeat wraps actual native playback to the staged start instead of recogni
   await page.getByRole('button', { name: 'Stop reviewed passage', exact: true }).click();
   await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
 }));
+
+test('exclude false automatic lines before one exact saved review edit', async ({ page }) => withClip(page, async id => {
+  const source = await (await page.request.get(`/api/projects/${id}/transcript`)).json();
+  await page.getByLabel('End line 1', { exact: true }).fill('2.7500');
+  await page.getByLabel('Clip title', { exact: true }).fill('Reviewed clip');
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied paste 🎵'); const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByLabel('Reviewed lyric line 1', { exact: true }).fill('Kept café 🎵');
+  await page.getByLabel('Reviewed lyric line 2', { exact: true }).fill('');
+  await page.getByLabel('Reviewed start line 2 (seconds)', { exact: true }).fill('');
+  await page.getByLabel('Exclude automatic line 2', { exact: true }).check();
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(page.locator('#automatic-review-count')).toContainText('2 included lines; 1 excluded');
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  expect(await page.locator('#cue-list textarea').evaluateAll(nodes => nodes.map(n => (n as HTMLTextAreaElement).value))).toEqual(['Kept café 🎵', 'Sing it back to me']);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); expect(await editor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Save lyrics', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Discard pasted draft', exact: true }).click();
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click(); await expect(page.locator('#message')).toContainText('saved locally');
+  expect(await (await page.request.get(`/api/projects/${id}/transcript`)).json()).toEqual(source);
+  await page.reload(); await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue('Kept café 🎵');
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Sing it back to me');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export timed lyrics', exact: true }).click()]);
+  const { readFile } = await import('node:fs/promises');
+  expect(await readFile((await download.path())!, 'utf8')).toBe('1\n00:00:00,850 --> 00:00:02,750\nKept café 🎵\n\n2\n00:00:08,850 --> 00:00:11,750\nSing it back to me\n');
+}));
+
+test('excluded review lines restore raw errors and hidden included lines still validate', async ({ page }) => withClip(page, async id => {
+  const source = await (await page.request.get(`/api/projects/${id}/transcript`)).json();
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByLabel('Reviewed lyric line 3', { exact: true }).fill('');
+  await page.getByLabel('Exclude automatic line 3', { exact: true }).check();
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeEnabled();
+  await page.getByLabel('Exclude automatic line 3', { exact: true }).uncheck();
+  await expect(page.locator('#automatic-review-error')).toContainText('Line 3');
+  await expect(page.getByLabel('Reviewed lyric line 3', { exact: true })).toHaveValue('');
+  await page.getByLabel('Exclude automatic line 3', { exact: true }).check();
+  await page.getByLabel('Reviewed start line 2 (seconds)', { exact: true }).fill('');
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(page.getByLabel('Reviewed start line 2 (seconds)', { exact: true })).toBeHidden();
+  await expect(page.locator('#automatic-review-error')).toContainText('Line 2');
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeDisabled();
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).uncheck();
+  await page.getByLabel('Exclude automatic line 2', { exact: true }).check();
+  await page.getByLabel('Exclude automatic line 1', { exact: true }).check();
+  await expect(page.locator('#automatic-review-count')).toContainText('0 included lines; 3 excluded');
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await expect(page.locator('#cue-list textarea')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(page.locator('#cue-list textarea')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('saved locally');
+  await page.reload(); await expect(page.locator('#cue-list textarea')).toHaveCount(0);
+  expect(await (await page.request.get(`/api/projects/${id}/transcript`)).json()).toEqual(source);
+}));
+
+test('phone keyboard exclusion keeps drafts and retired checkbox cannot change a fresh review', async ({ page }) => withClip(page, async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByLabel('Reviewed end line 2 (seconds)', { exact: true }).fill('7.5000');
+  const exclude = page.getByLabel('Exclude automatic line 2', { exact: true });
+  const retired = await exclude.elementHandle();
+  await exclude.focus(); await page.keyboard.press('Space'); await expect(exclude).toBeChecked();
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).uncheck();
+  await expect(page.getByLabel('Reviewed end line 2 (seconds)', { exact: true })).toHaveValue('7.5000');
+  await expect(exclude).toBeChecked();
+  await page.getByRole('button', { name: 'Cancel lyric import', exact: true }).click();
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(page.getByLabel('Exclude automatic line 2', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('Reviewed end line 2 (seconds)', { exact: true })).not.toHaveValue('7.5000');
+  await retired!.evaluate(node => { (node as HTMLInputElement).checked = true; node.dispatchEvent(new Event('change', { bubbles: true })); });
+  await expect(page.locator('#automatic-review-count')).toHaveText('Showing 3 of 3 automatic lines. Applying replaces all 3 lines.');
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await expect(page.locator('#cue-list textarea')).toHaveCount(3);
+}));
+
+test('changing automatic line exclusion retires playback and excluded audio remains inspectable', async ({ page }) => withClip(page, async () => {
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByRole('button', { name: 'Repeat automatic line 1', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByLabel('Exclude automatic line 1', { exact: true }).check();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByRole('button', { name: 'Repeat automatic line 1', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByLabel('Exclude automatic line 1', { exact: true }).uncheck();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await expect(page.locator('#cue-list textarea')).toHaveCount(3);
+}));
