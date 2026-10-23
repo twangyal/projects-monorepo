@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureRadioSnapshot, accessibleName } from './page-context.js';
+import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -97,7 +97,7 @@ export function setChecked(element, checked) {
   return { ok, message: ok ? `Checkbox ${checked ? 'checked' : 'unchecked'}.` : 'The website did not retain the requested checkbox state. Check it before continuing.' };
 }
 
-function radioVisible(element) {
+function controlVisible(element) {
   for (let scope = element; scope;) {
     const style = scope.ownerDocument.defaultView.getComputedStyle(scope);
     if (style.visibility === 'hidden' || style.visibility === 'collapse' ||
@@ -112,7 +112,7 @@ export function selectRadio(element, snapshot = captureRadioSnapshot(element)) {
   const native = element.tagName === 'INPUT' && element.type === 'radio';
   const state = () => native ? element.checked : element.getAttribute('aria-checked') === 'true' ? true
     : element.getAttribute('aria-checked') === 'false' ? false : null;
-  const available = () => element.isConnected && !element.readOnly && unlocked(element) && radioVisible(element) &&
+  const available = () => element.isConnected && !element.readOnly && unlocked(element) && controlVisible(element) &&
     (native ? element.tagName === 'INPUT' && element.type === 'radio' &&
       [null, 'radio'].includes(element.getAttribute('role'))
       : element.getAttribute('role') === 'radio' && !['INPUT', 'SELECT', 'TEXTAREA', 'OPTION'].includes(element.tagName) &&
@@ -138,6 +138,40 @@ export function selectRadio(element, snapshot = captureRadioSnapshot(element)) {
     const ok = available() && unchanged() && state() === true;
     return { ok, message: ok ? 'Radio button selected.' : 'The website did not retain the requested available radio selection. Check it before continuing.' };
   }) };
+}
+
+/** Select a website-owned ARIA tab. Ownership is checked before any deferred click. */
+export function selectTab(element, snapshot = captureTabSnapshot(element), { isCurrent = () => true } = {}) {
+  const state = tab => tab.getAttribute('aria-selected') === 'true' ? true : tab.getAttribute('aria-selected') === 'false' ? false : null;
+  const available = () => element.isConnected && !element.readOnly && unlocked(element) && controlVisible(element) &&
+    element.getAttribute('role') === 'tab' && !['INPUT', 'SELECT', 'TEXTAREA', 'OPTION'].includes(element.tagName) &&
+    !(element.tagName === 'A' && element.hasAttribute('href')) &&
+    !(element.tagName === 'BUTTON' && element.form && ['submit', 'reset'].includes(element.type)) &&
+    snapshot.groupOwner?.isConnected && snapshot.groupOwner.getAttribute('role') === 'tablist' &&
+    [null, 'false'].includes(snapshot.groupOwner.getAttribute('aria-multiselectable')) && !snapshot.groupOwner.hasAttribute('aria-owns') &&
+    typeof element.focus === 'function' && typeof element.click === 'function';
+  const unchanged = () => {
+    const current = captureTabSnapshot(element);
+    return ['document', 'root', 'form', 'type', 'role', 'name', 'group', 'value', 'groupOwner', 'formOwner', 'groupName', 'id', 'controls'].every(key => current[key] === snapshot[key]) &&
+      current.frames.length === snapshot.frames.length && current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document && frame.element.isConnected) &&
+      current.members.length === snapshot.members.length && current.members.every((member, i) => ['element', 'id', 'name', 'controls', 'type'].every(key => member[key] === snapshot.members[i][key]));
+  };
+  const validGroup = () => snapshot.members.length > 0 && snapshot.members.every(member => state(member.element) !== null) &&
+    snapshot.members.filter(member => state(member.element) === true).length <= 1;
+  const ready = () => isCurrent() && available() && unchanged() && validGroup();
+  const refused = () => ({ ok: false, message: 'The website tab or its single-select group changed, is unavailable or has invalid selection state. Look at it and try again.' });
+  if (!ready()) return refused();
+  if (state(element) === true) return { ok: true, message: 'Website tab is already selected.' };
+  element.focus({ preventScroll: true });
+  const tick = () => new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, 0));
+  return { message: 'Selecting the website tab…', followUp: (async () => {
+    // Automatic activation can happen in focus handlers or their microtasks.
+    await tick();
+    if (!ready() || !ownsFocus(element)) return refused();
+    if (state(element) === false) { element.click(); await tick(); }
+    const ok = ready() && state(element) === true;
+    return { ok, message: ok ? 'Website tab selected.' : 'The website did not retain the requested available tab selection. Check it before continuing.' };
+  })() };
 }
 
 export function setRangeValue(element, value) {

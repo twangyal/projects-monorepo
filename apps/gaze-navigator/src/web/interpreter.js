@@ -262,6 +262,17 @@ export function interpret(utterance, context = { elements: [] }) {
   if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
     return chooseSelectionField(context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
   }
+  // Explicit website-tab selection never falls back to another control role.
+  const tab = /^(?:select|choose|pick) (?:the )?(?:tab(?: (.+))?|(.+?) tab)$/.exec(text);
+  if (tab) {
+    const subject = tab[1] ?? tab[2];
+    const candidates = context.elements.filter(element => element.role === 'tab');
+    const act = element => ({ type: 'select-tab', targetId: element.id });
+    const counted = subject && ORDINAL.exec(`${subject} control`);
+    if (counted?.[2] === 'control') return ordinal(counted[1], 'control', candidates, act);
+    return !subject || DEICTIC.test(subject) ? deictic(candidates, act, 'website tab')
+      : resolve(subject, candidates, null, act, 'website tab');
+  }
   // Explicit radio intent cannot fall back to activating a similarly named button.
   const radio = /^(?:select|choose|pick) (?:the )?(?:radio(?: button)?(?: (.+))?|(.+?) radio(?: button)?)$/.exec(text);
   if (radio) {

@@ -430,3 +430,23 @@ test('injected extension selects a strict-CSP website radio without toggling rep
   await typeInstruction(page, 'select Express radio button'); await expect(status(page)).toContainText('already selected');
   expect(await page.evaluate(() => window.radioClicks)).toBe(1);
 });
+
+test('injected extension selects a strict-CSP website tab and repeats without another click', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage(); await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await page.evaluate(() => {
+    const group = document.createElement('div'); group.setAttribute('role', 'tablist'); group.setAttribute('aria-label', 'Product');
+    group.innerHTML = '<button id="overview" type="button" role="tab" aria-selected="true" aria-controls="panel-a">Overview</button><button id="details" type="button" role="tab" aria-selected="false" aria-controls="panel-b">Details</button>';
+    document.body.prepend(group); window.tabClicks = 0;
+    document.querySelector('#details').addEventListener('click', event => {
+      window.tabClicks++; queueMicrotask(() => { for (const tab of group.children) tab.setAttribute('aria-selected', String(tab === event.target)); });
+    });
+  });
+  const tab = page.getByRole('tab', { name: 'Details', exact: true }); await look(page, tab);
+  await typeInstruction(page, 'select Details tab'); await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute('aria-selected', 'false');
+  await expect(status(page)).toContainText('Website tab selected');
+  await typeInstruction(page, 'select Details tab'); await expect(status(page)).toContainText('already selected');
+  expect(await page.evaluate(() => window.tabClicks)).toBe(1);
+});

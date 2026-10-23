@@ -250,6 +250,16 @@ export function captureRadioSnapshot(element) {
     group: element.getAttribute('name'), value: element.getAttribute('value'), frames };
 }
 
+/** Identity only; website-owned selection can legitimately change during a pending request. */
+export function captureTabSnapshot(element) {
+  const groupOwner = element.closest('[role="tablist"]');
+  return { ...captureRadioSnapshot(element), groupOwner, groupName: groupOwner ? accessibleName(groupOwner) : null,
+    id: element.id, controls: element.getAttribute('aria-controls'),
+    members: groupOwner ? [...groupOwner.querySelectorAll('[role="tab"]')]
+      .filter(tab => tab.closest('[role="tablist"]') === groupOwner)
+      .map(tab => ({ element: tab, id: tab.id, name: accessibleName(tab), controls: tab.getAttribute('aria-controls'), type: tab.type })) : [] };
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -275,6 +285,7 @@ function describe(element) {
     else if (['true', 'false'].includes(element.getAttribute('aria-checked'))) description.checked = element.getAttribute('aria-checked') === 'true';
   }
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
+  if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").
   if (disclosure) description.expanded = element.getAttribute('aria-expanded') === 'true';
   else if (element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS') description.expanded = element.parentElement.open;
