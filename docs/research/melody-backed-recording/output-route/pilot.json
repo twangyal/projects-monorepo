@@ -1,0 +1,171 @@
+{
+  "completedReceipts": 11,
+  "rows": [
+    {
+      "pair": 0,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "fa6283b29d9f261641a51a89d10dc9dab0ff122276c7631bf44772149d6e95e3",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 0,
+      "route": "normal",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "c045a8925af63d8a19be6728bffc81d83ae388625a5900ca27dd0fcd5c22bc93",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 1,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "5f57b6acf12ba6f781b682a461480ac1fc6c661db3d2c43791333b95439f519b",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 1,
+      "route": "normal",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "1487e5dd351d7041b68fb85f4fe48ce8c42530d27afdc13ca59f5ba5be2a0db5",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 2,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "3c4fe5ce7fa7590ffd54665dbe8d3f0eb3d5d248bfdfc85c71a5e1c05968eaa9",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 2,
+      "route": "normal",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "f08408e1f80f84563ba4606fc946d5548b6ff6ed08802ee3e88704b74ff4701d",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 3,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "2aa31919f3aeb70f52485b3346d07f6a543609822d7ef6f4bb248dae1b7c2b8c",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 3,
+      "route": "normal",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "e00ffea8c1df43cc48ba3b9acb02659b22f1a4dce0b4af387412f6a07214b7ee",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 4,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "6bd8a82916d733a160a25d2c90ddc210e4363b5fddb665b0bca2ab7f9c36b262",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 4,
+      "route": "normal",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "1f4b1257ba25b2e16c513fd6096a85ee16d787f98d0858354a4d6eef3a0caa95",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    },
+    {
+      "pair": 5,
+      "route": "disconnected",
+      "error": null,
+      "routes": [
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode",
+        "AudioDestinationNode"
+      ],
+      "receiptSha256": "cb7083011a0dd79da158f66996f0b4496b59bc98788e4d6b920037c57ab2ab41",
+      "excludedReason": "Global wrapper intercepted one offline normalization source as well as five real-time sources; final five-route assertion failed."
+    }
+  ],
+  "fullPilotAudioRetained": false
+}

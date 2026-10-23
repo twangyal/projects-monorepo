@@ -1,0 +1,15 @@
+diff --git a/apps/melody-studio/src/backed-capture.worklet.ts b/apps/melody-studio/src/backed-capture.worklet.ts
+index 3b6184a..6f0ce98 100644
+--- a/apps/melody-studio/src/backed-capture.worklet.ts
++++ b/apps/melody-studio/src/backed-capture.worklet.ts
+@@ -42,6 +42,10 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
+         if (this.#ready) throw new BackedFrameError('missing-input');
+         return true;
+       }
++      const zeros: number[][] = []; let z = 0;
++      const zeroAt = (i: number) => input.reduce((sum, channel) => sum + channel[i], 0) === 0;
++      while (z < input[0].length) { if (!zeroAt(z)) { z++; continue; } let end = z + 1; while (end < input[0].length && zeroAt(end)) end++; zeros.push([z, end]); z = end; }
++      if (zeros.length) this.port.postMessage({type:'zero-input-route300',currentFrame,sampleRate,channels:input.length,frames:input[0].length,zeroRuns:zeros});
+       const result = this.#frames.push(currentFrame, input);
+       if (!this.#ready) {
+         this.#ready = true;

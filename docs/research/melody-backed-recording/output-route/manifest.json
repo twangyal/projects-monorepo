@@ -1,0 +1,332 @@
+{
+  "sourceCommit": "e67b4b473468605d54c04a7cd8072d2bd11fcfa7",
+  "melodyTree": "fe873409756d3506c00d1630a32c900c9429a726",
+  "node": "24.19.0",
+  "chromium": "143.0.7499.0",
+  "playwright": "1.63.0",
+  "workers": 1,
+  "probeSha256": "5af9581514762179bde75f12ac29a64315e4fef98da9d713e86c94e15199a48d",
+  "patchSha256": "1036ebba6bdbd5b3af924e6dd2b60b8625c069cc8d58ba47cc8c7e7368afe0cd",
+  "rows": [
+    {
+      "pair": 0,
+      "route": "normal",
+      "receipt": "00-normal.json",
+      "receiptSha256": "3330fae78ff34b9cf2b670a9e46e961980ca819cf539af0fa7febcadcfd9f18c",
+      "native": {
+        "file": "00-normal-native.f32le.xz",
+        "bytes": 508424,
+        "sha256": "1489dcd0e99c3d03675cbdbdef1768280fb6eab0ddc1afc1a54d6faaef911b0f"
+      },
+      "normalized": {
+        "file": "00-normal-normalized.s16le.gz",
+        "bytes": 127106,
+        "sha256": "696f4539e31ddd5e57e38ef8c0a6406db9dfd7b65fb242148a7587dcf37f0b68"
+      }
+    },
+    {
+      "pair": 0,
+      "route": "disconnected",
+      "receipt": "00-disconnected.json",
+      "receiptSha256": "5d9f97398af57b487eb3cd298c4d93487cefcfc266492369608e22a750ad3640",
+      "native": {
+        "file": "00-disconnected-native.f32le.xz",
+        "bytes": 495620,
+        "sha256": "1be6a57a12e1020f15f720d34e04e2672f6b429f276e4ed572fcaf31388902a0"
+      },
+      "normalized": {
+        "file": "00-disconnected-normalized.s16le.gz",
+        "bytes": 123904,
+        "sha256": "82066fdb2c044cb24586d319c4830da1dfb90bcb7696238f459799ea86f45cab"
+      }
+    },
+    {
+      "pair": 1,
+      "route": "disconnected",
+      "receipt": "01-disconnected.json",
+      "receiptSha256": "2680807a5be6291d853a6c9e8f89970f62e1a90039b4570a42bff9dbbb7a4499",
+      "native": {
+        "file": "01-disconnected-native.f32le.xz",
+        "bytes": 498184,
+        "sha256": "42f16707d5fab28e25c954ec01295a0c4775d0900e564dee41e3776b694b5eab"
+      },
+      "normalized": {
+        "file": "01-disconnected-normalized.s16le.gz",
+        "bytes": 124546,
+        "sha256": "962dfe82f011606a28b63126a11c59c6adc58a957010a6055ae6c44d8d808ad0"
+      }
+    },
+    {
+      "pair": 1,
+      "route": "normal",
+      "receipt": "01-normal.json",
+      "receiptSha256": "59cb62930945984ebd77f6f7bf6a12865e625db8e8b9ce98d43af2b69e2a73d0",
+      "native": {
+        "file": "01-normal-native.f32le.xz",
+        "bytes": 494600,
+        "sha256": "2338f25767658d17215c347ee8664377e5eb711b118ac2bb9d4df1e52531610d"
+      },
+      "normalized": {
+        "file": "01-normal-normalized.s16le.gz",
+        "bytes": 123650,
+        "sha256": "e0ff871998c55dda0b740a76a49612190e5f04de4057cb14629b18b6e31e57c4"
+      }
+    },
+    {
+      "pair": 2,
+      "route": "normal",
+      "receipt": "02-normal.json",
+      "receiptSha256": "e40929a54d53825b3b093b8e749bb36be3f792382dc52255ef1d62234a0bd48e",
+      "native": {
+        "file": "02-normal-native.f32le.xz",
+        "bytes": 506888,
+        "sha256": "eebb27eb010917261cc3392f620adc601741cded3a99d0fbd82639516587848f"
+      },
+      "normalized": {
+        "file": "02-normal-normalized.s16le.gz",
+        "bytes": 126722,
+        "sha256": "3f9eaea4b39317ed3f13f9e2392ad09b6fa319d828c571c4ec3788475f6870c4"
+      }
+    },
+    {
+      "pair": 2,
+      "route": "disconnected",
+      "receipt": "02-disconnected.json",
+      "receiptSha256": "ec909109d47494f022589368466ea634cf5518d6e8b8ccd2dd350d5afa4dc47b",
+      "native": {
+        "file": "02-disconnected-native.f32le.xz",
+        "bytes": 502280,
+        "sha256": "6e52372eebdacbb132649bdada130828fa3af64e5680f295275164e8b4780b7c"
+      },
+      "normalized": {
+        "file": "02-disconnected-normalized.s16le.gz",
+        "bytes": 125570,
+        "sha256": "7860475d245de3bfabcbd9add06b576c1c5b150775f37042649eeb726f8db7a7"
+      }
+    },
+    {
+      "pair": 3,
+      "route": "disconnected",
+      "receipt": "03-disconnected.json",
+      "receiptSha256": "c591867bd2e47916e8764658637c933f733c7fefaf14a07ceecbdb199c2f00e9",
+      "native": {
+        "file": "03-disconnected-native.f32le.xz",
+        "bytes": 502792,
+        "sha256": "8e016787125f12d6a4fc4b22f6e4e99cbfe1d4c28a19ca81160453d7fd36b8d5"
+      },
+      "normalized": {
+        "file": "03-disconnected-normalized.s16le.gz",
+        "bytes": 125698,
+        "sha256": "7364f2e1e98f589624beaf4bc2baf3f3a68e596ffaa4c814573e3031d95ab1ed"
+      }
+    },
+    {
+      "pair": 3,
+      "route": "normal",
+      "receipt": "03-normal.json",
+      "receiptSha256": "a03157c8a689f6d10207c2a55ecace0d124663f71009398a6c8a42d0190437a1",
+      "native": {
+        "file": "03-normal-native.f32le.xz",
+        "bytes": 498696,
+        "sha256": "dc6da7eb74cc72091ff2f816d1b93241cd849fb3c2edd6b4e24b8214ed15ccda"
+      },
+      "normalized": {
+        "file": "03-normal-normalized.s16le.gz",
+        "bytes": 124674,
+        "sha256": "9944ec3db766b1151d29c1a515c97c53e7c27661b08b636d7bf194acdf223fe6"
+      }
+    },
+    {
+      "pair": 4,
+      "route": "normal",
+      "receipt": "04-normal.json",
+      "receiptSha256": "47f101cd9237df157ef2aa9bd2bd129e512657e502747f9092b7e33514e0e25b",
+      "native": {
+        "file": "04-normal-native.f32le.xz",
+        "bytes": 497672,
+        "sha256": "9e28325d8a8d57e23698da1fe16511a5fa2fbf92a5440316148ba57b479c94e7"
+      },
+      "normalized": {
+        "file": "04-normal-normalized.s16le.gz",
+        "bytes": 124418,
+        "sha256": "0380ecf51728767b3310fd017eb371e7ae440185c15a45448a4911b6036b7078"
+      }
+    },
+    {
+      "pair": 4,
+      "route": "disconnected",
+      "receipt": "04-disconnected.json",
+      "receiptSha256": "0511efc602df5749f8866b2675eed8b794b0bd201f0b9cff7b69a0404a4fc76a",
+      "native": {
+        "file": "04-disconnected-native.f32le.xz",
+        "bytes": 497672,
+        "sha256": "d83069dd96d556c8b2089ab85e36b9c8c400ebc37f699e0f0d340e19cd8c2116"
+      },
+      "normalized": {
+        "file": "04-disconnected-normalized.s16le.gz",
+        "bytes": 124418,
+        "sha256": "edc5bbe3686e4df76eeda1b726bd14f8c4c4aa94b0c0e1181179adb5eec9964f"
+      }
+    },
+    {
+      "pair": 5,
+      "route": "disconnected",
+      "receipt": "05-disconnected.json",
+      "receiptSha256": "270e3f68d48c2e2b7a47165cf28a91ff60d8de8e936a15c3cfbbd576b97cca44",
+      "native": {
+        "file": "05-disconnected-native.f32le.xz",
+        "bytes": 494084,
+        "sha256": "c0a992c382b95ae33d94ee94cac0ecc3264507982f353af13f3285d896a2d1e2"
+      },
+      "normalized": {
+        "file": "05-disconnected-normalized.s16le.gz",
+        "bytes": 123520,
+        "sha256": "c12296b8eab37cfc201f7fe099b15fda82d08c5083bf4c3daeb23c0f92116855"
+      }
+    },
+    {
+      "pair": 5,
+      "route": "normal",
+      "receipt": "05-normal.json",
+      "receiptSha256": "0d6a222e2be059804345489dd3b4e7c9e76046d28185f92f78c9a89b3ef4fdc9",
+      "native": {
+        "file": "05-normal-native.f32le.xz",
+        "bytes": 497672,
+        "sha256": "d83069dd96d556c8b2089ab85e36b9c8c400ebc37f699e0f0d340e19cd8c2116"
+      },
+      "normalized": {
+        "file": "05-normal-normalized.s16le.gz",
+        "bytes": 124418,
+        "sha256": "edc5bbe3686e4df76eeda1b726bd14f8c4c4aa94b0c0e1181179adb5eec9964f"
+      }
+    },
+    {
+      "pair": 6,
+      "route": "normal",
+      "receipt": "06-normal.json",
+      "receiptSha256": "8d94919141bcc6569dab799f529f9d22cb6f0dadc9ad21447884769796c8ae83",
+      "native": {
+        "file": "06-normal-native.f32le.xz",
+        "bytes": 504328,
+        "sha256": "c636db3631754c89b9bbd8745ac171005b77f97d8815ba04a92412a5161d0cfe"
+      },
+      "normalized": {
+        "file": "06-normal-normalized.s16le.gz",
+        "bytes": 126082,
+        "sha256": "6396a7e0220523bcf92ac563c1287a7b5f6043199bf84d7f89f4d4393c8f5944"
+      }
+    },
+    {
+      "pair": 6,
+      "route": "disconnected",
+      "receipt": "06-disconnected.json",
+      "receiptSha256": "9562f673df1441a7ad22fb71146163ee2d920a51f2a5d372934e81a5f2c7aaf9",
+      "native": {
+        "file": "06-disconnected-native.f32le.xz",
+        "bytes": 494088,
+        "sha256": "b2c1d850ab71815f8fa80b0b78274e007b4929e03bc8b1145dff27fe001fefdc"
+      },
+      "normalized": {
+        "file": "06-disconnected-normalized.s16le.gz",
+        "bytes": 123522,
+        "sha256": "9fca32fb464e9239550f92faf41b9d1e4c7682fad220409320a4531a3f4fc204"
+      }
+    },
+    {
+      "pair": 7,
+      "route": "disconnected",
+      "receipt": "07-disconnected.json",
+      "receiptSha256": "72a5459ed783f01b07c4e3f5c3194843268ed3564040aab3957ed7fb47274673",
+      "native": {
+        "file": "07-disconnected-native.f32le.xz",
+        "bytes": 503304,
+        "sha256": "d39263a9c6d364a291c15f1bca4d8109998f1bd9e7b0a5f0905714b4cb52a5a8"
+      },
+      "normalized": {
+        "file": "07-disconnected-normalized.s16le.gz",
+        "bytes": 125826,
+        "sha256": "7fa88a984465826151d90d267045dcdd701efe783261605b8050fee7156b5bea"
+      }
+    },
+    {
+      "pair": 7,
+      "route": "normal",
+      "receipt": "07-normal.json",
+      "receiptSha256": "966272360d0e224a4818fa80088abb495af7efcf67bf4c35a6ff21108a65da23",
+      "native": {
+        "file": "07-normal-native.f32le.xz",
+        "bytes": 499208,
+        "sha256": "ee7440c34173b35d1355a2fd8a0a732b677dbf76ca309c52306dae3150f3ea51"
+      },
+      "normalized": {
+        "file": "07-normal-normalized.s16le.gz",
+        "bytes": 124802,
+        "sha256": "6ce7a22a01b0dfb386c077c5f36f90eda9d73ce98339c3b849e03b4eb54eb880"
+      }
+    },
+    {
+      "pair": 8,
+      "route": "normal",
+      "receipt": "08-normal.json",
+      "receiptSha256": "c7d8464fbcb1bfae6701eb085108b7d9b8d0760141bd37a886f0f8b34c964e53",
+      "native": {
+        "file": "08-normal-native.f32le.xz",
+        "bytes": 497672,
+        "sha256": "d83069dd96d556c8b2089ab85e36b9c8c400ebc37f699e0f0d340e19cd8c2116"
+      },
+      "normalized": {
+        "file": "08-normal-normalized.s16le.gz",
+        "bytes": 124418,
+        "sha256": "edc5bbe3686e4df76eeda1b726bd14f8c4c4aa94b0c0e1181179adb5eec9964f"
+      }
+    },
+    {
+      "pair": 8,
+      "route": "disconnected",
+      "receipt": "08-disconnected.json",
+      "receiptSha256": "cfe1d80ef0a7442c299bfd252e2e422bb61f092de14885bac0bee87ca2bd4671",
+      "native": {
+        "file": "08-disconnected-native.f32le.xz",
+        "bytes": 498180,
+        "sha256": "70f4810f5e13dfa099dd2586697e733183e4d1fb32c7063178a933e348ad2ba5"
+      },
+      "normalized": {
+        "file": "08-disconnected-normalized.s16le.gz",
+        "bytes": 124544,
+        "sha256": "cbe29b43956ba41362e975be14283021a41b9d856808637f259a430f9e0f3051"
+      }
+    },
+    {
+      "pair": 9,
+      "route": "disconnected",
+      "receipt": "09-disconnected.json",
+      "receiptSha256": "7763038e0e8e97559a3ba6b65bd18d2506883532fecedc693e93d4ee3fa5d49b",
+      "native": {
+        "file": "09-disconnected-native.f32le.xz",
+        "bytes": 495620,
+        "sha256": "fd8340f06bef9c5171d99143281208bb8e8ba9edb3ec791e6ef37cc438c83da7"
+      },
+      "normalized": {
+        "file": "09-disconnected-normalized.s16le.gz",
+        "bytes": 123904,
+        "sha256": "aab534a7f522876cd80bf05275977fb99dd6e03fa8c94274794e113da5a07e50"
+      }
+    },
+    {
+      "pair": 9,
+      "route": "normal",
+      "receipt": "09-normal.json",
+      "receiptSha256": "5c43d93386f767ecd4c8e66abc86055742254853dc5cdfb96350efb043134d10",
+      "native": {
+        "file": "09-normal-native.f32le.xz",
+        "bytes": 497672,
+        "sha256": "d83069dd96d556c8b2089ab85e36b9c8c400ebc37f699e0f0d340e19cd8c2116"
+      },
+      "normalized": {
+        "file": "09-normal-normalized.s16le.gz",
+        "bytes": 124418,
+        "sha256": "edc5bbe3686e4df76eeda1b726bd14f8c4c4aa94b0c0e1181179adb5eec9964f"
+      }
+    }
+  ]
+}

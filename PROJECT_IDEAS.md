@@ -63,6 +63,8 @@ Milestone #306 adds one-shot low-to-high/high-to-low chord attack rolling with e
 
 Ongoing #300 preserves six allowlisted native backed-recording refusal categories in actionable feedback, with unchanged audio/frame acceptance and old-take protection. Intermittent startup refusal and separate synthetic-stream frequency failures remain unresolved; diagnostics and acceptance evidence are tracked in [the recording investigation](docs/2026-10-22-melody-backed-failures.md). A passing unchanged rerun does not establish their cause or physical microphone reliability. The [original-flow native boundary study](docs/2026-10-22-melody-native-boundary.md) now retains17/20strict results and paired native/PCM gaps before normalization; a controlled input observer did not reproduce the retained gap, so input-versus-collector attribution remains unresolved. A [validated30-case input cohort](docs/2026-10-22-melody-input-boundary.md) now reproduces27/30strict results and locates observed synthetic-stream zeros upstream of collection, including a passing-window160ms gap; the original startup refusal and source/transport cause remain unresolved.
 
+A controlled original-controller [output-route cohort](docs/2026-10-22-melody-output-route.md) now retains20full native/normalized capture pairs. A10ms upstream gap occurs with backing output disconnected, showing routed output is not required for that instrumented synthetic gap. All20 original frequency windows pass; root cause, original startup refusal and physical microphone quality remain unresolved. No shipping behavior or acceptance threshold changed.
+
 ## 4. Git blame agent
 
 Path: apps/git-history
