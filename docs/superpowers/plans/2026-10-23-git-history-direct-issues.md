@@ -7,4 +7,4 @@ Architecture: additive referenced-issue record with commit associations in retri
 - [x] RED direct-commit actual CLI JSON/HTML, parser/refusal/limit/partial retrieval cases.
 - [x] Implement retrieval/model/render/synopsis and workbench wording.
 - [x] Native opt-in direct commit report/download evidence; full project checks and fresh review.
-- [ ] Connected GitHub commit, canonical CI, actual acceptance record and issue closure.
+- [x] Connected GitHub commit, canonical CI, actual acceptance record and issue closure.
