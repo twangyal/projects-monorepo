@@ -1,5 +1,6 @@
 import { validateComposition, compositionDurationBeats } from './model.ts';
 import { sectionWindow, type SectionRange } from './section.ts';
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition } from './types.ts';
 
 /** Remove whole notes and close the all-track gap; original references are external. */
@@ -64,6 +65,33 @@ export function scaleSection(project: Composition, trackId: string, range: Secti
       note.start = start + (note.start - start) * factor;
       note.duration *= factor;
     }
+  }
+  return validateComposition(next);
+}
+
+/** Move whole all-track notes into a vacant window; no ripple, copying or reference shift. */
+export function moveSection(project: Composition, range: SectionRange, destination: string): Composition {
+  const next = validateComposition(project);
+  sectionWindow(range.start, range.end, next.tempo, compositionDurationBeats(next), 22050);
+  const start = Number(range.start) - 1, end = Number(range.end) - 1, span = end - start;
+  const target = Number(destination) - 1;
+  if (!destination.trim() || !Number.isFinite(target) || target < 0 || target + span > MAX_COMPOSITION_BEATS) {
+    throw new Error(`Destination must be a finite beat starting at 1, with the whole section inside ${MAX_COMPOSITION_BEATS} beats.`);
+  }
+  let count = 0;
+  for (const track of next.tracks) {
+    for (const note of track.notes) {
+      const stop = note.start + note.duration;
+      if (note.start < start && stop > start || note.start < end && stop > end) throw new Error(`A note in ${track.name} crosses a section boundary. Choose bounds that include whole notes.`);
+      if (note.start >= start && note.start < end) count++;
+      else if (note.start < target + span && stop > target) throw new Error(`The destination is occupied by a note in ${track.name}. Choose an empty section window.`);
+    }
+  }
+  if (!count) throw new Error('The selected section contains no notes.');
+  if (target === start) return next;
+  const shift = target - start;
+  for (const track of next.tracks) {
+    track.notes = track.notes.map(note => note.start >= start && note.start < end ? { ...note, start: note.start + shift } : note);
   }
   return validateComposition(next);
 }
