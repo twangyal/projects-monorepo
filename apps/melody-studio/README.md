@@ -28,6 +28,12 @@ Select a note and choose **Join next matching note**. It must have exactly one t
 
 The joined note has one attack, filter evolution and release, with one set of echo copies. This deliberately changes articulation. Apply or discard editor drafts first. One Undo restores both notes, and complete backups, autosave, MIDI and WAV retain the joined result ([#191](https://github.com/twangyal/projects-monorepo/issues/191)).
 
+## Organize track layers (#307)
+
+Select a track and open **Arrange**. **Move track earlier** and **Move track later** move it one position in the track list; the first/last boundary disables the corresponding control. Notes, sounds, automation and original reference recordings stay attached to their track IDs. The selected track and note remain selected. MIDI part order follows the new layer order, with each part's own notes and instrument program; WAV renders the same musical content. These controls change layer order, not note timing or audio routing.
+
+Finish unapplied fields, continuation suggestions and piano-roll gestures first. Each move is one Undo/Redo edit, retained in autosave, complete backups and saved compositions. Keyboard users retain an available order control after the move. Melody remains ACTIVE toward the complete DAW experience.
+
 ## Roll chord attacks (#306)
 
 Select a note in a simultaneous melodic chord and open **Notes → Roll chord attacks**. Choose **Low to high** or **High to low** and attack spacing of **0.25**, **0.5** or **1 beat**, then **Roll chord notes**. All distinct pitches at the selected note's exact onset are ordered by pitch and delayed in sequence. Nearby attacks stay separate. The first voice retains the original onset; note IDs, pitches, durations and velocities are unchanged. Releases may overlap and the phrase may extend. This spreads the attacks once; it is not a repeating arpeggiator.
