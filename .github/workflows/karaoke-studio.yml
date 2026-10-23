@@ -21,7 +21,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Package downloads can exceed 15 minutes before application checks start.
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: apps/karaoke-studio
