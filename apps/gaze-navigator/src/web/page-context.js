@@ -232,6 +232,24 @@ export function captureSelectSnapshot(element) {
       groupLabel: option.parentElement?.tagName === 'OPTGROUP' ? option.parentElement.label : null })) };
 }
 
+// Identity only: state may legitimately change while a confirmation is pending.
+export function captureRadioSnapshot(element) {
+  const frames = [];
+  let document = element.ownerDocument;
+  while (document.defaultView?.frameElement) {
+    const frame = document.defaultView.frameElement; frames.push({ element: frame, document }); document = frame.ownerDocument;
+  }
+  let groupOwner = null, formOwner = null;
+  for (let parent = element.parentElement ?? element.getRootNode().host; parent;
+    parent = parent.parentElement ?? parent.getRootNode().host) {
+    if (!groupOwner && parent.getAttribute('role') === 'radiogroup') groupOwner = parent;
+    if (!formOwner && parent.tagName === 'FORM') formOwner = parent;
+  }
+  return { document: element.ownerDocument, root: element.getRootNode(), form: element.form, groupOwner, formOwner,
+    type: element.type, role: element.getAttribute('role'), name: accessibleName(element),
+    group: element.getAttribute('name'), value: element.getAttribute('value'), frames };
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -256,6 +274,7 @@ function describe(element) {
     if (element.tagName === 'INPUT' && ['checkbox', 'radio'].includes(element.type)) description.checked = element.checked;
     else if (['true', 'false'].includes(element.getAttribute('aria-checked'))) description.checked = element.getAttribute('aria-checked') === 'true';
   }
+  if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").
   if (disclosure) description.expanded = element.getAttribute('aria-expanded') === 'true';
   else if (element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS') description.expanded = element.parentElement.open;

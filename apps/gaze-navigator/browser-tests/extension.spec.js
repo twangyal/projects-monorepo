@@ -411,3 +411,22 @@ test('injected extension check commands observe website-owned custom switch upda
  await typeInstruction(page,'tick Newsletter');await expect(status(page)).toContainText('already checked');expect(await page.evaluate(()=>window.ariaClicks)).toBe(1);
  await typeInstruction(page,'uncheck Newsletter');await expect(widget).toHaveAttribute('aria-checked','false');await expect(status(page)).toContainText('Switch unchecked');expect(await page.evaluate(()=>window.ariaClicks)).toBe(2);
 });
+
+
+test('injected extension selects a strict-CSP website radio without toggling repeated requests', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage(); await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await page.evaluate(() => {
+    const group = document.createElement('fieldset');
+    group.innerHTML = '<legend>Delivery</legend><label>Standard<input name="delivery" type="radio" checked></label><label>Express<input id="express" name="delivery" type="radio"></label>';
+    document.body.prepend(group); window.radioClicks = 0;
+    document.querySelector('#express').addEventListener('click', () => window.radioClicks++);
+  });
+  const radio = page.getByRole('radio', { name: 'Express' }); await look(page, radio);
+  await typeInstruction(page, 'select Express radio button'); await expect(radio).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Standard' })).not.toBeChecked();
+  await expect(status(page)).toContainText('Radio button selected');
+  await typeInstruction(page, 'select Express radio button'); await expect(status(page)).toContainText('already selected');
+  expect(await page.evaluate(() => window.radioClicks)).toBe(1);
+});

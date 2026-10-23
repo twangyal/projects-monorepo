@@ -382,3 +382,12 @@ In the extension, camera calibrations are serialized from WebGazer's regression,
 ### Measured spoken phrasing — 2026-10-12
 
 A versioned 120-instruction suite plus a 50-instruction held-out set measures the interpreter. Broadening raised the tuned suite from 91/120 with one unsafe action to 120/120. The held-out set scores 34/50, with 0 unsafe actions on both. 124 unit tests pass, and the 64 web-runtime native cases pass. [Evaluation](docs/2026-10-12-instruction-suite-evaluation.md); issue #209.
+
+
+## Explicit radio choices (#308)
+
+Look at the choices and say or type **select Express radio button**, **choose the Express radio**, **pick radio button Express**, **select that radio button**, or **select second radio button**. These commands target radios only. Ambiguous names ask for a number; consequential choices still require confirmation. Cancel or pause retires pending feedback.
+
+A native radio uses one website-owned click, preserving browser radio-group behavior. Binary ARIA radios also use one site-owned click; the navigator never assigns custom state or retries. An already selected radio needs no click. Feedback checks retained availability, identity and selection after website microtasks. Missing/mixed custom state, disabled/inert/read-only or hidden controls, focus redirects, changed names/values/form/group owners and replaced nodes refuse. Native groups stay browser-owned; this does not validate a website's complete custom radiogroup implementation. Ordinary **click** and dropdown commands retain their existing behavior.
+
+The same interpreter/controller runs in the injected MV3 extension, practice runtime, speech and typed command paths. Physical speech/gaze and intended-user acceptance remain open in #132. [Verification and limits](docs/2026-10-23-radio-selection.md).

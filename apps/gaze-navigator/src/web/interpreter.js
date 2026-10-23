@@ -262,6 +262,17 @@ export function interpret(utterance, context = { elements: [] }) {
   if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
     return chooseSelectionField(context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
   }
+  // Explicit radio intent cannot fall back to activating a similarly named button.
+  const radio = /^(?:select|choose|pick) (?:the )?(?:radio(?: button)?(?: (.+))?|(.+?) radio(?: button)?)$/.exec(text);
+  if (radio) {
+    const subject = radio[1] ?? radio[2];
+    const candidates = context.elements.filter(element => element.role === 'radio');
+    const act = element => ({ type: 'select-radio', targetId: element.id });
+    const counted = subject && ORDINAL.exec(`${subject} control`);
+    if (counted?.[2] === 'control') return ordinal(counted[1], 'control', candidates, act);
+    return !subject || DEICTIC.test(subject) ? deictic(candidates, act, 'radio button')
+      : resolve(subject, candidates, null, act, 'radio button');
+  }
   const checkboxState = /^(check|uncheck|tick|untick)(?:\s+(.+))?$/.exec(text);
   if (checkboxState && !/^check out(?: now)?$/.test(text)) {
     const candidates = context.elements.filter(element => ['checkbox', 'switch'].includes(element.role));

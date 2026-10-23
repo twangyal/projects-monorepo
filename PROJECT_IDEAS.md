@@ -336,3 +336,8 @@ Karaoke #303 adds repeat-passage authoring at `apps/karaoke-studio`: copy a sele
 Gaze #304 adds explicit add/remove commands for native multi-select lists at `apps/gaze-navigator`: one requested option changes while other selections remain captured and preserved. Typed, shortcut and speech interpretation share ambiguity/confirmation, stale-state refusal and site-retained feedback. Existing implicit choose commands retain single-choice semantics. Physical gaze/speech quality remains open in #132; Gaze stays ACTIVE. Project #8 stays skipped.
 
 Karaoke #305 adds contextual literal lyric find at `apps/karaoke-studio`: navigate repeated/Unicode words with previous/next or Enter/Shift+Enter, retain raw editor fields/history/reviews and deliberate playback, and explicitly audition the selected matching line through existing practice ownership. Live corrections recompute results; clip changes clear the utility query. Karaoke remains ACTIVE; automatic real-song alignment quality remains open in #241. Project #8 stays skipped.
+
+
+### 2026-10-23 — Gaze explicit radio choices (#308)
+
+Gaze at `apps/gaze-navigator` adds explicit named/gazed/ordinal radio selection with clarification, consequential confirmation and idempotence. Native groups and binary ARIA widgets use one website-owned click and verify retained selection after microtasks; changed identity/group/form ownership, hidden/locked targets and site refusals do not report success. No ARIA state is assigned. See `apps/gaze-navigator/docs/2026-10-23-radio-selection.md` for actual verification and limitations. Gaze remains ACTIVE toward real-website task completion; #132 physical speech/gaze and intended-user evaluation remains open. Project #8 remains skipped.
