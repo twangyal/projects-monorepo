@@ -8,3 +8,5 @@ Domain: strict boolean marker; skip excluded rows while validating only included
 - [x] RED missing checkbox in actual automatic review, then owned UI/count/retirement integration.
 - [x] Native exact Apply/Undo/Redo/Save/reopen/SRT and immutable source, hidden validation, phone keyboard/Cancel/stale controls and playback retirement.
 - [ ] Project checks, independent review, documentation/roadmap, GitHub commit/CI acceptance and issue closure based on actual evidence.
+
+Source c8009ef integrated; fresh review and local checks complete. Full local browser 133/135 and Python 205/206 retain known runtime failures. Canonical run39995712975 still installing system video dependencies at final check. Last acceptance checkbox stays open: see `docs/2026-10-23-karaoke-exclusion-checkpoint.md`; finish CI verification before issue closure.
