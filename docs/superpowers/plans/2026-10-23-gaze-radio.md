@@ -11,8 +11,10 @@
 Ambiguity must retain the intended action. Confirmation must not activate a changed target. Focus handlers must not redirect a click. Website cancellations/reversions must not report success. Open shadow roots and same-origin frames must retain ancestor restrictions.
 
 ## One coherent task
-- [ ] Add interpreter assertions for named, deictic, ordinal, ambiguous and unsupported explicit commands. Observe RED before implementation.
-- [ ] Add actual-browser cases for native grouped selection, idempotence, custom ARIA microtasks, cancellation/reversion, locks, focus/identity changes, stale follow-ups, shadow/frame targets and confirmation. Observe RED.
-- [ ] Add interpreter intent, controller dispatch/confirmation, DOM action and identity snapshot, plus concise overlay guidance. No new dependency.
-- [ ] Run Node, syntax/build, instruction evaluation and full browser suite including extension tests; inspect failures.
-- [ ] Obtain fresh read-only review, resolve findings with regressions, update README/roadmap/evidence, commit via connected GitHub tools and close #308 only with verification recorded.
+- [x] Add interpreter assertions for named, deictic, ordinal, ambiguous and unsupported explicit commands. Observe RED before implementation.
+- [x] Add actual-browser cases for native grouped selection, idempotence, custom ARIA microtasks, cancellation/reversion, locks, focus/identity changes, stale follow-ups, shadow/frame targets and confirmation. Observe RED.
+- [x] Add interpreter intent, controller dispatch/confirmation, DOM action and identity snapshot, plus concise overlay guidance. No new dependency.
+- [x] Run Node, syntax/build, instruction evaluation and full browser suite including extension tests; inspect failures.
+- [x] Obtain fresh read-only review, resolve findings with regressions, update README/roadmap/evidence, commit via connected GitHub tools and close #308 only with verification recorded.
+
+Final canonical source 45a7fbb passes 203 Node and all 572 full Chromium browser cases; root acceptance receipt retains local failures and physical-use limitations.

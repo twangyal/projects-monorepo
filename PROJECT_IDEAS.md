@@ -345,3 +345,5 @@ Gaze at `apps/gaze-navigator` adds explicit named/gazed/ordinal radio selection 
 ### 2026-10-23 — Karaoke missed lyric insertion (#309)
 
 Karaoke at `apps/karaoke-studio` now inserts manually supplied words into an empty time span, including clips with no recognized cues. Atomic whole-cue validation retains corrected lines, raw timing fields, title and pasted drafts; success is one unsaved Undo/Redo edit and uses existing save/SRT/video schemas. See `apps/karaoke-studio/docs/2026-10-23-line-insertion.md` for actual acceptance and retained verification limitations. Karaoke stays ACTIVE; automatic multilingual real-song acceptance remains #241. Project #8 remains skipped.
+
+Gaze #308 canonical acceptance is complete at45a7fbb:203Node tests and all572Chromium browser cases across three shards, including the injected extension path. [Final receipt](docs/2026-10-23-gaze-radio-acceptance.md) retains local limitations and physical-use gaps.
