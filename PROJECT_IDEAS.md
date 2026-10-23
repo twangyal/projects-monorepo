@@ -365,3 +365,5 @@ Melody #311 canonical acceptance at `5852d25` is complete: **463 unit tests and 
 ### 2026-10-23 — Gaze website-tab selection (#312)
 
 Gaze at `apps/gaze-navigator` now selects named/gazed/ordinal website ARIA tabs with verified single-selection state, no-op behavior, site-owned automatic/manual activation and cancellation of deferred clicks. Captured group/member identity and current locks protect clarification/confirmation. This advances extension navigation within real pages; browser-chrome tabs, panel-load verification and physical gaze/speech acceptance remain outside this milestone. See `apps/gaze-navigator/docs/2026-10-23-website-tabs.md` for actual acceptance evidence. Gaze remains ACTIVE; project#8 stays skipped.
+
+Gaze #312 canonical acceptance at `d5bf85f` is complete: **205 unit tests and 620 browser cases**, plus lint/build. [Final receipt](docs/2026-10-23-gaze-tabs-acceptance.md) retains frozen-evaluator results, corrected fixture/scorer failures and physical-use boundaries. Gaze remains ACTIVE.
