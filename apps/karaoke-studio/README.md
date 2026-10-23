@@ -641,3 +641,11 @@ The copy is one unsaved Undo/Redo edit. Untouched raw timing fields, title and u
 Open **Find lyric line** and enter words from the current lyric cues. Matching is literal and case-insensitive, including Unicode text and punctuation; unapplied pasted words and pending imported/recognized reviews are not searched. **Next lyric match** / **Previous lyric match** wrap through matching lines. Enter goes forward and Shift+Enter goes backward from the search field. The matching textarea receives focus without rebuilding cue rows or changing raw timings, title, drafts, history or playback.
 
 **Play lyric match** deliberately plays the chosen line through the existing practice controls and readiness checks. Searching or moving to a different result does not seek or restart audio. Invalid timings/title can still be found and corrected, but playback retains the ordinary whole-project validation. Edits recompute matches; replacing cue objects clears the chosen result until you navigate again. Opening another clip clears the query. No query is saved into the song.
+
+### Add a missed lyric line (#309)
+
+Open **Add lyric line**, supply **New lyric words**, **New line start (seconds)** and **New line end (seconds)**, then choose **Insert lyric line**. This works with an empty clip or an empty span before, between or after existing cues. The whole result must fit the song and existing cue/text limits; overlaps and invalid current cues refuse without cropping or changing current corrections.
+
+Insertion makes one unsaved Undo/Redo edit. Existing title, pasted draft and unrelated raw timing spellings remain intact. The inserted boundaries display canonical numbers; literal lyric text is retained. Save lyrics separately to persist the result and include it in SRT/video output. Entry fields clear after successful insertion, opening a clip or deletion. They are session utilities, outside saved lyrics/history until inserted; keep needed words before leaving. Failed insertion keeps them and current playback/review/Redo.
+
+See [verification and limits](docs/2026-10-23-line-insertion.md). Automatic multilingual recognition and real-song quality remain separate work in #241.

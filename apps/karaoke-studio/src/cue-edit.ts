@@ -78,3 +78,19 @@ export function copyCues(cues: Cue[], duration: number, rawSeconds: string, pass
   before.splice(insertIndex, 0, ...copies);
   return { cues: validateCues(before, duration), insertIndex };
 }
+
+/** Insert supplied words into an empty interval without moving existing cues. */
+export function insertCue(cues: Cue[], duration: number, text: string, rawStart: string, rawEnd: string): { cues: Cue[]; insertIndex: number } {
+  const numeric = (raw: string) => {
+    if (!/^[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw.trim()) || !Number.isFinite(Number(raw))) {
+      throw new Error('Enter finite start and end seconds at or after zero.');
+    }
+    return Number(raw);
+  };
+  const start = numeric(rawStart), end = numeric(rawEnd), before = validateCues(cues, duration);
+  const cue = validateCues([{ start, end, text }], duration)[0];
+  if (before.some(item => item.start < end && item.end > start)) throw new Error('The new lyric line must fit in an empty span without overlapping existing lines.');
+  const next = before.findIndex(item => item.start >= end), insertIndex = next < 0 ? before.length : next;
+  before.splice(insertIndex, 0, cue);
+  return { cues: validateCues(before, duration), insertIndex };
+}

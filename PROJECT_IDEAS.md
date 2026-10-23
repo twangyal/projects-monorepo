@@ -341,3 +341,7 @@ Karaoke #305 adds contextual literal lyric find at `apps/karaoke-studio`: naviga
 ### 2026-10-23 — Gaze explicit radio choices (#308)
 
 Gaze at `apps/gaze-navigator` adds explicit named/gazed/ordinal radio selection with clarification, consequential confirmation and idempotence. Native groups and binary ARIA widgets use one website-owned click and verify retained selection after microtasks; changed identity/group/form ownership, hidden/locked targets and site refusals do not report success. No ARIA state is assigned. See `apps/gaze-navigator/docs/2026-10-23-radio-selection.md` for actual verification and limitations. Gaze remains ACTIVE toward real-website task completion; #132 physical speech/gaze and intended-user evaluation remains open. Project #8 remains skipped.
+
+### 2026-10-23 — Karaoke missed lyric insertion (#309)
+
+Karaoke at `apps/karaoke-studio` now inserts manually supplied words into an empty time span, including clips with no recognized cues. Atomic whole-cue validation retains corrected lines, raw timing fields, title and pasted drafts; success is one unsaved Undo/Redo edit and uses existing save/SRT/video schemas. See `apps/karaoke-studio/docs/2026-10-23-line-insertion.md` for actual acceptance and retained verification limitations. Karaoke stays ACTIVE; automatic multilingual real-song acceptance remains #241. Project #8 remains skipped.

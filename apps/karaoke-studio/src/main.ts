@@ -8,7 +8,7 @@ import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 import { findCueIndices, nextCueMatch } from './find-cues.ts';
-import { splitCue, mergeCue, shiftCues, copyCues, type CuePassage } from './cue-edit.ts';
+import { splitCue, mergeCue, shiftCues, copyCues, insertCue, type CuePassage } from './cue-edit.ts';
 import { createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
@@ -56,6 +56,7 @@ app.innerHTML = `
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><p class="fine">Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Apply replaces all lines together; Cancel discards reviewed corrections. Split or merge lines in the main editor after applying.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <details class="lyric-find"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="timing-shift"><summary>Shift lyric timing</summary><p class="fine">Move all current cues or a selected passage by the same number of seconds: positive is later, negative is earlier. Words, line lengths and gaps stay together. The complete result must fit inside this clip without overlapping neighboring lines; nothing is cropped. This makes one unsaved Undo/Redo edit. Unapplied pasted words are not included.</p><label class="field">Timing shift scope<select id="timing-shift-scope" disabled><option value="all">All lines</option><option value="passage">Selected passage</option></select></label><div id="timing-shift-passage" class="practice-selection" hidden><label class="field">First line in passage<select id="timing-shift-first" disabled></select></label><label class="field">Last line in passage<select id="timing-shift-last" disabled></select></label></div><p id="timing-shift-range-summary" class="fine"></p><label class="field">Timing shift (seconds)<input id="timing-shift-seconds" type="text" inputmode="decimal" placeholder="For example +0.25 or -0.5" disabled></label><button id="timing-shift-apply" class="quiet" disabled>Shift all lyric times</button><div id="passage-copy" hidden><p class="fine">Repeat the selected passage in an empty part of this clip. Original lines stay; copied words, lengths and internal gaps stay together.</p><label class="field">Copy passage to (seconds)<input id="passage-copy-seconds" type="text" inputmode="decimal" placeholder="Destination first-line start" disabled></label><button id="passage-copy-apply" class="quiet" disabled>Copy selected passage</button><p id="passage-copy-status" class="fine" role="status" aria-live="polite"></p></div><p id="timing-shift-status" class="fine" role="status" aria-live="polite"></p></details>
+        <details class="timing-shift"><summary>Add lyric line</summary><p class="fine">Supply missed words and an empty time span. Existing lines stay unchanged. Insert makes one unsaved Undo/Redo edit; Save lyrics is separate. These entry fields are session-only and are not part of saved lyrics until inserted.</p><label class="field">New lyric words<textarea id="line-insert-text" rows="2" disabled></textarea></label><label class="field">New line start (seconds)<input id="line-insert-start" type="text" inputmode="decimal" disabled></label><label class="field">New line end (seconds)<input id="line-insert-end" type="text" inputmode="decimal" disabled></label><button id="line-insert-apply" class="quiet" disabled>Insert lyric line</button><p id="line-insert-status" class="fine" role="status" aria-live="polite"></p></details>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
@@ -223,6 +224,7 @@ function controls() {
   element<HTMLInputElement>('timing-shift-seconds').disabled = !working || busy || saving || aligning;
   element<HTMLButtonElement>('timing-shift-apply').disabled = !working?.cues.length || busy || saving || aligning;
   timingShiftControls(busy || saving || aligning);
+  for (const id of ['line-insert-text', 'line-insert-start', 'line-insert-end', 'line-insert-apply']) element<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>(id).disabled = !working || busy || saving || aligning;
   element('discard-draft').hidden = !draftDirty;
   for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>('input,textarea,button')) control.disabled = busy || saving;
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
@@ -884,9 +886,31 @@ element('passage-copy-apply').addEventListener('click', () => {
   element('passage-copy-status').textContent = `Copied ${count} lyric lines as one unsaved edit. Undo removes the copy; use Save lyrics when ready. Choose the passage again for another copy.`;
 });
 
+function resetLineInsert(): void {
+  for (const id of ['line-insert-text', 'line-insert-start', 'line-insert-end']) element<HTMLInputElement | HTMLTextAreaElement>(id).value = '';
+  element('line-insert-status').textContent = '';
+}
+element('line-insert-apply').addEventListener('click', () => {
+  if (!working || !lyricHistory || !srtAllowed()) return;
+  const start = element<HTMLInputElement>('line-insert-start').value, end = element<HTMLInputElement>('line-insert-end').value;
+  let result: ReturnType<typeof insertCue>;
+  try { result = insertCue(working.cues, working.duration, element<HTMLTextAreaElement>('line-insert-text').value, start, end); }
+  catch (error) {
+    element('line-insert-status').textContent = `${error instanceof Error ? error.message : 'Check the new lyric line.'} Current lyrics and entry fields were kept.`; return;
+  }
+  // Validate before retiring playback, reviews, history or native editor fields.
+  const raw = captureTimingDrafts();
+  lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+  const cue = result.cues[result.insertIndex];
+  raw.splice(result.insertIndex, 0, { start: cue.start, end: cue.end, startText: String(cue.start), endText: String(cue.end) });
+  working.cues = result.cues; renderCues(raw); changed(); resetLineInsert();
+  element('line-insert-status').textContent = 'Lyric line inserted as one unsaved edit. Undo removes it; use Save lyrics when ready.';
+  element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${result.insertIndex}"] textarea`)?.focus();
+});
+
 function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
-  if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Paste your words above, then create draft timings to begin.'; list.append(empty); return; }
+  if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Add a lyric line or paste your words above and create draft timings to begin.'; list.append(empty); return; }
   for (const [index, cue] of working.cues.entries()) {
     const row = document.createElement('div'); row.className = 'cue'; row.dataset.cue = String(index);
     const number = document.createElement('span'); number.className = 'cue-number'; number.textContent = String(index + 1).padStart(2, '0'); row.append(number);
@@ -950,6 +974,7 @@ async function openProject(id: string) {
   loadedProjectGeneration++; editGeneration++;
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
   if (working?.id !== project.id) { findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
+  resetLineInsert();
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;
@@ -1050,6 +1075,7 @@ element('delete-project').addEventListener('click', async () => {
     await request(`/api/projects/${working.id}`, json('DELETE', {}));
     timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; loadedProjectGeneration++; mediaGeneration++;
     ++projectGeneration; audio.pause(); audio.removeAttribute('src'); audio.load();
+    resetLineInsert();
     working = null; findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
     archiveInfoEpoch++; archiveInfo = null; archiveInfoState = 'none';
     element('clip-details').hidden = true; element<HTMLInputElement>('title').value = '';
