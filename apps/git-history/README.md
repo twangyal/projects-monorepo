@@ -51,10 +51,11 @@ How it works:
   - up to **3 issues it says it closes** (`Fixes #N`, `Closes #N`, `Resolves #N`, same repository).
 
   Empty approvals are skipped. Every text is limited to 4,000 characters, and truncation is marked.
+- For report range-change commits with no associated pull request, the same opt-in also retrieves descriptions of explicitly cited same-repository issues: `Refs #7`, `References #7`, `Fixes #7`, `Closes #7`, `Resolves #7`, or a standalone `(#7)`. Bare hashes, foreign repository references and URLs do not trigger issue lookup. At most **8 unique referenced issues** are read, in report order; repeated references share one fetch and retain each source commit. Blame-only summaries are not scanned. Returned issue numbers/types/URLs must match this repository; unavailable issues and partial failures are disclosed. Only the description is quoted, not issue comments. Citing an issue establishes neither intent nor closure. JSON adds `referenced_issues` with commit associations; the synopsis and HTML link to the original commit and issue. Default no-network reports remain unchanged.
 - The synopsis gains **Retrieved pull-request discussion**, showing each pull request's title, merge date, first description paragraph, review comments on this file and closed issues. Timeline commits link to their pull request. The JSON report gains `retrieved_discussions` and `synopsis.discussions`. Reports made without the option keep their exact previous shape.
 - Everything retrieved is labelled as **quoted participant text that is not verified**: it can state reasons, but the tool does not establish intent, and discussions may be incomplete or later edited. The report records the retrieval time.
 - Links are accepted only when they point at this repository's pull requests, comments, reviews and issues on `https://github.com`; anything else is dropped and counted. Text renders escaped.
-- Public repositories work without credentials, within GitHub's unauthenticated rate limit of 60 requests an hour (a report makes 12 commit lookups plus at most 6 requests per pull request, usually far fewer than 60). Set `GITHUB_TOKEN` in the environment of the command or the `serve` process to raise the limit or read a private repository. The token is sent only to `api.github.com` and never written into reports.
+- Public repositories work without credentials, within GitHub's unauthenticated rate limit of 60 requests an hour (a report makes 12 commit lookups, at most 6 requests per pull request, and at most 8 direct-issue lookups, usually far fewer than 60). Set `GITHUB_TOKEN` in the environment of the command or the `serve` process to raise the limit or read a private repository. The token is sent only to `api.github.com` and never written into reports.
 - Rate limits, refusals, timeouts (15 s per request, 60 s overall, and within the workbench's 45 s job budget, so **Stop** still works) and malformed replies stop further lookups. Discussion already retrieved is kept, and the report explains what was skipped. Without a GitHub origin the command refuses with exit status 2.
 
 ### Browse in the local workbench
@@ -395,7 +396,7 @@ python3 -m pip wheel --no-deps . --wheel-dir dist
 
 CI checks dependency-free behavior before installing the extra, then requires the complete native suite and checks the installed command outside the source tree on Python 3.11, 3.12 and 3.13.
 
-Future work includes evidence-grounded semantic summaries. Supplied excerpts remain unverified context; this tool does not infer intent or automatically retrieve discussions.
+Future work includes evidence-grounded semantic summaries. Supplied excerpts remain unverified context; this tool does not infer intent; discussion retrieval remains explicit and optional.
 
 ### Measured optional-parser verification
 
@@ -514,3 +515,5 @@ on Python 3.11–3.13 in core/native environments with the same intentional skip
 17 Node cases, lint, wheel/installed checks and 46 browser cases. The actual PR
 merge has the identical tree; all thirteen project PR workflows pass. The
 [CI receipt](docs/2026-10-05-changed-files-ci.json) records first-run job evidence.
+
+Direct-commit issue verification: [2026-10-23 receipt](docs/2026-10-23-direct-issues.md).

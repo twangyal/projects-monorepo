@@ -125,6 +125,10 @@ def _render_synopsis(synopsis: dict) -> str:
                          f'<q>{escape(item["title"])}</q> · {state} · commits {commits}{excerpt}{extra_html}</li>')
         discussion_html = ('<h3>Retrieved pull-request discussion</h3>'
                            + ('<ul>' + ''.join(items) + '</ul>' if items else '<p>No associated pull requests were found for the looked-up commits.</p>'))
+    if synopsis.get("referenced_issues"):
+        references = ''.join(f'<li><a href="#{escape(item["evidence_anchor"])}">Referenced issue #{item["number"]}</a>: '
+                             f'{escape(item["title"])}</li>' for item in synopsis["referenced_issues"])
+        discussion_html += '<h3>Referenced issues from direct commits</h3><ul>' + references + '</ul>'
     return f'''<section id="synopsis" class="synopsis"><div class="section-title"><span>00</span><h2>Evidence synopsis</h2></div>
 <p>{selected}</p><h3>Current-line attribution</h3>{attribution_html}
 <h3>Newest available range changes</h3>{recent_html}
@@ -167,8 +171,17 @@ def _render_discussions(retrieved: RetrievedDiscussions, number: str) -> str:
 <h3>{escape(pull.title)}</h3><p class="muted">By {escape(pull.author)} · contains report commits {commits}</p>
 {description}{issues}{comment_html}</article>''')
     content = ''.join(articles) or '<p class="empty">No associated pull requests were found for the looked-up commits.</p>'
+    for issue in retrieved.referenced_issues:
+        commits = ', '.join(f'<a href="#{_commit_anchor(commit)}"><code>{escape(commit[:12])}</code></a>' for commit in issue.commits)
+        cut = '<p class="muted">Description truncated at 4,000 characters.</p>' if issue.truncated else ''
+        content += (f'<article class="change" id="referenced-issue-{issue.number}">'
+                    f'<h3>Referenced issue #{issue.number}: {escape(issue.title)}</h3>'
+                    f'<p class="muted">{escape(issue.state)} · by {escape(issue.author)} · quoted, unverified. '
+                    f'This reference does not establish intent or closure. Cited by report commits {commits}.</p>'
+                    f'<p><a href="{escape(issue.url)}" rel="noreferrer noopener" target="_blank">Open referenced issue ↗</a></p>'
+                    f'<pre class="message">{escape(issue.excerpt or "The issue has no description.")}</pre>{cut}</article>')
     notes = ''.join(f'<li>{escape(note)}</li>' for note in retrieved.notes)
-    return (f'<section id="discussions"><div class="section-title"><span>{number}</span><h2>Retrieved pull-request discussion</h2></div>'
+    return (f'<section id="discussions"><div class="section-title"><span>{number}</span><h2>Retrieved GitHub context</h2></div>'
             f'<p class="muted">{escape(retrieved.provenance)} Repository {escape(retrieved.repository)}, retrieved {escape(retrieved.retrieved_at)}.</p>'
             f'{"<ul class=warnings>" + notes + "</ul>" if notes else ""}{content}</section>\n')
 
@@ -300,7 +313,7 @@ def render_html(report: Report, context: list[ContextEntry] | ContextRecords | N
     discussion_html = discussion_nav = ''
     if retrieved is not None:
         discussion_html = _render_discussions(retrieved, f'{number:02d}')
-        discussion_nav = '<a href="#discussions">Pull-request discussion</a>'
+        discussion_nav = '<a href="#discussions">GitHub context</a>'
         number += 1
     context_html = _render_context(supplied, f'{number:02d}') if supplied is not None else ''
     context_nav = '<a href="#supplied-context">Supplied context</a>' if supplied is not None else ''
@@ -312,10 +325,10 @@ def render_html(report: Report, context: list[ContextEntry] | ContextRecords | N
         if any(item['commit'] == report.revision for item in supplied['entries']):
             revision_id = f' id="{escape(_commit_anchor(report.revision))}"'
     limits_number = f'{number + (supplied is not None or records is not None):02d}'
-    fetched = ('Retrieved pull-request discussion below quotes what participants wrote on GitHub; it may state '
+    fetched = ('Retrieved GitHub discussion and issue descriptions below quote what participants wrote on GitHub; it may state '
                'reasons, but it is not verified.' if retrieved is not None else
                'PR discussions and issue conversations have not been fetched.')
-    network = ('GitHub was contacted only to retrieve the pull-request discussion for report commits; no '
+    network = ('GitHub was contacted only to retrieve pull-request discussion and explicit issue references for report commits; no '
                'model-generated explanations were used.' if retrieved is not None else
                'No network requests or model-generated explanations were used.')
     warnings = ''.join(f'<li>{escape(warning)}</li>' for warning in synopsis["completeness_notes"])

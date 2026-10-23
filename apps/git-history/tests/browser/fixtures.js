@@ -17,7 +17,8 @@ export const SOURCE = '# Literal <img src=x onerror="globalThis.OWNED=1">\ndef c
 export const test = base.extend({
   missingNative: [false, { option: true }],
   githubDiscussion: [false, { option: true }],
-  workbench: async ({ missingNative, githubDiscussion }, use) => {
+  githubDirectIssues: [false, { option: true }],
+  workbench: async ({ missingNative, githubDiscussion, githubDirectIssues }, use) => {
     const directory = await mkdtemp(join(tmpdir(), 'git-history-browser-'));
     const repo = join(directory, 'repository');
     await mkdir(repo);
@@ -33,7 +34,7 @@ export const test = base.extend({
       await write('src/original.py', SOURCE.replace('value + 2', 'value + 1'));
       const initial = await commit('Original local function');
       await write('src/original.py', SOURCE);
-      const changed = await commit('Change return value <script>globalThis.OWNED=1</script>');
+      const changed = await commit('Change return value <script>globalThis.OWNED=1</script>' + (githubDirectIssues ? ' (#9)' : ''));
       await git('mv', 'src/original.py', SPECIAL_PATH);
       await write('src/optional.ts', 'export function add(value: number): number {\n  return value + 2;\n}\n');
       await write('notes.txt', 'Literal manual source <img src=x onerror="globalThis.OWNED=1">\nSecond physical line without trailing LF');
@@ -47,6 +48,7 @@ export const test = base.extend({
       const args = [join(APP, 'tests/browser/launch_service.py'), '--repo', repo];
       if (missingNative) args.push('--missing-native');
       if (githubDiscussion) args.push('--github-pull', changed);
+      if (githubDirectIssues) args.push('--github-direct', changed);
       service = spawn(PYTHON, args, { cwd: directory, env: { ...process.env, PYTHONPATH: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
       let stderr = '';
       service.stderr.on('data', chunk => { if (stderr.length < 8192) stderr += chunk.toString(); });

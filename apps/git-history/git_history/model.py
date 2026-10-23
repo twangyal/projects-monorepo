@@ -147,6 +147,11 @@ class RetrievedPull:
 
 
 @dataclass
+class ReferencedIssue(RetrievedIssue):
+    commits: list[str] = field(default_factory=list)
+
+
+@dataclass
 class RetrievedDiscussions:
     provider: str
     repository: str
@@ -156,6 +161,7 @@ class RetrievedDiscussions:
     commits_without_pulls: list[str]
     pulls: list[RetrievedPull]
     notes: list[str]
+    referenced_issues: list[ReferencedIssue] = field(default_factory=list)
 
 
 @dataclass

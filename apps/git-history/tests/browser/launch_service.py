@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--repo", required=True)
     parser.add_argument("--missing-native", action="store_true")
     parser.add_argument("--github-pull", help="Serve a loopback GitHub API with one pull request for this commit.")
+    parser.add_argument("--github-direct", help="Serve a direct-commit referenced issue fixture.")
     args = parser.parse_args()
     if os.environ.get("GIT_HISTORY_BROWSER_INSTALLED") != "1":
         sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -25,6 +26,10 @@ def main():
     fake = None
     if args.github_pull:
         fake = _fake_github(args.github_pull)
+    if args.github_direct:
+        fake = _fake_github(args.github_direct)
+        fake.commit_pulls.clear()
+        fake.issue(9, "Direct issue <script>", "The direct change needs this task context.")
     server = create_server(args.repo, port=0, **({"github_api": fake.url} if fake else {}))
     try:
         native_available = not args.missing_native and all(

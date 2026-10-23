@@ -89,7 +89,7 @@ def build_synopsis(report: Report) -> dict:
         notes.append(
             f"GitHub pull requests were looked up for {len(retrieved.commits_checked)} report commits "
             f"at {retrieved.retrieved_at}; {found} had an associated pull request. Commits pushed "
-            "directly or merged without a pull request have none."
+            "directly or merged without a pull request have none. Explicit issue references in returned range-change messages are looked up separately; a reference does not establish intent or closure."
         )
         notes.extend(retrieved.notes)
     result = {
@@ -108,6 +108,12 @@ def build_synopsis(report: Report) -> dict:
     }
     if retrieved is not None:
         result["discussions"] = _discussions(report)
+        result["referenced_issues"] = [
+            {"number": issue.number, "title": issue.title, "url": issue.url,
+             "evidence_anchor": f"referenced-issue-{issue.number}",
+             "commits": [{"commit": commit, "evidence_anchor": commit_anchor(commit)} for commit in issue.commits]}
+            for issue in retrieved.referenced_issues
+        ]
         result["intent_note"] = (
             "This report does not establish author intent. Commit messages and retrieved pull-request, "
             "review and issue text are quoted participant statements: they may state reasons, but "

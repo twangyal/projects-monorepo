@@ -13,7 +13,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .model import Report, RetrievedComment, RetrievedDiscussions, RetrievedIssue, RetrievedPull
+from .model import ReferencedIssue, Report, RetrievedComment, RetrievedDiscussions, RetrievedIssue, RetrievedPull
 from .work_budget import check_work_budget, current_work_budget
 
 API_URL = 'https://api.github.com'
@@ -21,12 +21,15 @@ MAX_COMMITS = 12
 MAX_PULLS = 8
 MAX_COMMENTS = 30
 MAX_LINKED_ISSUES = 3
+MAX_REFERENCED_ISSUES = 8
 MAX_TEXT = 4000
 MAX_RESPONSE = 2 * 1024 * 1024
 TIMEOUT = 15
 DEADLINE = 60
 _NAME = r'[A-Za-z0-9_.-]{1,100}'
 _CLOSES = re.compile(r'\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#([0-9]{1,9})\b', re.IGNORECASE)
+
+_REFERENCES = re.compile(r'\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references?)\s*:?\s+#([1-9][0-9]{0,8})\b|(?<![\w/])\(#([1-9][0-9]{0,8})\)', re.IGNORECASE)
 
 PROVENANCE = ('Retrieved from GitHub for commits shown in this report. Titles, descriptions, reviews '
               'and comments are what participants wrote; they can explain intent but are not verified '
@@ -143,7 +146,7 @@ def attach_discussions(report: Report, retrieved: RetrievedDiscussions) -> None:
     """Add retrieved discussion to a report, keeping its completeness statements true."""
     report.retrieved_discussions = retrieved
     report.warnings = [warning.replace(NOT_FETCHED, ' Pull-request discussion was retrieved from GitHub for report '
-                                                    'commits; it is quoted, not verified.') for warning in report.warnings]
+                                                    'commits, along with explicitly referenced direct-commit issues; it is quoted, not verified.') for warning in report.warnings]
 
 
 def _all_commits(report: Report) -> list[str]:
@@ -173,6 +176,7 @@ def retrieve_discussions(report: Report, *, api_url: str = API_URL, token: str |
     retrieved_at = (now or datetime.now(timezone.utc)).strftime('%Y-%m-%dT%H:%M:%SZ')
     pulls: dict[int, RetrievedPull] = {}
     checked, without, notes, dropped = [], [], [], 0
+    referenced: list[ReferencedIssue] = []
     if len(set(_all_commits(report))) > MAX_COMMITS:
         notes.append(f'Only the first {MAX_COMMITS} report commits (range changes first) were looked up.')
     try:
@@ -207,6 +211,33 @@ def retrieve_discussions(report: Report, *, api_url: str = API_URL, token: str |
         for pull in pulls.values():
             dropped += _comments(client, pull, prefix, _paths(report))
             dropped += _linked_issues(client, pull, prefix)
+        candidates: dict[int, list[str]] = {}
+        messages = {change.commit: change.message for change in report.changes}
+        for commit in without:
+            for match in _REFERENCES.finditer(messages.get(commit, '')):
+                number = int(match.group(1) or match.group(2))
+                sources = candidates.setdefault(number, [])
+                if commit not in sources:
+                    sources.append(commit)
+        if len(candidates) > MAX_REFERENCED_ISSUES:
+            notes.append(f'Only the first {MAX_REFERENCED_ISSUES} referenced issues from direct report commits were looked up.')
+        issue_url = re.compile(prefix + r'/issues/([0-9]{1,9})')
+        for number, sources in list(candidates.items())[:MAX_REFERENCED_ISSUES]:
+            item = client.get(f'/issues/{number}')
+            if item is None:
+                notes.append(f'Referenced issue #{number} was not available.')
+                continue
+            try:
+                if type(item) is not dict or 'pull_request' in item or type(item.get('number')) is not int or item['number'] != number \
+                        or type(item.get('html_url')) is not str or not issue_url.fullmatch(item['html_url']) \
+                        or issue_url.fullmatch(item['html_url']).group(1) != str(number):
+                    raise ValueError
+                title, _ = _text(item['title'], 300)
+                text, truncated = _text(item.get('body'))
+                state = item['state'] if item.get('state') in ('open', 'closed') else 'unknown'
+                referenced.append(ReferencedIssue(number, item['html_url'], title, _login(item.get('user')), state, text, truncated, sources))
+            except (KeyError, TypeError, ValueError):
+                dropped += 1
     except _Stop as stop:
         notes.append(str(stop))
     if dropped:
@@ -215,7 +246,7 @@ def retrieve_discussions(report: Report, *, api_url: str = API_URL, token: str |
         notes.append('No commits could be looked up.')
     return RetrievedDiscussions('github', f'{owner}/{repo}', retrieved_at, PROVENANCE, checked, without,
                                 sorted(pulls.values(), key=lambda pull: commits.index(pull.commits[0])),
-                                notes)
+                                notes, referenced)
 
 
 def _comments(client: GitHubClient, pull: RetrievedPull, prefix: str, paths: set[str]) -> int:

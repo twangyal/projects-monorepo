@@ -113,7 +113,7 @@ class DiscussionRetrievalTests(unittest.TestCase):
         self.assertIn('Closes issue #7: Checkout crashes on missing price', html)
         self.assertIn('GitHub was contacted only to retrieve', html)
         self.assertNotIn('have not been fetched', html)
-        self.assertRegex(html, re.compile(r'<span>05</span><h2>Retrieved pull-request discussion</h2>'))
+        self.assertRegex(html, re.compile(r'<span>05</span><h2>Retrieved GitHub context</h2>'))
         self.assertRegex(html, re.compile(r'<span>06</span><h2>Evidence & limits</h2>'))
         self.assertNotIn('not fetched', html)
 
@@ -150,6 +150,80 @@ class DiscussionRetrievalTests(unittest.TestCase):
         self.assertEqual((len(pull['description']), pull['description_truncated']), (4000, True))
         self.assertEqual(len(pull['comments']), 30)
         self.assertEqual(pull['omitted_comments'], 12)
+
+    def test_direct_commit_issues_are_opt_in_quoted_and_associated_in_json_and_html(self):
+        self.repo.write('src/app.py', 'def total(items):\n    # Correct missing price.\n    return 2\n')
+        direct = self.repo.commit('Correct totals (#7)\n\nRefs #8. Fixes #7.')
+        self.fake.issue(7, 'Wrong total <script>', 'The total must be literal <b>two</b>.')
+        self.fake.issue(8, 'Keep the contract', 'x' * 4500)
+        code, raw, _ = self.run_cli('--format', 'json')
+        self.assertEqual(code, 0)
+        self.assertNotIn('retrieved_discussions', json.loads(raw))
+        self.assertEqual(self.fake.requests, [])
+        report = self.fetch()
+        issues = report['retrieved_discussions']['referenced_issues']
+        self.assertEqual([(i['number'], i['commits']) for i in issues], [(7, [direct]), (8, [direct])])
+        self.assertEqual((len(issues[1]['excerpt']), issues[1]['truncated']), (4000, True))
+        self.assertEqual([i['number'] for i in report['synopsis']['referenced_issues']], [7, 8])
+        self.assertEqual(sum(path.endswith('/issues/7') for path, _ in self.fake.requests), 1)
+        code, html, err = self.run_cli('--fetch-discussions', '--github-api', self.fake.url)
+        self.assertEqual(code, 0, err)
+        self.assertIn('Referenced issue #7', html)
+        self.assertIn(f'href="#commit-{direct}"', html)
+        self.assertIn('&lt;script&gt;', html)
+        self.assertNotIn('<b>two</b>', html)
+        self.assertIn('Description truncated at 4,000 characters.', html)
+        self.assertIn('reference does not establish', html)
+
+    def test_direct_issue_references_skip_foreign_bare_hashes_and_unexpected_records(self):
+        self.repo.write('src/app.py', 'def total(items):\n    # Third value.\n    return 3\n')
+        self.repo.commit('Refs #7. References #8. (#9) (#10) (#11)\nBare #12 other/repo#13 https://github.com/other/repo/issues/14')
+        for number in range(7, 15):
+            self.fake.issue(number, f'Issue {number}', 'body')
+        self.fake.issues[7]['html_url'] = 'https://github.com/other/repo/issues/7'
+        self.fake.issues[8]['number'] = True
+        self.fake.issues[9]['pull_request'] = {}
+        self.fake.issues[10]['html_url'] += '?redirect=evil'
+        retrieved = self.fetch()['retrieved_discussions']
+        self.assertEqual([i['number'] for i in retrieved['referenced_issues']], [11])
+        self.assertTrue(any('4 malformed' in note for note in retrieved['notes']))
+        requested = [path for path, _ in self.fake.requests]
+        self.assertFalse(any(path.endswith(f'/issues/{n}') for path in requested for n in [12, 13, 14]))
+
+    def test_direct_issue_budget_and_partial_refusal_keep_earlier_quoted_evidence(self):
+        self.repo.write('src/app.py', 'def total(items):\n    # Fourth value.\n    return 4\n')
+        self.repo.commit(' '.join(f'(#{n})' for n in range(1, 12)))
+        for number in range(1, 12):
+            self.fake.issue(number, f'Issue {number}', 'body')
+        retrieved = self.fetch()['retrieved_discussions']
+        self.assertEqual([i['number'] for i in retrieved['referenced_issues']], list(range(1, 9)))
+        self.assertTrue(any('8 referenced issues' in note for note in retrieved['notes']))
+        self.fake.failures.append(('/issues/3', 403, {'X-RateLimit-Remaining': '0'}))
+        retrieved = self.fetch()['retrieved_discussions']
+        self.assertEqual([i['number'] for i in retrieved['referenced_issues']], [1, 2])
+        self.assertTrue(any('rate limit' in note for note in retrieved['notes']))
+
+    def test_shared_direct_issue_retains_both_commits_and_missing_issue_is_explicit(self):
+        self.repo.write('src/app.py', 'def total(items):\n    # Direct one.\n    return 5\n')
+        older = self.repo.commit('Direct one (#7)')
+        self.repo.write('src/app.py', 'def total(items):\n    # Direct two.\n    return 6\n')
+        newer = self.repo.commit('Direct two (#7). Refs #8')
+        self.fake.issue(7, 'Shared task', 'body')
+        result = self.fetch()['retrieved_discussions']
+        self.assertEqual([(i['number'], i['commits']) for i in result['referenced_issues']], [(7, [newer, older])])
+        self.assertEqual(sum(path.endswith('/issues/7') for path, _ in self.fake.requests), 1)
+        self.assertIn('Referenced issue #8 was not available.', result['notes'])
+
+    def test_pr_associated_commit_does_not_use_direct_issue_references(self):
+        self.repo.write('src/app.py', 'def total(items):\n    # In a pull.\n    return 7\n')
+        commit = self.repo.commit('Refs #8 (#7)')
+        self.fake.pull(12, 'The pull context', 'No closing issue declared.')
+        self.fake.commit_pulls[commit] = [12]
+        self.fake.issue(7, 'Not in direct scope', 'body')
+        self.fake.issue(8, 'Neither', 'body')
+        result = self.fetch()['retrieved_discussions']
+        self.assertEqual(result['referenced_issues'], [])
+        self.assertFalse(any(path.endswith('/issues/7') or path.endswith('/issues/8') for path, _ in self.fake.requests))
 
     def test_only_github_origins_and_safe_api_addresses_are_accepted(self):
         self.repo.git('remote', 'set-url', 'origin', 'https://gitlab.com/acme/widgets.git')

@@ -114,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     explain.add_argument("--max-commits", type=int, default=20, help="At most 1–50 range-changing commits (default: 20).")
     explain.add_argument("--context", metavar="FILE", help="Optional local JSON of unverified discussion excerpts for represented commits.")
     explain.add_argument("--fetch-discussions", action="store_true",
-                         help="Contact GitHub to retrieve pull-request discussion for report commits (github.com origins only). "
+                         help="Contact GitHub to retrieve pull-request discussion and explicit direct-commit issue references (github.com origins only). "
                               "Uses GITHUB_TOKEN from the environment if set.")
     explain.add_argument("--github-api", default=API_URL, help=argparse.SUPPRESS)
     explain.add_argument("--format", choices=("html", "json"), default="html")
