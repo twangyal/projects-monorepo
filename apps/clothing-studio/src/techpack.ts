@@ -71,7 +71,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
     pom('H', 'Back neck drop', 'High point shoulder line to back neck seam', dims.neckDepthBack, 0, 0.5),
     pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.hemHalf * 2, 2.5, 1),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
-    ...(product.base === 'hoodie' ? [pom('K', 'Hood height', 'Neck seam at centre back to top of hood', dims.hoodHeight, 0.5, 1)]
+    ...(product.base === 'hoodie' ? [pom('K', 'Hood side height', 'Side pattern base to top; no seam allowance; 3D crown is illustrative', dims.hoodHeight, 0.5, 1)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
     ...(product.base === 'tee' ? [] : [
       pom('L', 'Cuff height', 'Finished rib cuff', dims.cuffHeight, 0, 0.25),
