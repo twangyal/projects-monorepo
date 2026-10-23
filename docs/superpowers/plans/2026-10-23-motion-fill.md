@@ -10,6 +10,8 @@ Approach: extend existing appearance Apply/Discard and history ownership rather 
 - [x] Implement optional validation, atomic appearance edit, shared paint kernel and interior hit selection. Retain strict malformed/accessor/budget admission.
 - [x] Observe missing fill-control browser failure, then extend existing raw appearance lifecycle with Enable fill and Fill color.
 - [x] Validate interpolation/proposal admission, guides and thumbnails. Native pixels and decoded PNG/GIF, backups/reload, Undo/Redo, raw draft/navigation guards and phone keyboard flow.
-- [ ] Full project checks, independent read-only review, fix verified regressions, documentation/roadmap, connected-GitHub commits and issue completion based on actual CI.
+- [x] Full project checks, independent read-only review, fix verified regressions, documentation/roadmap, connected-GitHub commits and issue completion based on actual CI.
 
 Review focus: accidental fill loss through clone/admission/tween; stale draft commits; filled interior hit order; fill/outline closure semantics; no-fill rendering changes; unsupported mixed endpoint styles; private/shared snapshots preserving complete admitted data.
+
+Final acceptance: [canonical/local receipt](../../2026-10-23-motion-fill-acceptance.md);279 units and203 browser cases.

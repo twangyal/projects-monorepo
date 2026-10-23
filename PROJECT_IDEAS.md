@@ -353,3 +353,5 @@ Karaoke #309 corrected canonical acceptance is complete at `2e72ef7`: **206 Pyth
 ### 2026-10-23 — Motion authored shape fills (#310)
 
 Motion at `apps/motion-studio` adds optional editable polygon interiors through selected-stroke appearance, with raw-draft protection, Undo/Redo, held artwork, fill-aware geometric in-betweens, shared preview/export painting and filled-interior selection. Legacy unfilled data stays unchanged; older readers may refuse filled files. See `apps/motion-studio/docs/2026-10-23-stroke-fill.md` for actual verification and limitations. This advances draw-to-animation authoring; learned assistance and intended-user acceptance remain unfinished. Motion stays ACTIVE. Project #8 remains skipped.
+
+Motion #310 canonical acceptance at `8d46fa6` is complete: **279 unit tests and 203 browser cases**, plus lint/types/build. [Final receipt](docs/2026-10-23-motion-fill-acceptance.md) retains corrected fixture failures, compatibility boundaries and real-use gaps. Motion remains ACTIVE.
