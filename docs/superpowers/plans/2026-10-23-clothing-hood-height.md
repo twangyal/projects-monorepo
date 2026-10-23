@@ -7,4 +7,6 @@ One dimension feeds side-pattern H, existing loft rise/UV height, drape rest mes
 - [x] RED actual domain validation/geometry/default/cloth/export fixtures; implement model dimension and validation.
 - [x] RED native absent field; implement existing owned Fit UI, tech pack and method wording.
 - [x] Native desktop/phone Undo/Redo/raw guards/reset/reload/backup/pattern/GLB evidence; complete project checks and fresh independent review.
-- [ ] Connected GitHub commits, canonical gates, receipt/roadmap and actual issue closure.
+- [x] Connected GitHub source/acceptance commits, canonical gates, receipt/roadmap and issue completion.
+
+Final evidence: source `b0191675`, canonical application run40037968720 passes180 units/all224 browsers plus lint/types/build; canonical garment preflight run40037968716 passes163 tests and historical/current default-packet reproduction. Local full browser run also passes all224 in12.3minutes. [Acceptance receipt](../../2026-10-23-clothing-hood-height-acceptance.md) preserves failures and scope. Clothing remains ACTIVE and #290 remains open; #8 stays skipped.
