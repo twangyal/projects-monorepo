@@ -349,3 +349,7 @@ Karaoke at `apps/karaoke-studio` now inserts manually supplied words into an emp
 Gaze #308 canonical acceptance is complete at45a7fbb:203Node tests and all572Chromium browser cases across three shards, including the injected extension path. [Final receipt](docs/2026-10-23-gaze-radio-acceptance.md) retains local limitations and physical-use gaps.
 
 Karaoke #309 corrected canonical acceptance is complete at `2e72ef7`: **206 Python, 146 TypeScript and 131 browser tests**, plus lint/types/build. [Final receipt](docs/2026-10-23-karaoke-insertion-acceptance.md) preserves the fixed selector regression, numeric-display review fix and local procfs/native-audio limitations. Karaoke remains ACTIVE; #241 remains open.
+
+### 2026-10-23 — Motion authored shape fills (#310)
+
+Motion at `apps/motion-studio` adds optional editable polygon interiors through selected-stroke appearance, with raw-draft protection, Undo/Redo, held artwork, fill-aware geometric in-betweens, shared preview/export painting and filled-interior selection. Legacy unfilled data stays unchanged; older readers may refuse filled files. See `apps/motion-studio/docs/2026-10-23-stroke-fill.md` for actual verification and limitations. This advances draw-to-animation authoring; learned assistance and intended-user acceptance remain unfinished. Motion stays ACTIVE. Project #8 remains skipped.

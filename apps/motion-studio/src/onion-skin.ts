@@ -1,3 +1,4 @@
+import { paintStroke } from './stroke-paint.ts';
 import {WIDTH, HEIGHT, validateProject, drawingCelIndex, evaluatePose, type Project, type Pose, type Stroke} from './model.ts';
 export type NeighborDrawing = {side: 'previous' | 'next'; frame: number; strokes: Stroke[]; pose: Pose};
 /** Adjacent exposure artwork, positioned at the selected layer's current pose. */
@@ -22,12 +23,7 @@ export function renderNeighborDrawings(context: CanvasRenderingContext2D, guides
       try {
         context.translate(guide.pose.x, guide.pose.y); context.rotate(guide.pose.rotation * Math.PI / 180); context.scale(guide.pose.scale, guide.pose.scale);
         context.globalAlpha = .25 * guide.pose.opacity; context.strokeStyle = context.fillStyle = guide.side === 'previous' ? '#087f8c' : '#c43d64';
-        for (const stroke of guide.strokes) {
-          context.lineWidth = stroke.width; context.beginPath();
-          const first = stroke.points[0];
-          if (stroke.points.every(point => point.x === first.x && point.y === first.y)) { context.arc(first.x, first.y, stroke.width / 2, 0, Math.PI * 2); context.fill(); }
-          else { context.moveTo(first.x, first.y); for (let i = 1; i < stroke.points.length; i++) context.lineTo(stroke.points[i].x, stroke.points[i].y); context.stroke(); }
-        }
+        for (const stroke of guide.strokes) paintStroke(context, stroke, guide.side === 'previous' ? '#087f8c' : '#c43d64');
       } finally { context.restore(); }
     }
   } finally { context.restore(); }

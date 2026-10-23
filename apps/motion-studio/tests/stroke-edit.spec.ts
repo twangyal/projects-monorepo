@@ -169,11 +169,11 @@ test('canceled translation ignores late pointerup and preserves subsequent raw t
   const original = originalStrokeProject(); await open(page, original); await drag(page, [190, 120], [210, 110], false);
   const title = page.locator('#project-title'); await expect(title).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(title).toBeEnabled();
-  await title.fill('New raw title <keep>'); await title.focus(); await title.evaluate(node => { node.setAttribute('data-oracle-title', 'same'); (node as HTMLInputElement).setSelectionRange(4, 7); }); await page.mouse.up();
-  await expect(title).toHaveValue('New raw title <keep>'); await expect(title).toHaveAttribute('data-oracle-title', 'same'); await expect(title).toBeFocused();
-  expect(await title.evaluate(node => [(node as HTMLInputElement).selectionStart, (node as HTMLInputElement).selectionEnd])).toEqual([4, 7]);
-  // Inspect durable state without a backup button blur, then explicitly commit only the title.
-  expect(await nativeCurrent(page)).toEqual(original); await title.press('Tab'); const committed = structuredClone(original); committed.title = 'New raw title <keep>'; expect(await backup(page)).toEqual(committed);
+  await title.fill('   '); await title.focus(); await title.evaluate(node => { node.setAttribute('data-oracle-title', 'same'); (node as HTMLInputElement).setSelectionRange(1, 2); }); await page.mouse.up();
+  await expect(title).toHaveValue('   '); await expect(title).toHaveAttribute('data-oracle-title', 'same'); await expect(title).toBeFocused();
+  expect(await title.evaluate(node => [(node as HTMLInputElement).selectionStart, (node as HTMLInputElement).selectionEnd])).toEqual([1, 2]);
+  // Whitespace is genuinely uncommittable; valid names save on input. Inspect without a backup blur.
+  expect(await nativeCurrent(page)).toEqual(original); await title.fill('New raw title <keep>'); await title.press('Tab'); const committed = structuredClone(original); committed.title = 'New raw title <keep>'; expect(await backup(page)).toEqual(committed);
   await page.locator('#undo').click(); expect(await backup(page)).toEqual(original);
 });
 

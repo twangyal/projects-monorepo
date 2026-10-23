@@ -407,3 +407,13 @@ retains the original native failure and clock regression. All239 units,
 lint/type/build and148 native cases pass locally and in both first published
 push/PR CI runs at64f19f7. Authored frames, endpoint/loop behavior, export formats and HTTPS
 authority remain unchanged.
+
+## Fill an authored shape (#310)
+
+In **Edit strokes**, select a retained path, enable **Enable stroke fill**, choose **Selected stroke fill color**, then use **Apply stroke appearance**. Disable the checkbox and Apply to remove its interior. Outline color/width remain separate. These fields share the existing Apply/Discard, raw-draft guards and one-edit Undo/Redo behavior. Committed fills survive saved projects, reload, copied layers/drawings/strokes, geometry edits and private snapshots.
+
+Fill uses the canvas **nonzero winding rule** on the polygon formed by the retained points. The interior implicitly joins the last point to the first; the authored outline stays open unless you drew that closing segment. A dot or line with no enclosed area has no fill interior. This is a retained polygon fill, not a paint-bucket flood fill, edge inference or object recognition. Filled interiors are selectable on the stage in ordinary paint order, with existing layer transforms applied.
+
+The same committed paint kernel supplies preview, opaque/transparent PNG, GIF and PNG-frame exports. Neighbor guides show tinted fill areas; endpoint thumbnails show the authored fill. For geometric in-betweens, each pair must either have fill at both endpoints or no fill at both. Two fills interpolate their RGB channels with the existing rounding rule. A mixed pair refuses Review. Shape-based pair suggestions still prioritize geometry; inspect the displayed fill styles and manually correct pairs or endpoint appearance when necessary.
+
+Unfilled project data remains unchanged. Schema2 stores fill as an optional strict `#RRGGBB` stroke field; older readers may refuse filled files. Existing project/point/stroke/byte limits remain. This adds authored color control; it does not establish useful learned animation or intended-user acceptance. [Verification and remaining limits](docs/2026-10-23-stroke-fill.md).

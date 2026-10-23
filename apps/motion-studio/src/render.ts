@@ -1,3 +1,4 @@
+import { paintStroke } from './stroke-paint.ts';
 import { HEIGHT, WIDTH, MAX_FRAMES, SCHEMA_VERSION, drawingCelIndex, evaluatePose, validateProject, type Layer, type Project } from './model.ts';
 import { decodeImageAsset } from './images.ts';
 export type Assets = Map<string, ImageBitmap>;
@@ -82,18 +83,7 @@ function drawFrame(ctx: RenderContext, safe: Project, frame: number, assets: Ass
           ctx.lineCap = ctx.lineJoin = 'round'; ctx.setLineDash([]);
           // Use the model's same bounded cut rule, without cloning held artwork.
           const cel = layer.cels[drawingCelIndex(layer.cels, frame)];
-          for (const stroke of cel.strokes) {
-            ctx.strokeStyle = ctx.fillStyle = stroke.color; ctx.lineWidth = stroke.width; ctx.beginPath();
-            // Canvas implementations differ on stroked zero-length polylines.
-            // A resampled dot retains many identical points; paint it explicitly.
-            if (stroke.points.every(point => point.x === stroke.points[0].x && point.y === stroke.points[0].y)) {
-              const point = stroke.points[0]; ctx.arc(point.x, point.y, stroke.width / 2, 0, Math.PI * 2); ctx.fill();
-            } else {
-              ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-              for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-              ctx.stroke();
-            }
-          }
+          for (const stroke of cel.strokes) paintStroke(ctx, stroke);
         }
       } finally { ctx.restore(); }
     }

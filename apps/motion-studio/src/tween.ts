@@ -163,11 +163,13 @@ export function buildDrawingTween(project: Project, selected: TweenSelection, re
   if (before.projectPoints + addedStrokes * TWEEN_SAMPLES > 10_000) fail('This proposal would exceed 10,000 retained project points.');
   const sampled = selectedChoices.pairs.map(pair => {
     const a = start.strokes[pair.startStroke], b = end.strokes[pair.endStroke];
-    return { start: sample(a.points, false), end: sample(b.points, pair.reverseEnd), widthA: a.width, widthB: b.width, colorA: channels(a.color), colorB: channels(b.color) };
+    if (!!a.fill !== !!b.fill) fail('Paired endpoint strokes must both have fill or both have no fill. Correct their appearance before reviewing.');
+    return { fillA: a.fill ? channels(a.fill) : null, fillB: b.fill ? channels(b.fill) : null, start: sample(a.points, false), end: sample(b.points, pair.reverseEnd), widthA: a.width, widthB: b.width, colorA: channels(a.color), colorB: channels(b.color) };
   });
   const generated = selectedChoices.frames.map(frame => {
     const t = (frame - selectedSafe.startFrame) / (selectedSafe.endFrame - selectedSafe.startFrame);
     const strokes: Stroke[] = sampled.map(stroke => ({
+      ...(stroke.fillA && stroke.fillB ? { fill: interpolateColor(stroke.fillA, stroke.fillB, t) } : {}),
       color: interpolateColor(stroke.colorA, stroke.colorB, t), width: interpolate(stroke.widthA, stroke.widthB, t),
       points: stroke.start.map((a, index) => ({ x: interpolate(a.x, stroke.end[index].x, t), y: interpolate(a.y, stroke.end[index].y, t) })),
     }));
@@ -192,9 +194,11 @@ function admitProposal(value: unknown): TweenProposal {
     const frame = integer(cel.frame, selected.startFrame + 1, selected.endFrame - 1, 'Generated frame', true);
     if (frame !== requested.frames[index]) fail('Generated frames must match the reviewed selection.');
     const strokes = array(cel.strokes, requested.pairs.length, requested.pairs.length, 'Generated strokes').map((value): Stroke => {
-      const stroke = object(value, ['color', 'width', 'points'], 'Generated stroke');
+      const hasFill = value !== null && typeof value === 'object' && Object.hasOwn(value, 'fill');
+      const stroke = object(value, ['color', 'width', 'points', ...(hasFill ? ['fill'] : [])], 'Generated stroke');
+      if (hasFill && (typeof stroke.fill !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(stroke.fill))) fail('Generated fill must be a six-digit hex color.');
       if (typeof stroke.color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(stroke.color)) fail('Generated color must be a six-digit hex color.');
-      return { color: stroke.color, width: number(stroke.width, 1, 40, 'Generated width', true), points: array(stroke.points, TWEEN_SAMPLES, TWEEN_SAMPLES, 'Generated points').map(value => point(value, true)) };
+      return { ...(hasFill ? { fill: stroke.fill as string } : {}), color: stroke.color, width: number(stroke.width, 1, 40, 'Generated width', true), points: array(stroke.points, TWEEN_SAMPLES, TWEEN_SAMPLES, 'Generated points').map(value => point(value, true)) };
     });
     return { frame, strokes };
   });

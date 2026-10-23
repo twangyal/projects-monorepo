@@ -52,6 +52,16 @@ export function hitStroke(strokes: readonly Stroke[], query: Point, padding: num
   for (let index = admitted.length - 1; index >= 0; index--) {
     const stroke = admitted[index], radius = stroke.width / 2 + extra;
     const close = (nearest: Point) => Math.hypot(cursor.x - nearest.x, cursor.y - nearest.y) <= radius;
+    if (stroke.fill) {
+      let winding = 0;
+      for (let i = 0; i < stroke.points.length; i++) {
+        const a = stroke.points[i], b = stroke.points[(i + 1) % stroke.points.length];
+        const cross = (b.x - a.x) * (cursor.y - a.y) - (cursor.x - a.x) * (b.y - a.y);
+        if (a.y <= cursor.y && b.y > cursor.y && cross > 0) winding++;
+        else if (a.y > cursor.y && b.y <= cursor.y && cross < 0) winding--;
+      }
+      if (winding !== 0) return index;
+    }
     if (close(stroke.points[0])) return index;
     for (let vertex = 1; vertex < stroke.points.length; vertex++) {
       const a = stroke.points[vertex - 1], b = stroke.points[vertex];
@@ -101,12 +111,16 @@ export function deleteStrokePoint(input: Project, target: StrokeTarget, pointInd
   stroke.points.splice(index, 1);
   return validateProject(project);
 }
-export function setStrokeAppearance(input: Project, target: StrokeTarget, appearance: { color: string; width: number }): Project {
-  const values = fields(appearance, ['color', 'width'], 'Stroke appearance');
+export function setStrokeAppearance(input: Project, target: StrokeTarget, appearance: { color: string; width: number; fill?: string | null }): Project {
+  const values = fields(appearance, ['color', 'width', ...(Object.hasOwn(appearance, 'fill') ? ['fill'] : [])], 'Stroke appearance');
   if (typeof values.color !== 'string') throw new Error('Stroke color must use #RRGGBB notation.');
   const width = finite(values.width, 'Stroke width');
   const { project, stroke } = select(input, target);
   stroke.color = values.color; stroke.width = width;
+  if (Object.hasOwn(values, 'fill')) {
+    if (values.fill === null) delete stroke.fill;
+    else { if (typeof values.fill !== 'string') throw new Error('Stroke fill must use #RRGGBB notation.'); stroke.fill = values.fill; }
+  }
   return validateProject(project);
 }
 export function deleteStroke(input: Project, target: StrokeTarget): Project {

@@ -8,7 +8,7 @@ export const MAX_DRAWING_CELS = 24;
 export const MAX_JSON_BYTES = 6 * 1024 * 1024 + 168;
 
 export type Point = { x: number; y: number };
-export type Stroke = { color: string; width: number; points: Point[] };
+export type Stroke = { color: string; width: number; fill?: string; points: Point[] };
 export type Pose = { x: number; y: number; scale: number; rotation: number; opacity: number };
 export type Easing = 'linear' | 'hold' | 'ease';
 export type Keyframe = Pose & { frame: number; easing: Easing };
@@ -99,11 +99,13 @@ function strokes(value: unknown, totals: Totals, strict: boolean): Stroke[] {
   totals.strokes += entries.length;
   if (totals.strokes > 100) throw new Error('A project can contain at most 100 strokes across all drawings.');
   return entries.map(entry => {
-    const stroke = object(entry, 'Stroke', strict ? ['color', 'width', 'points'] : undefined);
+    const source = object(entry, 'Stroke');
+    const stroke = strict ? object(source, 'Stroke', ['color', 'width', 'points', ...(Object.hasOwn(source, 'fill') ? ['fill'] : [])]) : source;
     const points = array(stroke.points, 1, 1000, 'Stroke points');
     totals.points += points.length;
     if (totals.points > 10_000) throw new Error('A project can contain at most 10,000 points across all drawings.');
     return { color: color(stroke.color, 'Stroke color'), width: number(stroke.width, 1, 40, 'Stroke width'),
+      ...(Object.hasOwn(stroke, 'fill') ? { fill: color(stroke.fill, 'Stroke fill') } : {}),
       points: points.map(entry => {
         const point = object(entry, 'Point', strict ? ['x', 'y'] : undefined);
         return { x: number(point.x, -1280, 1280, 'Point x'), y: number(point.y, -1280, 1280, 'Point y') };

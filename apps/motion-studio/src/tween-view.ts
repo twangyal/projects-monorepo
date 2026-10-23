@@ -1,3 +1,4 @@
+import { paintStroke } from './stroke-paint.ts';
 import { MAX_DRAWING_CELS, MAX_JSON_BYTES, type DrawingLayer, type Project, type Stroke } from './model.ts';
 import type { Assets } from './render.ts';
 import { applyDrawingTween, buildDrawingTween, planTweenFrames, previewDrawingTween, suggestTweenPairs, type TweenProposal } from './tween.ts';
@@ -75,7 +76,7 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
   function message(error: unknown) { return error instanceof Error ? error.message : 'Could not review these drawing choices.'; }
   function describe(stroke: Stroke, index: number) {
     const first = stroke.points[0], last = stroke.points.at(-1)!;
-    return `Stroke ${index + 1} · ${stroke.color} · width ${stroke.width} · start (${first.x}, ${first.y}) → end (${last.x}, ${last.y})`;
+    return `Stroke ${index + 1} · ${stroke.color} · ${stroke.fill ? `fill ${stroke.fill}` : 'no fill'} · width ${stroke.width} · start (${first.x}, ${first.y}) → end (${last.x}, ${last.y})`;
   }
   function thumbnail(stroke: Stroke, index: number, label: string): HTMLElement {
     const figure = document.createElement('figure'), canvas = document.createElement('canvas'), caption = document.createElement('figcaption');
@@ -86,15 +87,8 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const scale = Math.min(140 / Math.max(1, maxX - minX), 60 / Math.max(1, maxY - minY));
     const point = (p: { x: number; y: number }) => ({ x: 90 + (p.x - (minX + maxX) / 2) * scale, y: 50 + (p.y - (minY + maxY) / 2) * scale });
-    context.strokeStyle = stroke.color; context.lineWidth = Math.min(18, Math.max(2, stroke.width * scale)); context.lineCap = 'round'; context.lineJoin = 'round'; context.beginPath();
-    const first = stroke.points[0];
-    if (stroke.points.every(p => p.x === first.x && p.y === first.y)) {
-      const center = point(first); context.fillStyle = stroke.color;
-      context.arc(center.x, center.y, context.lineWidth / 2, 0, Math.PI * 2); context.fill();
-    } else {
-      for (const [i, p] of stroke.points.entries()) { const q = point(p); if (i) context.lineTo(q.x, q.y); else context.moveTo(q.x, q.y); }
-      context.stroke();
-    }
+    context.lineCap = 'round'; context.lineJoin = 'round';
+    paintStroke(context, { ...stroke, points: stroke.points.map(point), width: Math.min(18, Math.max(2, stroke.width * scale)) });
     for (const [label, p] of [['S', stroke.points[0]], ['E', stroke.points.at(-1)!]] as const) {
       const q = point(p); context.fillStyle = '#302a3d'; context.font = 'bold 12px sans-serif'; context.fillText(label, q.x + 5, q.y - (label === 'S' ? 7 : -15));
     }

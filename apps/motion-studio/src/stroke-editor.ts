@@ -26,9 +26,10 @@ interface State { project: Project; layerId: string; frame: number; generation: 
 interface Hooks { state(): State; admitOtherDrafts(): boolean; begin(keepSelection?: boolean): void; apply(project: Project): boolean; changed(): void }
 interface Selection { target: StrokeTarget; project: Project; frame: number; generation: number; operation: number }
 export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
-  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-duplicate">Duplicate selected stroke</button><button id="stroke-mirror-x">Mirror stroke horizontally</button><button id="stroke-mirror-y">Mirror stroke vertically</button><button id="stroke-grow">Grow stroke ×2</button><button id="stroke-shrink">Shrink stroke ×0.5</button><button id="stroke-rotate-cw">Rotate stroke clockwise 90°</button><button id="stroke-rotate-ccw">Rotate stroke counterclockwise 90°</button><button id="stroke-forward">Bring stroke forward</button><button id="stroke-backward">Send stroke backward</button><button id="stroke-delete">Delete selected stroke</button></div><fieldset id="stroke-points"><legend>Reshape a stroke point</legend><label class="field">Selected point<select id="stroke-point"></select></label><label class="field">Point local X<input id="stroke-point-x" type="text" inputmode="decimal"></label><label class="field">Point local Y<input id="stroke-point-y" type="text" inputmode="decimal"></label><button id="stroke-point-apply">Apply stroke point</button><button id="stroke-point-insert">Insert midpoint after point</button><button id="stroke-point-delete">Delete selected point</button><p class="hint">Coordinates belong to the drawing before layer poses. Each axis accepts −1280 to 1280. The ring marks the committed selected point. Discard stroke edits restores raw fields.</p></fieldset><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
+  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><label class="field">Enable stroke fill<input id="stroke-fill-enabled" type="checkbox"></label><label class="field">Selected stroke fill color<input id="stroke-fill-color" type="color" value="#563d75"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-duplicate">Duplicate selected stroke</button><button id="stroke-mirror-x">Mirror stroke horizontally</button><button id="stroke-mirror-y">Mirror stroke vertically</button><button id="stroke-grow">Grow stroke ×2</button><button id="stroke-shrink">Shrink stroke ×0.5</button><button id="stroke-rotate-cw">Rotate stroke clockwise 90°</button><button id="stroke-rotate-ccw">Rotate stroke counterclockwise 90°</button><button id="stroke-forward">Bring stroke forward</button><button id="stroke-backward">Send stroke backward</button><button id="stroke-delete">Delete selected stroke</button></div><fieldset id="stroke-points"><legend>Reshape a stroke point</legend><label class="field">Selected point<select id="stroke-point"></select></label><label class="field">Point local X<input id="stroke-point-x" type="text" inputmode="decimal"></label><label class="field">Point local Y<input id="stroke-point-y" type="text" inputmode="decimal"></label><button id="stroke-point-apply">Apply stroke point</button><button id="stroke-point-insert">Insert midpoint after point</button><button id="stroke-point-delete">Delete selected point</button><p class="hint">Coordinates belong to the drawing before layer poses. Each axis accepts −1280 to 1280. The ring marks the committed selected point. Discard stroke edits restores raw fields.</p></fieldset><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
   const get = <T extends HTMLElement = HTMLElement>(id: string) => host.querySelector<T>(`#${id}`)!;
   const color = get<HTMLInputElement>('stroke-color'), width = get<HTMLInputElement>('stroke-width');
+  const fillEnabled = get<HTMLInputElement>('stroke-fill-enabled'), fillColor = get<HTMLInputElement>('stroke-fill-color');
   const pointSelect = get<HTMLSelectElement>('stroke-point'), pointX = get<HTMLInputElement>('stroke-point-x'), pointY = get<HTMLInputElement>('stroke-point-y');
   const rows = new Map<number, HTMLElement>(); let selection: Selection | null = null, dirty = false, invalid = false, pointIndex = 0;
   let draftKind: 'appearance' | 'point' | null = null;
@@ -48,7 +49,7 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
   function bind(target: StrokeTarget, resetFields: boolean) {
     const state = hooks.state(); selection = { target: { ...target }, project: state.project, frame: state.frame, generation: state.generation, operation: state.operation }; invalid = false;
     const stroke = currentStroke(); if (!stroke) { selection = null; return; }
-    if (resetFields) { color.value = stroke.color; width.value = String(stroke.width); dirty = false; draftKind = null; pointFields(stroke); }
+    if (resetFields) { color.value = stroke.color; width.value = String(stroke.width); fillEnabled.checked = !!stroke.fill; fillColor.value = stroke.fill ?? stroke.color; dirty = false; draftKind = null; pointFields(stroke); }
   }
   function admit(): boolean {
     if (!dirty) return true;
@@ -84,10 +85,10 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
       }
       const button = row.querySelector('button')!;
       button.disabled = state.locked; button.setAttribute('aria-pressed', String(!!currentStroke() && selection?.target.strokeIndex === index));
-      row.querySelector('span')!.textContent = `${stroke.color} · ${stroke.width} px · ${stroke.points.length} ${stroke.points.length === 1 ? 'point' : 'points'}`;
+      row.querySelector('span')!.textContent = `${stroke.color} · ${stroke.width} px · ${stroke.fill ? `fill ${stroke.fill}` : 'no fill'} · ${stroke.points.length} ${stroke.points.length === 1 ? 'point' : 'points'}`;
     }
     if (!cel?.strokes.length) get('stroke-exposure').textContent += ' This drawing has no retained strokes.';
-    const available = !!currentStroke(); color.disabled = state.locked || !available || draftKind === 'point'; width.disabled = color.disabled;
+    const available = !!currentStroke(); color.disabled = state.locked || !available || draftKind === 'point'; width.disabled = color.disabled; fillEnabled.disabled = color.disabled; fillColor.disabled = color.disabled || !fillEnabled.checked;
     pointSelect.disabled = state.locked || !available || dirty;
     pointX.disabled = state.locked || !available || draftKind === 'appearance'; pointY.disabled = pointX.disabled;
     get<HTMLButtonElement>('stroke-point-apply').disabled = pointX.disabled;
@@ -104,6 +105,7 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
     status('Unapplied stroke appearance. Apply valid values or discard; committed artwork is unchanged.'); update(); hooks.changed();
   }
   color.addEventListener('input', appearanceInput); width.addEventListener('input', appearanceInput);
+  fillEnabled.addEventListener('input', appearanceInput); fillColor.addEventListener('input', appearanceInput);
   get('stroke-apply').addEventListener('click', () => {
     if (hooks.state().locked || draftKind === 'point' || !hooks.admitOtherDrafts() || !currentStroke() || !selection) return;
     const target = { ...selection.target }, raw = width.value;
@@ -112,7 +114,8 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
       const committed = currentStroke()!;
       // Native color inputs lowercase RGB. Keep the retained spelling when RGB is unchanged.
       const chosenColor = color.value === committed.color.toLowerCase() ? committed.color : color.value;
-      const candidate = setStrokeAppearance(hooks.state().project, target, { color: chosenColor, width: Number(raw) });
+      const chosenFill = !fillEnabled.checked ? null : committed.fill && fillColor.value === committed.fill.toLowerCase() ? committed.fill : fillColor.value;
+      const candidate = setStrokeAppearance(hooks.state().project, target, { color: chosenColor, width: Number(raw), fill: chosenFill });
       const changed = hooks.apply(candidate); bind(target, true); status(changed ? 'Stroke appearance applied.' : 'Stroke appearance is unchanged. No new edit was made.'); update(); hooks.changed();
     } catch (error) { status(error instanceof Error ? error.message : 'Could not apply this stroke appearance.'); }
   });
