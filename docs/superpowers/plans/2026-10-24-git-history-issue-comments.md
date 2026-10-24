@@ -23,8 +23,8 @@
 - [x] Baseline370tests pass (26optional-parser skips before installing isolated verification tools).
 - [x] Four real CLI/HTTP tests RED on absent comments; native literal-comment check RED;17focused tests GREEN.
 - [x] Typed nested records, bounded recent-page retrieval, safe rendering; review drift regression observedRED then repaired.
-- [ ] Focused/full Python/Node/browser/static checks, fresh review, necessary RED→GREEN fixes.
-- [ ] Commit through connected GitHub tools; observe canonical gates, issue/roadmap update.
+- [x] Final375Python/18focused/18Node/static checks and54native pass; fresh review and drift RED→GREEN repair.
+- [x] Source67102a committed; canonical4jobs pass Python3.11/3.12/3.13/core+native parser matrices and54browsers; final verification/roadmap and issue closure record actual scope.
 
 ## Ledger
 
