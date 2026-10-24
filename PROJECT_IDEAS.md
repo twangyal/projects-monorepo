@@ -407,3 +407,5 @@ Melody recording investigation retains a fixed five-cold/five-warm source-clock 
 ### 2026-10-24 — Gaze native date form control (#318)
 
 Gaze at `apps/gaze-navigator` adds explicit ISO date-field set/Undo with native calendar/min/max/step admission, captured identity/lock guards, independent date history and in-overlay discovery/help. [Checkpoint](apps/gaze-navigator/docs/2026-10-24-date-fields.md) records red-first intent/native tests,211 passing units/static/build and focused DOM scope; complete canonical browser gates are tracked separately. Gaze stays ACTIVE and physical speech/gaze/intended-user acceptance #132 remains open. #8 stays skipped.
+
+Gaze #318 final acceptance at `01623c88`:211 units, static/build checks and all688 canonical browser cases pass, including actual injected-extension date editing across four viewports. [Final receipt](docs/2026-10-24-gaze-date-fields-acceptance.md) supersedes pending checkpoint status. Physical speech/gaze and intended-user acceptance #132 remain open; Gaze stays ACTIVE and #8 stays skipped.
