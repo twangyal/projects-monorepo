@@ -25,7 +25,7 @@ Files: src/product.ts, product-view.ts, techpack.ts; new tests/hood-width.test.t
 - [x] Baseline180units; RED pattern/mesh/POM/default/rest/bounds/incompatibility and native absent-width UI.
 - [x] Minimal typed fit, dimension, pattern, z-radius, UI and POM integration; GREEN focused checks.
 - [x] Native Apply/Undo/Redo/reload/phone drafts, decoded GLB/pattern/POM plus existing height/trim regressions and drape where practical.
-- [ ] Full units/static/build/browser; fresh review; source commit via connected tools.
+- [x] Full units/static/build/browser; fresh review; source commit via connected tools.
 - [ ] Observe canonical app/preflight gates, root-only acceptance receipt and actual issue closure/state.
 
 ## Ledger
@@ -33,3 +33,5 @@ Files: src/product.ts, product-view.ts, techpack.ts; new tests/hood-width.test.t
 Currentmain8a81073; Gaze#321 source complete, final CI running. No local unfinished edits. Existing FitKey controls enumerate from FIT_KEYS; update fitValues and hoodie-only hiding/skipping together. POM N currently reports fixed26; use actual pattern side width with accurate wording. Default dome14 remains exactly14 when width26.
 
 Task1 progress:180baseline;3unit RED unsupportedfield;183unit/static/build GREEN. Native partial-fixture build failed unused helpers before actual absent-field RED. Six focused width/height cases pass31.1s including realGLB/drape. Fresh review no blocker, independently3unit pass and width-only rest checks; committed rest-test combined-input minor is documented. Full browser running with added downloadedSVG sewing-width assertion; canonical pending.
+
+Final local verification:183units/lint/types/build and all227browser cases pass7.6m on source0c943339649c2afdf95a1d4c1987d1354c4a3f0d. Three new width cases cover actualSVG sewing-line width, decodedGLB/POM/history/reload, phone drafts/reset/template visibility and actual drape. Canonical application40108893843 and garment-preflight40108893842 remain pending until their observed completion. No workflow/deadline changes.
