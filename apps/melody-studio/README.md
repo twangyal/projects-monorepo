@@ -48,6 +48,12 @@ Major uses a major third and perfect fifth; Minor a minor third and perfect fift
 
 Finish unapplied editor drafts, gestures and suggestions first. The quality choice is a session-only parameter retained across navigation; choosing it does not edit notes. A successful chord is one Undo/Redo/autosave edit, retained in complete backups, saved compositions, MIDI and synthesized playback/WAV. Physical listening and musician-quality evaluation remain unverified. [Integration evidence](../../docs/2026-10-21-melody-chord-construction.md).
 
+## Explore a chord's octave voicing (#320)
+
+Select any melodic note in an exact-onset chord, then use **Raise lowest chord voice** or **Lower highest chord voice** in the chord tools. The first moves the lowest pitch above the highest; the second moves the highest below the lowest. Each moves one voice by the smallest positive whole-octave multiple that passes the opposite boundary. Thus C4–E4–G4 becomes E4–G4–C5 when raised; a widely spaced chord can move its boundary voice by several octaves. Pitch class, note ID, start, length and velocity stay intact; other notes/tracks, sounds, automation and reference recordings remain unchanged.
+
+Each cycle is one Undo/Redo/autosave edit, retained in complete project files, MIDI and WAV. Finish unapplied drafts/suggestions first. Single voices, unison duplicates at that onset, drums, pitches outside C2–C7 and newly overlapping voices of the same pitch refuse the whole action. Nearby attacks are separate. This is explicit octave placement, without key detection, learned harmony or automatic voice leading. The full DAW destination and recording investigation #300 remain open.
+
 ## Run locally
 
 Use Node.js **22.18 or newer** and npm:

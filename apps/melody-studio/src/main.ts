@@ -1,3 +1,4 @@
+import { cycleChordVoicing } from './chord-voicing.ts';
 import {moveTrack} from './track-order.ts';
 import {rollChord} from './chord-roll.ts';
 import {addChord,CHORD_QUALITIES,type ChordQuality} from './note-chord.ts';
@@ -135,7 +136,7 @@ function harmonicPanel(track:Track):string{
 }
 function chordPanel(note:Note|undefined):string {
  const drums=currentTrack().instrument==='drums';
- return `<fieldset id="note-chord-panel" class="note-editor" ${!note||busy||drums?'disabled':''}><legend>Build a chord</legend><label for="chord-quality">Chord quality</label><select id="chord-quality">${Object.entries(CHORD_QUALITIES).map(([key,name])=>`<option value="${key}" ${key===chordQuality?'selected':''}>${name}</option>`).join('')}</select><button type="button" data-action="add-note-chord">Add chord tones</button><p class="small">${drums?'Choose a melodic track to build a chord.':'Add two editable tones above the selected root, with the same timing and velocity.'} Refuse overlapping existing target tones, pitches above C7 or insufficient note space. Finish unapplied edits first. Undo restores the original. This is an explicit interval tool; it does not infer a key or harmony.</p></fieldset>`;
+ return `<fieldset id="note-chord-panel" class="note-editor" ${!note||busy||drums?'disabled':''}><legend>Build a chord</legend><label for="chord-quality">Chord quality</label><select id="chord-quality">${Object.entries(CHORD_QUALITIES).map(([key,name])=>`<option value="${key}" ${key===chordQuality?'selected':''}>${name}</option>`).join('')}</select><button type="button" data-action="add-note-chord">Add chord tones</button><button type="button" data-action="raise-chord-voice">Raise lowest chord voice</button><button type="button" data-action="lower-chord-voice">Lower highest chord voice</button><p class="small">Cycle distinct voices at the selected note’s exact onset: move the lowest above the highest, or highest below the lowest, by whole octaves. Wide chords can need several octaves. Timing, lengths and expression stay fixed. Refuse C2–C7 overflow or a new same-pitch overlap. Each cycle is one Undo edit; this does not infer harmony.</p><p class="small">${drums?'Choose a melodic track to build a chord.':'Add two editable tones above the selected root, with the same timing and velocity.'} Refuse overlapping existing target tones, pitches above C7 or insufficient note space. Finish unapplied edits first. Undo restores the original. This is an explicit interval tool; it does not infer a key or harmony.</p></fieldset>`;
 }
 function chordRollPanel(note: Note | undefined): string {
   const drums = currentTrack().instrument === 'drums';
@@ -955,7 +956,7 @@ root.addEventListener('pointerdown', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || button.matches(workspaceControl) || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
-  if (['split-note','join-note','add-note-chord','roll-note-chord'].includes(button.dataset.action ?? '')) { event.preventDefault(); if (!articulationDraftGuard()) { event.stopImmediatePropagation(); return; } }
+  if (['split-note','join-note','add-note-chord','roll-note-chord','raise-chord-voice','lower-chord-voice'].includes(button.dataset.action ?? '')) { event.preventDefault(); if (!articulationDraftGuard()) { event.stopImmediatePropagation(); return; } }
   if (['move-track-earlier','move-track-later'].includes(button.dataset.action ?? '')) { event.preventDefault(); if (!trackOrderGuard()) { event.stopImmediatePropagation(); return; } }
   if (sectionEditAction(button.dataset.action) && !sectionArrangementGuard()) {
     event.preventDefault(); event.stopImmediatePropagation(); return;
@@ -1008,7 +1009,7 @@ app.addEventListener('click', event => {
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
   if (sectionEditAction(action) && !sectionArrangementGuard()) return;
   if (['move-track-earlier','move-track-later'].includes(action ?? '') && !trackOrderGuard()) return;
-  if (['split-note','join-note','add-note-chord','roll-note-chord'].includes(action ?? '') && !articulationDraftGuard()) return;
+  if (['split-note','join-note','add-note-chord','roll-note-chord','raise-chord-voice','lower-chord-voice'].includes(action ?? '') && !articulationDraftGuard()) return;
   if (action === 'apply-envelope' && !soundDraftGuard()) return;
   if (action === 'apply-echo' && !soundDraftGuard(echoFields)) return;
   if (action === 'midi-expression' && !soundDraftGuard([])) return;
@@ -1020,6 +1021,14 @@ app.addEventListener('click', event => {
   if (action && !['record-backed', 'save', 'midi', 'midi-expression', 'wav', 'wav-section', 'wav-track', 'solo-track', 'duplicate-section', 'remove-section', 'move-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   if (action?.startsWith('drum-')) { drumAction(action); return; }
   switch (action) {
+    case 'raise-chord-voice':
+    case 'lower-chord-voice': {
+      try {
+        if (!selectedNoteId) throw new Error('Choose a chord note to cycle its voicing.');
+        commit(cycleChordVoicing(project, currentTrack().id, selectedNoteId, action === 'raise-chord-voice' ? 'up' : 'down'), 'Chord voicing cycled by whole octaves. Timing and expression are unchanged; Undo restores the original pitches.');
+      } catch (error) { announce(error instanceof Error ? error.message : 'Could not cycle this chord voicing.'); }
+      break;
+    }
     case 'roll-note-chord': {
       try {
         if (!selectedNoteId) throw new Error('Choose a chord note to roll its attacks.');
