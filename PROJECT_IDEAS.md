@@ -455,3 +455,7 @@ Git History at `apps/git-history` extends explicit discussion retrieval with one
 Git History #324 source `67102a8` has fresh375-test Python verification (2expected skips),18focused/18Node/static checks and pre-final54native pass. Final-source native and canonical3-version matrix remain pending; [durable verification handoff](docs/2026-10-24-git-history-issue-comments-verification.md). Issue remains open; Git History ACTIVE; #8 skipped.
 
 Git History #324 final source `67102a8` passes all4canonical jobs:375-test Python3.11/3.12/3.13 matrix in core-only and native-parser environments,18Node/static checks and54native cases. Final local375Python/18Node/static/54native checks also pass, retaining the earlier unchanged PID-marker fixture race and deferred parent-frame assertion minor. [Final verification](docs/2026-10-24-git-history-issue-comments-verification.md) supersedes pending status. Git History ACTIVE; #8 skipped.
+
+### 2026-10-24 — Gaze native month/week form periods (#325)
+
+Gaze at `apps/gaze-navigator` adds literal month/week set and kind-specific Undo in the shared extension runtime, with native calendar/min/max/step admission, snapshots/focus/lock checks, clarification/confirmation, independent histories and contextual help. [Checkpoint](apps/gaze-navigator/docs/2026-10-24-period-fields.md) records225units/static/build and96focused native cases; full local/canonical acceptance follows separately. Gaze ACTIVE; physical#132 open; #8 skipped.

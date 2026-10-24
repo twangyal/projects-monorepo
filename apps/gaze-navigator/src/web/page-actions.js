@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, accessibleName } from './page-context.js';
+import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -225,8 +225,16 @@ export function setTimeValue(element, value, snapshot = captureTimeSnapshot(elem
   return setTemporalValue(element, value, snapshot, options, 'time', captureTimeSnapshot, [null], 'clock');
 }
 
+export function setMonthValue(element, value, snapshot = captureMonthSnapshot(element), options = {}) {
+  return setTemporalValue(element, value, snapshot, options, 'month', captureMonthSnapshot, [null], 'calendar month');
+}
+
+export function setWeekValue(element, value, snapshot = captureWeekSnapshot(element), options = {}) {
+  return setTemporalValue(element, value, snapshot, options, 'week', captureWeekSnapshot, [null], 'ISO week calendar');
+}
+
 function setTemporalValue(element, value, snapshot, { restore = false }, kind, capture, roles, constraint) {
-  const label = kind === 'date' ? 'Date' : 'Time';
+  const label = kind[0].toUpperCase() + kind.slice(1);
   const available = () => element.tagName === 'INPUT' && element.type === kind &&
     roles.includes(element.getAttribute('role')) && element.isConnected &&
     !element.readOnly && unlocked(element) && controlVisible(element);

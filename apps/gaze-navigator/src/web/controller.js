@@ -25,11 +25,15 @@ export function createController({ window, actions = pageActions, interpret = in
   const dateRevision = new WeakMap();
   const timeHistory = new WeakMap();
   const timeRevision = new WeakMap();
+  const monthHistory = new WeakMap();
+  const monthRevision = new WeakMap();
+  const weekHistory = new WeakMap();
+  const weekRevision = new WeakMap();
 
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
 
   function confirmable(action, element) {
-    if (['activate', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time'].includes(action.type)) return element.consequential;
+    if (['activate', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
     if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
@@ -43,7 +47,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
@@ -62,7 +66,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -88,6 +92,8 @@ export function createController({ window, actions = pageActions, interpret = in
         break;
       }
       case 'edit': result = edit(element, target.name, action.edit); break;
+      case 'month':
+      case 'week':
       case 'time':
       case 'date':
       case 'number': {
@@ -95,6 +101,8 @@ export function createController({ window, actions = pageActions, interpret = in
           number: [numberHistory, numberRevision, 'setNumberValue', 'numberSnapshot'],
           date: [dateHistory, dateRevision, 'setDateValue', 'dateSnapshot'],
           time: [timeHistory, timeRevision, 'setTimeValue', 'timeSnapshot'],
+          month: [monthHistory, monthRevision, 'setMonthValue', 'monthSnapshot'],
+          week: [weekHistory, weekRevision, 'setWeekValue', 'weekSnapshot'],
         }[action.type];
         const values = histories.get(element) ?? [];
         const entry = values.at(-1);

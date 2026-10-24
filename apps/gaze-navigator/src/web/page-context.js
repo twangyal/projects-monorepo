@@ -239,6 +239,8 @@ export function captureNumberSnapshot(element) {
 
 export function captureDateSnapshot(element) { return captureNumberSnapshot(element); }
 export function captureTimeSnapshot(element) { return captureNumberSnapshot(element); }
+export function captureMonthSnapshot(element) { return captureNumberSnapshot(element); }
+export function captureWeekSnapshot(element) { return captureNumberSnapshot(element); }
 
 // Identity only: state may legitimately change while a confirmation is pending.
 export function captureRadioSnapshot(element) {
@@ -300,6 +302,12 @@ function describe(element) {
   }
   if (element.tagName === 'INPUT' && element.type === 'time') {
     description.nativeTime = true; description.timeSnapshot = captureTimeSnapshot(element);
+  }
+  for (const [kind, label] of [['month', 'Month'], ['week', 'Week']]) {
+    if (element.tagName === 'INPUT' && element.type === kind) {
+      description[`native${label}`] = true;
+      description[`${kind}Snapshot`] = captureNumberSnapshot(element);
+    }
   }
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);

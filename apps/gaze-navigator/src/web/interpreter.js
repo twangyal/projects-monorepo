@@ -294,6 +294,19 @@ export function interpret(utterance, context = { elements: [] }) {
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
       ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
   }
+  // Reserve explicit period intent before generic text editing, activation or model fallback.
+  // Do not mistake a generic field's replacement payload ("... field to month field") for intent.
+  const periodPrefix = /^(?:set|change|undo)\s+(?:the\s+)?(?:(.*?)\s+)?(month|week)\s+field\b/i.exec(command);
+  if (periodPrefix && !/\bfield\s+to\b/i.test(periodPrefix[1] ?? '')) {
+    const periodSet = /^(?:set|change)\s+(?:the\s+)?(?:(.*?)\s+)?(month|week)\s+field\s+to\s+(.+)$/i.exec(command);
+    const periodUndo = /^undo\s+(?:the\s+)?(?:(.*?)\s+)?(month|week)\s+field[.!?,;:]*$/i.exec(command);
+    const kind = periodPrefix[2].toLowerCase(), name = (periodSet ?? periodUndo)?.[1], value = periodSet?.[3];
+    const format = kind === 'month' ? /^\d{4}-(?:0[1-9]|1[0-2])$/ : /^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/;
+    if ((!periodSet && !periodUndo) || (periodSet && !format.test(value))) return { type: 'unknown', message: `Say a literal ${kind === 'month' ? 'YYYY-MM month' : 'YYYY-Www ISO week with uppercase W'}, such as “set Reporting ${kind} field to ${kind === 'month' ? '2026-11' : '2026-W43'}”, or “undo Reporting ${kind} field”.` };
+    const fields = context.elements.filter(element => element[kind === 'month' ? 'nativeMonth' : 'nativeWeek'] === true);
+    const act = element => ({ type: kind, targetId: element.id, ...(periodUndo ? { undo: true } : { value }) });
+    return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, `${kind} field`) : resolve(name, fields, null, act, `${kind} field`);
+  }
   const timeSet = /^(?:set|change) (?:the )?(?:(.*?) )?time field to (.+)$/i.exec(command);
   const timeUndo = /^undo (?:the )?(?:(.*?) )?time field$/i.exec(command);
   if (timeSet || timeUndo) {
