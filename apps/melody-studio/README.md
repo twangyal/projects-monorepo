@@ -94,7 +94,19 @@ Filter changes are explicit, undoable, autosaved track edits. Blank, nonfinite a
 
 Projects, saved compositions, duplicated tracks, Undo/Redo and reload retain applied filters. Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share the renderer. MIDI does not carry this custom filter. Older projects bypass filtering and retain their original PCM. The two-pole filter processes each oscillator voice before its amplitude envelope; state starts fresh with each note and release length is unchanged. At lower render sample rates the effective cutoff is capped at 45% of the rate. Existing mix peak limiting remains active; strong resonance can make it reduce the whole mix's gain.
 
-Coefficients follow the [W3C Audio EQ Cookbook low-pass filter](https://www.w3.org/TR/audio-eq-cookbook/). This is static subtractive sound shaping, not filter automation, a filter envelope, a track effects bus or musician-quality evaluation. Those remain part of the ACTIVE full-DAW destination.
+Coefficients follow the [W3C Audio EQ Cookbook low-pass filter](https://www.w3.org/TR/audio-eq-cookbook/). The optional song-time cutoff curve below extends this static filter. Per-note filter envelopes, track effects buses and musician-quality acceptance remain part of the ACTIVE full-DAW destination.
+
+### Sweep filter cutoff over song time (#323)
+
+In **Sound → Sound filter**, enable **low-pass filter** and **cutoff curve**, then enter **Cutoff curve points**, one song beat and frequency per line, such as `1 8000`, `5 300`, `9 3000`. Up to64 strictly increasing points use beats1–513 and cutoff20–10000Hz. Cutoff interpolates linearly in Hz and holds its first/last value outside the entered range. The committed graph uses a linear frequency scale. The curve overrides the retained static cutoff; resonance(Q) stays static. Effective cutoff still caps at45% of render sample rate.
+
+Use **Apply sound filter** for one undoable, autosaved edit, or **Discard filter edits** to restore all committed filter fields. Raw text survives track/tool navigation. Blank, malformed, duplicate, unordered or out-of-range points refuse the complete edit. Finish unrelated drafts, suggestions and gestures first. Disable the curve and Apply to restore static cutoff; disable the whole filter and Apply to remove both. Checking the curve without enabling the filter does not activate an effect.
+
+Each oscillator/drum voice follows absolute song time through its release/ring before amplitude shaping and echo placement. Finite echoes repeat the originally filtered voice; they do not resample cutoff at the delayed tap time. Playback, solo, backing, edited-note comparison and WAV/stem/section exports share this renderer. Cropped sections retain original song time; section note edits leave automation anchored; continuation auditions shift the curve with the selected ending. Curves add no tail/duration. Existing frame and peak guards remain.
+
+Changing cutoff uses trapezoidal state-variable integrators to avoid the unstable coefficient-dependent state of a changing direct-form filter. Static and constant-curve voices retain the original Cookbook filter and grouping for exact PCM parity. See Andrew Simper's [trapezoidal SVF derivation](https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf), especially pages4–6. This DSP choice does not establish musician-quality or physical listening acceptance.
+
+Complete project backups, saved compositions, duplication, autosave, Undo/Redo and reload retain optional `filter.curve`. Both MIDI exports omit the effect; older Melody readers may refuse the added nested field. Reference audio stays unchanged. Melody remains ACTIVE toward its full-DAW destination; capture diagnosis#300, audio-clip editing, broader effects/routing and real-use evaluation remain open. [Verification and retained failures](docs/2026-10-24-filter-automation.md).
 
 ### Add rhythmic echo
 

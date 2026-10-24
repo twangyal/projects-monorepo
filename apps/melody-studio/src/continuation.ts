@@ -1,3 +1,4 @@
+import {shiftFilterCurve} from './filter-curve.ts';
 import {shiftPanCurve} from './pan-curve.ts';
 import {shiftVolumeCurve} from './volume-curve.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
@@ -289,6 +290,6 @@ export function auditionComposition(proposal: ContinuationProposal): Composition
     : undefined;
   return validateComposition({
     version: 1, title: checked.base.title, tempo: checked.base.tempo,
-    tracks: [{ ...source, notes, ...(source.panCurve?{panCurve:shiftPanCurve(source.panCurve,shift)}:{}), ...(volumeRamp ? {volumeRamp} : {}), ...(source.volumeCurve ? {volumeCurve:shiftVolumeCurve(source.volumeCurve,shift)} : {}) }],
+    tracks: [{ ...source, notes, ...(source.filter?.curve?{filter:{...source.filter,curve:shiftFilterCurve(source.filter.curve,shift)}}:{}), ...(source.panCurve?{panCurve:shiftPanCurve(source.panCurve,shift)}:{}), ...(volumeRamp ? {volumeRamp} : {}), ...(source.volumeCurve ? {volumeCurve:shiftVolumeCurve(source.volumeCurve,shift)} : {}) }],
   });
 }

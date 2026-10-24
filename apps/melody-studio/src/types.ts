@@ -8,7 +8,7 @@ export interface Note {
   velocity: number;
 }
 export interface SoundEnvelope { attack: number; decay: number; sustain: number; release: number }
-export interface SoundFilter { cutoff: number; resonance: number }
+export interface SoundFilter { cutoff: number; resonance: number; /** Absolute song-beat cutoff in Hz; overrides static cutoff. */ curve?: VolumeCurve }
 export interface SoundEcho { beats: number; decay: number; repeats: number }
 export interface VolumeRamp { start: number; end: number; from: number; to: number }
 export type VolumeCurve = {beat:number;level:number}[];
