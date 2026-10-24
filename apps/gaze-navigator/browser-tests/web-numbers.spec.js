@@ -112,3 +112,17 @@ test('a newer numeric write consumes an earlier applied Undo without duplicate h
   await command(page,'undo number field');await expect(page.locator('#a')).toHaveValue('2');
   expect((await command(page,'undo number field')).message).toContain('Nothing to undo');
 });
+
+test('shared overlay names numeric fields and teaches exact set and Undo on the live page', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await page.evaluate(()=>{const label=document.createElement('label');label.textContent='Quantity';label.style.cssText='position:fixed;top:8px;left:8px;z-index:10;background:white;padding:12px';const e=document.createElement('input');e.type='number';e.id='visible-number';e.value='2';e.min='0';e.max='10';label.append(e);document.body.append(label);});
+  const input=page.locator('#visible-number'),box=await input.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  const panel=page.locator('#gaze-web-navigator section');
+  await expect(panel.locator('.context')).toContainText('Number field: Quantity');
+  await panel.getByText('What can I say?',{exact:true}).click();
+  await expect(panel.getByText('Native numeric fields:',{exact:false})).toContainText('set Quantity number field to 3');
+  for(const [text,value] of [['set Quantity number field to 3','3'],['undo Quantity number field','2']]){
+    await panel.getByLabel('Typed instruction').fill(text);await panel.getByRole('button',{name:'Do it',exact:true}).click();await expect(input).toHaveValue(value);await expect(panel.locator('.status')).toContainText(`Number field set to ${value}`);
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+});

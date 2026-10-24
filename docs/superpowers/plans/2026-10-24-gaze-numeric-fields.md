@@ -10,3 +10,5 @@ Capture native ownership, label, constraints and current value; refuse stale con
 - [ ] Canonical CI, final evidence and issue completion or explicit remaining state.
 
 Review focus: empty required-field restoration; value-attribute step base; site nested-microtask overrides; changed constraints/ownership at focus; same-label clarification and consequential confirmation. Physical microphone/webcam and intended-user acceptance remain #132. Project #8 stays skipped; no PR.
+
+Discovery follow-up: retain ordinary role semantics while displaying Number field for native numeric controls; teach set/Undo in live help. Real overlay test first fails on old label, then all36 native cases pass. Fresh review cleared. Initial source2ef3885 additionally passes all580 non-extension local browser cases on the original4173 origin; the earlier incomplete wrong-origin attempt is retained separately with all observed failure names.

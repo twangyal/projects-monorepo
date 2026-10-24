@@ -98,7 +98,7 @@ function deepActiveElement(document) {
 }
 
 export function describeElement(element) {
-  const role = ROLE_LABELS[element.role] ?? element.role;
+  const role = element.nativeNumber ? 'Number field' : ROLE_LABELS[element.role] ?? element.role;
   const state = element.checked !== undefined ? (element.checked ? ', checked' : ', not checked') : '';
   const value = element.options ? `, ${element.value || 'no choice'}` : element.editable && element.value ? `, contains "${element.value.slice(0, 40)}"` : '';
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
@@ -156,6 +156,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit.</p>
         <p class="hint">Radio choices: "select Express radio button" or "select that radio button" selects and checks the requested choice. Repeating it keeps it selected. Native and binary ARIA radios use the website’s click behavior; mixed or missing custom state is refused.</p>
         <p class="hint">Checkboxes: "check Newsletter" or "uncheck that checkbox" sets the requested state; repeating it keeps that state. Binary ARIA checkboxes and switches use one website click and verify its state. Missing or mixed state is refused. "Click" and "toggle" keep ordinary website activation.</p>
+        <p class="hint">Native numeric fields: "set Quantity number field to 3" or "change number field to -0.25" uses the field’s current min/max/step. "Undo Quantity number field" restores its earlier value, including an empty field. Use decimal digits in the field’s own units; custom ARIA spinbuttons and number words are not supported. This command does not request form submission.</p>
         <p class="hint">Native sliders: "set Volume slider to 40", or "set slider to -0.25" in its own units. "Undo Volume slider" restores its last changed value. Exact min/max/step values are required; custom ARIA sliders are not supported.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
