@@ -450,3 +450,19 @@ test('injected extension selects a strict-CSP website tab and repeats without an
   await typeInstruction(page, 'select Details tab'); await expect(status(page)).toContainText('already selected');
   expect(await page.evaluate(() => window.tabClicks)).toBe(1);
 });
+
+test('injected extension sets a strict-CSP numeric field with constraint refusal and exact Undo', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await page.evaluate(() => {
+    const label=document.createElement('label');label.textContent='Quantity';
+    const input=document.createElement('input');input.type='number';input.id='quantity';input.value='2';input.min='0';input.max='10';label.append(input);document.body.prepend(label);
+    window.numberEvents=[];for(const type of ['input','change'])input.addEventListener(type,()=>window.numberEvents.push([type,input.value]));
+  });
+  const input=page.locator('#quantity');await look(page,input);
+  await typeInstruction(page,'set Quantity number field to 4');await expect(input).toHaveValue('4');await expect(status(page)).toContainText('Number field set to 4');
+  expect(await page.evaluate(()=>window.numberEvents)).toEqual([['input','4'],['change','4']]);
+  await typeInstruction(page,'set Quantity number field to 4.5');await expect(input).toHaveValue('4');await expect(status(page)).toContainText('current min, max or step');
+  await typeInstruction(page,'undo Quantity number field');await expect(input).toHaveValue('2');
+});

@@ -294,6 +294,19 @@ export function interpret(utterance, context = { elements: [] }) {
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
       ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
   }
+  // Explicit numeric-field intent does not change ordinary text or slider commands.
+  const numberSet = /^(?:set|change) (?:the )?(?:(.*?) )?number field to (.+)$/i.exec(command);
+  const numberUndo = /^undo (?:the )?(?:(.*?) )?number field$/i.exec(command);
+  if (numberSet || numberUndo) {
+    const name = (numberSet ?? numberUndo)[1];
+    const value = numberSet?.[2];
+    if (numberSet && (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) || !Number.isFinite(Number(value)))) {
+      return { type: 'unknown', message: 'Say an exact numeric value, such as “set Quantity number field to 3”, in the field’s own units.' };
+    }
+    const fields = context.elements.filter(element => element.nativeNumber === true);
+    const act = element => ({ type: 'number', targetId: element.id, ...(numberUndo ? { undo: true } : { value: value.replace(/^\+/, '').replace(/\.$/, '') }) });
+    return name ? resolve(name, fields, null, act, 'number field') : deictic(fields, act, 'number field');
+  }
   // Explicit slider intent stays separate from ordinary text/option commands.
   const sliderSet = /^(?:set|change) (?:the )?(?:(.*?) )?slider to (.+)$/i.exec(command);
   const sliderUndo = /^undo (?:the )?(?:(.*?) )?slider$/i.exec(command);

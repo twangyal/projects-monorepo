@@ -232,6 +232,11 @@ export function captureSelectSnapshot(element) {
       groupLabel: option.parentElement?.tagName === 'OPTGROUP' ? option.parentElement.label : null })) };
 }
 
+export function captureNumberSnapshot(element) {
+  return { ...captureRadioSnapshot(element), valueAttribute: element.getAttribute('value'), value: element.value,
+    min: element.min, max: element.max, step: element.step, badInput: element.validity?.badInput };
+}
+
 // Identity only: state may legitimately change while a confirmation is pending.
 export function captureRadioSnapshot(element) {
   const frames = [];
@@ -283,6 +288,9 @@ function describe(element) {
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {
     if (element.tagName === 'INPUT' && ['checkbox', 'radio'].includes(element.type)) description.checked = element.checked;
     else if (['true', 'false'].includes(element.getAttribute('aria-checked'))) description.checked = element.getAttribute('aria-checked') === 'true';
+  }
+  if (element.tagName === 'INPUT' && element.type === 'number') {
+    description.nativeNumber = true; description.numberSnapshot = captureNumberSnapshot(element);
   }
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);

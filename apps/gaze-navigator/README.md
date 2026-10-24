@@ -72,6 +72,14 @@ Ordinary typing, clearing, correction and text Undo keep the focused or explicit
 
 [Verification and boundaries](../../docs/2026-10-16-gaze-writable-fields.md) distinguish hosted Node/Chromium checks from the unavailable local execution environment. This does not establish real microphone/webcam or broad framework acceptance.
 
+### Setting native numeric fields (#316)
+
+Look at a native numeric form field and say **“set Quantity number field to 3”**, **“change number field to -0.25”**, or **“undo Quantity number field”**. Equal names ask for a numbered choice; consequential names still require confirmation. The explicit **number field** phrase keeps these commands separate from ordinary dictation and sliders. Use signed decimal digits in the field's own units; number words, percentages, exponent notation and custom ARIA spinbuttons are not converted.
+
+The requested literal decimal is retained, including digits beyond JavaScript's ordinary number precision. Admission uses the browser's current native min/max/step rules and numeric precision, rather than rounding to a permitted step. This does not add arbitrary-precision arithmetic to the website. Locked, hidden, replaced or changed controls and focus-handler changes refuse before writing. One native value change emits ordinary input/change events; the website can react. Feedback checks the retained field after website microtasks and reports overrides rather than forcing the value or submitting the form.
+
+Numeric Undo is separate from text and slider Undo, belongs to that exact native element and retains up to 20 prior values. Unchanged requests do not add entries. An earlier empty field can be restored even if it is required; this clears the field without submitting it. A nonempty earlier value must still fit current numeric limits. Refused Undo retains recovery; new numeric writes and overlapping Undo keep their actual ordering. Replaced controls do not inherit history. Physical speech/gaze and intended-user acceptance remain unverified in #132.
+
 ### Setting native sliders (#283)
 
 Look at a native range slider and say **“set Volume slider to 40”** (using its name), or **“set slider to 40”** for the slider under the circle. Signed decimals such as `set Balance slider to -0.25` work in the control's own numeric units. The word **slider** makes this explicit; ordinary text/option commands retain their existing meaning. Percentages and spoken number words are not converted. Equal names ask a numbered question; Cancel/Pause retire the pending action.
