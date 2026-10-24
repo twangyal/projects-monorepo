@@ -1,0 +1,262 @@
+[
+  {
+    "pair": 0,
+    "mode": "cold",
+    "startup": {
+      "requested": 0,
+      "startTime": 0,
+      "handoffTime": 0,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677664856979514
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677393040878034
+    }
+  },
+  {
+    "pair": 0,
+    "mode": "warm",
+    "startup": {
+      "requested": 0.2,
+      "startTime": 0,
+      "handoffTime": 0.2002721088435374,
+      "wallMs": 187.8000000002794,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677664697053302
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677385317022998
+    }
+  },
+  {
+    "pair": 1,
+    "mode": "warm",
+    "startup": {
+      "requested": 0.2,
+      "startTime": 0.020317460317460317,
+      "handoffTime": 0.22058956916099773,
+      "wallMs": 204.60000000009313,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767766515613512
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 439.0,
+      "rms": 0.17677384171453678
+    }
+  },
+  {
+    "pair": 1,
+    "mode": "cold",
+    "startup": {
+      "requested": 0,
+      "startTime": 0,
+      "handoffTime": 0,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767766482047164
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677390662291398
+    }
+  },
+  {
+    "pair": 2,
+    "mode": "cold",
+    "startup": {
+      "requested": 0,
+      "startTime": 0.020317460317460317,
+      "handoffTime": 0.020317460317460317,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677664906776627
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767739450447646
+    }
+  },
+  {
+    "pair": 2,
+    "mode": "warm",
+    "startup": {
+      "requested": 0.2,
+      "startTime": 0,
+      "handoffTime": 0.2002721088435374,
+      "wallMs": 181.70000000018626,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677664933637255
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677383079703624
+    }
+  },
+  {
+    "pair": 3,
+    "mode": "warm",
+    "startup": {
+      "requested": 0.2,
+      "startTime": 0,
+      "handoffTime": 0.2002721088435374,
+      "wallMs": 181.60000000009313,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767766515402039
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677386113692461
+    }
+  },
+  {
+    "pair": 3,
+    "mode": "cold",
+    "startup": {
+      "requested": 0,
+      "startTime": 0,
+      "handoffTime": 0,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": false,
+    "native": {
+      "zeroRuns": [
+        [
+          4353,
+          4794
+        ]
+      ],
+      "hz": 436.0,
+      "rms": 0.17600379801439947
+    },
+    "normalized": {
+      "zeroRuns": [
+        [
+          2177,
+          2397
+        ]
+      ],
+      "hz": 436.0,
+      "rms": 0.1760028607406223
+    }
+  },
+  {
+    "pair": 4,
+    "mode": "cold",
+    "startup": {
+      "requested": 0,
+      "startTime": 0.020317460317460317,
+      "handoffTime": 0.020317460317460317,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767766467367772
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767739242503221
+    }
+  },
+  {
+    "pair": 4,
+    "mode": "warm",
+    "startup": {
+      "requested": 0.2,
+      "startTime": 0,
+      "handoffTime": 0.2002721088435374,
+      "wallMs": 181.70000000018626,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "route": "normal",
+    "error": null,
+    "qualityPass": true,
+    "native": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.1767766459977244
+    },
+    "normalized": {
+      "zeroRuns": [],
+      "hz": 440.0,
+      "rms": 0.17677383455399642
+    }
+  }
+]

@@ -1,0 +1,557 @@
+{
+  "pair": 4,
+  "mode": "cold",
+  "route": "normal",
+  "error": null,
+  "qualityError": null,
+  "normalized": {
+    "id": "cbf56ac7-e053-436a-89c1-86d8e044bdf1",
+    "kind": "microphone",
+    "captureTempo": 240,
+    "decodedSampleRate": 44100,
+    "decodedChannels": 2,
+    "decodedFrames": 124162,
+    "analyzedFrames": 124162,
+    "frameCount": 62081,
+    "sha256": "3f4378b95227186dd89c44d836389ff27f9146e972a58f9402dcee0957670f80"
+  },
+  "inputs": [
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 4096,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 4608,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 4736,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 4864,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 4992,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5120,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5248,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5376,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5504,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5632,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5760,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 5888,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 6016,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 6144,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          43
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 8320,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          72,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 8448,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 8576,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 8704,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          128
+        ]
+      ]
+    },
+    {
+      "type": "zero-input-route300",
+      "currentFrame": 8832,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 128,
+      "zeroRuns": [
+        [
+          0,
+          1
+        ]
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "type": "ready",
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "type": "armed",
+      "startFrame": 53246,
+      "limitFrame": 935246
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 1026
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 5506
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 9986
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 14466
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 18946
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 23426
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 27906
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 32386
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 36866
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 41346
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 45826
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 50306
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 54786
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 59266
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 63746
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 68226
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 72706
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 77186
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 81666
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 86146
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 90626
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 95106
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 99586
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 104066
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 108546
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 113026
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 117506
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 121986
+    }
+  ],
+  "bytes": {
+    "length": 496648
+  },
+  "complete": {
+    "type": "complete",
+    "samples": {
+      "frames": 124162
+    },
+    "sampleRate": 44100,
+    "channels": 2,
+    "startFrame": 53246,
+    "endFrame": 177408
+  },
+  "routes": [
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode"
+  ],
+  "notice": "Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.",
+  "capture": "Finding the notes…",
+  "observed": {
+    "requests": 1,
+    "stopped": 1,
+    "sources": [
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 1.2073922902494332,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.20739229024943312,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.4573922902494331,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.7073922902494331,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.9573922902494331,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      }
+    ],
+    "startup": {
+      "requested": 0,
+      "startTime": 0.020317460317460317,
+      "handoffTime": 0.020317460317460317,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "elapsed": 4.8152834467120185,
+    "released": true
+  }
+}
