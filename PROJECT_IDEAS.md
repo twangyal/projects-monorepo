@@ -413,3 +413,5 @@ Gaze #318 final acceptance at `01623c88`:211 units, static/build checks and all6
 ### 2026-10-24 — Motion retained shape drawing (#319)
 
 Motion at `apps/motion-studio` adds clean Line/Rectangle/Ellipse drawing beside default Freehand. Ordinary retained paths support existing point/fill editing, poses, history, saved projects and rendered exports; preview is owned and resource-bound. [Checkpoint](apps/motion-studio/docs/2026-10-24-shape-drawing.md) records283units/static/build and6 focused native cases, including decoded media and phone drafts. Complete browser/review/canonical acceptance is tracked separately. Motion remains ACTIVE against the full authored-animation/useful-assistance destination; #8 stays skipped.
+
+Motion #319 final acceptance at `402ee0b`:283units/static/build and all209 native browser cases pass both locally and in canonical CI. [Final receipt](docs/2026-10-24-motion-shapes-acceptance.md) supersedes pending checkpoint status and preserves initial harness failures/review scope. Motion stays ACTIVE; #8 skipped.
