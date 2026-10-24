@@ -433,3 +433,5 @@ Gaze at `apps/gaze-navigator` supports explicit HH:MM/HH:MM:SS native time set/U
 Gaze #321 follow-through fixes this/that targeting for existing Date/Number commands alongside new Time controls. Two observed RED regressions become GREEN; final217units/static/build and84native cases pass. Complete canonical217-unit/injected-extension/browser gates supersede the earlier215-unit source and remain tracked in #321. Gaze ACTIVE; #132 open; #8 skipped.
 
 Gaze #321 final source `655ebb3` passes217local units/static/build and84targeted native cases. Canonical full-browser/injected-extension acceptance remains pending in run40107178293 (Chromium install/browser work still running); [durable verification handoff](docs/2026-10-24-gaze-time-fields-verification.md). #321 remains open; Gaze ACTIVE; physical #132 open; #8 skipped.
+
+Gaze #321 final acceptance at `655ebb3`:217units/lint/build and all716browser cases pass in canonical40107178293, including native time injection at4viewports. [Final acceptance](docs/2026-10-24-gaze-time-fields-acceptance.md) supersedes the earlier pending handoff. Gaze ACTIVE; physical #132 open; #8 skipped.

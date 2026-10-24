@@ -25,8 +25,8 @@ Files: src/web/{page-context,page-actions,controller,interpreter,overlay}.js; te
 - [x] RED4interpreter cases and native absent-time action; baseline211units.
 - [x] Minimal intent/descriptor/shared executor/time history/label/help; GREEN unit/static/build and native time cases.
 - [x] Native minute/second/midnight/overnight/min/max/step/step-base; empty/fractional/no-op/overlapping Undo; stale/focus/locks/customrole/site override; clarification/confirmation/cancel and visible phone overlay. Existing24date/36number cases regress shared code.
-- [ ] Fresh review and connected-tools source commit. Observe full canonical browser+unit/static/build gates, including injected extension4viewports.
-- [ ] Root final receipt/roadmap and actual issue state. No physical speech/gaze acceptance claim.
+- [x] Fresh review and connected-tools source commit. Observe full canonical browser+unit/static/build gates, including injected extension4viewports.
+- [x] Root final receipt/roadmap and actual issue state. No physical speech/gaze acceptance claim.
 
 ## Ledger
 
@@ -37,3 +37,5 @@ Task1 progress: baseline211pass; first215unit/static/build green and24native tim
 Ruling: include the identical existing Date/Number deictic targeting bug under #321 rather than create parser-line tickets; this closes the same gaze-value command gap, at the cost of requiring full fresh217unit/84native and canonical regressions. Both new unit regressions show actual unknown-name RED, then GREEN after resolver fixes. One numeric expected-value type was corrected to the existing string contract. Final217unit/static/build and84native cases pass.
 
 Durable handoff: final655ebb3 source/local217unit+84native pass. Canonical40107178293 is pending at15:34UTC: allunit/lint/build steps successful, shard3success, shard1browser/shard2Chromiuminstall. Root docs/2026-10-24-gaze-time-fields-verification.md records exact remaining work. Leave #321 open until full final-source browser/injected-extension gates are observed.
+
+Task1 complete: final655ebb3 canonical40107178293 passes217units/lint/build/all716browser cases (244/240/232), including4actual injected time cases. Earlier pending snapshot remains historical; final root acceptance supersedes it. #321 can close; #132 stays open.
