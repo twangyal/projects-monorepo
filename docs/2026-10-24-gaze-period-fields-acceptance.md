@@ -22,7 +22,7 @@ An attempted nonexistent `build:extension:test` command was corrected to existin
 
 ## Canonical verification
 
-[Run40136272669](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669) verifies the exact source across three isolated shards, including installed-extension cases. Acceptance remains pending until observed below.
+[Run40136272669](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669) verifies the exact source across three isolated shards, including installed-extension cases. Two successful jobs establish518/780cases: [shard3/job120998340241](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340241) passes255/255 in3.3min; [shard2/job120998340420](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340420) passes263/263 in3.2min. Both confirm228units, syntax110 and build. Real installed-extension month/week set, step refusal and Undo pass in short/compact-boundary viewports. Shard1/job120998340417 remains in Chromium installation; complete780-case acceptance is still pending.
 
 ## Remaining destination
 
