@@ -22,7 +22,7 @@ An attempted nonexistent `build:extension:test` command was corrected to existin
 
 ## Canonical verification
 
-[Run40136272669](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669) verifies the exact source across three isolated shards, including installed-extension cases. Two successful jobs establish518/780cases: [shard3/job120998340241](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340241) passes255/255 in3.3min; [shard2/job120998340420](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340420) passes263/263 in3.2min. Both confirm228units, syntax110 and build. Real installed-extension month/week set, step refusal and Undo pass in short/compact-boundary viewports. Shard1/job120998340417 remains in Chromium installation; complete780-case acceptance is still pending.
+[Run40136272669](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669) verifies the exact source across three isolated shards, including installed-extension cases. Two successful jobs establish518/780cases: [shard3/job120998340241](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340241) passes255/255 in3.3min; [shard2/job120998340420](https://github.com/twangyal/projects-monorepo/actions/runs/40136272669/job/120998340420) passes263/263 in3.2min. Both confirm228units, syntax110 and build. Real installed-extension month/week set, step refusal and Undo pass in short/compact-boundary viewports. At the intermediate observation, shard1/job120998340417 remained in Chromium installation; this pending state is superseded by the final acceptance below.
 
 ## Remaining destination
 
@@ -156,3 +156,11 @@ Excerpts below remove trailing whitespace only; they are readable error records,
   5 passed (1.4m)
 
 ```
+
+## Final canonical acceptance — 2026-10-24
+
+Run40136272669 completes successfully at22:08:05UTC on exact source `a26b195d233d694acd3a1b6b76cf8dbdc5e3f590`. All three jobs pass: shard1/job120998340417262cases in5.3min, shard2/job120998340420263cases in3.2min, shard3/job120998340241255cases in3.3min, totaling780/780. Every job passes228units, syntax110 and extension-test build. The unchanged full installed-extension suite includes month/week set, exact events, native step refusal and Undo in all four viewports. Shard1's Chromium installation took7min31s before browser tests began; no installation root cause is inferred.
+
+Canonical logs also pass desktop confirmation timing, desktop maximum20drafts (4.4s), and desktop draft download/reopen (9.5s), as well as corresponding narrow cases. The short maximum-drafts case is included in the successful complete suite. Canonical success does not erase the local676/680 and separate5/6results or prove the portable failure cause. No product source, deadline or acceptance threshold was changed to accommodate them.
+
+Software milestone#325 is complete; close its tracker with these exact gates. Physical#132 stays open, deferred direct boundary coverage remains explicit, and the extension-first project remains ACTIVE. The separate retained Melody#300 trace-boundary analysis is research progress, not a causal fix or issue completion.

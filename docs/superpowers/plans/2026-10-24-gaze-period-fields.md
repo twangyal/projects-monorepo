@@ -23,8 +23,8 @@
 - [x] Currentmain eb05b93/clean linked detached worktree/open issues/PRs/direction;217baselineunits pass.
 - [x] Eight intent tests (6RED/2existing refusal passes); controlled pre-feature interpreter reversion produces2native period REDs; restoreGREEN.
 - [x] Descriptions/snapshots/setters/history/interpreter/help/extension tests;225unit/static/build and96focused native pass.
-- [x] Final228unit/static/build/56native checks; fresh review and one necessary fix pass. Full canonical check pending.
-- [x] Connected-tool source commit `a26b195`, checkpoint/roadmap; issue remains open pending canonical acceptance.
+- [x] Final228unit/static/build/56native checks; fresh review and one necessary fix pass. Full canonical780/780 passes on source`a26b195` (run40136272669).
+- [x] Connected-tool source commit `a26b195`, checkpoint/roadmap; final canonical acceptance documented; close#325; physical#132 remains open.
 
 ## Ledger
 
