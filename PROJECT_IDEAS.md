@@ -403,3 +403,7 @@ Karaoke #317 final acceptance at `ac261785`: **206 Python, 154 TypeScript and al
 ### 2026-10-24 — Melody source-clock handoff evidence (#300)
 
 Melody recording investigation retains a fixed five-cold/five-warm source-clock handoff cohort with all complete native/normalized captures, protocol/source pins and independent replay. Cold pair3 preserves a10ms native zero gap and the original436Hz quality-window failure; nine of ten quality checks pass, while all ten structural captures complete. Warm5 have no such gaps, without causal or production-fix acceptance. [Evidence and limitations](docs/research/melody-backed-recording/source-clock/README.md) retain observer/scheduling/small-cohort limits. Shipping source is restored:463 units/static/build and21 unchanged recording cases pass. Melody stays ACTIVE and #300 stays open; #8 remains skipped.
+
+### 2026-10-24 — Gaze native date form control (#318)
+
+Gaze at `apps/gaze-navigator` adds explicit ISO date-field set/Undo with native calendar/min/max/step admission, captured identity/lock guards, independent date history and in-overlay discovery/help. [Checkpoint](apps/gaze-navigator/docs/2026-10-24-date-fields.md) records red-first intent/native tests,211 passing units/static/build and focused DOM scope; complete canonical browser gates are tracked separately. Gaze stays ACTIVE and physical speech/gaze/intended-user acceptance #132 remains open. #8 stays skipped.

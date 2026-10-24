@@ -294,6 +294,15 @@ export function interpret(utterance, context = { elements: [] }) {
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
       ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
   }
+  const dateSet = /^(?:set|change) (?:the )?(?:(.*?) )?date field to (.+)$/i.exec(command);
+  const dateUndo = /^undo (?:the )?(?:(.*?) )?date field$/i.exec(command);
+  if (dateSet || dateUndo) {
+    const name = (dateSet ?? dateUndo)[1], value = dateSet?.[2];
+    if (dateSet && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { type: 'unknown', message: 'Say a literal YYYY-MM-DD date, such as “set Departure date field to 2026-11-01”.' };
+    const fields = context.elements.filter(element => element.nativeDate === true);
+    const act = element => ({ type: 'date', targetId: element.id, ...(dateUndo ? { undo: true } : { value }) });
+    return name ? resolve(name, fields, null, act, 'date field') : deictic(fields, act, 'date field');
+  }
   // Explicit numeric-field intent does not change ordinary text or slider commands.
   const numberSet = /^(?:set|change) (?:the )?(?:(.*?) )?number field to (.+)$/i.exec(command);
   const numberUndo = /^undo (?:the )?(?:(.*?) )?number field$/i.exec(command);

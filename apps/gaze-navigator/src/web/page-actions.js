@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, accessibleName } from './page-context.js';
+import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -214,6 +214,49 @@ export function setNumberValue(element, value, snapshot = captureNumberSnapshot(
         element.value === text;
       return { ok, message: ok ? `Number field set to ${element.value || 'empty'}.`
         : `The website did not retain the requested available number field (observed ${element.value || 'empty'}). Check it before continuing.` };
+    }) };
+}
+
+export function setDateValue(element, value, snapshot = captureDateSnapshot(element), { restore = false } = {}) {
+  const available = () => element.tagName === 'INPUT' && element.type === 'date' &&
+    [null, 'combobox'].includes(element.getAttribute('role')) && element.isConnected &&
+    !element.readOnly && unlocked(element) && controlVisible(element);
+  const unchanged = (includeValue = true) => {
+    const current = captureDateSnapshot(element);
+    return Object.keys(snapshot).filter(key => key !== 'frames' && (includeValue || !['value', 'badInput'].includes(key)))
+      .every(key => current[key] === snapshot[key]) && current.frames.length === snapshot.frames.length &&
+      current.frames.every((frame, i) => frame.element === snapshot.frames[i].element &&
+        frame.document === snapshot.frames[i].document && frame.element.isConnected);
+  };
+  const refused = () => ({ ok: false, message: 'The date field changed, is unavailable or is not a native date input. Look at the current field and try again.' });
+  if (!available() || !unchanged()) return refused();
+  // Empty is reserved for restoring an empty history entry, including a required
+  // field. Nonempty edits must obey the browser's exact calendar constraints.
+  if (typeof value !== 'string' || (value === '' && !restore)) return refused();
+  const text = String(value);
+  const probe = element.cloneNode(false);
+  setNativeValue(probe, String(value));
+  const dateValid = input => !input.validity.badInput && !input.validity.rangeUnderflow &&
+    !input.validity.rangeOverflow && !input.validity.stepMismatch;
+  if (value !== '' && (probe.value !== text || !Number.isFinite(probe.valueAsNumber) || !dateValid(probe))) {
+    return { ok: false, message: 'That date does not fit the current calendar, min, max or step. No value was changed.' };
+  }
+  const before = element.value;
+  if (!element.validity.badInput && before === text) {
+    return { ok: true, changed: false, message: `Date field is already ${before || 'empty'}.` };
+  }
+  element.focus({ preventScroll: true });
+  if (!available() || !unchanged() || !ownsFocus(element)) return refused();
+  setNativeValue(element, String(value));
+  const view = element.ownerDocument.defaultView;
+  element.dispatchEvent(new view.Event('input', { bubbles: true, composed: true }));
+  if (available() && unchanged(false)) element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  return { before, wrote: true, message: 'Checking the date field…',
+    followUp: new Promise(resolve => view.setTimeout(resolve, 0)).then(() => {
+      const ok = available() && unchanged(false) && dateValid(element) &&
+        element.value === text;
+      return { ok, message: ok ? `Date field set to ${element.value || 'empty'}.`
+        : `The website did not retain the requested available date field (observed ${element.value || 'empty'}). Check it before continuing.` };
     }) };
 }
 

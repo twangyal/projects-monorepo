@@ -237,6 +237,8 @@ export function captureNumberSnapshot(element) {
     min: element.min, max: element.max, step: element.step, badInput: element.validity?.badInput };
 }
 
+export function captureDateSnapshot(element) { return captureNumberSnapshot(element); }
+
 // Identity only: state may legitimately change while a confirmation is pending.
 export function captureRadioSnapshot(element) {
   const frames = [];
@@ -291,6 +293,9 @@ function describe(element) {
   }
   if (element.tagName === 'INPUT' && element.type === 'number') {
     description.nativeNumber = true; description.numberSnapshot = captureNumberSnapshot(element);
+  }
+  if (element.tagName === 'INPUT' && element.type === 'date') {
+    description.nativeDate = true; description.dateSnapshot = captureDateSnapshot(element);
   }
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);

@@ -21,11 +21,13 @@ export function createController({ window, actions = pageActions, interpret = in
   const rangeHistory = new WeakMap();
   const numberHistory = new WeakMap();
   const numberRevision = new WeakMap();
+  const dateHistory = new WeakMap();
+  const dateRevision = new WeakMap();
 
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
 
   function confirmable(action, element) {
-    if (['activate', 'check', 'select-radio', 'select-tab', 'number'].includes(action.type)) return element.consequential;
+    if (['activate', 'check', 'select-radio', 'select-tab', 'number', 'date'].includes(action.type)) return element.consequential;
     if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
@@ -39,7 +41,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
@@ -58,7 +60,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -84,26 +86,28 @@ export function createController({ window, actions = pageActions, interpret = in
         break;
       }
       case 'edit': result = edit(element, target.name, action.edit); break;
+      case 'date':
       case 'number': {
-        const values = numberHistory.get(element) ?? [];
+        const isDate = action.type === 'date', histories = isDate ? dateHistory : numberHistory, revisions = isDate ? dateRevision : numberRevision;
+        const values = histories.get(element) ?? [];
         const entry = values.at(-1);
-        if (action.undo && !entry) { result = { ok: false, message: 'Nothing to undo in this number field.' }; break; }
-        result = actions.setNumberValue(element, action.undo ? entry.value : action.value, target.numberSnapshot, { restore: Boolean(action.undo) });
+        if (action.undo && !entry) { result = { ok: false, message: `Nothing to undo in this ${isDate ? 'date' : 'number'} field.` }; break; }
+        result = actions[isDate ? 'setDateValue' : 'setNumberValue'](element, action.undo ? entry.value : action.value, target[isDate ? 'dateSnapshot' : 'numberSnapshot'], { restore: Boolean(action.undo) });
         if (result.wrote || result.ok) {
-          const revision = (numberRevision.get(element) ?? 0) + 1;
-          numberRevision.set(element, revision);
+          const revision = (revisions.get(element) ?? 0) + 1;
+          revisions.set(element, revision);
           if (action.undo) {
             // Consume an applied Undo now, before another numeric command can
             // capture its result. Reinstate only an unsuperseded site refusal.
             values.pop();
             if (result.followUp) result.followUp = result.followUp.then(later => {
-              if (!later.ok && numberRevision.get(element) === revision) values.push(entry);
+              if (!later.ok && revisions.get(element) === revision) values.push(entry);
               return later;
             });
           } else if (result.wrote) {
             values.push({ value: result.before }); if (values.length > HISTORY_LIMIT) values.shift();
           }
-          numberHistory.set(element, values);
+          histories.set(element, values);
         }
         break;
       }
