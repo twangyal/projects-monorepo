@@ -28,12 +28,14 @@ Files: new src/chord-voicing.ts, tests/chord-voicing.test.ts and .spec.ts; src/m
 
 - [x] RED helper: literal up/down expected graph; wide/exact-octave bounds; stale/malformed/drum/unison/singleton/direction/collision/capacity. Confirm baseline463 units.
 - [x] Minimal helper implementation; GREEN geometry/full units. Native RED missing action then guarded UI in existing chord panel and both activation lists.
-- [ ] Native ordinary project/backups/reference/MIDI/WAV/history/reload, refusal/drafts/focused phone checks. Preserve initial failures and actual verification scopes.
-- [ ] Full project checks/native gates, fresh review and connected-tools source commit.
-- [ ] Observe canonical CI; root-only final receipt/roadmap/issue state reflecting actual gates.
+- [x] Native ordinary project/backups/reference/MIDI/WAV/history/reload, refusal/drafts/focused phone checks. Preserve initial failures and actual verification scopes.
+- [x] Full project checks/native gates, fresh review and connected-tools source commit.
+- [x] Observe canonical CI; root-only final receipt/roadmap/issue state reflecting actual gates.
 
 ## Ledger
 
 Pre-flight: helper consumes Composition and returns a validated independent Composition; commit preserves reference document/history. Existing renderer/exporters consume ordinary pitch fields unchanged. Current source402ee0b; Motion #319 code is complete, local283unit/209browser gates pass, hosted CI pending. No PR.
 
 Task1 progress: baseline463units pass; missing-module RED then6helperGREEN; native missing actionRED.469units/lint/build pass; first2nativecases pass8.9s. Three final cases included in full267browser invocation. Freshreview no blockers and independently6helperpass; no independent browser claim.
+
+Task1 complete: source c6be69e; local and canonical469units/static/build/all267browser pass. See docs/2026-10-24-melody-chord-voicing-acceptance.md. Original capture-study artifacts for separate #300 were lost before commit; they are not part of #320 acceptance.

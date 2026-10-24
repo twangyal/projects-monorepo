@@ -419,3 +419,5 @@ Motion #319 final acceptance at `402ee0b`:283units/static/build and all209 nativ
 ### 2026-10-24 — Melody chord octave placement (#320)
 
 Melody at `apps/melody-studio` adds explicit Raise lowest/Lower highest chord voice controls with exact-onset grouping, whole-octave placement, MIDI range/collision refusal and preserved timing/expression/references. Ordinary notes carry through history/backups/MIDI/WAV. [Checkpoint](apps/melody-studio/docs/2026-10-24-chord-voicing.md) records469units/static/build, focused native media/history/phone checks and review; complete native/canonical gates are tracked separately. Melody remains ACTIVE against its full DAW destination; recording #300 remains open and #8 skipped.
+
+Melody #320 acceptance at `c6be69e`:469units/static/build and all267browser cases pass locally and in canonical CI. [Final receipt](docs/2026-10-24-melody-chord-voicing-acceptance.md) supersedes pending status. Separate #300 observer-control raw artifacts were lost before commit; [the limitation](docs/research/melody-backed-recording/observer-control-lost-cohort.md) preserves only provisional observations. Melody remains ACTIVE; #300 open; #8 skipped.

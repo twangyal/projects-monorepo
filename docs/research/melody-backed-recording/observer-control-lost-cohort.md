@@ -1,0 +1,11 @@
+# Lost observer-control cohort — #300
+
+The first predeclared observer ON/OFF control ran six cold-source pairs (12 sessions), alternating order, one Chromium143 worker, no retries, source9045d689674e9caf415861c1d048777e4e895130. The captured synthetic440Hz/.25gain path used the original controller/count-in,5normal backing routes and2.4s Finish. The zero scan/message branch toggled via processorOptions, with worklet-origin acknowledgement.
+
+Before a workspace reset, producer checks reported12structural completions and12passing original frequency/RMS windows. Independent review decoded all24complete native/normalized payloads and reported a single OFFpair2 native exact-zero interval[91671,92112) at44100Hz (10ms beginning2.078707s), normalized[45836,46056) at22050Hz. Other11captures had no>=8samplezero interval. The gap was outside the original one-second quality window beginning0.1s. Eleven source handoffs advanced0; pair5ON advanced0.0058049886621315185s despite requested wait0. Five verifier tests passed; restored baseline463units/static/build and10unchanged controller browser cases passed36.5s. Reviewer did not rerun browser captures/shipping checks.
+
+**The complete raw captures, receipts, manifest, probe, patch, replay and verifier directory were not committed before reset and are now unavailable.** These are provisional recorded observations, not a durable independently replayable archive. Do not present the lost payloads as retained, combine them into later incidence calculations, or claim a production fix. Existing committed source-clock/output-route archives remain intact. No shipping recording change was committed.
+
+The review additionally noted runtime/worker metadata was recorded rather than independently enforced by replay; full backup/reference checks were producer runtime assertions without retained before/after whole backups. OFF could not localize a gap upstream. The first launch ran npm from the wrong directory before any capture; five final replay tests passed after correcting a missing Path import.
+
+#300 remains OPEN. Any repeat must be labeled a separate cohort with all new outcomes retained, not a recovery or silent replacement of these lost captures.
