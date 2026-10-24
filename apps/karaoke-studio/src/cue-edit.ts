@@ -94,3 +94,18 @@ export function insertCue(cues: Cue[], duration: number, text: string, rawStart:
   before.splice(insertIndex, 0, cue);
   return { cues: validateCues(before, duration), insertIndex };
 }
+
+/** Literal case-sensitive whole-editor word correction; timing is never shifted. */
+export function replaceCueWords(cues: Cue[], duration: number, find: string, replacement: string): { cues: Cue[]; occurrences: number; changed: number[] } {
+  if (!find.trim() || Array.from(find).length > 240) throw new Error('Enter 1–240 literal characters to replace. Matching is case-sensitive.');
+  if (Array.from(replacement).length > 240) throw new Error('Replacement text: use at most 240 characters.');
+  const before = validateCues(cues, duration), changed: number[] = [];
+  let occurrences = 0;
+  const proposed = before.map((cue, index) => {
+    const parts = cue.text.split(find); occurrences += parts.length - 1;
+    const text = parts.join(replacement);
+    if (text !== cue.text) changed.push(index);
+    return { ...cue, text };
+  });
+  return { cues: validateCues(proposed, duration), occurrences, changed };
+}

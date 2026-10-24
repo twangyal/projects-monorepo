@@ -651,3 +651,11 @@ Insertion makes one unsaved Undo/Redo edit. Existing title, pasted draft and unr
 See [verification and limits](docs/2026-10-23-line-insertion.md). Automatic multilingual recognition and real-song quality remain separate work in #241.
 
 Automatic line exclusion verification: [2026-10-23 receipt](docs/2026-10-23-review-exclusion.md).
+
+### Correct repeated lyric words (#317)
+
+Open **Replace lyric words**, enter **Literal text to replace** and **Replacement lyric text**, and review every changed line's before/after text. Matching is literal and case-sensitive, with exact spacing; it does not use regex, normalize Unicode or generate words. Nonoverlapping occurrences within each current cue are replaced, including repeated choruses. Pasted drafts and source recognition are separate and are not searched or changed.
+
+**Apply lyric word replacements** makes one unsaved Undo/Redo edit, retaining every cue time, unrelated numeric spelling, clip title and pasted draft. Use **Save lyrics** separately to persist the result for SRT/video. The entire current cue graph and proposed text must fit the existing limits; correct invalid cue times first. Empty replacement can remove a fragment, but a line cannot become empty. No-match, identical replacements and invalid proposals preserve history and playback. Successful Apply retires obsolete listening, import review and timing capture through the ordinary editing flow.
+
+Preview refreshes when current cues change. Apply checks the current proposal again; there is no delayed stale result. Utility fields clear after successful Apply and when opening another clip, to prevent accidental repeated application. They are session-only and are outside lyric history until applied. This improves manual correction tools, not measured recognition/alignment quality or user correction effort; #241 remains open. [Verification checkpoint](docs/2026-10-24-word-replacement.md).
