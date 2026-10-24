@@ -451,3 +451,5 @@ Melody #323 final source `19d2601` passes canonical478units/lint/types/build and
 ### 2026-10-24 — Git History recent issue comments (#324)
 
 Git History at `apps/git-history` extends explicit discussion retrieval with one bounded recent page of direct-commit issue progress, attributed safe quotes in HTML/JSON, partial-failure retention and honest count/omission estimates. [Checkpoint](apps/git-history/docs/2026-10-24-issue-comments.md) records RED→GREEN tests and review; full/canonical gates follow separately. Git History ACTIVE; #8 skipped.
+
+Git History #324 source `67102a8` has fresh375-test Python verification (2expected skips),18focused/18Node/static checks and pre-final54native pass. Final-source native and canonical3-version matrix remain pending; [durable verification handoff](docs/2026-10-24-git-history-issue-comments-verification.md). Issue remains open; Git History ACTIVE; #8 skipped.
