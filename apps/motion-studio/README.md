@@ -54,6 +54,12 @@ rounded centisecond timing.
 
 Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; large projects may retain fewer. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text fields. With the canvas focused, Space toggles playback. History is session-only and is not included in backups.
 
+## Draw clean shapes (#319)
+
+In **Draw**, choose **Draw shape**: **Freehand** (the default), **Line**, **Rectangle** or **Ellipse**. Drag between two corners on a selected drawing layer. Ink color and Brush width apply to the new path. Shapes follow the drawing's local axes, so a rotated layer also rotates its shapes. Ellipses are editable 64-segment polygons; rectangles include their closing outline. These are ordinary retained strokes, so **Edit strokes** can move, reshape, recolor, fill or delete them, and normal pose animation, backups and exports retain the result.
+
+Each completed drag is one Undo/Redo edit and changes the active drawing throughout its held interval. A click without movement adds nothing; rectangles/ellipses with zero width or height also add nothing. **Escape**, focus loss, a changed stage geometry or pointer cancellation discards the preview. New shapes obey the existing point/stroke/project limits atomically. Apply/discard editor drafts before changing tools. Tool choice is session-only and returns to Freehand on reload; no shape metadata or new saved format is introduced. This is authored geometry, not object recognition or learned animation.
+
 ## Reuse animated drawings
 
 Select a drawing layer and choose **Duplicate drawing layer** to copy all its held drawings, strokes and pose keys. The independent copy is inserted immediately above the source in paint order, selected, and named with a bounded “ copy” suffix. The timeline stays at its current frame. Change its poses or artwork to reuse an animated character or prop without altering the original. One Undo removes the copy; Redo restores it. Autosaves, project files and exports include the committed copy.

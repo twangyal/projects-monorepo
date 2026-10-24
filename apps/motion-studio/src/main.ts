@@ -1,3 +1,4 @@
+import { shapePoints, type ShapeKind } from './shape-draw.ts';
 import {mountAnimationWorkspace} from './workspace-view.ts';
 import './style.css';
 import { playbackFrame } from './playback.ts';
@@ -30,6 +31,7 @@ app.innerHTML = `
 <div class="studio">
 <aside class="tools panel"><div class="panel-heading"><h3>Make your mark</h3><span>01</span></div><div class="tool-content">
 <div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button><button id="edit-strokes-mode" aria-pressed="false">Edit strokes</button></div><div id="stroke-editor-host"></div>
+<label class="field" id="shape-control">Draw shape<select id="draw-shape"><option value="freehand">Freehand</option><option value="line">Line</option><option value="rectangle">Rectangle</option><option value="ellipse">Ellipse</option></select></label><p class="hint">Drag a shape in the drawing’s local axes. Rectangles and ellipses become closed editable paths. Edit strokes adds fill or adjusts points. Escape cancels the preview.</p>
 <label class="field">Ink color<input id="ink" type="color" value="#563d75"></label><label class="field">Brush width <output id="brush-value">6 px</output><input id="brush" type="range" min="1" max="40" value="6"></label><p class="hint">Draw on the selected drawing layer. Move places a pose at the current frame.</p>
 <div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="duplicate-layer">Duplicate drawing layer</button><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
 <div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
@@ -80,8 +82,9 @@ let saveChain: Promise<void> = Promise.resolve();
 const libraryView = createLibraryView(el('project-library'), id => void openLibraryProject(id), id => void deleteLibraryProject(id));
 const downloadUrls = new Set<string>();
 type Geometry = { width: number; height: number; dpr: number; left: number; top: number; canvasWidth: number; canvasHeight: number };
-interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; strokeTarget?: StrokeTarget; strokeDrag?: StrokeDrag; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
+interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; shape?: ShapeKind; strokeTarget?: StrokeTarget; strokeDrag?: StrokeDrag; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
 let gesture: Gesture | null = null;
+let drawTool: 'freehand' | ShapeKind = 'freehand';
 const tweens = createTweenWorkspace(el('tween-workspace'), {
   state: () => ({ project, assets, layerId: selected, frame, generation, operation, locked: busy || exporting || !!gesture || restorePending || retryPending }),
   admitDrafts, pause,
@@ -242,6 +245,7 @@ function controls() {
   el('tween-eligibility').textContent = drawing ? 'Pair adjacent nonblank drawings with the same 1–8 strokes. Review geometric in-betweens before committing.' : 'In-betweens need vector drawings; imported images animate through poses.';
   draftControls(); tweens.update(); strokeEditor.update(); updateLibrary();
   el<HTMLButtonElement>('edit-strokes-mode').disabled = locked || !drawing;
+  el<HTMLSelectElement>('draw-shape').disabled = authoringLocked || mode !== 'draw' || !drawing;
   canvas.setAttribute('aria-disabled', String(locked));
   el('cancel-export').hidden = !exporting; el('export-progress').hidden = !exporting;
 }
@@ -416,13 +420,18 @@ app.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   // Discard owns the raw fields before native blur can auto-commit a valid pose value.
   if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
-  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#retime-key,#onion-enabled,.onion-control,#png,#png-transparent')) return;
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#retime-key,#onion-enabled,.onion-control,#shape-control,#png,#png-transparent')) return;
   if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 // A label's later default click can focus its input even after pointerdown cancellation.
 app.addEventListener('click', event => {
-  if ((event.target as HTMLElement).closest('.onion-control') && !admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
+  if ((event.target as HTMLElement).closest('.onion-control,#shape-control') && !admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
+el('draw-shape').addEventListener('change', () => {
+  const input = el<HTMLSelectElement>('draw-shape');
+  if (busy || exporting || gesture || restorePending || retryPending || libraryPending || mode !== 'draw' || layer()?.kind !== 'drawing' || !admitDrafts() || !['freehand', 'line', 'rectangle', 'ellipse'].includes(input.value)) { input.value = drawTool; return; }
+  drawTool = input.value as typeof drawTool; pause(); intent(); controls(); draw();
+});
 el('onion-enabled').addEventListener('change', () => {
   const input = el<HTMLInputElement>('onion-enabled');
   if (busy || exporting || gesture || restorePending || retryPending || libraryPending || layer()?.kind !== 'drawing' || !admitDrafts()) { input.checked = onionEnabled; return; }
@@ -491,6 +500,7 @@ canvas.addEventListener('pointerdown', event => {
     const target = preview.layers.find(item => item.id === selected)!;
     if (target.kind === 'drawing') target.cels.find(cel => cel.frame === celFrame)!.strokes.push(stroke);
     gesture.stroke = stroke;
+    if (drawTool !== 'freehand') gesture.shape = drawTool;
   }
   canvas.setPointerCapture(event.pointerId); controls(); draw(); event.preventDefault();
 });
@@ -500,6 +510,8 @@ canvas.addEventListener('pointermove', event => {
   const point = stagePoint(event);
   if (gesture.strokeTarget) {
     try { updateRetainedStroke(gesture, event); } catch (error) { cancelGesture(); strokeEditor.status(errorMessage(error)); return; }
+  } else if (gesture.shape) {
+    try { updateShape(gesture, point); } catch (error) { tell(errorMessage(error), true); endGesture(event, true); return; }
   } else if (gesture.stroke) {
     try {
       const local = checkedPoint(point, gesture.pose), last = gesture.stroke.points.at(-1)!;
@@ -522,15 +534,25 @@ function updateRetainedStroke(active: Gesture, event: PointerEvent) {
   active.moved = update.moved;
   active.preview = update.moved ? translateStroke(active.base, active.strokeTarget!, update.delta) : active.base;
 }
+function updateShape(active: Gesture, point: Point) {
+  const start = checkedPoint(active.start, active.pose);
+  const points = shapePoints(active.shape!, start, checkedPoint(point, active.pose));
+  if (drawingCounts(active.base).points + points.length > 10000) throw new Error('This shape would exceed the drawing point limit. Delete artwork or use a simpler shape.');
+  active.moved = points.length > 0;
+  active.stroke!.points = points.length ? points : [start];
+}
 function endGesture(event: PointerEvent, cancelled: boolean) {
   if (!gesture || gesture.pointer !== event.pointerId) return;
   if (cancelled || !ownsGesture(gesture)) { cancelGesture(); return; }
   if (gesture.strokeTarget) {
     try { updateRetainedStroke(gesture, event); } catch (error) { cancelGesture(); strokeEditor.status(errorMessage(error)); return; }
   }
+  if (gesture.shape) {
+    try { updateShape(gesture, stagePoint(event)); } catch (error) { cancelGesture(); tell(errorMessage(error), true); return; }
+  }
   const completed = gesture; gesture = null;
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-  if (completed.stroke || completed.moved) {
+  if ((completed.stroke && !completed.shape) || completed.moved) {
     try {
       const chosen = completed.preview.layers.find(item => item.id === completed.layerId)!;
       const next = completed.stroke && chosen.kind === 'drawing' ? replaceDrawingCelStrokes(completed.base, completed.layerId, completed.celFrame!, chosen.cels.find(cel => cel.frame === completed.celFrame)!.strokes) : completed.preview;
@@ -542,8 +564,8 @@ function endGesture(event: PointerEvent, cancelled: boolean) {
 }
 canvas.addEventListener('pointerup', event => endGesture(event, false));
 canvas.addEventListener('pointercancel', event => endGesture(event, true));
-canvas.addEventListener('blur', () => { if (gesture?.strokeTarget) cancelGesture(); });
-app.addEventListener('input', () => { if (gesture?.strokeTarget) cancelGesture(); }, true);
+canvas.addEventListener('blur', () => { if (gesture?.strokeTarget || gesture?.shape) cancelGesture(); });
+app.addEventListener('input', () => { if (gesture?.strokeTarget || gesture?.shape) cancelGesture(); }, true);
 canvas.addEventListener('lostpointercapture', event => { if (gesture) endGesture(event as PointerEvent, true); });
 
 function setPose() {
