@@ -1,0 +1,56 @@
+diff --git a/apps/melody-studio/src/backed-capture.worklet.ts b/apps/melody-studio/src/backed-capture.worklet.ts
+index 3b6184a..61006f4 100644
+--- a/apps/melody-studio/src/backed-capture.worklet.ts
++++ b/apps/melody-studio/src/backed-capture.worklet.ts
+@@ -13,8 +13,11 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
+   #terminal = false;
+   #startFrame = 0;
+   #progressAt = 0;
+-  constructor() {
++  readonly #observeZero: boolean;
++  constructor(options?: {processorOptions?: {observerScan?: boolean}}) {
+     super();
++    this.#observeZero = options?.processorOptions?.observerScan === true;
++    this.port.postMessage({type:'observer-mode300',enabled:this.#observeZero});
+     this.port.onmessage = event => {
+       if (this.#terminal) return;
+       try {
+@@ -42,6 +45,12 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
+         if (this.#ready) throw new BackedFrameError('missing-input');
+         return true;
+       }
++      if (this.#observeZero) {
++      const zeros: number[][] = []; let z = 0;
++      const zeroAt = (i: number) => input.reduce((sum, channel) => sum + channel[i], 0) === 0;
++      while (z < input[0].length) { if (!zeroAt(z)) { z++; continue; } let end = z + 1; while (end < input[0].length && zeroAt(end)) end++; zeros.push([z, end]); z = end; }
++      if (zeros.length) this.port.postMessage({type:'zero-input-route300',currentFrame,sampleRate,channels:input.length,frames:input[0].length,zeroRuns:zeros});
++      }
+       const result = this.#frames.push(currentFrame, input);
+       if (!this.#ready) {
+         this.#ready = true;
+diff --git a/apps/melody-studio/tests/backed-recording-fixtures.ts b/apps/melody-studio/tests/backed-recording-fixtures.ts
+index d036a70..01a59f1 100644
+--- a/apps/melody-studio/tests/backed-recording-fixtures.ts
++++ b/apps/melody-studio/tests/backed-recording-fixtures.ts
+@@ -16,15 +16,15 @@ export function originalBacking(title='Original backed recording Ω'):CompleteBa
+ export async function backup(page:Page):Promise<CompleteBackup>{const waiting=page.waitForEvent('download');await page.getByRole('button',{name:'Save project file',exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native project download unavailable');const value=JSON.parse((await readFile(path)).toString())as CompleteBackup;for(const asset of value.assets){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(hash(pcm)).toBe(asset.sha256);expect(pcm.length).toBe(asset.frameCount*2);}return value;}
+ export async function open(page:Page,fixture=originalBacking()){await page.goto('/');await expect(page.getByLabel('Open project file',{exact:true})).toBeEnabled();page.once('dialog',d=>d.accept());await page.getByLabel('Open project file',{exact:true}).setInputFiles({name:'original-backed.melody.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))});await expect(page.getByLabel('Project title')).toHaveValue(fixture.document.composition.title);await expect(page.locator('#save-status')).toHaveText('Saved in this browser');await page.locator('[data-track=target]').click();}
+ interface ObservedSource {sampleRate:number;frames:number;when:number;contextRate:number;samples:number[]}
+-interface Probe {requests:number;stopped:number;sources:ObservedSource[];releasePermission:(()=>void)|null;elapsed:()=>number;stream:MediaStream|null;renderRequests:number}
++interface Probe {requests:number;stopped:number;sources:ObservedSource[];releasePermission:(()=>void)|null;elapsed:()=>number;stream:MediaStream|null;renderRequests:number;startup:{requested:number;startTime:number;handoffTime:number|null;wallMs:number|null;stateBefore:string;stateAfter:string|null}|null}
+ type ProbeWindow=Window&{backed113:Probe};
+-export async function microphone(page:Page,pending=false,silent=false){await page.addInitScript(({pending,silent})=>{
+- const state:Probe={requests:0,stopped:0,sources:[],releasePermission:null,elapsed:()=>-Infinity,stream:null,renderRequests:0};(window as unknown as ProbeWindow).backed113=state;
++export async function microphone(page:Page,pending=false,silent=false,warmup=0){await page.addInitScript(({pending,silent,warmup})=>{
++ const state:Probe={requests:0,stopped:0,sources:[],releasePermission:null,elapsed:()=>-Infinity,stream:null,renderRequests:0,startup:null};(window as unknown as ProbeWindow).backed113=state;
+  const native=AudioContext.prototype.createBufferSource;
+  AudioContext.prototype.createBufferSource=function(){const source=native.call(this),start=source.start.bind(source),context=source.context;source.start=(...args:Parameters<AudioBufferSourceNode['start']>)=>{const b=source.buffer;if(b){const when=args[0]??context.currentTime;state.sources.push({sampleRate:b.sampleRate,frames:b.length,when,contextRate:context.sampleRate,samples:b.length===441000?Array.from(b.getChannelData(0).subarray(0,66150)):[]});if(b.length===441000)state.elapsed=()=>context.currentTime-when;}start(...args);};return source;};
+- Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{state.requests++;state.elapsed=()=>-Infinity;const context=new AudioContext(),tone=context.createOscillator(),gain=context.createGain(),destination=context.createMediaStreamDestination();tone.frequency.value=440;gain.gain.value=silent?0:.25;tone.connect(gain).connect(destination);tone.start();const stream=destination.stream;state.stream=stream;for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{if(track.readyState==='ended')return;state.stopped++;stop();tone.stop();void context.close();};}await context.resume();if(pending)await new Promise<void>(done=>state.releasePermission=done);return stream;}});
+- },{pending,silent});}
+-export async function probe(page:Page){return page.evaluate(()=>{const p=(window as unknown as ProbeWindow).backed113;return{requests:p.requests,stopped:p.stopped,sources:p.sources,elapsed:p.elapsed(),released:p.stream?.getTracks().every(t=>t.readyState==='ended')??false};});}
++ Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{state.requests++;state.elapsed=()=>-Infinity;const context=new AudioContext(),tone=context.createOscillator(),gain=context.createGain(),destination=context.createMediaStreamDestination();tone.frequency.value=440;gain.gain.value=silent?0:.25;tone.connect(gain).connect(destination);tone.start();const stream=destination.stream;state.stream=stream;for(const track of stream.getTracks()){const stop=track.stop.bind(track);track.stop=()=>{if(track.readyState==='ended')return;state.stopped++;stop();tone.stop();void context.close();};}await context.resume();const began=performance.now();state.startup={requested:warmup,startTime:context.currentTime,handoffTime:null,wallMs:null,stateBefore:context.state,stateAfter:null};try{while(context.currentTime-state.startup.startTime<warmup){if(performance.now()-began>3000)throw Error('Diagnostic source clock did not advance before handoff.');await new Promise<void>(done=>setTimeout(done,5));}}finally{state.startup.handoffTime=context.currentTime;state.startup.wallMs=performance.now()-began;state.startup.stateAfter=context.state;}if(pending)await new Promise<void>(done=>state.releasePermission=done);return stream;}});
++ },{pending,silent,warmup});}
++export async function probe(page:Page){return page.evaluate(()=>{const p=(window as unknown as ProbeWindow).backed113;return{requests:p.requests,stopped:p.stopped,sources:p.sources,startup:p.startup,elapsed:p.elapsed(),released:p.stream?.getTracks().every(t=>t.readyState==='ended')??false};});}
+ export async function awaitElapsed(page:Page,seconds:number){await expect.poll(()=>page.evaluate(()=>(window as unknown as ProbeWindow).backed113.elapsed())).toBeGreaterThan(seconds);}
+ export async function releasePermission(page:Page){await page.evaluate(()=>(window as unknown as ProbeWindow).backed113.releasePermission?.());}
+ export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}

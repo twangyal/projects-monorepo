@@ -1,0 +1,312 @@
+{
+  "pair": 3,
+  "mode": "off",
+  "route": "normal",
+  "error": null,
+  "qualityError": null,
+  "normalized": {
+    "id": "e93e0707-bede-4efc-a275-79d55347dd87",
+    "kind": "microphone",
+    "captureTempo": 240,
+    "decodedSampleRate": 44100,
+    "decodedChannels": 2,
+    "decodedFrames": 124034,
+    "analyzedFrames": 124034,
+    "frameCount": 62017,
+    "sha256": "773c23015669057b7078f557107e70dd312c1bca3009e83b6d31cbac61ccc3cc"
+  },
+  "inputs": [],
+  "messages": [
+    {
+      "type": "ready",
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "type": "armed",
+      "startFrame": 53374,
+      "limitFrame": 935374
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "counting-in",
+      "framesCaptured": 0
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 898
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 5378
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 9858
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 14338
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 18818
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 23298
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 27778
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 32258
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 36738
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 41218
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 45698
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 50178
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 54658
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 59138
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 63618
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 68098
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 72578
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 77058
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 81538
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 86018
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 90498
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 94978
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 99458
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 103938
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 108418
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 112898
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 117378
+    },
+    {
+      "type": "progress",
+      "phase": "recording",
+      "framesCaptured": 121858
+    }
+  ],
+  "observerModes": [
+    false
+  ],
+  "bytes": {
+    "length": 496136
+  },
+  "complete": {
+    "type": "complete",
+    "samples": {
+      "frames": 124034
+    },
+    "sampleRate": 44100,
+    "channels": 2,
+    "startFrame": 53374,
+    "endFrame": 177408
+  },
+  "routes": [
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode",
+    "AudioDestinationNode"
+  ],
+  "notice": "Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.",
+  "capture": "Finding the notes…",
+  "observed": {
+    "requests": 1,
+    "stopped": 1,
+    "sources": [
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 1.2102947845804988,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.21029478458049886,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.4602947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.7102947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.9602947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      }
+    ],
+    "startup": {
+      "requested": 0,
+      "startTime": 0.020317460317460317,
+      "handoffTime": 0.020317460317460317,
+      "wallMs": 0,
+      "stateBefore": "running",
+      "stateAfter": "running"
+    },
+    "elapsed": 4.8704308390022675,
+    "released": true
+  }
+}
