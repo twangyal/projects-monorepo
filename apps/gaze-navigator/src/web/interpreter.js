@@ -310,7 +310,7 @@ export function interpret(utterance, context = { elements: [] }) {
     if (dateSet && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { type: 'unknown', message: 'Say a literal YYYY-MM-DD date, such as “set Departure date field to 2026-11-01”.' };
     const fields = context.elements.filter(element => element.nativeDate === true);
     const act = element => ({ type: 'date', targetId: element.id, ...(dateUndo ? { undo: true } : { value }) });
-    return name ? resolve(name, fields, null, act, 'date field') : deictic(fields, act, 'date field');
+    return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'date field') : resolve(name, fields, null, act, 'date field');
   }
   // Explicit numeric-field intent does not change ordinary text or slider commands.
   const numberSet = /^(?:set|change) (?:the )?(?:(.*?) )?number field to (.+)$/i.exec(command);
@@ -323,7 +323,7 @@ export function interpret(utterance, context = { elements: [] }) {
     }
     const fields = context.elements.filter(element => element.nativeNumber === true);
     const act = element => ({ type: 'number', targetId: element.id, ...(numberUndo ? { undo: true } : { value: value.replace(/^\+/, '').replace(/\.$/, '') }) });
-    return name ? resolve(name, fields, null, act, 'number field') : deictic(fields, act, 'number field');
+    return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'number field') : resolve(name, fields, null, act, 'number field');
   }
   // Explicit slider intent stays separate from ordinary text/option commands.
   const sliderSet = /^(?:set|change) (?:the )?(?:(.*?) )?slider to (.+)$/i.exec(command);

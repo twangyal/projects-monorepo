@@ -14,10 +14,10 @@ async function setup(page, html = '<label>Quantity<input id="a" type="number" mi
 const command = (page, text) => page.evaluate(text => nCommand(text), text);
 test('exact numeric values emit native events, no-op retains Undo, and empty required fields restore', async ({ page }) => {
   await setup(page);
-  expect((await command(page, 'set Quantity number field to 4')).performed).toBe('number');
+  expect((await command(page, 'set that number field to 4')).performed).toBe('number');
   await expect(page.locator('#a')).toHaveValue('4');
   expect(await page.evaluate(() => events)).toEqual([['a','input','4'],['a','change','4']]);
-  await command(page, 'set number field to 4');await command(page, 'undo number field');
+  await command(page, 'set number field to 4');await command(page, 'undo this number field');
   await expect(page.locator('#a')).toHaveValue('2');
   expect((await command(page, 'undo number field')).message).toContain('Nothing to undo');
   await command(page, 'set number field to 4');await command(page, 'set number field to 6');

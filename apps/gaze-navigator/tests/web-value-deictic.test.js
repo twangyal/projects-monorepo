@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {interpret} from '../src/web/interpreter.js';
+test('this and that number fields retain gaze targeting exact value and Undo',()=>{const c={elements:[{id:1,name:'Amount',role:'spinbutton',nativeNumber:true,distance:0}]};for(const text of ['set this number field to 1.25','set That number field to 1.25'])assert.deepEqual(interpret(text,c),{type:'number',targetId:1,value:'1.25'});assert.deepEqual(interpret('undo that number field',c),{type:'number',targetId:1,undo:true});});
