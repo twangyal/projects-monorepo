@@ -174,12 +174,21 @@ def _render_discussions(retrieved: RetrievedDiscussions, number: str) -> str:
     for issue in retrieved.referenced_issues:
         commits = ', '.join(f'<a href="#{_commit_anchor(commit)}"><code>{escape(commit[:12])}</code></a>' for commit in issue.commits)
         cut = '<p class="muted">Description truncated at 4,000 characters.</p>' if issue.truncated else ''
+        comment_items = ''.join(
+            f'<li><p class="muted">By {escape(comment.author)} · {escape(comment.created_at)} · '
+            f'<a href="{escape(comment.url)}" rel="noreferrer noopener" target="_blank">Open issue comment ↗</a>'
+            f'{" [truncated at 4,000 characters]" if comment.truncated else ""}</p>'
+            f'<pre class="message">{escape(comment.excerpt)}</pre></li>'
+            for comment in issue.comments)
+        comment_html = (f'<details open><summary>Recent quoted issue comments ({len(issue.comments)})</summary>'
+                        f'<ul class="discussion-comments">{comment_items}</ul></details>' if comment_items else '')
+        comment_html += f'<p class="muted">{escape(issue.comment_note)}</p>'
         content += (f'<article class="change" id="referenced-issue-{issue.number}">'
                     f'<h3>Referenced issue #{issue.number}: {escape(issue.title)}</h3>'
                     f'<p class="muted">{escape(issue.state)} · by {escape(issue.author)} · quoted, unverified. '
                     f'This reference does not establish intent or closure. Cited by report commits {commits}.</p>'
                     f'<p><a href="{escape(issue.url)}" rel="noreferrer noopener" target="_blank">Open referenced issue ↗</a></p>'
-                    f'<pre class="message">{escape(issue.excerpt or "The issue has no description.")}</pre>{cut}</article>')
+                    f'<pre class="message">{escape(issue.excerpt or "The issue has no description.")}</pre>{cut}{comment_html}</article>')
     notes = ''.join(f'<li>{escape(note)}</li>' for note in retrieved.notes)
     return (f'<section id="discussions"><div class="section-title"><span>{number}</span><h2>Retrieved GitHub context</h2></div>'
             f'<p class="muted">{escape(retrieved.provenance)} Repository {escape(retrieved.repository)}, retrieved {escape(retrieved.retrieved_at)}.</p>'

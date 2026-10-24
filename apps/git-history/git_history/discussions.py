@@ -22,6 +22,7 @@ MAX_PULLS = 8
 MAX_COMMENTS = 30
 MAX_LINKED_ISSUES = 3
 MAX_REFERENCED_ISSUES = 8
+ISSUE_COMMENT_PAGE = 10
 MAX_TEXT = 4000
 MAX_RESPONSE = 2 * 1024 * 1024
 TIMEOUT = 15
@@ -236,6 +237,7 @@ def retrieve_discussions(report: Report, *, api_url: str = API_URL, token: str |
                 text, truncated = _text(item.get('body'))
                 state = item['state'] if item.get('state') in ('open', 'closed') else 'unknown'
                 referenced.append(ReferencedIssue(number, item['html_url'], title, _login(item.get('user')), state, text, truncated, sources))
+                dropped += _issue_comments(client, referenced[-1], item.get('comments'))
             except (KeyError, TypeError, ValueError):
                 dropped += 1
     except _Stop as stop:
@@ -247,6 +249,52 @@ def retrieve_discussions(report: Report, *, api_url: str = API_URL, token: str |
     return RetrievedDiscussions('github', f'{owner}/{repo}', retrieved_at, PROVENANCE, checked, without,
                                 sorted(pulls.values(), key=lambda pull: commits.index(pull.commits[0])),
                                 notes, referenced)
+
+
+def _issue_comments(client: GitHubClient, issue: ReferencedIssue, count) -> int:
+    """One last snapshot page; never imply a complete or immutable discussion."""
+    if type(count) is not int or not 0 <= count <= 2**31 - 1:
+        issue.comment_note = 'Issue comment count unavailable; comments were not fetched.'
+        return 0
+    issue.comment_count_at_lookup = count
+    issue.omitted_comments_estimate = count
+    if count == 0:
+        issue.comment_note = 'No comments were reported at issue lookup; the snapshot may change.'
+        return 0
+    page = (count + ISSUE_COMMENT_PAGE - 1) // ISSUE_COMMENT_PAGE
+    value = client.get(f'/issues/{issue.number}/comments?per_page={ISSUE_COMMENT_PAGE}&page={page}')
+    if value is None:
+        issue.comment_note = 'The issue comment page was unavailable; its description is retained.'
+        return 0
+    if type(value) is not list or len(value) > ISSUE_COMMENT_PAGE:
+        issue.comment_note = 'The issue comment page was malformed; its description is retained.'
+        return 1
+    expected = f'https://api.github.com/repos/{client.owner}/{client.repo}/issues/{issue.number}'
+    collected, seen, dropped = [], set(), 0
+    for item in value:
+        try:
+            if type(item) is not dict:
+                raise ValueError
+            identity = item.get('id')
+            if type(identity) is not int or not 1 <= identity <= 999999999999999 or identity in seen \
+                    or item.get('html_url') != f'{issue.url}#issuecomment-{identity}' \
+                    or item.get('issue_url') != expected:
+                raise ValueError
+            seen.add(identity)
+            text, truncated = _text(item.get('body'))
+            if not text.strip():
+                continue
+            comment = RetrievedComment('issue-comment', _login(item.get('user')), item['html_url'],
+                                       _time(item.get('created_at')), text, truncated)
+            collected.append((identity, comment))
+        except (KeyError, TypeError, ValueError):
+            dropped += 1
+    issue.comments = [comment for _, comment in sorted(collected)]
+    issue.omitted_comments_estimate = max(0, count - len(issue.comments))
+    issue.comment_note = (f'Read page {page} using {count} comments reported at issue lookup; '
+                          f'Omission estimate: {issue.omitted_comments_estimate} comments are not quoted. '
+                          'Counts may change during retrieval; this is not a complete discussion.')
+    return dropped
 
 
 def _comments(client: GitHubClient, pull: RetrievedPull, prefix: str, paths: set[str]) -> int:

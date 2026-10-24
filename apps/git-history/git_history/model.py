@@ -149,6 +149,10 @@ class RetrievedPull:
 @dataclass
 class ReferencedIssue(RetrievedIssue):
     commits: list[str] = field(default_factory=list)
+    comments: list[RetrievedComment] = field(default_factory=list)
+    omitted_comments_estimate: int | None = None
+    comment_count_at_lookup: int | None = None
+    comment_note: str = 'Issue comment retrieval did not complete.'
 
 
 @dataclass

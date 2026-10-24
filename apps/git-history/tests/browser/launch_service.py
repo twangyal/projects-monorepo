@@ -30,6 +30,10 @@ def main():
         fake = _fake_github(args.github_direct)
         fake.commit_pulls.clear()
         fake.issue(9, "Direct issue <script>", "The direct change needs this task context.")
+        fake.issues[9]['comments'] = 1
+        fake.conversation[9] = [dict(fake.comment(9, 901, 'Completed: <img src=x onerror="globalThis.OWNED=1">'),
+                                   html_url='https://github.com/fixture/local-evidence/issues/9#issuecomment-901',
+                                   issue_url='https://api.github.com/repos/fixture/local-evidence/issues/9')]
     server = create_server(args.repo, port=0, **({"github_api": fake.url} if fake else {}))
     try:
         native_available = not args.missing_native and all(

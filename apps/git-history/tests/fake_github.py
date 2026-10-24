@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import re
 import threading
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 
 class FakeGitHub:
@@ -56,7 +56,11 @@ class FakeGitHub:
                 if match := re.fullmatch(r'/pulls/([0-9]+)/reviews', route):
                     return self.send(200, fake.reviews.get(int(match.group(1)), []))
                 if match := re.fullmatch(r'/issues/([0-9]+)/comments', route):
-                    return self.send(200, fake.conversation.get(int(match.group(1)), []))
+                    params = parse_qs(urlsplit(self.path).query)
+                    size = int(params.get('per_page', ['30'])[0])
+                    page = int(params.get('page', ['1'])[0])
+                    values = fake.conversation.get(int(match.group(1)), [])
+                    return self.send(200, values[(page - 1) * size:page * size])
                 if match := re.fullmatch(r'/issues/([0-9]+)', route):
                     issue = fake.issues.get(int(match.group(1)))
                     return self.send(200, issue) if issue else self.send(404, {'message': 'Not Found'})
