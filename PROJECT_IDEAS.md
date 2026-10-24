@@ -425,3 +425,7 @@ Melody #320 acceptance at `c6be69e`:469units/static/build and all267browser case
 ### 2026-10-24 — Melody separate observer-control cohort B (#300)
 
 A separately labeled six-pair observerON/OFF cohort at `docs/research/melody-backed-recording/observer-control-b` retains all12complete native/normalized capture pairs, fixed protocol/source/runtime hashes and independent replay. One ON capture retains a10ms input/native gap outside the original quality window; other5ON/6OFF show no>=8sample gap. This outcome differs from the lost cohort’s provisional OFF gap and must not be pooled or used as a causal/fix claim. [Evidence and limits](docs/research/melody-backed-recording/observer-control-b/README.md). #300 remains open; Melody ACTIVE; #8 skipped.
+
+### 2026-10-24 — Gaze native appointment times (#321)
+
+Gaze at `apps/gaze-navigator` supports explicit HH:MM/HH:MM:SS native time set/Undo, named/this/that targeting, native overnight/min/max/step checks and separate revision-safe time history. Labels/help and one-event website-aware writes preserve the extension flow. [Checkpoint](apps/gaze-navigator/docs/2026-10-24-time-fields.md) records review RED/GREEN fix,215unit/static/build and84native time/date/numeric cases across four viewports. Full canonical/injected extension gates remain pending. Gaze stays ACTIVE; physical #132 open; #8 skipped.

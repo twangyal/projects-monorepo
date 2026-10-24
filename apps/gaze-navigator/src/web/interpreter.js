@@ -294,6 +294,15 @@ export function interpret(utterance, context = { elements: [] }) {
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
       ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
   }
+  const timeSet = /^(?:set|change) (?:the )?(?:(.*?) )?time field to (.+)$/i.exec(command);
+  const timeUndo = /^undo (?:the )?(?:(.*?) )?time field$/i.exec(command);
+  if (timeSet || timeUndo) {
+    const name = (timeSet ?? timeUndo)[1], value = timeSet?.[2];
+    if (timeSet && !/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return { type: 'unknown', message: 'Say a literal 24-hour HH:MM or HH:MM:SS time, such as “set Appointment time field to 14:30”.' };
+    const fields = context.elements.filter(element => element.nativeTime === true);
+    const act = element => ({ type: 'time', targetId: element.id, ...(timeUndo ? { undo: true } : { value }) });
+    return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'time field') : resolve(name, fields, null, act, 'time field');
+  }
   const dateSet = /^(?:set|change) (?:the )?(?:(.*?) )?date field to (.+)$/i.exec(command);
   const dateUndo = /^undo (?:the )?(?:(.*?) )?date field$/i.exec(command);
   if (dateSet || dateUndo) {
