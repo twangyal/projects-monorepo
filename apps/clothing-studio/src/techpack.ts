@@ -78,7 +78,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
       pom('M', 'Hem band height', 'Finished rib hem band', dims.band, 0, 0.25),
     ]),
     ...(product.base === 'hoodie' ? [
-      pom('N', 'Hood width (½)', 'Face edge to back of hood, at the widest point', dims.hoodHalf * 2, 0.5, 1),
+      pom('N', 'Hood side width', 'Side pattern face edge to furthest back; excludes allowance; 3D projection is illustrative', dims.hoodWidth, 0.5, 1),
       pom('O', 'Pocket width at bottom', 'Pocket edge to pocket edge along its lower seam', dims.pocketHalfBottom * 2, 1, 0.5),
     ] : []),
     ...(dims.hemCurve ? [
@@ -96,7 +96,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
   const construction: ConstructionRow[] = [
     { area: 'Shoulder seams', operation: '4-thread overlock', detail: 'Back neck to shoulder point; stabilise with 6 mm clear tape' },
     ...(product.base === 'hoodie' ? [
-      { area: 'Hood', operation: '4-thread overlock centre seam, then attach to neckline', detail: `Hood sides cut 2; ${cm(dims.hoodHeight)} high; face edge turned 2 cm and coverstitched` },
+      { area: 'Hood', operation: '4-thread overlock centre seam, then attach to neckline', detail: `Hood sides cut 2; ${cm(dims.hoodHeight)} high × ${cm(dims.hoodWidth)} wide; face edge turned 2 cm and coverstitched` },
       { area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` },
     ] : [{ area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long (${Math.round((1 - NECK_RIB_RATIO) * 100)}% shorter than the flat neckline sewing path; confirm for the chosen rib), ${cm(dims.ribHeight)} finished` }]),
     { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },

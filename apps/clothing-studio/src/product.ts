@@ -95,10 +95,10 @@ export interface Measurements { chest: number; length: number; sleeve: number }
  * out keeps its default. Optional chest-pocket width/height/placement use P/Q/R/V. Defaults are chest-based where applicable; back neck drop is 2 cm and shoulder drop is 4 cm.
  */
 export const POCKET_FIT_KEYS = ['chestPocketWidth', 'chestPocketHeight', 'chestPocketX', 'chestPocketY'] as const;
-export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
+export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'hoodWidth', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
-export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop', hoodHeight: 'Hood side height', neckRibHeight: 'Neck rib height', cuffHeight: 'Cuff height', hemBandHeight: 'Hem band height',
+export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop', hoodHeight: 'Hood side height', hoodWidth: 'Hood side width', neckRibHeight: 'Neck rib height', cuffHeight: 'Cuff height', hemBandHeight: 'Hem band height',
   chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
@@ -133,7 +133,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
+  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -368,7 +368,7 @@ export function teeDimensions(product: Product) {
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
     neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: fit.backNeckDrop ?? 2, ribHeight: neckSize(m, product.neckline, fit).width, ribLength: neckSize(m, product.neckline, fit).length,
     band: product.base === 'tee' ? 0 : fit.hemBandHeight ?? BAND_CM, cuffHeight: product.base === 'tee' ? 0 : fit.cuffHeight ?? BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
-    hoodHeight: fit.hoodHeight ?? 32, hoodHalf: 13, pocketTop: m.length - (fit.hemBandHeight ?? BAND_CM) - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
+    hoodHeight: fit.hoodHeight ?? 32, hoodWidth: fit.hoodWidth ?? 26, hoodHalf: 13, pocketTop: m.length - (fit.hemBandHeight ?? BAND_CM) - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
     hemCurve: optionsOf(product).hem === 'curved' ? HEM_CURVE_CM : 0,
     // Chest pocket on the wearer's left (+x seen from the front): centre, top below the shoulder line, finished size.
@@ -381,7 +381,7 @@ export function flare(product: Product): number { const d = teeDimensions(produc
 
 /** Edited points of measure must still make a garment: the neck inside the shoulders, the armhole and neck within the body. */
 function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit'>) {
-  if (product.base !== 'hoodie' && product.fit?.hoodHeight !== undefined) fail('Hood side height applies only to hoodies.');
+  if (product.base !== 'hoodie' && (product.fit?.hoodHeight !== undefined || product.fit?.hoodWidth !== undefined)) fail('Hood side dimensions apply only to hoodies.');
   if (product.base === 'hoodie' && product.fit?.neckRibHeight !== undefined) fail('A hoodie has a hood instead of a neck rib.');
   if (product.base === 'tee' && (product.fit?.cuffHeight !== undefined || product.fit?.hemBandHeight !== undefined)) fail('Cuff and hem band heights apply only to sweatshirts and hoodies.');
   const d = teeDimensions(product as Product);
@@ -556,7 +556,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
   if (product.base === 'hoodie') {
     // Hood side panel (cut 2, mirrored): neck edge along the bottom, face edge on the left, rounded crown and back.
-    const H = dims.hoodHeight, W = 26, hood = [{ x: 0, y: H }, { x: 0, y: 6 }];
+    const H = dims.hoodHeight, W = dims.hoodWidth, hood = [{ x: 0, y: H }, { x: 0, y: 6 }];
     for (let i = 0; i <= 8; i++) { const t = Math.PI / 2 * i / 8; hood.push({ x: W * 0.55 * (1 - Math.cos(t)) + 0, y: 6 * (1 - Math.sin(t)) }); }
     hood.push({ x: W, y: H * 0.45 }, { x: W * 0.9, y: H });
     pieces.push(make('hood', hood.map(p => ({ x: p.x, y: p.y })), 2));
@@ -754,7 +754,7 @@ function neckRib(rib: PartMesh, ring: { x: number; y: number; z: number }[], wid
  * neck stays open as the face opening. Rows ease from the neck curve toward a head-sized ellipse set slightly back.
  */
 function hoodMesh(hood: PartMesh, ring: { x: number; y: number; z: number }[], front: ReadonlySet<number>,
-  dims: { neckHalf: number; hoodHeight: number; hoodHalf: number }) {
+  dims: { neckHalf: number; hoodHeight: number; hoodWidth: number; hoodHalf: number }) {
   const open = dims.neckHalf * 0.55;
   const frontRight = ring.filter((p, i) => front.has(i) && p.x >= open), back = ring.filter((_, i) => !front.has(i)), frontLeft = ring.filter((p, i) => front.has(i) && p.x <= -open);
   const base = [...frontRight, ...back, ...frontLeft], rows = 16;
@@ -768,7 +768,7 @@ function hoodMesh(hood: PartMesh, ring: { x: number; y: number; z: number }[], f
     const crown = t < 0.6 ? 1 : Math.cos(((t - 0.6) / 0.4) * Math.PI / 2), rise = dims.hoodHeight * t + (t > 0.6 ? 3 * Math.sin(((t - 0.6) / 0.4) * Math.PI / 2) : 0);
     for (let i = 0; i < base.length; i++) {
       const b = base[i], theta = opening + (2 * Math.PI - 2 * opening) * along[i] / total;
-      const dome = { x: dims.hoodHalf * Math.sin(theta), z: -5 + 14 * Math.cos(theta) };
+      const dome = { x: dims.hoodHalf * Math.sin(theta), z: -5 + 14 * (dims.hoodWidth / 26) * Math.cos(theta) };
       const x = (b.x + (dome.x - b.x) * ease) * crown, z = b.z + (dome.z - b.z) * ease;
       hood.positions.push(x, b.y + rise, z);
       hood.uvs.push(along[i], dims.hoodHeight * t);

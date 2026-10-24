@@ -435,3 +435,7 @@ Gaze #321 follow-through fixes this/that targeting for existing Date/Number comm
 Gaze #321 final source `655ebb3` passes217local units/static/build and84targeted native cases. Canonical full-browser/injected-extension acceptance remains pending in run40107178293 (Chromium install/browser work still running); [durable verification handoff](docs/2026-10-24-gaze-time-fields-verification.md). #321 remains open; Gaze ACTIVE; physical #132 open; #8 skipped.
 
 Gaze #321 final acceptance at `655ebb3`:217units/lint/build and all716browser cases pass in canonical40107178293, including native time injection at4viewports. [Final acceptance](docs/2026-10-24-gaze-time-fields-acceptance.md) supersedes the earlier pending handoff. Gaze ACTIVE; physical #132 open; #8 skipped.
+
+### 2026-10-24 — Clothing hood side width (#322)
+
+Clothing at `apps/clothing-studio` adds20–34cm hoodie-only side width, linked pattern/POMN/material area and proportional illustrative front/back projection with fixed neckline base. Existing modelled drape/history/exports consume the new geometry; no flattened/physical-fit claim. [Checkpoint](apps/clothing-studio/docs/2026-10-24-hood-width.md) records183units/static/build,6focused native width/height cases and review; full/canonical gates follow separately. Clothing ACTIVE; #290 remains open; #8 skipped.
