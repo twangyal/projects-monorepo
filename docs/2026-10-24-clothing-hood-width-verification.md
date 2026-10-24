@@ -11,3 +11,7 @@ Canonical [application run40108893843](https://github.com/twangyal/projects-mono
 Fresh independent review found no blockers, independently passed all three new units and isolated width-only cloth-rest changes at20/34cm with unchanged topology and changes confined to hood constraints. Deferred minor: the committed rest unit varies height and width together, so independent width-only evidence comes from review. The reviewer did not rerun browsers.
 
 No solver/rest law, workflow, deadline, dependency or format-version changes. This accepts a linked creative construction parameter, not a new flattening/seam solution, native physical solve or physical-fit guarantee. Clothing remains ACTIVE and #290 remains open. Project #8 remains skipped; no PR.
+
+## Later observed gates
+
+The complete local Python garment-preflight suite finishes successfully: **163 tests in367.498s**. Canonical garment-preflight40108893842/job120916256369 also completes successfully: **163 tests in493.498s**, plus historical/current cold/warm packet provenance, rest candidate and faceted-body candidate reproduction. The application job has completed Chromium installation and is running browsers; that final outcome remains pending until observed.

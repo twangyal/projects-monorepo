@@ -439,3 +439,5 @@ Gaze #321 final acceptance at `655ebb3`:217units/lint/build and all716browser ca
 ### 2026-10-24 — Clothing hood side width (#322)
 
 Clothing at `apps/clothing-studio` adds20–34cm hoodie-only side width, linked pattern/POMN/material area and proportional illustrative front/back projection with fixed neckline base. Existing modelled drape/history/exports consume the new geometry; no flattened/physical-fit claim. [Checkpoint](apps/clothing-studio/docs/2026-10-24-hood-width.md) records183units/static/build,6focused native width/height cases and review; full/canonical gates follow separately. Clothing ACTIVE; #290 remains open; #8 skipped.
+
+Clothing #322 final acceptance at `0c94333`: canonical183units/lint/types/build, all227browser cases and163garment-preflight tests pass. Local183units/227browsers/163preflight tests and complete current cold/warm packet equivalence also pass. [Final acceptance](docs/2026-10-24-clothing-hood-width-acceptance.md) supersedes pending checkpoints. Clothing ACTIVE; physical/native #290 open; #8 skipped.

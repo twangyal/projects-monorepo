@@ -26,7 +26,7 @@ Files: src/product.ts, product-view.ts, techpack.ts; new tests/hood-width.test.t
 - [x] Minimal typed fit, dimension, pattern, z-radius, UI and POM integration; GREEN focused checks.
 - [x] Native Apply/Undo/Redo/reload/phone drafts, decoded GLB/pattern/POM plus existing height/trim regressions and drape where practical.
 - [x] Full units/static/build/browser; fresh review; source commit via connected tools.
-- [ ] Observe canonical app/preflight gates, root-only acceptance receipt and actual issue closure/state.
+- [x] Observe canonical app/preflight gates, root-only acceptance receipt and actual issue closure/state (completion recorded in #322).
 
 ## Ledger
 
@@ -35,3 +35,5 @@ Currentmain8a81073; Gaze#321 source complete, final CI running. No local unfinis
 Task1 progress:180baseline;3unit RED unsupportedfield;183unit/static/build GREEN. Native partial-fixture build failed unused helpers before actual absent-field RED. Six focused width/height cases pass31.1s including realGLB/drape. Fresh review no blocker, independently3unit pass and width-only rest checks; committed rest-test combined-input minor is documented. Full browser running with added downloadedSVG sewing-width assertion; canonical pending.
 
 Final local verification:183units/lint/types/build and all227browser cases pass7.6m on source0c943339649c2afdf95a1d4c1987d1354c4a3f0d. Three new width cases cover actualSVG sewing-line width, decodedGLB/POM/history/reload, phone drafts/reset/template visibility and actual drape. Canonical application40108893843 and garment-preflight40108893842 remain pending until their observed completion. No workflow/deadline changes.
+
+Final canonical gates complete:183units/static/build and227browsers in40108893843;163garment-preflight tests plus all packet/provenance/candidate checks in40108893842. Final acceptance receipt supersedes pending handoff. Local163preflight tests also pass. ClothingACTIVE/#290open/#8skip; no PR.
