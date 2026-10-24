@@ -25,7 +25,7 @@ Files: types.ts, breakpoint-curve.ts, filter-curve.ts, sound-filter.ts, audio.ts
 - [x] Fresh469baseline, unsupported-field RED; reconstruct initial renderer and observe review instability/exact-parity RED.
 - [x] Implement typed UI/shared moving filter/onset cache/audition; single repair pass9focused units GREEN.
 - [x] Fresh478units/lint/types/build; focused native below, full native/canonical pending observation.
-- [ ] Complete full browser and canonical gates; commit through connected GitHub tools; close/update #323 with actual state.
+- [x] Source committed19d2601; canonical478units/270browsers passes. Local269/270 with known#300startup failure and separate1case retry pass; exact trace/context committeda981c25. Final root acceptance and issue closure record actual scope.
 
 ## Ledger
 
