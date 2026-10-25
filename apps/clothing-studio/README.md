@@ -65,7 +65,6 @@ Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser, and `C
 - `src/style-prompt.ts`: Describe a style parser.
 - `src/tensile*.ts`, `src/bending*.ts`, `src/membrane*.ts`: swatch experiments (each with its worker).
 - `src/model.ts`, `src/storage.ts`, `src/design-library*.ts`, `src/top-body-profiles*.ts`, `src/media.ts`: project model and validation, persistence, image admission.
-- `src/native-garment-*.ts`, `scripts/export-native-*.ts`: research-only export of a fixed synthetic garment, left from the solver study.
 - `tests/`: unit tests (`*.test.ts`) and Playwright specs (`*.spec.ts`).
 
 ## Data & privacy

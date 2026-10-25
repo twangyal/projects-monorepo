@@ -42,6 +42,8 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gap.** The extension supports a wide range of native form controls in software, but the real end-to-end loop (physical gaze tracking plus real speech on real sites) has not been evaluated with intended users. Prioritize making that loop dependable over adding further control types.
 
+**Fix first (review, 2026-10-25):** move camera and microphone capture out of the website's origin into an extension-owned context; never expose password field values in the panel, status or speech; edit rich-text fields without flattening them to plain text; make spoken dates, times and numbers ("November first", "two thirty") work, since the speech recognizer never produces literal `2026-11-01`; throttle context capture on large pages; and evaluate on real sites with realistic gaze error rather than a perfectly placed pointer.
+
 ---
 
 ## 2. Clothing Studio — ACTIVE (priority)
@@ -63,6 +65,8 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gaps:** material-dependent drape that is visibly convincing in the browser across garments (bottoms are undraped and the body is a proxy), AI style interpretation, layered garments and personalized bodies.
 
+**Fix first (review, 2026-10-25):** the app has three separate garment systems (concept tee, product bases, skirt construction) with two solvers, two fabric lists and two body models; unify them on the product-base system. In the current drape, jersey, denim and linen all stretch about 62% at the worst edge with nearly identical body contact, so fabrics do not yet behave differently. Save body measurements in the project, stop re-decoding every image on each autosave, keep typing out of the undo history, and stop the style prompt from silently dropping words ("red" in "washed black denim with red topstitching").
+
 ---
 
 ## 3. Karaoke Studio — ACTIVE (priority)
@@ -76,6 +80,8 @@ Manual editing is the *correction* workflow. Supplying all lyrics and timing eac
 **Success** includes real-song separation, transcription and alignment quality and low correction effort, alongside reliable exports. Measure these on real songs; a successful export alone does not prove a useful automatic experience.
 
 **Biggest gaps:** automatic lyrics are not yet good enough to be the normal path (a developer benchmark on JamendoLyrics English songs found about 31% word error), so users still end up pasting lyrics. Multilingual coverage is partial (European languages only), and correction effort has not been measured with real users.
+
+**Fix first (review, 2026-10-25):** look up existing lyrics (for example LRCLIB) and align them instead of relying on recognition text; replace the word-alignment step, which silently returns no matches above about one million word pairs (long or dense songs); keep finished stems when the user cancels recognition; include `transcript.json` in backups and show why recognition failed; and add a CI job that runs the real models on one short song. Stop adding manual-editing micro-features until correction effort has been measured.
 
 ---
 
