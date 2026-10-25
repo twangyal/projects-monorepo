@@ -1,0 +1,21 @@
+{
+  "harnessPasses": 10,
+  "plannedStarts": 20,
+  "observedArms": 20,
+  "scheduledBackingStarts": 20,
+  "recordingPhases": 19,
+  "nativeRefusals": 1,
+  "refusals": [
+    {
+      "row": 1,
+      "sequence": 21,
+      "site": "clock",
+      "previousEnd": 139008,
+      "incomingStart": 138880,
+      "incomingLength": 128,
+      "startFrame": 181374,
+      "captured": 0,
+      "overlapFrames": 128
+    }
+  ]
+}

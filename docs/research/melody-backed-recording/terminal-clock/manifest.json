@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "252ba7346f39cb72f2a3413e2406a7e3cea63e4b",
+  "sourceTree": "904d6ab5060ce749828adfec4e3ab51e7fe1bb47",
+  "protocol": {
+    "pages": 10,
+    "plannedStarts": 20,
+    "controls": [
+      44100,
+      48000
+    ],
+    "workers": 1,
+    "retries": 0
+  },
+  "runtime": {
+    "node": "v24.22.1",
+    "playwright": "1.63.0",
+    "chromium": "143.0.7499.0",
+    "command": "CHROMIUM_PATH=/tmp/terminal300-runtime/run MELODY_TEST_PORT=4196 npm --prefix apps/melody-studio run test:browser -- terminal300-probe.spec.ts --workers=1 --output=/tmp/terminal300-cohort"
+  },
+  "originalSourceHashes": {
+    "apps/melody-studio/src/backed-frames.ts": "e0173d2ebc09570d48c14a390c517a5e9ec705717bb3146d00ea21f5223ecc9f",
+    "apps/melody-studio/src/backed-capture.worklet.ts": "514de8e420b35dcd339a456ad6f2dd5110fbb00de8bd1c9bc06c26380558b9cd",
+    "apps/melody-studio/src/backed-recorder.ts": "ba9bf32a122bb0bc26b408e13707d25eaf20de22af5ea2ec703611336bda9d58",
+    "apps/melody-studio/tests/backed-recording-fixtures.ts": "38af2523f03ec24f0ca311571c7109e96ceb56350eb56a9b349c74a9a5e7dba2",
+    "apps/melody-studio/tests/backed-recording.spec.ts": "4b720c14140e13bafbc97114d6fe0f10d8fae02ba874a8324fba6b3079df8bf5"
+  },
+  "files": {
+    "model-probe.test.ts": "f16b7b2d2e3cef1a0bd72aa56c30e744ba0df9be1d2e7923bb236c241ab24acf",
+    "native-run.log.gz": "ddcb89647667d8ef2d85f49acf17da946262448faa279f8af776a467074c6748",
+    "observer.patch": "7f122d01b0a734f13cfe78fc045c91b36047448cdae5c3a0462dbd5522b011c6",
+    "observer.ts": "77de7494010ba0e3643dfe775abe9c23b723ce8b40c3711c43226f2d5a0d86ba",
+    "probe.spec.ts": "2d8afd895950ef9c4185c032d2db8d2c4d322d6aa304f524f3fed4d5d0962a03",
+    "receipts/00.json": "064d5b514b54ec75d4dd3f48baa982dcb9aaef713c0aa41035815129474e86d6",
+    "receipts/01.json": "430d0d7e4add17a95e4ee4ca2755146b6243f792f357f17ed88f7c8b401bc781",
+    "receipts/02.json": "01934f3441aef984a265824b423d9a8ea3f6ae35882fcfabb10141cd902a8890",
+    "receipts/03.json": "30fbdcc004e74e7e0faf566b627e595c07cb7b3109b67c351c9c61e4c072824a",
+    "receipts/04.json": "b289f0e302e9bbc5d613b9d11f3942379a33067df1ec8a08b0219f8252939a4f",
+    "receipts/05.json": "4560e0304ec4d962464c405dbee6ee55fd6ba342dbb851375ca7603db06d46db",
+    "receipts/06.json": "3a1f6a272bfade9c7e2efa1c3f5406fa4b54b9c2e425b014a43027d2f581af0b",
+    "receipts/07.json": "5a2438ac3a71bf154356e0a2b2e0dec2a8b5813167fd92f1f2332fb9e5fd26fe",
+    "receipts/08.json": "e0cd12335aa87d8f4ba9a0fa78934ba47ff51adba52d9221693b7d2db4563652",
+    "receipts/09.json": "bc43879eac8ca3a5e5526a90fd9a4cd690a9ea021e4d159c912ab33e51e0abd2",
+    "receipts/control-44100.json": "12be84eb99e472f9a8ecb32bb978b32e3c331d37f4e358a9f9aa1b194a2c332b",
+    "receipts/control-48000.json": "21b81336d9be446418318b7c0a7299b189b15ab94af07d6ed2d1faf0ceb5a816",
+    "test_verify_terminal_clock.py": "4014e4348be304ac2315f87163be59c0773252a0f199a802fff5056009fce64b",
+    "verify_terminal_clock.py": "42f79b87705e92cd5585c7ecb08cc101fe0eaf277eb1fb8411f4346cd7bc44c7"
+  }
+}

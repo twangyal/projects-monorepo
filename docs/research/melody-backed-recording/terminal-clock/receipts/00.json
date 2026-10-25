@@ -1,0 +1,346 @@
+{
+  "row": 0,
+  "stage": "complete",
+  "error": null,
+  "beforeHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "afterHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "captured": {
+    "events": [
+      {
+        "sequence": 0,
+        "wallMs": 773.5999999999767,
+        "kind": "context",
+        "contextId": 0,
+        "state": "running",
+        "audioTime": 0.08126984126984127
+      },
+      {
+        "sequence": 1,
+        "wallMs": 776.3999999999651,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 0.09287981859410431,
+        "data": {
+          "type": "ready",
+          "sampleRate": 44100,
+          "channels": 2
+        }
+      },
+      {
+        "sequence": 2,
+        "wallMs": 778.0999999999767,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 0.09287981859410431,
+        "data": {
+          "type": "arm",
+          "startFrame": 52606,
+          "limitFrame": 934606
+        }
+      },
+      {
+        "sequence": 3,
+        "wallMs": 778.2999999999884,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 0.09287981859410431,
+        "data": {
+          "type": "armed",
+          "startFrame": 52606,
+          "limitFrame": 934606
+        }
+      },
+      {
+        "sequence": 4,
+        "wallMs": 791.2000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "frames": 441000,
+        "when": 1.1928798185941043
+      },
+      {
+        "sequence": 5,
+        "wallMs": 791.2000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "frames": 551,
+        "when": 0.1928798185941043
+      },
+      {
+        "sequence": 6,
+        "wallMs": 791.2000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "frames": 551,
+        "when": 0.4428798185941043
+      },
+      {
+        "sequence": 7,
+        "wallMs": 791.2000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "frames": 551,
+        "when": 0.6928798185941043
+      },
+      {
+        "sequence": 8,
+        "wallMs": 791.2000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "frames": 551,
+        "when": 0.9428798185941043
+      },
+      {
+        "sequence": 9,
+        "wallMs": 794.3999999999651,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "phase": "counting-in",
+        "framesCaptured": 0
+      },
+      {
+        "sequence": 10,
+        "wallMs": 1896.2000000000116,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 1.2219501133786848,
+        "phase": "recording",
+        "framesCaptured": 898
+      },
+      {
+        "sequence": 11,
+        "wallMs": 3049.2000000000116,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 2.3713378684807256,
+        "data": {
+          "type": "cancel"
+        }
+      },
+      {
+        "sequence": 12,
+        "wallMs": 3767.2999999999884,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 3.091156462585034,
+        "data": {
+          "type": "ready",
+          "sampleRate": 44100,
+          "channels": 2
+        }
+      },
+      {
+        "sequence": 13,
+        "wallMs": 3768.7000000000116,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 3.091156462585034,
+        "data": {
+          "type": "arm",
+          "startFrame": 184830,
+          "limitFrame": 1066830
+        }
+      },
+      {
+        "sequence": 14,
+        "wallMs": 3770.5999999999767,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 3.091156462585034,
+        "data": {
+          "type": "armed",
+          "startFrame": 184830,
+          "limitFrame": 1066830
+        }
+      },
+      {
+        "sequence": 15,
+        "wallMs": 3785.7000000000116,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.102766439909297,
+        "frames": 441000,
+        "when": 4.191156462585034
+      },
+      {
+        "sequence": 16,
+        "wallMs": 3785.7999999999884,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.102766439909297,
+        "frames": 551,
+        "when": 3.191156462585034
+      },
+      {
+        "sequence": 17,
+        "wallMs": 3785.7999999999884,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.102766439909297,
+        "frames": 551,
+        "when": 3.441156462585034
+      },
+      {
+        "sequence": 18,
+        "wallMs": 3785.7999999999884,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.102766439909297,
+        "frames": 551,
+        "when": 3.691156462585034
+      },
+      {
+        "sequence": 19,
+        "wallMs": 3785.7999999999884,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.102766439909297,
+        "frames": 551,
+        "when": 3.941156462585034
+      },
+      {
+        "sequence": 20,
+        "wallMs": 3789.399999999965,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 3.111473922902494,
+        "phase": "counting-in",
+        "framesCaptured": 0
+      },
+      {
+        "sequence": 21,
+        "wallMs": 4886.299999999988,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 4.211519274376418,
+        "phase": "recording",
+        "framesCaptured": 898
+      },
+      {
+        "sequence": 22,
+        "wallMs": 5496.700000000012,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 4.821043083900227,
+        "data": {
+          "type": "cancel"
+        }
+      },
+      {
+        "sequence": 23,
+        "wallMs": 5511.899999999965,
+        "kind": "context",
+        "contextId": 0,
+        "state": "closed",
+        "audioTime": 4.83265306122449
+      }
+    ],
+    "overflow": false,
+    "notice": "Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.",
+    "captureState": "Finding the notes…"
+  },
+  "observed": {
+    "requests": 2,
+    "stopped": 2,
+    "sources": [
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 1.1928798185941043,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.1928798185941043,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.4428798185941043,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.6928798185941043,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.9428798185941043,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 4.191156462585034,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.191156462585034,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.441156462585034,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.691156462585034,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.941156462585034,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      }
+    ],
+    "elapsed": 0.6414965986394563,
+    "released": true
+  }
+}

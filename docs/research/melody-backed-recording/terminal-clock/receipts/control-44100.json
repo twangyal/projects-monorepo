@@ -1,0 +1,41 @@
+{
+  "rate": 44100,
+  "running": false,
+  "result": {
+    "rate": 44100,
+    "sourceFrame": 4303,
+    "startFrame": 87454,
+    "requestedEnd": 88457,
+    "messages": [
+      {
+        "type": "ready",
+        "sampleRate": 44100,
+        "channels": 2
+      },
+      {
+        "type": "armed",
+        "startFrame": 87454,
+        "limitFrame": 88457
+      },
+      {
+        "type": "terminal-clock-research300",
+        "reason": "invalid-command",
+        "ready": true,
+        "armed": true,
+        "currentFrame": 3584,
+        "sampleRate": 44100,
+        "receipt": null
+      },
+      {
+        "type": "error",
+        "reason": "invalid-command"
+      }
+    ],
+    "samples": null,
+    "maximumOutput": 0,
+    "closed": true,
+    "sourceStops": 1,
+    "initialReadyCount": 0
+  },
+  "failure": null
+}

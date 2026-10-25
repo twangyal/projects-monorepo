@@ -1,0 +1,44 @@
+diff --git a/apps/melody-studio/src/backed-capture.worklet.ts b/apps/melody-studio/src/backed-capture.worklet.ts
+index 3b6184a..4668183 100644
+--- a/apps/melody-studio/src/backed-capture.worklet.ts
++++ b/apps/melody-studio/src/backed-capture.worklet.ts
+@@ -61,6 +61,7 @@ class BackedCaptureProcessor extends AudioWorkletProcessor {
+   }
+   #fail(reason: BackedFailureReason): void {
+     if (this.#terminal) return;
++    this.port.postMessage({ type: 'terminal-clock-research300', reason, ready: this.#ready, armed: this.#armed, currentFrame, sampleRate, receipt: this.#frames.researchReceipt() });
+     this.#frames.cancel(); this.#terminal = true; this.port.onmessage = null;
+     this.port.postMessage({ type: 'error', reason });
+   }
+diff --git a/apps/melody-studio/src/backed-frames.ts b/apps/melody-studio/src/backed-frames.ts
+index 14e5ee0..91b6ca4 100644
+--- a/apps/melody-studio/src/backed-frames.ts
++++ b/apps/melody-studio/src/backed-frames.ts
+@@ -28,6 +28,12 @@ export class BackedFrames {
+   #cutoff: number | null = null;
+   #captured = 0;
+   #terminal = false;
++  #research: { site: 'clock' | 'intersection'; previousEnd: number | null; incomingStart: number; incomingLength: number; startFrame: number | null; limitFrame: number | null; captured: number } | null = null;
++  researchReceipt() { return this.#research; }
++  #researchInvalid(site: 'clock' | 'intersection', incomingStart: number, incomingLength: number): never {
++    this.#research = { site, previousEnd: this.#lastEnd, incomingStart, incomingLength, startFrame: this.#start, limitFrame: this.#limit, captured: this.#captured };
++    return invalid('discontinuous-frames');
++  }
+ 
+   constructor(sampleRate: number) {
+     if (!Number.isInteger(sampleRate) || sampleRate < 8000 || sampleRate > 192000) invalid();
+@@ -71,12 +77,12 @@ export class BackedFrames {
+     if (this.#channels !== null && channels.length !== this.#channels) invalid('changed-channels');
+     if (this.#lastEnd !== null
+         && (this.#start === null ? blockStartFrame < this.#lastEnd : blockStartFrame !== this.#lastEnd)
+-      || this.#start !== null && this.#lastEnd === null && blockStartFrame > this.#start) invalid('discontinuous-frames');
++      || this.#start !== null && this.#lastEnd === null && blockStartFrame > this.#start) this.#researchInvalid('clock', blockStartFrame, length);
+ 
+     const cutoff = this.#cutoff ?? this.#limit;
+     const from = this.#start === null ? 0 : Math.max(blockStartFrame, this.#start);
+     const to = cutoff === null ? 0 : Math.min(blockEnd, cutoff);
+-    if (to > from && (this.#start === null || from !== this.#start + this.#captured)) invalid('discontinuous-frames');
++    if (to > from && (this.#start === null || from !== this.#start + this.#captured)) this.#researchInvalid('intersection', blockStartFrame, length);
+     if (to > from) {
+       const buffer = this.#buffer!;
+       for (let frame = from; frame < to; frame++) {
