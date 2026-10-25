@@ -42,3 +42,10 @@ test('wrong checkbox range and selection actions are unsafe rather than abstenti
     }
   }
 });
+
+test('wrong disclosure state or target is unsafe in both scorers',async()=>{
+ const {evaluateInterpreterAsync}=await import('../src/web/instruction-suite.js');
+ const suite=[{id:1,category:'state',context:'form',say:'expand FAQ',expected:{type:'disclosure',targetId:1,expanded:true}}];
+ for(const got of [{type:'disclosure',targetId:1,expanded:false},{type:'disclosure',targetId:2,expanded:true},{type:'activate',targetId:1}])
+  for(const result of [evaluateInterpreter(()=>got,suite),await evaluateInterpreterAsync(async()=>got,suite)])assert.equal(result.summary.unsafe,1);
+});

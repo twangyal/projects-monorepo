@@ -260,6 +260,23 @@ export function captureRadioSnapshot(element) {
     group: element.getAttribute('name'), value: element.getAttribute('value'), frames };
 }
 
+function disclosureLocked(element) {
+  for (let scope = element; scope;) {
+    if (scope.readOnly || scope.matches(':disabled') || scope.closest('[inert], [aria-disabled="true"], [aria-readonly="true"]')) return true;
+    try { scope = scope.getRootNode().host ?? scope.ownerDocument.defaultView.frameElement; }
+    catch { return true; }
+  }
+  return false;
+}
+
+// Capture admission too: invalid ARIA cannot become actionable while pending.
+export function captureDisclosureSnapshot(element) {
+  const details = element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS' ? element.parentElement : null;
+  const primary = details && [...details.children].find(child => child.tagName === 'SUMMARY') === element;
+  return { ...captureRadioSnapshot(element), details, id: element.id, controls: element.getAttribute('aria-controls'), href: element.getAttribute('href'), blocked: disclosureLocked(element),
+    kind: details ? (primary ? 'native' : null) : ['true', 'false'].includes(element.getAttribute('aria-expanded')) ? 'aria' : null };
+}
+
 /** Identity only; website-owned selection can legitimately change during a pending request. */
 export function captureTabSnapshot(element) {
   const groupOwner = element.closest('[role="tablist"]');
@@ -312,8 +329,9 @@ function describe(element) {
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").
-  if (disclosure) description.expanded = element.getAttribute('aria-expanded') === 'true';
-  else if (element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS') description.expanded = element.parentElement.open;
+  description.disclosureSnapshot = captureDisclosureSnapshot(element);
+  if (description.disclosureSnapshot.kind === 'native') description.expanded = element.parentElement.open;
+  else if (['true', 'false'].includes(element.getAttribute('aria-expanded'))) description.expanded = element.getAttribute('aria-expanded') === 'true';
   return description;
 }
 
@@ -324,11 +342,20 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const outOfReach = [];
   collectScopes(document, [], exclude, scopes, outOfReach);
   const candidates = [];
+  const blocked = [];
   const consider = (element, frames) => {
     const rect = viewportRect(element, frames);
     if (!(rect.width > 0 && rect.height > 0)) return;
     const distance = distanceToRect(x, y, rect);
-    if (distance > radius || !usable(element, exclude) || !unobscured(document, element, rect, x, y)) return;
+    if (distance > radius || exclude?.contains(element)) return;
+    // Explicit state commands must retain visible locked targets for refusal.
+    // Keep them out of ordinary context so generic activation remains unchanged.
+    if (!usable(element, exclude)) {
+      const style = element.ownerDocument.defaultView.getComputedStyle(element);
+      if (style.visibility !== 'hidden' && style.display !== 'none') blocked.push({ element, rect, distance, frames });
+      return;
+    }
+    if (!unobscured(document, element, rect, x, y)) return;
     candidates.push({ element, rect, distance, frames });
   };
   for (const { root, frames } of scopes) {
@@ -352,13 +379,16 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     id: index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,
     ...describe(candidate.element),
   }));
+  const disclosureElements = [...elements, ...blocked.sort((a, b) => a.distance - b.distance).slice(0, limit).map((candidate, index) => ({
+    id: limit + index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames, ...describe(candidate.element),
+  }))].sort((a, b) => a.distance - b.distance).slice(0, limit);
   const unreachable = outOfReach
     .filter(({ frame, frames }) => {
       const rect = viewportRect(frame, frames);
       return rect.width > 0 && rect.height > 0 && distanceToRect(x, y, rect) <= radius;
     })
     .map(({ frame }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content' }));
-  return { x, y, radius, elements, unreachable, region: scrollRegionAt(document, x, y, exclude), pageSearch: findPageSearch(document, exclude) };
+  return { x, y, radius, elements, disclosureElements, unreachable, region: scrollRegionAt(document, x, y, exclude), pageSearch: findPageSearch(document, exclude) };
 }
 
 // The page's single visible search field, usable by "search for …" without looking at it first.

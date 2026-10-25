@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { isEditable, captureSelectSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -106,6 +106,41 @@ function controlVisible(element) {
     catch { return false; }
   }
   return true;
+}
+
+/** Request a website-owned disclosure state with one activation at most. */
+export function setExpanded(element, expanded, snapshot = captureDisclosureSnapshot(element), { isCurrent = () => true } = {}) {
+  const native = snapshot.kind === 'native';
+  const state = () => native ? snapshot.details.open : element.getAttribute('aria-expanded') === 'true' ? true
+    : element.getAttribute('aria-expanded') === 'false' ? false : null;
+  const available = () => element.isConnected && !element.readOnly && unlocked(element) && controlVisible(element) &&
+    (native ? element.tagName === 'SUMMARY' && element.parentElement === snapshot.details &&
+      [...snapshot.details.children].find(child => child.tagName === 'SUMMARY') === element && [null, 'button'].includes(element.getAttribute('role'))
+      : snapshot.kind === 'aria' && (element.tagName === 'BUTTON' ? [null, 'button'].includes(element.getAttribute('role')) : element.getAttribute('role') === 'button') &&
+        !['INPUT', 'SELECT', 'TEXTAREA', 'OPTION', 'SUMMARY'].includes(element.tagName) &&
+        !(element.tagName === 'A' && element.hasAttribute('href')) &&
+        !(element.tagName === 'BUTTON' && element.form && ['submit', 'reset'].includes(element.type))) &&
+    typeof element.focus === 'function' && typeof element.click === 'function';
+  const unchanged = (includeName = true) => {
+    const current = captureDisclosureSnapshot(element);
+    return ['document', 'root', 'form', 'formOwner', 'type', 'role', 'details', 'id', 'controls', 'kind', 'href', ...(includeName ? ['name'] : [])]
+      .every(key => current[key] === snapshot[key]) && current.frames.length === snapshot.frames.length &&
+      current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document && frame.element.isConnected);
+  };
+  const ready = (includeName = true) => !snapshot.blocked && isCurrent() && available() && unchanged(includeName) && state() !== null;
+  const refused = () => ({ ok: false, message: 'The disclosure changed, is unavailable or has unsupported state. Look at the current panel and try again.' });
+  if (typeof expanded !== 'boolean' || !ready()) return refused();
+  if (state() === expanded) return { ok: true, message: `Panel is already ${expanded ? 'expanded' : 'collapsed'}.` };
+  element.focus({ preventScroll: true });
+  const tick = () => new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, 0));
+  return { message: 'Checking the requested panel state…', followUp: (async () => {
+    await tick();
+    if (!ready() || !ownsFocus(element)) return refused();
+    if (state() !== expanded) { element.click(); await tick(); }
+    // Sites may change Show to Hide as part of successful activation.
+    const ok = ready(false) && state() === expanded;
+    return { ok, message: ok ? `Panel ${expanded ? 'expanded' : 'collapsed'}.` : 'The website did not retain the requested available panel state. Check it before continuing.' };
+  })() };
 }
 
 export function selectRadio(element, snapshot = captureRadioSnapshot(element)) {

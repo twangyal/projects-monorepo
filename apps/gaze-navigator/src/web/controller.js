@@ -7,7 +7,7 @@ const CONFIRM_MS = 15000;
 const HISTORY_LIMIT = 20;
 
 function targetOf(context, id) {
-  return context.elements.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
+  return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
 }
 
 // `commands` handles navigator-level actions (tracking source, calibration) outside the page.
@@ -33,7 +33,7 @@ export function createController({ window, actions = pageActions, interpret = in
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
 
   function confirmable(action, element) {
-    if (['activate', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
+    if (['activate', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
     if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
@@ -47,7 +47,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
@@ -66,7 +66,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -75,6 +75,7 @@ export function createController({ window, actions = pageActions, interpret = in
     if (problem) return problem;
     let result;
     switch (action.type) {
+      case 'disclosure': result = actions.setExpanded(element, action.expanded, target.disclosureSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'select-radio': result = actions.selectRadio(element, target.radioSnapshot); break;
       case 'select-tab': result = actions.selectTab(element, target.tabSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'check': result = actions.setChecked(element, action.checked); break;

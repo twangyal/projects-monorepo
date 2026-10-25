@@ -412,6 +412,18 @@ export function interpret(utterance, context = { elements: [] }) {
     if (picked) return picked;
   }
 
+  // Resolve before eligibility; unsupported intent must refuse, never redirect.
+  const disclosure = /^(expand|collapse)(?:\s+(.+))?$/.exec(text);
+  if (disclosure) {
+    const candidates = context.disclosureElements ?? context.elements;
+    const subject = disclosure[2]?.replace(/^the\s+/, '');
+    const act = element => ({ type: 'disclosure', targetId: element.id, expanded: disclosure[1] === 'expand' });
+    const counted = subject && ORDINAL.exec(subject);
+    if (counted) return ordinal(counted[1], /^(panel|section|disclosure|summary)$/.test(counted[2]) ? 'control' : counted[2], candidates, act);
+    return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:panel|section|disclosure|summary|menu)$/.test(subject)
+      ? deictic(candidates, act, 'disclosure') : resolve(subject, candidates, null, act, 'disclosure');
+  }
+
   // Closing something: a toggle that is open ("close the menu" when its button now reads "Hide navigation menu"),
   // or a Close/Hide/Collapse/Dismiss control. With neither in the circle, the words are an ordinary control name
   // ("close account"), which keeps its usual handling and confirmation.

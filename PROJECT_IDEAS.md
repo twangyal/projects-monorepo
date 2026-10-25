@@ -497,3 +497,7 @@ Karaoke #328 final source`dcefdbe` passes206Python/160TypeScript/all149browser c
 ### 2026-10-25 — Melody consecutive worklet clock readings (#300)
 
 A [bounded quantum-clock discriminator](docs/research/melody-backed-recording/quantum-clock/README.md) retains calls37/38 with the same nativeframe138240/time3.1346938775510202 beforecapture, with collectorpreviousEnd138368/incoming138240. Original-fixture comparison has19actualstarts/9of10passingcases/18recordingcheckpoints; instrumented20/10/19 plus2protocolcontrols retains1prestartrefusal despite12passingassertions. All22receipts/patch/logs/hashes/replay and8integritytests are durable. Shipping source restored;478unit/static/build pass, focused native19/20failure retained withoutretry. FreshreviewnoCritical/Important; one deferred golden-replay-testminor. No cause/fix/physicalacceptance claim;#300OPEN/MelodyACTIVE/#8skip.
+
+### 2026-10-25 — Gaze explicit disclosure state (#329)
+
+Gaze at `apps/gaze-navigator` reconstructs explicit expand/collapse state requests after the prior uncommitted work was lost. Typed intent preserves unsupported target identity and uses native/site-owned activation with no-op suppression, focus/turn checks and captured ownership. [Checkpoint](apps/gaze-navigator/docs/2026-10-25-disclosure-state.md) records fresh RED/GREEN units/native evidence and pending full/installed-extension acceptance. GazeACTIVE; physical#132open; project#8skipped.

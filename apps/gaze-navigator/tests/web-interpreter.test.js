@@ -154,7 +154,7 @@ test('"close" closes an open toggle or uses a Close control; otherwise the words
     'a name that does not match the open toggle is not guessed');
   assert.deepEqual(interpret('close', context(element(4, '×', 'button'), element(5, 'Subscribe', 'button'))), { type: 'activate', targetId: 4 });
   assert.deepEqual(interpret('dismiss the banner', context(element(6, 'Dismiss banner', 'button'))), { type: 'activate', targetId: 6 });
-  assert.deepEqual(interpret('collapse cabinet office', context(element(7, 'Cabinet Office', 'button', { expanded: true }))), { type: 'activate', targetId: 7 });
+  assert.deepEqual(interpret('collapse cabinet office', context(element(7, 'Cabinet Office', 'button', { expanded: true }))), { type: 'disclosure', targetId: 7, expanded: false });
   // A closed toggle is not "closed" again, and "close account" stays an ordinary (consequential) control name.
   assert.equal(interpret('close the menu', context(element(8, 'Show navigation menu', 'button', { expanded: false }))).type, 'unknown');
   assert.deepEqual(interpret('close account', context(element(9, 'Close account', 'button', { consequential: true }))), { type: 'activate', targetId: 9 });
@@ -283,4 +283,16 @@ test('checkbox state preserves reading-order ordinal requests', () => {
 test('the established checkout phrase retains ordinary consequential activation', () => {
   const page=context(element(1,'Check out now','button',{consequential:true}));
   assert.deepEqual(interpret('check out now',page),{type:'activate',targetId:1});
+});
+
+test('explicit disclosure requests retain state and preserve unsupported intended targets', () => {
+  const page = context(element(1, 'FAQ', 'button'), element(2, 'FAQ details', 'button', { expanded: false }));
+  for (const said of ['expand FAQ', 'expand that', 'expand first panel']) assert.deepEqual(interpret(said, page), {type:'disclosure', targetId:1, expanded:true}, said);
+  assert.deepEqual(interpret('collapse FAQ details', page), {type:'disclosure', targetId:2, expanded:false});
+  assert.deepEqual(interpret('expand second panel', page), {type:'disclosure', targetId:2, expanded:true});
+  const ask = interpret('expand FAQ', context(element(1, 'FAQ', 'button'),element(2, 'FAQ', 'button', {expanded:false})));
+  assert.equal(ask.type, 'clarify'); assert.deepEqual(ask.choose(2), {type:'disclosure',targetId:2,expanded:true});
+  assert.equal(interpret('expand missing', page).type, 'unknown');
+  assert.equal(interpret('expand missing', page).targetQuery, undefined);
+  assert.deepEqual(interpret('click FAQ',page), {type:'activate',targetId:1});
 });

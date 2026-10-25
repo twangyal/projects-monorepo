@@ -280,7 +280,7 @@ const HELD_OUT_2 = [
 export const HELD_OUT_2_SUITE = HELD_OUT_2.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
-const PAGE_ACTIONS = new Set(['activate', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
+const PAGE_ACTIONS = new Set(['activate', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 
 function matches(expected, got) {
   if (expected.type !== got.type) return false;

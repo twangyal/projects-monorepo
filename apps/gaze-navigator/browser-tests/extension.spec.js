@@ -10,6 +10,7 @@ const extension = join(process.cwd(), 'dist', 'extension-test');
 const SITE = {
   '/': ['Example Shop', '<nav><a href="/about">About us</a> <a href="/contact">Contact</a></nav><p>Welcome.</p><label>Playback volume<input id="volume" type="range" value="50"></label><button>Buy now</button>'],
   '/about': ['About Example Shop', '<p>We sell examples.</p><a href="/">Home</a>'],
+  '/disclosure': ['Shop FAQ', '<details id="faq-panel"><summary>FAQ</summary><p>Answer</p></details>'],
   '/contact': ['Contact Example Shop', '<label>Message <textarea></textarea></label><a href="/">Home</a>'],
 };
 const html = path => {
@@ -482,3 +483,16 @@ for(const period of [{kind:'month',label:'Month',original:'2026-01',value:'2026-
   await typeInstruction(page,`undo Reporting ${period.kind} field`);await expect(input).toHaveValue(period.original);
  });
 }
+
+
+test('injected runtime preserves repeated explicit expand and collapse state', async ({context,worker}) => {
+ await worker.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+ const page=await context.newPage();await page.goto('http://shop.example/disclosure');
+ await expect(status(page)).toContainText('Ready on');
+ await look(page,page.locator('#faq-panel summary'));await typeInstruction(page,'expand FAQ');
+ await expect(status(page)).toContainText('Panel expanded');await expect(page.locator('#faq-panel')).toHaveAttribute('open','');
+ await look(page,page.locator('#faq-panel summary'));await typeInstruction(page,'expand FAQ');
+ await expect(status(page)).toContainText('already expanded');await expect(page.locator('#faq-panel')).toHaveAttribute('open','');
+ await look(page,page.locator('#faq-panel summary'));await typeInstruction(page,'collapse FAQ');
+ await expect(status(page)).toContainText('Panel collapsed');await expect(page.locator('#faq-panel')).not.toHaveAttribute('open','');
+});
