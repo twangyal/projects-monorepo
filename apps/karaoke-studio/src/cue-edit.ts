@@ -34,6 +34,14 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
 
 export interface CuePassage { firstIndex: number; lastIndex: number }
 
+/** Remove literal lines, including invalid drafts, without normalizing survivors. */
+export function removeCues(cues: Cue[], passage: CuePassage): Cue[] {
+  if (!Array.isArray(cues) || cues.length > 200 || Array.from(cues).some(cue => !cue || typeof cue !== 'object')) throw new Error('Choose existing lyric lines.');
+  validIndex(cues, passage.firstIndex); validIndex(cues, passage.lastIndex);
+  if (passage.lastIndex < passage.firstIndex) throw new Error('Choose an ordered passage of existing lyric lines.');
+  return [...cues.slice(0, passage.firstIndex), ...cues.slice(passage.lastIndex + 1)];
+}
+
 /** Shift all cues or one inclusive passage; validate the whole graph without cropping. */
 export function shiftCues(cues: Cue[], duration: number, rawSeconds: string, passage?: CuePassage): Cue[] {
   const raw = rawSeconds.trim();

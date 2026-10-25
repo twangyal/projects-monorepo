@@ -118,3 +118,12 @@ test('passage admission checks sparse and invalid outside cues plus representabi
   assert.throws(() => shiftCues(source, 6, '1e-300', { firstIndex: 1, lastIndex: 1 }), /too small/);
   assert.equal(shiftCues(source, 6, '.25', { firstIndex: 1, lastIndex: 1 })[0].start, 0);
 });
+
+test('remove an inclusive passage without mutating or normalizing survivors', async () => {
+ const {removeCues}=await import('../src/cue-edit.ts');
+ const input=[{start:0,end:1,text:'literal 🌓\r\nwords'},{start:2,end:3,text:'wrong'},{start:4,end:5,text:'extra'},{start:5,end:6,text:' last '}];
+ const before=structuredClone(input);assert.deepEqual(removeCues(input,{firstIndex:1,lastIndex:2}),[input[0],input[3]]);assert.deepEqual(input,before);
+ assert.deepEqual(removeCues(input,{firstIndex:0,lastIndex:3}),[]);
+ for(const r of [{firstIndex:-1,lastIndex:2},{firstIndex:2,lastIndex:1},{firstIndex:0,lastIndex:4},{firstIndex:.5,lastIndex:1}])assert.throws(()=>removeCues(input,r));
+ assert.deepEqual(removeCues([{start:NaN,end:0,text:''},input[0]],{firstIndex:0,lastIndex:0}),[input[0]]);
+});

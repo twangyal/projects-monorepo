@@ -674,3 +674,7 @@ Choose **Playback speed** beside the player: **0.5×**, **0.75×** or **1× — 
 Changing speed stops owned practice/audition and discards staged manual timing capture without applying it. Choose Play/Repeat again deliberately. It preserves the paused playhead, raw lyric edits, title, pasted draft and Undo/Redo; ordinary playback is not started by the control. The selected speed survives same-clip track changes, and opening a different clip resets to1×. Nothing about speed is saved in the song. Unsupported externally changed rates cannot start practice; choose a supported value again.
 
 Manual **Time lines while listening** still requires normal1× speed. Slower listening is a rehearsal utility, not a new alignment algorithm or evaluated improvement in recognition accuracy, correction effort or physical latency. Native repeat seeks retain their existing audible scheduling gaps. [Verification checkpoint](docs/2026-10-25-rehearsal-speed.md).
+
+### Remove unwanted lyric passages
+
+Under **Shift lyric timing**, choose **Selected passage** and its first/last lines, then **Remove selected lyric lines**. The displayed range is removed as one unsaved Undo/Redo edit. Surviving words, times, title and pasted drafts remain exact; Save lyrics is separate. Invalid selected lines can be removed, and invalid surviving timing drafts stay visible and block saving. Missing/reversed/stale selection refuses before stopping listening or changing history. Removing all lines is allowed and reversible. Choose the passage again after structural edits or Undo/Redo.

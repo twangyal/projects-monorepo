@@ -469,3 +469,24 @@ test('a precision-collapsed positive gap refuses before editor or pending review
   await passageFixture(page);for(const [name,value]of[['End line 2','2.000'],['Start line 3','2.0000000000000004'],['End line 3','3.000']])await page.getByLabel(name,{exact:true}).fill(value);
   await page.getByLabel('Import timed lyrics (SRT)',{exact:true}).setInputFiles({name:'precision-review.srt',mimeType:'application/x-subrip',buffer:Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nKeep this review\n')});await expect(page.locator('#srt-review')).toBeVisible();await fitStart(page).fill('2');await fitEnd(page).fill('3');const before=await timingEditor(page);await fitApply(page).click();await expect(page.locator('#passage-fit-status')).toContainText('positive lyric gap');expect(await timingEditor(page)).toEqual(before);await expect(page.locator('#srt-review')).toBeVisible();await expect(fitStart(page)).toHaveValue('2');await expect(fitEnd(page)).toHaveValue('3');
 });
+
+test('remove passage preserves raw survivors history saved state and exported SRT',async({page})=>{
+ await passageFixture(page);const remove=page.getByRole('button',{name:'Remove selected lyric lines',exact:true});
+ await page.getByLabel('Clip title').fill('Removed passage');await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied 🌓');
+ const before=await timingEditor(page),id=new URL(page.url()).searchParams.get('project')!,saved=await(await page.request.get(`/api/projects/${id}`)).json();
+ await remove.click();await expect(page.locator('#passage-remove-status')).toContainText('Removed 2 lyric lines as one unsaved edit');await expect(page.locator('[data-cue]')).toHaveCount(2);await expect(page.getByLabel('Start line 2',{exact:true})).toHaveValue('4.000');await expect(page.getByLabel('End line 2',{exact:true})).toHaveValue('5.000');
+ expect(await(await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);const after=await timingEditor(page);
+ await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(before);await page.getByRole('button',{name:'Redo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(after);
+ await expect(page.getByRole('combobox',{name:'First line in passage',exact:true})).toHaveValue('');await remove.click();expect(await timingEditor(page)).toEqual(after);
+ await page.getByRole('button',{name:'Discard pasted draft',exact:true}).click();await page.getByRole('button',{name:'Save lyrics',exact:true}).click();await expect(page.locator('#message')).toContainText('saved locally');
+ const current=await(await page.request.get(`/api/projects/${id}`)).json();expect(current.cues).toEqual([{start:0,end:.5,text:'Keep 🌓'},{start:4,end:5,text:'Final 🎵'}]);
+ const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export timed lyrics',exact:true}).click()]);expect(await readFile((await download.path())!,'utf8')).toContain('00:00:04,000 --> 00:00:05,000');await page.reload();await expect(page.locator('[data-cue]')).toHaveCount(2);
+});
+test('remove passage refuses reversed ranges keeps invalid survivor drafts and all-lines Undo on phone',async({page})=>{
+ await page.setViewportSize({width:390,height:740});await passageFixture(page);const remove=page.getByRole('button',{name:'Remove selected lyric lines',exact:true});
+ await page.getByLabel('Start line 1',{exact:true}).fill('');await page.getByLabel('End line 2',{exact:true}).fill('');const before=await timingEditor(page);
+ await selectPassage(page,'2','1');await remove.click();expect(await timingEditor(page)).toEqual(before);
+ await selectPassage(page,'1','2');await remove.click();await expect(page.locator('[data-cue]')).toHaveCount(2);await expect(page.getByLabel('Start line 1',{exact:true})).toHaveValue('');await expect(page.getByRole('button',{name:'Save lyrics',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(before);await selectPassage(page,'0','3');await remove.click();await expect(page.locator('[data-cue]')).toHaveCount(0);await expect(remove).toBeDisabled();
+ await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(before);await page.getByRole('button',{name:'Redo lyric edit',exact:true}).click();await expect(page.locator('[data-cue]')).toHaveCount(0);
+});
