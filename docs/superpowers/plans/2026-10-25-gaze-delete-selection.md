@@ -34,3 +34,7 @@ Interface: {type:'delete-selection',targetId}; captureTextSelectionSnapshot; del
 Ruling: use separate typed deletion rather than generic text insertion with empty replacement, because destruction must recheck captured range after focus and report site overrides. Cost: unsupported native/rich-text controls refuse. Preserve existing ordinary typing/Undo APIs; new deletion adds an explicit before-value to shared history. No interface conflicts; one cohesive task. Autonomous inline execution/noquestions/noPR.
 
 Final review: one Important defaultValue reflection bug reproduced natively and repaired in one pass; pre-write value-attribute guard retained, post-write mutable default-value excluded. No rereview. Minor seeded prior-history refusal/cancellation Undo assertion deferred; site/framework/physical/distribution acceptance excluded. See app checkpoint for evidence and canonical gate status.
+
+Source committed main121d0d3. Final232units/static/build and32focused native cases47.8s pass. Final764case local run stopped17pass/6fail/741withoutcompletedresult; no full local pass. Canonical864case run40226283219 pending. Final root acceptance records exact results; do not interpret this source checkpoint as physical#132 acceptance.
+
+Final canonical run40226283219 succeeds on121d0d3:232units/syntax112/build/all864browser cases, including4installed deletion workflows. Software milestone accepted; exact local failures and deferredMinor remain in final rootacceptance. No additional review/fixpass.
