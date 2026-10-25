@@ -31,7 +31,7 @@ Interfaces: isRehearsalSpeed(value: unknown): value is 0.5 | 0.75 | 1; PracticeC
 - [x] Add shared fixed rate guard; controller snapshot/validity/status; guarded utility sets defaultPlaybackRate/playbackRate/preservesPitch, retires current owners, resets on new clip.
 - [x] Final160TSunits/lint/types/build;5focused native cases36.4s. Native actual-clock progress/repeat/gap/pause/stop, track continuity, raw/Redo/SRT, timing guard, clip reset, phone/automatic-review and stale callbacks.
 - [x] Fresh review: oneImportant default divergence repaired nativeRED expected1/got0.5→GREEN; noCritical/Minor/no rereview. Final160TSunits/lint/types/build and6focused native37.0s. Source commit via connected GitHub tools.
-- [ ] Observe complete canonical acceptance and close issue only as verified; root receipt keeps local limitations.
+- [x] Observed exact-source canonical206Python/160TS/all149browser, Ruff/compileall/lint/types/build pass. Final local149browser7.8min pass; root acceptance/receipt retain interrupted runs and prior local limitations. Close#328 as bounded software milestone; KaraokeACTIVE/#241open/#8skip.
 
 ## Ledger
 
@@ -47,3 +47,7 @@ Final Ruling: no newlyrendered slow-choiceMP4 in this review; export isolation i
 Final Ruling: full/localcanonical gates are recorded separately onlyafterobservation; focusedsuccess doesnot establish whole-suite acceptance. Unrelated existing behavior is outside this milestone; no regression closure claim.
 
 Final: fixed native/control default divergence — native player speed changes remain selected across same-clip track loads RED→GREEN;160/160units/lint/types/build and6/6focused native37.0s pass. Earlier full148case run intentionally interrupted(exit130) after46observed passes before rebuilding for the review fix; no complete/full pass claim. Fresh final149case local/canonical gates follow.
+
+Post-review observation directly addresses export isolation: selected0.5x native export passes onecase5.4s, independently decoded6second H264/AAC/144frames/12boundarypixels and unchanged saved/raw/SRT/all3audio hashes. Receipt retained in root docs. Fresh final149case local suite passes7.8minutes,exit0. Canonical job121117808882/run40176366602 still in progress; no full acceptance claim yet.
+
+Task1 complete: source dcefdbe; fresh whole-suite160TS/static/build and149native local7.8min/canonical7.0min pass. Canonical206Python83.949s includingRSS. Root acceptance supersedes pending checkpoints. Fresh reviewoneImportantfixedRED/GREEN/noCritical/Minor/no rereview; post-review actualMP4 observation recorded separately. Owner authorization integrates to main via connectedGitHub, noPR.
