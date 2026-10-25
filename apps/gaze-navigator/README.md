@@ -84,6 +84,7 @@ Browser tests start `python3 -m http.server` on port 4173 themselves. They use a
 ## Data & privacy
 
 - The navigator never records, uploads or stores audio, transcripts or page content. In Chrome and Edge, the browser's own speech recognition sends microphone audio to the browser vendor. Typed instructions work without a microphone.
+- **Known issue:** in the extension, WebGazer runs in the content script, so Chrome grants camera (and speech-recognition microphone) permission to *the website being viewed*, not to the extension, and WebGazer's `<video>` element is inserted into the page. Moving capture into an extension-owned context is planned.
 - Webcam frames are processed in the browser by WebGazer and are not uploaded or stored. WebGazer's face models download from tfhub.dev. On the website, WebGazer itself loads from jsDelivr; the extension bundles it.
 - Extension state lives in extension storage, never in the website's storage. Navigator settings and camera calibration samples (small eye-patch images plus screen positions) are kept in in-memory session storage. "Stop camera" deletes the samples, and closing the browser discards them. The popup's stay-on and auto-start preferences are kept in extension local storage. The website version keeps settings in `sessionStorage` and recalibrates on every page.
 - The WaterSheep model is cached in Cache Storage: the extension's own cache, or the practice site's origin.
