@@ -16,7 +16,7 @@ test('valid preblur pose and raw stroke appearance drafts are protected at 390px
  await page.locator('#duplicate-layer').focus();await page.locator('#duplicate-layer').press('Enter');await expect(page.locator('#stroke-width')).toHaveValue('');expect(await backup(page)).toEqual(p);
  await page.locator('#duplicate-layer').scrollIntoViewIfNeeded();await page.screenshot({path:test.info().outputPath('drawing-copy-mobile.png')});
 });
-test('image selection is explicitly unsupported; full drawing quota refuses without changing selection or redo',async({page})=>{
- const p=await open(page);await page.locator('#layers button').filter({hasText:'Original magenta image'}).click();await expect(page.locator('#duplicate-layer')).toBeDisabled();await page.locator('#layers button').filter({hasText:'Paint'}).click();
+test('full drawing quota refuses without changing selection or redo',async({page})=>{
+ const p=await open(page);
  const crowded=structuredClone(p);crowded.layers[0].cels=[{frame:0,strokes:Array.from({length:51},()=>({color:'#010203',width:1,points:[{x:0,y:0}]}))}];await page.locator('#project-file').setInputFiles({name:'crowded.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(crowded))});await expect.poll(()=>nativeCurrent(page)).toEqual(crowded);await page.locator('#layers button').filter({hasText:'Paint'}).click();await page.locator('#layer-name').fill('Renamed');await page.locator('#undo').click();await expect(page.locator('#redo')).toBeEnabled();await page.locator('#duplicate-layer').click();await expect(page.locator('#message')).toContainText('100 strokes');await expect(page.locator('#layer-name')).toHaveValue('Paint');expect(await backup(page)).toEqual(crowded);await expect(page.locator('#redo')).toBeEnabled();await page.locator('#redo').click();crowded.layers[0].name='Renamed';expect(await backup(page)).toEqual(crowded);
 });

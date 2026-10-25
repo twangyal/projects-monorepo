@@ -64,7 +64,13 @@ Each completed drag is one Undo/Redo edit and changes the active drawing through
 
 Select a drawing layer and choose **Duplicate drawing layer** to copy all its held drawings, strokes and pose keys. The independent copy is inserted immediately above the source in paint order, selected, and named with a bounded “ copy” suffix. The timeline stays at its current frame. Change its poses or artwork to reuse an animated character or prop without altering the original. One Undo removes the copy; Redo restores it. Autosaves, project files and exports include the committed copy.
 
-Complete layer copies consume the existing layer, total stroke/point and project-file budgets. Refusals preserve artwork, selection and Redo. Finish or explicitly discard other pose/name/stroke drafts first; activation guards them before pointer blur and on keyboard activation. Copies are unavailable during gestures, loading or export. Imported image layers are not duplicated by this control. Drawing-layer copies leave all existing image data and resources unchanged.
+Complete layer copies consume the existing layer, total stroke/point and project-file budgets. Refusals preserve artwork, selection and Redo. Finish or explicitly discard other pose/name/stroke drafts first; activation guards them before pointer blur and on keyboard activation. Copies are unavailable during gestures, loading or export. Drawing-layer copies leave all existing image data and resources unchanged.
+
+## Reuse imported artwork (#326)
+
+Select an image layer and choose **Duplicate image layer** in Layers. The copy is inserted immediately above its source, selected at the current timeline frame, with the same embedded PNG and complete pose keys. Edit the copy’s poses to reuse a character or prop independently; source poses and pixels stay unchanged. One Undo removes the copy, and Redo restores it. Committed copies survive autosave, project backups, reload and PNG/GIF/frame exports.
+
+Each copy consumes one of the existing four image slots, eight layer slots and project-file budget. Limits refuse the whole copy. Finish or discard pending pose/name/stroke edits first; gestures, loading, export and recovery retain their existing guards. The browser decodes a separately owned bitmap before publishing the copy; failed or retired/page-suspended decoding preserves the project and closes any late bitmap. Source deletion and history cannot close the copy’s bitmap. The copy name uses the same bounded “ copy” suffix as drawings; this reuses authored artwork without generating new pixels or learned animation.
 
 ## Correct an existing stroke
 

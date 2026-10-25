@@ -469,3 +469,9 @@ Gaze #325 final canonical acceptance: source`a26b195` passes228units/syntax110/e
 ### 2026-10-24 — Melody terminal clock evidence (#300)
 
 A [fixed terminal-only diagnostic cohort](docs/research/melody-backed-recording/terminal-clock/README.md) observes one armed pre-start clock refusal among20planned startups: incoming138880 versus previousEnd139008,128frame overlap,captured0. All12browser assertions pass, but only19recording-phase transitions occur; the original elapsed oracle can advance after retirement. Exact patch,12receipts,hashes,replay,4model/2native controls and8corruption tests are retained. Shipping source is restored;478units/lint/types/build and20focused native cases pass. Fresh review finds no issues. No production fix, cause, incidence or physical acceptance claim;#300OPEN/MelodyACTIVE/#8skip.
+
+### 2026-10-24 — Motion imported-artwork copies (#326)
+
+Motion at `apps/motion-studio` now reuses imported image props with independent complete pose keys and bitmap ownership, one Undo edit, retained project/PNG/GIF output and atomic existing image/layer/file budgets. [Implementation record](apps/motion-studio/docs/2026-10-24-image-copy.md) separates287unit/static/build/8focused native passes from pending full local/canonical gates and documents corrected fixture assumptions. MotionACTIVE; broader learned animation and intended-user acceptance remain open;#8skip.
+
+Motion #326 review repairs deleted-image bitmap retention: repeated native copy/delete now closes removed bindings while keeping source/history usable. Final287units/lint/types/build and9focused cases pass, including animated GIF pixels. Fresh215-case local/canonical acceptance remains pending in the [record](apps/motion-studio/docs/2026-10-24-image-copy.md); initial214mixed-source pass is preserved separately. MotionACTIVE/#8skip.

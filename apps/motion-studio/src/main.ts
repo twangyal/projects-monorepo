@@ -7,11 +7,11 @@ import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts'
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
 import { retimeDrawingCel, retimePoseKey, displayedDrawingFrame } from './cel-timing.ts';
 import { neighborDrawings, renderNeighborDrawings } from './onion-skin.ts';
-import { duplicateDrawingLayer } from './layer-copy.ts';
+import { duplicateLayer } from './layer-copy.ts';
 import { History } from './history.ts';
 import { createTweenWorkspace } from './tween-view.ts';
 import { loadAssets, closeAssets, renderFrame, type Assets } from './render.ts';
-import { importImage, validateProjectImages } from './images.ts';
+import { importImage, validateProjectImages, decodeImageAsset } from './images.ts';
 import { exportGif } from './export.ts';
 import { exportPngFrames } from './png-export.ts';
 import { serializeRawRecord, type RawRecord } from './storage.ts';
@@ -33,7 +33,7 @@ app.innerHTML = `
 <div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button><button id="edit-strokes-mode" aria-pressed="false">Edit strokes</button></div><div id="stroke-editor-host"></div>
 <label class="field" id="shape-control">Draw shape<select id="draw-shape"><option value="freehand">Freehand</option><option value="line">Line</option><option value="rectangle">Rectangle</option><option value="ellipse">Ellipse</option></select></label><p class="hint">Drag a shape in the drawing’s local axes. Rectangles and ellipses become closed editable paths. Edit strokes adds fill or adjusts points. Escape cancels the preview.</p>
 <label class="field">Ink color<input id="ink" type="color" value="#563d75"></label><label class="field">Brush width <output id="brush-value">6 px</output><input id="brush" type="range" min="1" max="40" value="6"></label><p class="hint">Draw on the selected drawing layer. Move places a pose at the current frame.</p>
-<div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="duplicate-layer">Duplicate drawing layer</button><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
+<div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="duplicate-layer">Duplicate drawing layer</button><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers and 4 images. PNG, JPEG or still WebP, up to 4 MiB.</p>
 <div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
 </div></aside>
 <section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="onion-overlay" width="640" height="360" aria-hidden="true"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
@@ -56,7 +56,7 @@ let animation = 0, playStarted = 0, playFrom = 0;
 let busy = true, exporting = false, operation = 0, generation = 0;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let saveRevision = 0;
-let pendingKind: 'import' | 'history' | 'reset' | 'replacement' | 'library' | null = null;
+let pendingKind: 'import' | 'history' | 'reset' | 'replacement' | 'library' | 'copy' | null = null;
 let saveState: 'pending' | 'saved' | 'failed' = 'saved';
 let exported: AbortController | null = null;
 let isDemo = true;
@@ -225,7 +225,9 @@ function controls() {
   el<HTMLButtonElement>('remove-key').disabled = locked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
   el<HTMLButtonElement>('retime-key').disabled = authoringLocked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
   const drawing = chosen?.kind === 'drawing' ? chosen : null;
-  el<HTMLButtonElement>('duplicate-layer').disabled = authoringLocked || !drawing || project.layers.length >= 8;
+  const copyButton = el<HTMLButtonElement>('duplicate-layer');
+  copyButton.textContent = chosen?.kind === 'image' ? 'Duplicate image layer' : 'Duplicate drawing layer';
+  copyButton.disabled = authoringLocked || !chosen || project.layers.length >= 8 || (chosen.kind === 'image' && project.layers.filter(item => item.kind === 'image').length >= 4);
   const onionControl = el<HTMLInputElement>('onion-enabled');
   onionControl.disabled = authoringLocked || !drawing; onionControl.checked = onionEnabled;
   const guides = drawing && onionEnabled && !playing ? neighborDrawings(project, selected, frame) : [];
@@ -314,7 +316,11 @@ function renderDrawings() {
 function commit(next: Project): boolean {
   const safe = validateProject(next);
   if (!history.commit(safe)) { refresh(); return false; }
-  intent(); isDemo = false; initialDemo = false; project = history.current; refresh(); scheduleSave(); return true;
+  intent(); isDemo = false; initialDemo = false; project = history.current;
+  // Consumers are retired; history retains JSON and decodes missing bindings on travel.
+  const retainedImages = new Set(project.layers.filter(item => item.kind === 'image').map(item => item.id));
+  for (const [id, bitmap] of assets) if (!retainedImages.has(id)) { bitmap.close(); assets.delete(id); }
+  refresh(); scheduleSave(); return true;
 }
 function edit(action: (next: Project) => void) {
   if (busy || exporting || gesture || !admitDrafts()) return;
@@ -614,17 +620,35 @@ el('discard-pose-edits').addEventListener('click', () => {
 });
 el<HTMLInputElement>('background').addEventListener('input', event => edit(next => { next.background = (event.target as HTMLInputElement).value; }));
 el('add-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { const added = createDrawingLayer(`Drawing ${next.layers.length + 1}`); next.layers.push(added); selected = added.id; selectMode('draw'); }); });
-el('duplicate-layer').addEventListener('click', () => {
+async function duplicateSelectedLayer() {
   if (busy || exporting || gesture || restorePending || retryPending || libraryPending || !admitDrafts()) return;
+  let prepared: ImageBitmap | null = null, copiedId = '';
+  let token: number | null = null;
   try {
-    const next = duplicateDrawingLayer(project, selected);
-    const index = next.layers.findIndex(item => item.id === selected);
-    const copiedId = next.layers[index + 1].id;
+    const next = duplicateLayer(project, selected);
+    const index = next.layers.findIndex(item => item.id === selected), copied = next.layers[index + 1];
+    copiedId = copied.id;
     if (!tweens.confirmLeave()) return;
     pause();
-    if (commit(next)) { selected = copiedId; refresh(); tell('Drawing layer duplicated. All drawings and pose keys are independent.'); }
-  } catch (error) { tell(errorMessage(error), true); }
-});
+    if (copied.kind === 'image') {
+      intent(); token = operation; const revision = generation;
+      busy = true; pendingKind = 'copy'; controls();
+      prepared = await decodeImageAsset(copied.image);
+      if (token !== operation || revision !== generation || drafts.size || gesture) return;
+      // One independently owned bitmap is ready before synchronous history publication.
+      assets.set(copiedId, prepared); busy = false; pendingKind = null;
+    }
+    if (commit(next)) {
+      prepared = null; selected = copiedId; refresh();
+      tell(copied.kind === 'image' ? 'Image layer duplicated. Its pose keys and image resource are independent.' : 'Drawing layer duplicated. All drawings and pose keys are independent.');
+    }
+  } catch (error) { if (token === null || token === operation) tell(errorMessage(error), true); }
+  finally {
+    if (prepared) { if (assets.get(copiedId) === prepared) assets.delete(copiedId); prepared.close(); }
+    if (token !== null && token === operation) { busy = false; pendingKind = null; controls(); }
+  }
+}
+el('duplicate-layer').addEventListener('click', () => void duplicateSelectedLayer());
 el('delete-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { next.layers = next.layers.filter(item => item.id !== selected); }); });
 for (const [id, delta] of [['layer-down', -1], ['layer-up', 1]] as const) el(id).addEventListener('click', () => edit(next => {
   const index = next.layers.findIndex(item => item.id === selected), target = index + delta;
