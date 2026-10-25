@@ -1,5 +1,6 @@
 // Interpretation stage: maps one instruction plus a described gaze context to one typed action.
 // Deterministic rules form the baseline; a model interpreter can implement the same contract.
+import { spokenDate, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -181,7 +182,35 @@ function unquote(text) {
   return match ? match[1] : text.trim();
 }
 
+// Native value fields that "set <name> to <value>" can reach by name or kind, with what to say.
+const TYPED_FIELDS = [
+  { matches: element => element.nativeDate === true, type: 'date', noun: 'date', parse: spokenDate, example: '“November first”, “tomorrow” or 2026-11-01' },
+  { matches: element => element.nativeTime === true, type: 'time', noun: 'time', parse: spokenTime, example: '“2:30 pm”, “half past nine” or 14:30' },
+  { matches: element => element.nativeMonth === true, type: 'month', noun: 'month', parse: spokenMonth, example: '“November 2026”, “next month” or 2026-11' },
+  { matches: element => element.nativeWeek === true, type: 'week', noun: 'week', parse: spokenWeek, example: '“week 43”, “next week” or 2026-W43' },
+  { matches: element => element.nativeNumber === true, type: 'number', noun: 'number', parse: spokenNumber, example: '“three”, “forty two” or 2.5' },
+  { matches: element => element.role === 'slider', type: 'range', noun: 'slider', parse: spokenSliderValue, example: '“forty”, “forty percent” or 40', number: true },
+];
+
+function typedSet(target, value, context, now) {
+  for (const kind of TYPED_FIELDS) {
+    const fields = context.elements.filter(kind.matches);
+    if (!fields.length) continue;
+    // "departure date" names the Departure field by its kind; "the date" or "this date" means the one in view.
+    const name = target.replace(new RegExp(`\\s*\\b${kind.noun}$`, 'i'), '').trim();
+    const saidKind = name !== target.trim();
+    const named = fields.filter(element => matchScore(target, element.name) >= 0.5 || (name && matchScore(name, element.name) >= 0.5));
+    if (!named.length && !(saidKind && (!name || DEICTIC.test(normalize(name))))) continue;
+    const parsed = kind.parse(value, now);
+    if (parsed === null) return { type: 'unknown', message: `“${value}” is not a ${kind.noun} value. Say something like ${kind.example}.` };
+    const act = element => ({ type: kind.type, targetId: element.id, value: kind.number ? Number(parsed) : parsed });
+    return named.length ? resolve(name || target, named, null, act, `${kind.noun} field`) : deictic(fields, act, `${kind.noun} field`);
+  }
+  return null;
+}
+
 export function interpret(utterance, context = { elements: [] }) {
+  const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
   // Dictation keeps its own words; commands also drop trailing politeness.
   const raw = heard.replace(LEADING_FILLER, '') || heard;
@@ -306,9 +335,10 @@ export function interpret(utterance, context = { elements: [] }) {
   if (periodPrefix && !/\bfield\s+to\b/i.test(periodPrefix[1] ?? '')) {
     const periodSet = /^(?:set|change)\s+(?:the\s+)?(?:(.*?)\s+)?(month|week)\s+field\s+to\s+(.+)$/i.exec(command);
     const periodUndo = /^undo\s+(?:the\s+)?(?:(.*?)\s+)?(month|week)\s+field[.!?,;:]*$/i.exec(command);
-    const kind = periodPrefix[2].toLowerCase(), name = (periodSet ?? periodUndo)?.[1], value = periodSet?.[3];
+    const kind = periodPrefix[2].toLowerCase(), name = (periodSet ?? periodUndo)?.[1];
+    const value = periodSet ? ((kind === 'month' ? spokenMonth : spokenWeek)(periodSet[3], now) ?? periodSet[3]) : undefined;
     const format = kind === 'month' ? /^\d{4}-(?:0[1-9]|1[0-2])$/ : /^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/;
-    if ((!periodSet && !periodUndo) || (periodSet && !format.test(value))) return { type: 'unknown', message: `Say a literal ${kind === 'month' ? 'YYYY-MM month' : 'YYYY-Www ISO week with uppercase W'}, such as “set Reporting ${kind} field to ${kind === 'month' ? '2026-11' : '2026-W43'}”, or “undo Reporting ${kind} field”.` };
+    if ((!periodSet && !periodUndo) || (periodSet && !format.test(value))) return { type: 'unknown', message: `Say a ${kind} such as ${kind === 'month' ? '“November 2026”, “next month” or 2026-11' : '“week 43”, “next week” or 2026-W43'}: “set Reporting ${kind} field to ${kind === 'month' ? 'November 2026' : 'week 43'}”, or “undo Reporting ${kind} field”.` };
     const fields = context.elements.filter(element => element[kind === 'month' ? 'nativeMonth' : 'nativeWeek'] === true);
     const act = element => ({ type: kind, targetId: element.id, ...(periodUndo ? { undo: true } : { value }) });
     return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, `${kind} field`) : resolve(name, fields, null, act, `${kind} field`);
@@ -316,8 +346,8 @@ export function interpret(utterance, context = { elements: [] }) {
   const timeSet = /^(?:set|change) (?:the )?(?:(.*?) )?time field to (.+)$/i.exec(command);
   const timeUndo = /^undo (?:the )?(?:(.*?) )?time field$/i.exec(command);
   if (timeSet || timeUndo) {
-    const name = (timeSet ?? timeUndo)[1], value = timeSet?.[2];
-    if (timeSet && !/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return { type: 'unknown', message: 'Say a literal 24-hour HH:MM or HH:MM:SS time, such as “set Appointment time field to 14:30”.' };
+    const name = (timeSet ?? timeUndo)[1], value = timeSet ? spokenTime(timeSet[2]) ?? timeSet[2] : undefined;
+    if (timeSet && !/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value)) return { type: 'unknown', message: 'Say a time such as “set Appointment time field to 2:30 pm”, “half past nine” or 14:30.' };
     const fields = context.elements.filter(element => element.nativeTime === true);
     const act = element => ({ type: 'time', targetId: element.id, ...(timeUndo ? { undo: true } : { value }) });
     return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'time field') : resolve(name, fields, null, act, 'time field');
@@ -325,8 +355,8 @@ export function interpret(utterance, context = { elements: [] }) {
   const dateSet = /^(?:set|change) (?:the )?(?:(.*?) )?date field to (.+)$/i.exec(command);
   const dateUndo = /^undo (?:the )?(?:(.*?) )?date field$/i.exec(command);
   if (dateSet || dateUndo) {
-    const name = (dateSet ?? dateUndo)[1], value = dateSet?.[2];
-    if (dateSet && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { type: 'unknown', message: 'Say a literal YYYY-MM-DD date, such as “set Departure date field to 2026-11-01”.' };
+    const name = (dateSet ?? dateUndo)[1], value = dateSet ? spokenDate(dateSet[2], now) ?? dateSet[2] : undefined;
+    if (dateSet && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { type: 'unknown', message: 'Say a date such as “set Departure date field to November first”, “tomorrow” or 2026-11-01.' };
     const fields = context.elements.filter(element => element.nativeDate === true);
     const act = element => ({ type: 'date', targetId: element.id, ...(dateUndo ? { undo: true } : { value }) });
     return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'date field') : resolve(name, fields, null, act, 'date field');
@@ -336,12 +366,12 @@ export function interpret(utterance, context = { elements: [] }) {
   const numberUndo = /^undo (?:the )?(?:(.*?) )?number field$/i.exec(command);
   if (numberSet || numberUndo) {
     const name = (numberSet ?? numberUndo)[1];
-    const value = numberSet?.[2];
-    if (numberSet && (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) || !Number.isFinite(Number(value)))) {
-      return { type: 'unknown', message: 'Say an exact numeric value, such as “set Quantity number field to 3”, in the field’s own units.' };
+    const value = numberSet ? spokenNumber(numberSet[2]) : undefined;
+    if (numberSet && (value === null || !Number.isFinite(Number(value)))) {
+      return { type: 'unknown', message: 'Say a number such as “set Quantity number field to three” or “2.5”, in the field’s own units.' };
     }
     const fields = context.elements.filter(element => element.nativeNumber === true);
-    const act = element => ({ type: 'number', targetId: element.id, ...(numberUndo ? { undo: true } : { value: value.replace(/^\+/, '').replace(/\.$/, '') }) });
+    const act = element => ({ type: 'number', targetId: element.id, ...(numberUndo ? { undo: true } : { value }) });
     return !name || DEICTIC.test(normalize(name)) ? deictic(fields, act, 'number field') : resolve(name, fields, null, act, 'number field');
   }
   // Explicit slider intent stays separate from ordinary text/option commands.
@@ -349,9 +379,9 @@ export function interpret(utterance, context = { elements: [] }) {
   const sliderUndo = /^undo (?:the )?(?:(.*?) )?slider$/i.exec(command);
   if (sliderSet || sliderUndo) {
     const name = (sliderSet ?? sliderUndo)[1];
-    const number = sliderSet?.[2];
-    if (sliderSet && (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(number) || !Number.isFinite(Number(number)))) {
-      return { type: 'unknown', message: 'Say an exact numeric slider value, such as “set Volume slider to 40”. Use the slider’s own units.' };
+    const number = sliderSet ? spokenSliderValue(sliderSet[2]) : undefined;
+    if (sliderSet && (number === null || !Number.isFinite(Number(number)))) {
+      return { type: 'unknown', message: 'Say a slider value such as “set Volume slider to forty” or “40 percent”, in the slider’s own units.' };
     }
     const sliders = context.elements.filter(element => element.role === 'slider');
     const act = element => ({ type: 'range', targetId: element.id, ...(sliderUndo ? { undo: true } : { value: Number(number) }) });
@@ -389,6 +419,8 @@ export function interpret(utterance, context = { elements: [] }) {
     if (selects.length) {
       return selectOption(value, selects) ?? { type: 'unknown', message: `"${value}" is not one of the choices in ${selects[0].name}.` };
     }
+    const typed = typedSet(target, value, context, now);
+    if (typed) return typed;
     const fields = context.elements.filter(element => textField(element) && matchScore(target, element.name) >= 0.5);
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
     // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.

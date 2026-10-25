@@ -120,7 +120,7 @@ test('shared overlay names numeric fields and teaches exact set and Undo on the 
   const panel=page.locator('#gaze-web-navigator section');
   await expect(panel.locator('.context')).toContainText('Number field: Quantity');
   await panel.getByText('What can I say?',{exact:true}).click();
-  await expect(panel.getByText('Native numeric fields:',{exact:false})).toContainText('set Quantity number field to 3');
+  await expect(panel.getByText('Dates, times and numbers:',{exact:false})).toContainText('set guests to four');
   for(const [text,value] of [['set Quantity number field to 3','3'],['undo Quantity number field','2']]){
     await panel.getByLabel('Typed instruction').fill(text);await panel.getByRole('button',{name:'Do it',exact:true}).click();await expect(input).toHaveValue(value);await expect(panel.locator('.status')).toContainText(`Number field set to ${value}`);
   }

@@ -11,7 +11,7 @@ test('explicit numeric intent preserves exact signed decimal value and separates
   assert.equal(interpret('type 3', context).type, 'edit');
 });
 test('numeric parsing refuses unsupported units words exponent and custom spinbuttons', () => {
-  for (const value of ['three', '3%', 'NaN', 'Infinity', '1e3', '1,000', '']) assert.equal(interpret(`set number field to ${value}`, { elements: [field(1)] }).type, 'unknown', value);
+  for (const value of ['three two', '3%', 'NaN', 'Infinity', '1e3', 'lots', '']) assert.equal(interpret(`set number field to ${value}`, { elements: [field(1)] }).type, 'unknown', value);
   assert.equal(interpret('set number field to 3', { elements: [{ id: 1, name: 'Quantity', role: 'spinbutton', distance: 0 }] }).type, 'unknown');
 });
 test('same-name numeric fields retain deliberate selection through clarification', () => {

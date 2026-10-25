@@ -1,8 +1,8 @@
 import {createAssistedInterpreter} from '../src/web/assisted-interpreter.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {interpret} from '../src/web/interpreter.js';
 for(const[kind,flag,good,bad]of[
- ['month','nativeMonth',['0001-01','2026-11','9999-12'],['2026-1','2026-00','2026-13','November 2026','2026-11-01']],
- ['week','nativeWeek',['0001-W01','2026-W43','9999-W53'],['2026-W1','2026-W00','2026-W54','2026-w43','week 43','2026-11-01']]
+ ['month','nativeMonth',['0001-01','2026-11','9999-12'],['2026-1','2026-00','2026-13','Smarch 2026','2026-11-01']],
+ ['week','nativeWeek',['0001-W01','2026-W43','9999-W53'],['2026-W1','2026-W00','2026-W54','2026-w43','week 54','2026-11-01']]
 ]){const field=(id,name='Reporting')=>({id,name,role:'textbox',[flag]:true,distance:0});
  test(`${kind} literal set preserves exact digits and kind`,()=>{for(const value of good)assert.deepEqual(interpret(`set Reporting ${kind} field to ${value}`,{elements:[field(1)]}),{type:kind,targetId:1,value});});
  test(`${kind} deictic set and Undo keep target identity`,()=>{for(const name of['','this ','That ']){assert.deepEqual(interpret(`set ${name}${kind} field to ${good[1]}`,{elements:[field(1)]}),{type:kind,targetId:1,value:good[1]});assert.deepEqual(interpret(`undo ${name}${kind} field`,{elements:[field(1)]}),{type:kind,targetId:1,undo:true});}});

@@ -254,7 +254,7 @@ test('explicit slider values preserve signed decimals and never become text dict
   assert.deepEqual(interpret('please set the slider to -0.25', page), { type: 'range', targetId: 1, value: -0.25 });
   assert.deepEqual(interpret('undo Volume slider', page), { type: 'range', targetId: 1, undo: true });
   assert.deepEqual(interpret('undo slider', page), { type: 'range', targetId: 1, undo: true });
-  for (const value of ['NaN', '40 percent', '1e3', 'infinity']) assert.equal(interpret(`set slider to ${value}`, page).type, 'unknown');
+  for (const value of ['NaN', 'loud', '1e3', 'infinity']) assert.equal(interpret(`set slider to ${value}`, page).type, 'unknown');
   assert.equal(interpret('set slider to 40', context(element(1, 'Message', 'textbox', { editable: true }))).type, 'unknown');
   assert.deepEqual(interpret('set message to 40', page), { type: 'edit', targetId: 2, edit: { kind: 'replace-all', text: '40' } });
 });
