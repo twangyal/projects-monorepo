@@ -354,12 +354,30 @@ function describe(element) {
   return description;
 }
 
-// Elements whose rectangles intersect the circle, nearest first, numbered for clarification.
-export function captureContext(document, { x, y, radius, exclude = null, limit = 12 }) {
-  if (![x, y, radius].every(Number.isFinite) || radius <= 0) return { x, y, radius, elements: [], region: null, unreachable: [] };
+// Finding shadow roots and frames walks the whole document, and measuring every control dominates capture
+// time on large pages. A caller that watches the page can pass `scopeCache` ({ entry: null, rects: null }):
+// clear `entry` when nodes are added or removed, and `rects` on any change, scroll or resize. Both expire.
+const SCOPE_CACHE_MS = 2000;
+// Cached rectangles only pre-select controls near the circle; those are measured again before use.
+const RECT_CACHE_MS = 500;
+const RECT_MARGIN = 48;
+
+function searchScopes(document, exclude, cache) {
+  const now = document.defaultView?.performance?.now() ?? 0;
+  const cached = cache?.entry;
+  if (cached && cached.exclude === exclude && now - cached.time < SCOPE_CACHE_MS && cached.scopes.every(scope => scope.root.isConnected !== false)) return cached;
   const scopes = [];
   const outOfReach = [];
   collectScopes(document, [], exclude, scopes, outOfReach);
+  const entry = { scopes, outOfReach, exclude, time: now };
+  if (cache) cache.entry = entry;
+  return entry;
+}
+
+// Elements whose rectangles intersect the circle, nearest first, numbered for clarification.
+export function captureContext(document, { x, y, radius, exclude = null, limit = 12, scopeCache = null }) {
+  if (![x, y, radius].every(Number.isFinite) || radius <= 0) return { x, y, radius, elements: [], region: null, unreachable: [] };
+  const { scopes, outOfReach } = searchScopes(document, exclude, scopeCache);
   const candidates = [];
   const blocked = [];
   const consider = (element, frames) => {
@@ -377,8 +395,17 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     if (!unobscured(document, element, rect, x, y)) return;
     candidates.push({ element, rect, distance, frames });
   };
-  for (const { root, frames } of scopes) {
-    for (const element of root.querySelectorAll(ACTIONABLE)) consider(element, frames);
+  const now = document.defaultView?.performance?.now() ?? 0;
+  let measured = scopeCache?.rects && now - scopeCache.rects.time < RECT_CACHE_MS && scopeCache.rects.scopes === scopes ? scopeCache.rects.items : null;
+  if (!measured) {
+    measured = [];
+    for (const { root, frames } of scopes) {
+      for (const element of root.querySelectorAll(ACTIONABLE)) measured.push({ element, frames, rect: viewportRect(element, frames) });
+    }
+    if (scopeCache) scopeCache.rects = { time: now, scopes, items: measured };
+  }
+  for (const { element, frames, rect } of measured) {
+    if (distanceToRect(x, y, rect) <= radius + RECT_MARGIN) consider(element, frames);
   }
   for (const element of inferredClickables(document, x, y, radius, exclude, new Set(candidates.map(candidate => candidate.element)))) {
     inferred.add(element);

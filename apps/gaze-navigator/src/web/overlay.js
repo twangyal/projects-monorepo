@@ -13,6 +13,11 @@ import { decodeCalibration, encodeCalibration } from './calibration-store.js';
 const RADII = { small: 60, medium: 90, large: 130 };
 const STORAGE_KEY = 'gaze-web-navigator';
 const CONTEXT_INTERVAL_MS = 100;
+// A gaze resting within this distance (or this fraction of the radius) on an unchanged page keeps its
+// context for up to RESTING_MAX_AGE_MS; camera gaze jitters even when the eyes are still.
+const RESTING_PX = 3;
+const RESTING_FRACTION = 0.1;
+const RESTING_MAX_AGE_MS = 500;
 
 const STYLE = `
 :host { all: initial; }
@@ -282,14 +287,27 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // following correction ("change Tuesday to Friday") still means the page field that had it before.
   let lastPageFocus = null;
   const inPanel = active => active === host || active?.getRootNode?.() === shadow;
-  const onFocusIn = () => { const active = deepActiveElement(document); if (!inPanel(active)) lastPageFocus = active; };
+  const onFocusIn = () => { pageChanged = true; const active = deepActiveElement(document); if (!inPanel(active)) lastPageFocus = active; };
   // Focus leaving to nothing (a click on the page background) forgets the field.
   const onFocusOut = event => { if (!event.relatedTarget) lastPageFocus = null; };
   const pageFocus = () => { const active = deepActiveElement(document); return inPanel(active) ? lastPageFocus : active; };
 
+  // Capturing scans the page, so a resting gaze on an unchanged page reuses the last context.
+  const scopeCache = { entry: null, rects: null };
+  let pageChanged = true, capturedAt = null;
+  const pageObserver = new window.MutationObserver(records => {
+    if (!records.some(record => record.target !== host)) return;
+    pageChanged = true;
+    scopeCache.rects = null;
+    if (records.some(record => record.type === 'childList')) scopeCache.entry = null;
+  });
+  pageObserver.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+
   function recapture(force = false) {
     if (!point || controller.paused) return;
     const time = window.performance.now();
+    if (!force && !pageChanged && capturedAt && Math.hypot(point.x - capturedAt.x, point.y - capturedAt.y) < Math.max(RESTING_PX, radius() * RESTING_FRACTION) &&
+      capturedAt.radius === radius() && time - lastCapture < RESTING_MAX_AGE_MS) return;
     if (!force && time - lastCapture < CONTEXT_INTERVAL_MS) {
       // Capture once more when the interval ends, so a resting gaze always gets fresh context.
       trailing ??= window.setTimeout(() => {
@@ -301,7 +319,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     window.clearTimeout(trailing);
     trailing = null;
     lastCapture = time;
-    context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host });
+    pageChanged = false;
+    capturedAt = { x: point.x, y: point.y, radius: radius() };
+    context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache });
     const focused = context.elements.find(element => element.element === pageFocus());
     context.focusedId = focused?.id ?? null;
     context.selectionFocusedId = context.disclosureElements?.find(element => element.element === pageFocus())?.id ?? context.focusedId;
@@ -398,7 +418,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   keyboard.attach(document);
   const watchedFrames = new WeakSet();
   const frameListeners = [];
-  const onFrameLoad = event => { if (/^I?FRAME$/.test(event.target?.tagName ?? '')) watchFrames(); };
+  const onFrameChange = () => { scopeCache.entry = null; scopeCache.rects = null; pageChanged = true; };
+  const onFrameLoad = event => { if (/^I?FRAME$/.test(event.target?.tagName ?? '')) { onFrameChange(); watchFrames(); } };
   function watchFrames() {
     for (const { document: frameDocument, frames } of sameOriginFrames(document, host)) {
       if (watchedFrames.has(frameDocument)) continue;
@@ -419,7 +440,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   window.addEventListener('load', watchFrames, true);
   // Frame load events reach their document in capture phase, but skip its window.
   document.addEventListener('load', onFrameLoad, true);
-  const refresh = () => recapture(true);
+  // Scrolling moves everything under the circle; recapture through the usual interval instead of on every event.
+  const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); };
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
   document.addEventListener('focusin', onFocusIn, true);
@@ -714,6 +736,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         frameDocument.removeEventListener('load', onFrameLoad, true);
       }
       window.removeEventListener('scroll', refresh, true);
+      pageObserver.disconnect();
       document.removeEventListener('focusin', onFocusIn, true);
       document.removeEventListener('focusout', onFocusOut, true);
       window.removeEventListener('resize', refresh);
