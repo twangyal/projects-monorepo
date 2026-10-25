@@ -3,6 +3,10 @@
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
 //   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
+//     [--gaze-error PX] [--trials N] [--seed S]
+// --gaze-error offsets each look by random Gaussian error with that standard deviation per axis, like
+// webcam gaze (often 100-200 px), instead of resting exactly on the control. --trials repeats each task
+// with fresh offsets; --seed makes the offsets reproducible.
 // DIR must be an extension build with host access granted (automation cannot click the permission prompt).
 import { chromium } from '@playwright/test';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -11,7 +15,21 @@ import { join } from 'node:path';
 
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : null; };
 const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json'), only = argument('--only');
+const gazeError = Number(argument('--gaze-error') ?? 0), trials = Math.max(1, Number(argument('--trials') ?? 1)), seed = Number(argument('--seed') ?? 1);
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
+if (!(gazeError >= 0)) throw new Error('--gaze-error must be a number of pixels.');
+
+// Seeded generator (mulberry32) and normal samples (Box-Muller), so a run's offsets can be repeated.
+function random(state) {
+  return () => {
+    state = (state + 0x6D2B79F5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const uniform = random(seed);
+const normal = () => Math.sqrt(-2 * Math.log(1 - uniform())) * Math.cos(2 * Math.PI * uniform());
 
 const link = name => page => page.getByRole('link', { name, exact: typeof name === 'string' }).first();
 const button = name => page => page.getByRole('button', { name, exact: true }).first();
@@ -95,7 +113,8 @@ export const TASKS = [
 
 async function run() {
   const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'gaze-real-')), {
-    executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, viewport: { width: 1280, height: 900 },
+    // Extensions need full Chromium; the headless shell cannot load them.
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: 'chromium' }), headless: true, viewport: { width: 1280, height: 900 },
     args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
   });
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
@@ -103,10 +122,11 @@ async function run() {
   await control.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
   await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
   const results = [];
-  for (const task of TASKS.filter(item => !only || item.goal.includes(only))) {
+  const runs = TASKS.filter(item => !only || item.goal.includes(only)).flatMap(task => Array.from({ length: trials }, (_, trial) => ({ task, trial })));
+  for (const { task, trial } of runs) {
     const page = await context.newPage();
     const panel = page.locator('#gaze-web-navigator section'), status = panel.locator('.status');
-    const record = { site: task.site, goal: task.goal, steps: [], completed: false };
+    const record = { site: task.site, goal: task.goal, trial, steps: [], completed: false };
     try {
       await page.goto(task.start, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await status.waitFor({ timeout: 20000 });
@@ -125,7 +145,12 @@ async function run() {
           await target.scrollIntoViewIfNeeded({ timeout: 10000 });
           const box = await target.boundingBox();
           if (!box) { entry.outcome = 'target-missing'; break; }
-          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          const viewport = page.viewportSize();
+          const dx = gazeError * normal(), dy = gazeError * normal();
+          entry.offset = [Math.round(dx), Math.round(dy)];
+          const x = Math.min(viewport.width - 1, Math.max(0, box.x + box.width / 2 + dx));
+          const y = Math.min(viewport.height - 1, Math.max(0, box.y + box.height / 2 + dy));
+          await page.mouse.move(x, y);
           await page.waitForTimeout(250);
         }
         const before = page.url(), measured = step.measure ? await step.measure(page) : undefined;
@@ -161,12 +186,12 @@ async function run() {
       record.error = error.message.split('\n')[0];
     }
     results.push(record);
-    console.log(JSON.stringify({ site: record.site, goal: record.goal, completed: record.completed, steps: record.steps.map(s => [s.say, s.outcome, s.utterances, s.questions]), error: record.error }));
+    console.log(JSON.stringify({ site: record.site, goal: record.goal, trial, completed: record.completed, steps: record.steps.map(s => [s.say, s.outcome, s.utterances, s.questions, s.offset]), error: record.error }));
     await page.close();
   }
   await context.close();
   const steps = results.flatMap(result => result.steps);
-  const summary = { assist, date: new Date().toISOString().slice(0, 10), tasks: results.length, completed: results.filter(result => result.completed).length,
+  const summary = { assist, gazeError, trials, seed, date: new Date().toISOString().slice(0, 10), tasks: results.length, completed: results.filter(result => result.completed).length,
     steps: steps.length, stepsDone: steps.filter(step => step.outcome === 'done').length, unintended: steps.filter(step => step.outcome === 'unintended').length,
     utterances: steps.reduce((sum, step) => sum + step.utterances, 0), questions: steps.reduce((sum, step) => sum + step.questions, 0) };
   console.log(JSON.stringify(summary));

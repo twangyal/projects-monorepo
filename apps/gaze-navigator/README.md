@@ -68,7 +68,7 @@ npx playwright install chromium
 npm run test:browser     # Playwright: dwell lab, practice site, decision lab, extension
 ```
 
-Browser tests start `python3 -m http.server` on port 4173 themselves. They use a fake speech recognizer and a fake gaze estimator, so they check interface behaviour, not webcam accuracy. CI: `.github/workflows/gaze-navigator.yml`. The manual-dispatch `.github/workflows/gaze-decision-benchmark.yml` runs the Ollama benchmark. `node scripts/evaluate-real-sites.mjs --extension DIR [--assist]` drives a built extension through scripted tasks on live public sites.
+Browser tests start `python3 -m http.server` on port 4173 themselves. They use a fake speech recognizer and a fake gaze estimator, so they check interface behaviour, not webcam accuracy. CI: `.github/workflows/gaze-navigator.yml`. The manual-dispatch `.github/workflows/gaze-decision-benchmark.yml` runs the Ollama benchmark. `node scripts/evaluate-real-sites.mjs --extension dist/extension-test [--assist] [--gaze-error 120 --trials 3]` drives a built extension through scripted tasks on live public sites; `--gaze-error` adds webcam-like pointing error (standard deviation in pixels) and reports completion, unintended actions and questions.
 
 ## Project layout
 
