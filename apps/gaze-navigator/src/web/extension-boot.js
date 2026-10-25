@@ -1,19 +1,10 @@
 // Starts the navigator inside the extension's isolated world on any website.
 import { startWebNavigator } from './overlay.js';
+import { createFrameCamera } from './frame-camera.js';
 
 const KEY = 'gaze-web-navigator';
 
 const CALIBRATION = 'gaze-calibration';
-
-// Asks the background worker to inject the bundled estimator; a fresh load replaces the old instance.
-async function loadCamera({ fresh = false } = {}) {
-  if (fresh || !globalThis.webgazer) {
-    const result = await chrome.runtime.sendMessage({ type: 'gaze:load-camera' });
-    if (!result?.ok) throw new Error(result?.message ?? 'Camera library could not load.');
-  }
-  if (!globalThis.webgazer) throw new Error('Camera library did not load correctly.');
-  return globalThis.webgazer;
-}
 
 // Smarter matching asks the extension's shared on-device model; only roles and names leave the page.
 async function loadAssistant(progress) {
@@ -40,5 +31,7 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     saveCalibration: calibration => { chrome.storage.session.set({ [CALIBRATION]: calibration }).catch(() => {}); },
     clearCalibration: () => { chrome.storage.session.remove(CALIBRATION).catch(() => {}); },
   };
-  return startWebNavigator({ window, store, loadCamera, loadAssistant });
+  // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
+  const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });
+  return startWebNavigator({ window, store, createCamera, loadAssistant });
 }

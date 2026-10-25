@@ -129,6 +129,17 @@ async function pageStatus(tabId) {
   }
 }
 
+// One setup tab at a time, next to the tab that needed the camera.
+async function openPermissionsPage(tab) {
+  const url = chrome.runtime.getURL('permissions.html');
+  const [open] = await chrome.tabs.query({ url });
+  if (open) {
+    await chrome.tabs.update(open.id, { active: true });
+    return;
+  }
+  await chrome.tabs.create({ url, index: tab.index + 1, openerTabId: tab.id });
+}
+
 // Smarter matching: the model runs in one offscreen document shared by all tabs.
 async function ensureOffscreen() {
   if (await chrome.offscreen.hasDocument()) return;
@@ -147,10 +158,9 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     chrome.tabs.sendMessage(message.tabId, message).catch(() => {});
     return false;
   }
-  if (message?.type === 'gaze:load-camera' && sender.tab?.id !== undefined) {
-    // MV3 forbids remote code: the pinned estimator is bundled and runs in the isolated world.
-    chrome.scripting.executeScript({ target: { tabId: sender.tab.id, frameIds: [sender.frameId ?? 0] }, files: ['vendor/webgazer.js'] })
-      .then(() => respond({ ok: true }), error => respond({ ok: false, message: error.message }));
+  if (message?.type === 'gaze:camera-permission' && sender.tab?.id !== undefined) {
+    // The camera frame cannot ask on its own behalf from inside a website; a Gaze Navigator tab can.
+    openPermissionsPage(sender.tab).then(() => respond({ ok: true }), error => respond({ ok: false, message: error.message }));
     return true;
   }
   if (message?.type === 'gaze:toggle' || message?.type === 'gaze:start' || message?.type === 'gaze:stop') {

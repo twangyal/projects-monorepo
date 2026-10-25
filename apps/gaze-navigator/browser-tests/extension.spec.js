@@ -126,7 +126,10 @@ test('protected browser pages report a clear error', async ({ context, control }
   expect(await control.evaluate(tab => chrome.runtime.sendMessage({ type: 'gaze:toggle', tabId: tab }), id)).toMatch(/cannot run on this page/);
 });
 
-test('camera mode loads the bundled estimator into the isolated world and releases it on stop', async ({ context, control }) => {
+// The camera and estimator run in an invisible extension frame, never in the website or its isolated world.
+const captureFrame = page => page.frames().find(frame => /^chrome-extension:\/\/[^/]+\/capture\.html#/.test(frame.url()));
+
+test('camera mode runs the estimator in an extension frame, not the website, and removes it on stop', async ({ context, control }) => {
   test.setTimeout(60000);
   await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
   const page = await context.newPage();
@@ -140,15 +143,33 @@ test('camera mode loads the bundled estimator into the isolated world and releas
   await typeInstruction(page, 'use camera');
   await expect(status(page)).toContainText(/Look at dot 1 of 9/);
   expect(await page.evaluate(() => typeof window.webgazer), 'the estimator is not exposed to the website').toBe('undefined');
+  expect(await isolated(() => typeof globalThis.webgazer), 'nor to the content script').toBe('undefined');
+  expect(await page.evaluate(() => document.querySelectorAll('video, iframe').length), 'the page sees no video or frame').toBe(0);
   await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.', { timeout: 30000 });
+  const frame = captureFrame(page);
+  expect(frame, 'the capture frame belongs to the extension').toBeTruthy();
   const box = await page.getByRole('button', { name: 'Buy now' }).boundingBox();
-  for (let i = 0; i < 15; i++) {
-    await isolated((x, y) => globalThis.webgazer.emit({ x, y }), [box.x + box.width / 2, box.y + box.height / 2]);
-  }
+  for (let i = 0; i < 15; i++) await frame.evaluate(([x, y]) => globalThis.webgazer.emit({ x, y }), [box.x + box.width / 2, box.y + box.height / 2]);
   await expect(panel(page).locator('.context li').first()).toHaveText('Button: Buy now');
+  expect(await frame.evaluate(() => globalThis.__fakeCamera)).toEqual({ instances: 1, released: 0, faceVisible: true });
   await typeInstruction(page, 'stop camera');
   await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
-  expect(await isolated(() => globalThis.__fakeCamera)).toEqual({ instances: 1, released: 1, faceVisible: true });
+  // Removing the frame destroys its document, which releases the camera.
+  await expect.poll(() => Boolean(captureFrame(page))).toBe(false);
+});
+
+test('a refused camera opens the Gaze Navigator setup tab instead of asking for the website', async ({ context, control }) => {
+  await control.evaluate(() => { localStorage.setItem('gaze-fake-camera', 'denied'); return chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }); });
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready');
+  const setup = context.waitForEvent('page', candidate => candidate.url().endsWith('/permissions.html'));
+  await typeInstruction(page, 'use camera');
+  await expect(status(page)).toContainText('Gaze Navigator needs permission to use the camera');
+  await expect((await setup).getByRole('heading', { name: 'Allow the camera for Gaze Navigator' })).toBeVisible();
+  await expect(panel(page).locator('.use-camera')).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(() => Boolean(captureFrame(page))).toBe(false);
+  await control.evaluate(() => localStorage.removeItem('gaze-fake-camera'));
 });
 
 test('a calibration follows navigation in extension memory and is forgotten when the camera stops', async ({ context, control }) => {
@@ -165,11 +186,7 @@ test('a calibration follows navigation in extension memory and is forgotten when
 
   await page.goto('http://shop.example/contact');
   await expect(status(page)).toHaveText('Camera on with your earlier calibration. Say recalibrate if the circle drifts.');
-  const id = await tabId(control, 'http://shop.example/*');
-  const restored = await control.evaluate(async tab => (await chrome.scripting.executeScript({
-    target: { tabId: tab }, func: () => globalThis.__fakeCamera.restored,
-  }))[0].result, id);
-  expect(restored).toBe(36);
+  expect(await captureFrame(page).evaluate(() => globalThis.__fakeCamera.restored)).toBe(36);
   await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/hidden/);
 
   // A different window size invalidates the mapping, so the next page calibrates again.

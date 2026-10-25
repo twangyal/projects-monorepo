@@ -52,7 +52,7 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
       return { ok: true, message: 'Camera on.' };
     } catch (error) {
       if (current === session) stop();
-      return { ok: false, message: `Camera tracking could not start (${error.message}). Check camera permission, or keep using the pointer.` };
+      return { ok: false, reason: error?.name, message: `Camera tracking could not start (${error.message}). Check camera permission, or keep using the pointer.` };
     } finally {
       if (startup === mine) startup = null;
     }

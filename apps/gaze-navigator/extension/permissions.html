@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allow the camera for Gaze Navigator</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { max-width: 34rem; margin: 3rem auto; padding: 0 1rem; font: 1rem/1.5 system-ui, sans-serif; }
+    button { font: inherit; padding: 0.6rem 1.2rem; }
+    .status { margin-top: 1rem; min-height: 1.5rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Allow the camera for Gaze Navigator</h1>
+    <p>Gaze Navigator follows your gaze with the webcam. Camera access is granted to Gaze Navigator once, not to each website you visit, and the websites cannot see the video.</p>
+    <p>Video is processed on this computer and is never uploaded or stored.</p>
+    <button id="allow" type="button">Allow camera</button>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </main>
+  <script type="module" src="permissions.js"></script>
+</body>
+</html>

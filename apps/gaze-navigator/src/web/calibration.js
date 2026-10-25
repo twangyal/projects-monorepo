@@ -8,8 +8,10 @@ export const CALIBRATION_POINTS = [
   [10, 88], [50, 88], [90, 88],
 ];
 
-export function runCalibration({ api, window, dot, points = CALIBRATION_POINTS, settleMs = 900, samples = 4, sampleMs = 250,
-  minSamples = 2, attempts = 2, minPoints = 7, onProgress = () => {} }) {
+// `record(x, y)` trains one sample and reports whether it was kept; it may answer asynchronously when the
+// estimator runs in another frame. Without it, samples go straight to the in-page `api`.
+export function runCalibration({ api, record = (x, y) => recordCalibrationSample(api, x, y), window, dot, points = CALIBRATION_POINTS, settleMs = 900,
+  samples = 4, sampleMs = 250, minSamples = 2, attempts = 2, minPoints = 7, onProgress = () => {} }) {
   let cancelled = false;
   let pending = null;
   const wait = ms => new Promise((resolve, reject) => {
@@ -35,7 +37,8 @@ export function runCalibration({ api, window, dot, points = CALIBRATION_POINTS, 
       dot.className = 'calibration-dot sampling';
       let accepted = 0;
       for (let sample = 0; sample < samples; sample++) {
-        if (recordCalibrationSample(api, x, y)) accepted++;
+        if (await record(x, y)) accepted++;
+        if (cancelled) throw new Error('cancelled');
         await wait(sampleMs);
       }
       if (accepted >= minSamples) return true;

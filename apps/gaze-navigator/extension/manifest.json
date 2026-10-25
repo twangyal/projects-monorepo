@@ -32,6 +32,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "capture.html",
         "src/*.js",
         "src/web/*.js"
       ],

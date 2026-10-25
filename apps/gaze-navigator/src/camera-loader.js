@@ -1,6 +1,7 @@
 const CAMERA_SCRIPT = 'https://cdn.jsdelivr.net/npm/webgazer@3.3.0/dist/webgazer.js';
 
-export function createCameraLoader(document, window, timeoutMs = 15000) {
+// `src` defaults to the pinned CDN copy used by the website; the extension passes its bundled file.
+export function createCameraLoader(document, window, timeoutMs = 15000, src = CAMERA_SCRIPT) {
   let pending = null;
   let loadedScript = null;
   return function load({ fresh = false } = {}) {
@@ -14,7 +15,7 @@ export function createCameraLoader(document, window, timeoutMs = 15000) {
     if (pending) return pending;
     pending = new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = CAMERA_SCRIPT;
+      script.src = src;
       script.async = true;
       let timer;
       const cleanup = () => {

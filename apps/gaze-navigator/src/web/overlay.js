@@ -6,9 +6,8 @@ import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
-import { createCameraGaze } from './camera-gaze.js';
+import { createLocalCamera } from './camera-source.js';
 import { runCalibration } from './calibration.js';
-import { decodeCalibration, encodeCalibration } from './calibration-store.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
 const STORAGE_KEY = 'gaze-web-navigator';
@@ -112,7 +111,8 @@ export function describeElement(element) {
 }
 
 // `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window) } = {}) {
+// `createCamera` supplies the camera (see camera-source.js); by default WebGazer runs in this document.
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera } = {}) {
   const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
@@ -198,8 +198,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const assistantRelay = { needs: (...args) => Boolean(assistant?.needs(...args)), improve: (...args) => assistant.improve(...args) };
   const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate }, assistant: assistantRelay });
   const filter = createGazeFilter();
-  const camera = createCameraGaze({
-    document, window, load: loadCamera,
+  const camera = createCamera({
+    document, window, load: loadCamera, store, mount: shadow,
     onGaze: (x, y, time) => track(x, y, time),
     onLost: () => ui.circle.classList.add('lost'),
   });
@@ -514,7 +514,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       active?.cancel();
       const wasOn = camera.stop();
       // Turning the camera off also forgets the saved calibration (eye-patch training data).
-      store.clearCalibration?.();
+      camera.clearCalibration();
       settings.source = 'pointer';
       store.save(settings);
       filter.reset();
@@ -545,36 +545,33 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
   async function restoreOrCalibrate(generation) {
-    const api = camera.api;
-    let decoded = { ok: false, reason: 'none' };
+    const session = camera.session;
+    let restored = { ok: false, reason: 'none' };
     try {
-      decoded = decodeCalibration(await store.loadCalibration?.(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
+      restored = await camera.restoreCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
     } catch { /* Fall back to a fresh calibration. */ }
-    if (generation !== sourceGeneration || !api || camera.api !== api || stopped || closing) return null;
-    if (decoded.ok) {
-      try {
-        camera.resetCalibration();
-        api.getRegression()[0].setData(decoded.samples);
-        filter.reset();
-        return { ok: true, message: 'Camera on with your earlier calibration. Say recalibrate if the circle drifts.', tone: 'success' };
-      } catch { /* Incompatible data: calibrate again. */ }
+    if (generation !== sourceGeneration || camera.state !== 'ready' || camera.session !== session || stopped || closing) return null;
+    if (restored.ok) {
+      filter.reset();
+      return { ok: true, message: 'Camera on with your earlier calibration. Say recalibrate if the circle drifts.', tone: 'success' };
     }
+    const decoded = restored;
     const result = calibrate();
     if (decoded.reason === 'resized') result.message = `The window size changed, so the camera needs calibrating again. ${result.message}`;
     return result;
   }
 
   function calibrate() {
-    const api = camera.api;
-    if (!api) return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
+    if (camera.state !== 'ready') return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
+    const session = camera.session;
     calibration?.cancel();
     camera.resetCalibration();
     filter.reset();
     ui.circle.classList.remove('visible');
     ui.outlines.replaceChildren();
     let instruction = '';
-    const session = runCalibration({
-      api, window, dot: ui.dot,
+    const run = runCalibration({
+      record: (x, y) => camera.session === session && camera.recordSample(x, y), window, dot: ui.dot,
       onProgress({ point: number, total, phase, attempt }) {
         instruction = phase === 'retry' || attempt > 1
           ? `Dot ${number} of ${total} needs another look. Keep your face visible and look at the dot.`
@@ -583,21 +580,18 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         ui.status.className = 'status question';
       },
     });
-    calibration = session;
-    session.done.then(result => {
-      if (calibration !== session) return;
+    calibration = run;
+    run.done.then(result => {
+      if (calibration !== run) return;
       calibration = null;
       if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
       else if (result.ok) {
-        try {
-          const saved = encodeCalibration(api.getRegression()[0].getData(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
-          store.saveCalibration?.(saved);
-        } catch { /* The calibration still works on this page. */ }
+        if (camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
         feedback({ message: `Calibrated with ${result.calibrated} of ${result.total} dots. The circle now follows your gaze.`, tone: 'success' });
       }
       else feedback({ message: `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
     }, () => {
-      if (calibration === session) calibration = null;
+      if (calibration === run) calibration = null;
       feedback({ message: 'Calibration failed. Say recalibrate to try again, or use pointer.', tone: 'error' });
     });
     return { ok: true, message: `Calibrating without clicks. ${instruction}` };
@@ -634,7 +628,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     settings.listening = false;
     ui.listen.setAttribute('aria-pressed', 'false');
     ui.listen.textContent = 'Start listening';
-    feedback({ message: 'Returned to this page. Listening is stopped. Choose Start listening to continue.' });
+    const returned = 'Returned to this page. Listening is stopped. Choose Start listening to continue.';
+    // Leaving the page stopped the camera; start it again (with the saved calibration) instead of
+    // leaving camera mode selected with nothing moving the circle.
+    if (settings.source === 'camera') {
+      settings.source = 'pointer';
+      feedback({ message: `${returned} ${setSource('camera').message}` });
+      return;
+    }
+    feedback({ message: returned });
   };
   window.addEventListener('pageshow', onPageShow);
   ui.pause.addEventListener('click', () => run(controller.paused ? 'resume' : 'pause', { elements: [] }));
@@ -699,7 +701,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   feedback({ message: arrival });
   renderSource();
   if (settings.listening) setListening(true);
-  // Camera mode continues across pages; estimator data never persists, so each page recalibrates.
+  // Camera mode continues across pages; a recent calibration is reused while the window size is unchanged.
   if (settings.source === 'camera') {
     settings.source = 'pointer';
     feedback({ message: `${arrival} ${setSource('camera').message}` });

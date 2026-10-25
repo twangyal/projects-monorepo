@@ -8,7 +8,11 @@
     params: {},
     setGazeListener(callback) { listener = callback; return this; },
     clearGazeListener() { listener = null; return this; },
-    begin: async () => globalThis.webgazer,
+    // Extension pages share storage, so a test can make the next start refuse like a denied camera.
+    begin: async () => {
+      if (globalThis.localStorage?.getItem('gaze-fake-camera') === 'denied') throw Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' });
+      return globalThis.webgazer;
+    },
     saveDataAcrossSessions() { return this; },
     showPredictionPoints() { return this; },
     removeMouseEventListeners() { return this; },
