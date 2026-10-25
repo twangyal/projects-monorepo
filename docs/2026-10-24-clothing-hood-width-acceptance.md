@@ -1,9 +1,0 @@
-# Clothing hood side width — final acceptance (#322)
-
-Source `0c943339649c2afdf95a1d4c1987d1354c4a3f0d` passes both canonical workflows. [Application40108893843](https://github.com/twangyal/projects-monorepo/actions/runs/40108893843), job120916256881: **183 unit tests**, lint/types/build and **227 browser cases** (5.8m). [Garment-preflight40108893842](https://github.com/twangyal/projects-monorepo/actions/runs/40108893842), job120916256369: **163 tests** (493.498s), complete historical packet, separate warm endpoint, both current default packets/source provenance, reviewed rest candidate and faceted-body candidate reproduction all pass.
-
-Independent local implementer verification:183units/lint/types/build, all227browsers (7.6m), all163garment-preflight tests (367.498s), plus exact complete cold/warm packet equivalence with current source hashes. Native cases cover actual downloaded SVG sewing-line width, decoded GLB, POM N, saved history/reload, phone draft protection/reset/template visibility and finite changed drape. Six focused width/height cases pass31.1s. The earlier [verification handoff](2026-10-24-clothing-hood-width-verification.md) remains a historical pending snapshot; this final receipt supersedes that pending state and preserves its setup/RED history.
-
-Fresh review found no blocker, independently ran three new units and separately checked width-only cloth rest at20/34cm. Deferred minor: the committed rest unit varies height and width together; review independently isolated width. Reviewer did not rerun browsers. No workflow, deadline, dependency or format-version changes; no PR.
-
-This accepts hoodie-only linked side-width editing across pattern/POM/material area, illustrative projection, history and exports. It does not establish a new flattening/seam solution or physical-fit/native-solver acceptance. Clothing remains ACTIVE; #290 remains open; project #8 remains skipped.

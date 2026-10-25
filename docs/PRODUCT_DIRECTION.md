@@ -1,335 +1,122 @@
-# Product direction — 2026-10-08
+# Product direction
 
-This document records the owner's revised product direction following a review of all seventeen project ideas. It defines destinations and acceptance expectations, not delivered functionality or an approved technical implementation plan. Read it alongside `PROJECT_IDEAS.md` and each application's current implementation documentation.
+Last revised 2026-10-25. This is the source of truth for what each project should become. Where an older plan, issue, README or commit message conflicts with it, follow this document. A newer explicit instruction from the owner overrides it.
 
-This is the current product-direction source of truth. Where earlier descriptions, design plans, issue scopes, README limitations or milestone completion labels conflict with it, follow this direction and reconcile the older plan before continuing. Newer explicit owner instructions supersede this document. The owner subsequently requested branch consolidation: `main` is the canonical branch for all fourteen applications and this direction. Historical `Astra` and feature-branch snapshots are retained through archive tags; resume development from current `main` rather than reviving those parallel branches.
+It records destinations and owner decisions, not delivery logs. What has shipped is visible in the code, tests and git history.
 
-## Portfolio-wide development standard
+## Portfolio focus (owner instruction, 2026-10-25)
 
-Twelve implemented applications remain ACTIVE. Composure and Shot Studio are DEFERRED by the owner as of 2026-10-14; follow their holds below. The previous MAINTENANCE labels do not establish completion of the revised visions. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
+Development is concentrated on three projects:
 
-A functioning prototype, bounded vertical slice, completed issue, passing test suite, or reliable storage/export workflow is an intermediate achievement. None alone establishes completion of the intended product. Historical acceptance receipts continue to describe the exact milestones they measured; they must not be presented as acceptance of these broader visions.
+1. **Gaze Navigator** (`apps/gaze-navigator`)
+2. **Clothing Studio** (`apps/clothing-studio`)
+3. **Karaoke Studio** (`apps/karaoke-studio`)
 
-Continue developing the original visions for projects whose direction was not changed. Choose coherent next milestones that close meaningful user-facing gaps. Reliability and recovery remain necessary, but repeated supporting improvements must not replace progress on a project's defining capabilities. Evaluate usefulness, editing quality, creative control, accessibility, domain quality and real-use behavior where relevant, alongside technical correctness.
+These are the only `ACTIVE` projects. Every other implemented app is `DEFERRED`: excluded from scheduled and autonomous work until the owner explicitly resumes it. This repeats and strengthens the owner's 2026-10-13 request to focus on these three. Deferral is not deletion or completion; deferred apps keep their source, tests and CI and must stay in a working state.
 
-Existing input limits, local-only architectures, manual workflows and simplified representations are implementation choices to reassess as the product grows. They are not permanent limits on the vision. Design and verify changes deliberately; do not merely remove resource guards or relabel simulations as real capabilities.
+The phone-restriction and handwriting projects stay `BLOCKED`. Paper trading stays skipped.
 
-MAINTENANCE is appropriate only when the intended product experience is substantially delivered and evaluated in relevant real use, with no major capability gap requiring active development. Do not narrow the vision to justify this status. Record remaining gaps and evidence before a future status transition. Existing prohibitions on paid charges and irreversible production changes remain in effect.
+## Development standard
 
-## 1. Gaze Navigator
+- **Build the defining experience.** Each priority app has one core loop (below). Prefer milestones that make that loop work end to end for a real user over adding another narrow control, edge case or verification layer to a loop that does not yet work.
+- **Prototype limits are not the vision.** Input caps, local-only storage, manual workflows and simplified models are current implementation choices. Change them deliberately; do not relabel a simulation as a real capability.
+- **Quality is part of delivery.** Accessibility, correctness and data safety still matter. Do not weaken safety or hide failures to claim progress.
+- **Status is honest.** `MAINTENANCE` or `DONE` requires the intended experience to be delivered and tried in real use. A passing test suite or a completed issue is an intermediate milestone.
+- **Standing safety rules:** no paid services or charges without owner approval, no irreversible production changes, no committed credentials.
 
-Gaze Navigator helps people who have difficulty using a mouse or keyboard interact with websites through gaze and spoken instructions. A visible context circle indicates the area they are looking at. When they speak, the app captures that context, interprets their instruction with the rule baseline and optional on-device WaterSheep target matching, and performs the intended browser action. It provides accessible feedback, asks when the target is unclear, and supports immediate cancellation.
+---
 
-The core experience includes:
+## 1. Gaze Navigator — ACTIVE (priority)
 
-- Context selection: a stable gaze circle with visible feedback about the elements included.
-- Spoken control: opening links, selecting controls, scrolling regions and navigating back.
-- Text entry: dictating into a selected field and correcting text.
-- Clarification and confirmation: resolving ambiguous targets and confirming consequential actions.
-- Accessible recovery: spoken pause/cancel, adjustable timing and usable feedback when tracking or speech recognition fails.
+**Vision.** Help people who have difficulty using a mouse or keyboard operate real websites with gaze and speech. A visible context circle shows where they are looking. When they speak, the app captures that context, interprets the instruction (rule baseline plus optional on-device WaterSheep target matching) and performs the browser action, with accessible feedback, clarification when the target is unclear, confirmation of consequential actions and immediate spoken pause/cancel.
 
-Success means someone can complete useful tasks on real websites with manageable effort and few unintended actions. Evaluate task completion, effort, unintended actions, clarification and recovery with intended users and real tracking/speech input. The practice inbox, dwell controls and separate model lab are supporting prototypes, not the completion target.
+**Core loop:** look at something → say what to do → the right thing happens on the page (or the app asks).
 
-Jev was the intended interpreter; on 2026-10-13 the owner replaced it with WaterSheep (see the owner update below). Its suitability and integration still require evidence. Browser integration, speech recognition, the exact instant context is captured, confirmation rules and supported platforms remain technical design questions. Preserve separate tracking, context, interpretation and execution responsibilities so failures and cancellation can be handled coherently.
+Core capabilities: opening links and selecting controls, scrolling regions, back navigation, dictation and text correction, clarification and confirmation, and accessible recovery when tracking or speech fails.
 
-### Owner update — 2026-10-14: browser extension as the primary product
+**Owner decisions**
+- *2026-10-13:* Use [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep) (Apache-2.0, locally runnable) instead of Jev as the target-choice interpreter. It must be measured against the rule baseline (correct targets, unintended actions, abstention, latency) before it drives real pages.
+- *2026-10-14:* **The Chrome (Manifest V3) browser extension is the primary product.** Control the site the user is already on through a compact overlay with pause/cancel/recovery. The website is for onboarding, practice, calibration help and demos. Make installation, permissions, camera/speech readiness and start/stop understandable, and keep calibration across page changes. A standalone desktop app is a possible later direction, not current scope.
 
-After testing the practice website and discussing a standalone app versus a browser plugin, the owner chose the extension: “extension is the plan.” Make the browser extension the primary Gaze Navigator product. Continue from the existing Chrome Manifest V3 extension and shared navigation runtime. The intended experience is controlling the website the user is already visiting through gaze context and spoken instructions, with a compact contextual overlay and accessible pause/cancel/recovery controls.
+**Success** means someone can finish useful tasks on real websites with manageable effort and few unintended actions. Evaluate with intended users, real camera and microphone input and representative sites.
 
-Use the website for onboarding, guided practice, calibration instruction and demonstrations. Practice inboxes, synthetic decision labs and a separate browser tab are supporting tools; future milestones should prioritize a usable extension experience on real websites. Make installation, permission setup, camera/speech readiness and starting/stopping navigation understandable. Support deliberate continuity across page changes with clear calibration reuse/recalibration and permission boundaries; do not require users to reopen the practice site to operate each page.
+**Biggest gap.** The extension supports a wide range of native form controls in software, but the real end-to-end loop (physical gaze tracking plus real speech on real sites) has not been evaluated with intended users. Prioritize making that loop dependable over adding further control types.
 
-Evaluate actual extension installation and use with intended users, real camera/microphone input and representative websites, including navigation, text entry/correction, ambiguity, consequential-action confirmation and immediate cancellation. Preserve the existing rule baseline, optional local WaterSheep matching, privacy boundaries and explicit control over website access. The extension implementation already exists; this direction does not claim that distribution, physical-input reliability or intended-user acceptance is complete.
+---
 
-A standalone desktop app for control outside the browser is a possible later direction, not the current delivery target or an instruction to begin an operating-system integration or migration. Scheduled Gaze work should follow this extension-first direction; Gaze Navigator remains ACTIVE and the broader accessibility goals remain unchanged.
+## 2. Clothing Studio — ACTIVE (priority)
 
-### Delivery note — 2026-10-16 (#273)
+**Vision.** A professional garment-design environment with the depth of tools like CLO, made approachable. Users go from sketches, descriptions, references, patterns or templates to an editable 3D garment. Real 2D pattern pieces link to 3D construction with seams, darts, pleats, pockets, closures and layers. Credible material simulation drives drape, folds and fit on adjustable or personalized avatars. AI proposes structured, editable designs under user control. Multiple categories, outfits, grading, reusable assets, version history, rendering and pattern/measurement/material/3D exports support design, presentation and production validation.
 
-The extension's shared runtime now supports spoken native-field select-all, cursor start/end and explicit insertion/replacement at the current selection, with exact text, caret placement and ordinary text Undo. It retains focused read-only identity for these new commands and refuses unsupported targets. Ordinary append dictation is unchanged. Source and canonical main CI pass 171 unit and 284 native browser cases; [the integration record](2026-10-16-gaze-selection-integration.md) preserves review fixes and the failed local portable-extension attempt. Gaze remains ACTIVE; physical speech/gaze and intended-user acceptance are unverified. The older ordinary-edit targeting defect has an implemented fix in #274; [its verification record](2026-10-16-gaze-writable-fields.md) records source checks and canonical verification status.
+**Core loop:** pick or describe a garment → shape and style it in 3D → see it drape on a body → export it.
 
-### Delivery note — 2026-10-17 (#275)
+**Owner decisions**
+- *2026-10-13:* The near-term experience should feel like [Fabra](https://www.fabra.com/): start from base products and templates, style parts in real-time 3D with drag-and-drop materials, colors, prints and graphics, edit linked patterns, and get an automatic tech pack, colorways and a costed range plan. This runs alongside the professional depth above, not instead of it.
+- *2026-10-14 (workspace):* Too many controls on one page. Make the **editable 3D garment the main screen**. Group tools into focused sections (garment/templates, materials and prints, artwork, pattern and measurements, body and drape, presentation and exports) with contextual panels and accessible dialogs. Opening, switching or closing a section must preserve the design and handle unapplied drafts deliberately. Works on desktop and phone.
+- *2026-10-14 (AI):* Investigate AI for "Describe a style". Example: "navy vertical stripes" currently reports "Not understood: vertical". Interpretations must map to supported, editable properties, show their scope (part or whole garment), and allow apply, correct and Undo. Unsupported details stay visible. Verify feasibility, privacy and cost first; no paid services without approval. AI research must not block the workspace work.
+- *2026-10-14 (physics):* Draping must use real cloth physics, and **different materials must behave meaningfully differently** (hang, folds, stretch, body contact), not just look different. Research simulation methods and credible fabric data (mass per area, directional stretch and shear, bending, damping, thickness, friction), document sources and units, and validate against reference drapes where possible. The current XPBD drape is a foundation, not calibrated physics.
+- *2026-10-17:* Investigate [PPF Contact Solver](https://github.com/st-tech/ppf-contact-solver) as a possible higher-quality native backend.
 
-Native text fields now support spoken literal phrase selection and explicit repeated-occurrence choice, followed by existing exact correction and text Undo. The runtime refuses an ambiguous or absent phrase and rechecks actual focus through shadow/frame boundaries. Reviewed source and canonical main CI both pass 184 unit and 320 native browser cases. [The integration record](2026-10-17-gaze-phrase-selection.md) preserves review regressions, local/hosted gates and remaining physical-input limits. Gaze remains ACTIVE against the full extension-first destination.
+**PPF solver research: outcome (2026-10-17 to 2026-10-21).** A pinned native CPU build of PPF ran in CI. Static-plane and convex-sphere contact worked (zero penetrations with contact on, many with it off). Normalized stretch and bending parameters responded as expected. A captured tee garment was bridged into the solver, and peak underarm strain of about 41% (soft) and 26% (stiff) was traced to the garment's construction geometry rather than the solver. The native build takes about 7 minutes, the solver cannot run in the browser, and a 3-second garment pair timed out at 300 seconds on a single-core runner. **No engine was adopted; the shipping app uses its own XPBD solver.** On 2026-10-25 the full study (scripts, about 200 MB of result archives and 18 CI workflows) was removed from `main`. It is preserved at tag `archive/pre-cleanup-2026-10-25` under `docs/research/ppf-cpu`. Resume it only on a new owner instruction.
 
-### Native range control — 2026-10-17 (#283)
+**Success** means a user can design an original garment, refine its construction and simulated fit, and export useful results. Judge visual appeal, editing quality, simulation credibility and usefulness alongside reliability. A simulation or exported pattern is not automatically validated for manufacture.
 
-Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source and canonical-main CI pass186 units/all368 browser cases across three isolated shards, including the injected extension flow.
+**Biggest gaps:** material-dependent drape that is visibly convincing in the browser across garments (bottoms are undraped and the body is a proxy), AI style interpretation, layered garments and personalized bodies.
 
-### Native checkbox state — 2026-10-17 (#286)
+---
 
-Explicit check/tick and uncheck/untick now retain the requested native binary-checkbox state, with no-op event suppression, one native click for changes, current DOM/focus guards and honest canceled/site-overridden outcomes. Named/gazed/ordinal clarification and consequential confirmation/cancel remain; custom ARIA and mixed-state controls refuse. [Source/canonical verification](2026-10-17-gaze-checkbox-state-integration.md) records191units/all396corrected-source browser cases and canonical acceptance. Physical speech/gaze and intended-user task completion remain unverified; Gaze stays ACTIVE.
+## 3. Karaoke Studio — ACTIVE (priority)
 
-### Native dropdown choice integrity — 2026-10-20 (#293)
+**Vision.** Make song-to-karaoke as automatic as possible. Upload a song; the app separates vocals and backing, transcribes the sung lyrics, synchronizes them with the music and produces a preview ready to export. Users correct words, line breaks and timing when mistakes occur.
 
-The shared extension runtime now keeps native option identity and displayed labels through clarification/focus, refuses locked/stale/multiple-selection controls, observes site-retained state and confirms consequential choices. [Verification](../apps/gaze-navigator/docs/2026-10-20-native-dropdowns.md) preserves regressions, software-gate scope and local extension-runtime limitations. This advances real-page command integrity; physical speech/gaze and intended-user acceptance remain unverified. Gaze remains ACTIVE.
+**Core loop:** upload a song → get a usable synced karaoke track without typing lyrics → fix the few mistakes → export.
 
-## 3. Melody Studio
+Manual editing is the *correction* workflow. Supplying all lyrics and timing each line by hand must not be the normal path. Uncertain passages need understandable feedback and efficient correction. Corrected text and timing must be preserved.
 
-Melody Studio's destination is a respectable, full music-production DAW with the depth and creative control associated with tools such as FL Studio. Most of the original voice-to-music vision remains: users can capture hummed or sung ideas, review and edit notes, choose sounds, layer parts and use AI assistance while retaining musical control. The destination is not limited to a simple sketchbook.
+**Success** includes real-song separation, transcription and alignment quality and low correction effort, alongside reliable exports. Measure these on real songs; a successful export alone does not prove a useful automatic experience.
 
-Users should be able to develop ideas into complete, polished productions. The roadmap needs to address full-song arrangement, capable note and audio editing, instruments and sounds, mixing, effects, routing, automation, complete project management and useful exports. These are development areas implied by the DAW ambition; exact feature scope, plugin support, native/browser architecture and compatibility standards require subsequent design. Referencing FL Studio establishes the intended level of capability, not an instruction to copy its interface or promise feature parity.
+**Biggest gaps:** transcription and alignment quality on real songs has not been measured, multilingual lyrics are unfinished, and correction effort has not been evaluated with real users.
 
-Current short recording/composition limits and simple instruments describe the prototype. Preserve its working capture, transcription, reference comparison and editing foundations while designing a credible path beyond those limits. A short-continuation learner does not by itself fulfill broad arrangement assistance.
+---
 
-Success requires a musician to create, edit, arrange, mix and export a useful complete production with dependable sound and responsive control. Evaluate actual vocal capture, musical usefulness and end-to-end production, not only synthetic audio or persistence tests. Focused milestones remain intermediate achievements.
+## Deferred projects
 
-### Owner update — 2026-10-14: focused sections and contextual controls
+All are `DEFERRED` as of 2026-10-25 unless noted. Do not resume them, choose platform migrations for them or run investigations on them without a new owner instruction. When one is resumed, start from the direction below.
 
-The owner confirmed that Melody Studio, Motion Studio and Lens Studio all show too much information on one page. For Melody, make composing and listening understandable through focused sections and contextual panels/modals. Keep the arrangement/piano roll and essential playback controls prominent. Reveal note/track editing, recording, instruments/effects, references, project/library management, exports and detailed explanations in the relevant section or dialog instead of displaying every form at once. Exact navigation and grouping require design; this feedback does not prescribe a particular DAW layout or reduce the full-DAW destination.
+### Melody Studio (`apps/melody-studio`)
+Destination: a full music-production DAW with the creative depth of tools like FL Studio, keeping the voice-to-music idea (capture hummed or sung ideas, edit notes, choose sounds, layer parts, AI assistance with musical control). It needs full-song arrangement, note and audio editing, instruments, mixing, effects, routing, automation and exports.
+- *Owner 2026-10-14:* Too much on one page. Keep the arrangement/piano roll and transport prominent; move other tools into focused sections and dialogs. A focused workspace shipped on 2026-10-15.
+- *Note:* the long-running backed-recording clock-timing research (#300) produced research commits but no user-facing change. Do not restart it by default.
 
-Prioritize a coherent navigation and information-density milestone when resuming Melody work. A user should be able to load or capture an idea, edit it, listen and find an export without confronting unrelated settings. Preserve notes, audio, selection, raw drafts, Undo/Redo, recovery and deliberate playback behavior when switching sections or opening/closing dialogs. Check desktop and phone usability, discoverability and keyboard/modal focus, including clear close/back behavior. This records future work, not a delivered redesign; Melody remains ACTIVE.
+### Motion Studio (`apps/motion-studio`)
+Destination: an account-free browser drawing and animation studio. Draw or import artwork, set keyframes, preview and export, with optional private-link saving and later AI help with in-betweens.
+- *Owner 2026-10-14:* Too crowded. Keep the stage, timeline and essential actions prominent, with focused sections and dialogs. A stage-first workspace shipped on 2026-10-15.
 
-### Delivery note — 2026-10-15 (#261)
+### Duet (`apps/duet`)
+Destination: Spotify integration and an automatically maintained shared musical timeline for a couple. Shared, new and favorite listening events appear without approval, users can curate them, and memories (text or photos) attach to songs. Verify Spotify API access and policies before designing the integration. Uploaded-audio rooms are a foundation, not the goal.
 
-The focused composing milestone now provides Compose, Capture, Sound, Notes, Arrange, Reference and Project & export sections plus an expanded workspace. Mounted controls and passive-navigation guards retain drafts and operation ownership; the toolbar exposes audio stop, save/recovery status and clear back behavior. Source verification passes428 unit and247 native browser tests, including desktop/phone creative flows, raw drafts and pending-operation races. See `docs/2026-10-15-melody-workspace-integration.md` for integration evidence and retained failures. This addresses the information-density milestone; intended-musician usability, broader production capability and the full DAW destination remain ACTIVE.
+### Git History (`apps/git-history`)
+Destination: a developer assistant that explains how and why code evolved by tracing lines and functions through commits, diffs, pull requests and discussions, separating documented reasoning from inference. It might become a browser extension.
 
-## 5. Clothing Studio
+### Style Studio (`apps/style-studio`)
+Destination: a personal style assistant that learns taste from outfits a user likes, dislikes and wears, suggests combinations for occasions and explains them.
+- *Owner 2026-10-14:* The first screen was overwhelming and required too much typing. Use guided screen-by-screen onboarding with picture-based taste choices (similar to Spotify's genre picks), fewer required fields and a quick path to suggestions. Evaluate Pinterest or a curated licensed image set. A guided onboarding milestone shipped on 2026-10-15.
 
-Clothing Studio is a professional garment-design application with the depth and creative control of tools like CLO. It enables users to develop clothing from an idea into an editable, three-dimensional garment, refine its construction and materials, evaluate it on a personalized body, and prepare it for presentation or physical production.
+### Friendly Challenges (`apps/friendly-challenges`)
+Destination: a social app for friendly bets with favors and bragging rights (never money). Agree on terms, deadline and evidence; results feed a social record; disputes are voided or settled by a chosen third party.
 
-Users can begin with sketches, descriptions, reference images, existing patterns or garment templates. AI helps translate those inputs into editable designs and proposes changes, while users retain precise control over pattern pieces, measurements, seams, silhouettes, fabrics and construction details.
+### Lens Studio (`apps/lens-studio`)
+Destination: a photo editor that simulates different lens and camera setups (field-of-view change, and focal length with camera distance for perspective change), with depth-aware reconstruction and honest presentation as a simulation.
+- *Owner 2026-10-14:* Too crowded. Make it comparison-first with focused sections. This shipped on 2026-10-15.
 
-The core experience includes:
+### Stock Notebook (`apps/stock-notebook`)
+Destination: turn a broad investing idea into visible, editable screening criteria and a source-linked research summary. Use AI-model API calls specifically to interpret natural-language screening requests into validated operations, with clarification and deliberate apply. Use free model access only; verify pricing and quotas first. Keep manual screening working without a model.
 
-- Garment construction: real 2D pattern pieces linked to a 3D garment, including seams, darts, pleats, pockets, closures and layered construction.
-- Realistic cloth simulation: fabric weight, stretch, stiffness and other material properties affecting drape, folds, movement and interaction with the body.
-- Personalized fitting: adjustable or imported avatars, entered body measurements, multiple viewing angles and poses. Photo-assisted body creation exposes assumptions and allows correction.
-- Design exploration: multiple garment categories, outfits and comparisons of cut, sizing, materials, colors and graphics.
-- AI-assisted creation and refinement: structured, editable garment proposals from instructions and references, preserving design intent through deliberate review and revision.
-- Professional workflows: organized projects, reusable assets, version history, reliable recovery, size grading, high-quality rendering and appropriate pattern, measurement, material and 3D exports.
+### Color Context Lab (`apps/color-context-lab`)
+Destination: research whether color and surround changes can keep an artwork's appearance for people while disrupting how image models learn from it. It needs an artist-facing comparison UI and reproducible experiments, and must report measured effects honestly rather than promise protection.
 
-The interface should make garment design approachable while providing precision and depth for increasingly sophisticated work.
+### Shot Studio (`apps/shot-studio`): owner-deferred 2026-10-14
+A virtual filmmaking studio (stage performers, light the set, operate cameras, record takes, assemble video, optional VR). Deferred after the owner's review. No replacement platform has been chosen.
 
-Success means a user can develop an original garment, meaningfully refine its construction and simulated fit, and export useful results for further design, presentation or production validation. Evaluate visual appeal, editing quality, simulation credibility and practical usefulness alongside technical reliability. A simulation or exported pattern is not automatically validated for physical manufacture.
-
-Development may proceed through focused milestones, but the destination remains a complete garment-design environment. A functioning prototype or single-garment workflow is not grounds for maintenance. The existing parametric T-shirt and photo overlay are current implementation foundations, not substitutes for linked patterns, 3D construction, simulation or fitting.
-
-### Owner update — 2026-10-13
-
-The owner asked to focus development on Gaze Navigator, Clothing Studio and Karaoke Studio. For Clothing Studio, the owner wants "something like" [Fabra](https://www.fabra.com/), an approachable web-based 3D product design tool:
-- start from a library of base products and templates;
-- style garment parts in real-time 3D with drag-and-drop materials, colors, prints and graphics;
-- edit linked patterns;
-- get an automatically generated tech pack, colorways and a range plan with costing.
-
-This approachable loop is now the primary near-term experience. It is pursued alongside the professional depth described above, not instead of it. See [the branch research](https://github.com/twangyal/projects-monorepo/blob/d6f594a/apps/clothing-studio/docs/2026-10-13-fabra-research.md) for the research and roadmap.
-
-For Gaze Navigator, the owner redirected the interpreter: "instead of jev look into [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep)". WaterSheep is an open-source (Apache-2.0), locally runnable, calibrated decision model with Jev-compatible requests. It replaces Jev as the intended interpreter for target choice. The requirement for evidence is unchanged: it must be measured against the rule baseline for correct targets, unintended actions, abstention and latency before it drives real pages. See [WaterSheep research and retained evaluations](../apps/gaze-navigator/docs/2026-10-13-watersheep.md).
-
-### Owner update — 2026-10-14: 3D-first workspace and contextual options
-
-After trying Clothing Studio, the owner reported the same information overload as in Style Studio: too many options and explanations are displayed on one page. The requested direction is to make the editable 3D garment construction the main screen and use focused sections and modals to expose options and information when needed.
-
-The next Clothing Studio experience should:
-
-- **Center the 3D garment.** Make construction, viewing and direct part selection the primary workspace, readily visible on entry. Keep essential navigation and common actions close to the garment. Template selection should lead naturally into this workspace rather than requiring users to navigate a long page of unrelated forms.
-- **Organize tools into focused sections.** Group garment/templates, materials and prints, artwork, pattern/measurements, body/drape, and presentation/exports into discoverable sections. Reveal the relevant controls for the active task or selected part instead of displaying every editor, table and explanation at once. Exact navigation and section boundaries require subsequent design.
-- **Use contextual panels and modals.** Use appropriate panels or accessible dialogs for option libraries, detailed settings, help, tech packs, costing and other secondary information. Preserve the visible garment context where useful. Support clear close/back behavior, keyboard focus and mobile use; opening, switching or dismissing a section must preserve the design and handle unapplied drafts deliberately. Existing capabilities remain available through this organization.
-- **Investigate AI assistance for “Describe a style.”** The owner suggested AI at the prompt shown in their screenshot. The concrete example is “navy vertical stripes”: the current response understands stripe and navy but reports “Not understood: vertical.” Explore richer natural-language interpretation that preserves attributes such as stripe direction, color, scale, material and the intended garment part. Treat this as a promising option to evaluate, not an already selected model/provider or delivered feature. The existing local parser remains the current implementation.
-
-Any AI proposal should map to supported, editable garment properties, make its interpretation and part-versus-whole-garment scope inspectable, and allow deliberate application, correction and Undo. Unsupported details must remain visible rather than being silently dropped; if direction such as vertical stripes also needs new rendering controls, address that capability explicitly rather than merely claiming the prompt was understood. Evaluate representative descriptions for intent fidelity and visible garment results. Verify model feasibility, privacy and cost before integration; this request does not authorize paid services. AI research must not block the requested workspace redesign.
-
-Success means a user can enter the app, focus on the 3D garment, find a relevant styling or construction option, see its effect and return to an uncluttered workspace without scrolling through every feature. Evaluate discovery, screen density, task completion and editing effort on desktop and phone, plus modal accessibility and preservation of existing projects and drafts. The broader professional construction, simulation and fitting vision remains in force.
-
-Scheduled development should read this update before selecting or resuming Clothing Studio work and prioritize a coherent 3D-first interaction flow over adding more controls to the existing all-in-one page. This records requested future work; neither the workspace redesign nor AI integration is complete, and Clothing Studio remains ACTIVE. Other projects' direction and the existing portfolio focus are unchanged.
-
-### Owner follow-up — 2026-10-14: material-dependent cloth physics
-
-Draping a garment over a body/model must involve cloth physics, with different materials producing meaningfully different behavior. Changing a fabric must affect how the garment hangs, folds, stretches and contacts the body, as well as its visible texture. This is part of the intended 3D garment experience and should remain prominent in the revised workspace.
-
-Research is an explicit part of this milestone. Investigate suitable simulation methods and credible material data, including fabric mass per area, directional stretch and shear, bending stiffness, damping, thickness and contact friction. Examine the effects of garment construction, seams, body shape, gravity, body contact and cloth self-collision and contact between layers. Fabric names alone do not establish physical properties: document parameter sources, units, calibration methods and assumptions, and distinguish measured values from approximate presets. Choose implementation milestones based on that research and the existing solver rather than prescribing an unverified physics engine.
-
-The current XPBD top-drape implementation already uses gravity, stretch, bending and body friction, with approximate relative fabric settings and a chest-based body proxy. It is a foundation, not evidence of calibrated material behavior or realistic personalized fit. Research and development should address those limitations, including layered garments, body/contact fidelity and extension beyond the currently supported draped garments, without relabeling the existing approximation as physically validated.
-
-Evaluate representative fabrics on the same garment and body so observed differences can be attributed to materials; compare with credible reference drapes or physical samples where available. Check fold/strain behavior, stretching along different fabric directions, contact and penetration, settling stability, and useful interaction/performance on supported devices. Keep limitations visible and make failed or unstable simulations understandable. Appearance alone does not validate physical fit or manufacturing readiness. Scheduled Clothing Studio work should include this research and validation alongside the 3D-first redesign; this follow-up records future requirements and does not claim that they are delivered.
-
-### Material-law foundation delivered — 2026-10-15 (#266)
-
-Body & drape now includes an independent static tensile comparison with two illustrative directional profiles, explicit SI mass/energy/force response,8/16-element checks, captured numerical JSON and owned cancellation. Material extensional coefficient and coupon force/extension stiffness are distinguished. Local and source/main CI pass121 units and146 native browser cases with project checks; see `docs/2026-10-15-clothing-tensile-integration.md`. The current garment solver stays unchanged. This axial foundation does not deliver membrane shear, bending/contact, calibrated materials or physical fit; the above research gates and ACTIVE destination remain in force.
-
-### Bending-law foundation delivered — 2026-10-15 (#267)
-
-Body & drape also offers an independent static cantilever comparison with two illustrative directional bending profiles, dimensioned D/EI, cubic curves, signed support reactions, explicit magnitudes, numerical JSON and owned cancellation. Local and source/main CI pass127 units and151 native browser cases with project checks. See `docs/2026-10-15-clothing-bending-integration.md`. This beam experiment supplies a controlled bending foundation alongside266; membrane shear/coupling, nonlinear garment dynamics/contact and measured-material/physical-fit validation remain unfinished. Existing garment drape and the full ACTIVE destination remain unchanged.
-
-### Coupled membrane foundation — 2026-10-16 (#268)
-
-Body & drape now includes a static orthotropic membrane comparison with directional stretch, transverse coupling and engineering shear,0/45/90degree grain and inspectable triangle meshes/numerical JSON. Coefficients are illustrative, and the affine traction patch checks assembly rather than general mesh convergence. Local and final source/main CI pass134 units and156 native browser cases with project checks. See `docs/2026-10-16-clothing-membrane-integration.md` for first failures, native-save barrier repair and deferred unloaded interior-mesh overlay. The current garment solver is unchanged; nonlinear/dynamic shell behavior, contact, measured-material and physical-fit validation remain unfinished. Clothing stays ACTIVE.
-
-### Entered top torso girths — 2026-10-16 (#269)
-
-The top-body proxy now accepts independent optional waist/hip girths while blank fields preserve its original chest-derived proportions. Session-only settings reach actual drape geometry/cache identity and captured exports, with atomic validation, retained raw drafts and stale-result protection. Extreme mismatches now report excessive numerical edge extension separately from residual motion. See `docs/2026-10-16-clothing-top-body-integration.md` for boundary measurements, retained failures, review and final gates. Final local and source/main CI pass137 units and161 native browser cases with project checks. This improves the entered-body experience without establishing anatomical accuracy or physical fit; body heights/depth/limbs and XPBD materials/contact remain approximations. Persistent personalized avatars and calibrated garment physics remain unfinished, and Clothing stays ACTIVE.
-
-### Matched garment fabric comparison — 2026-10-16 (#270)
-
-Body & drape can now compare two library fabrics on the same captured top/body with actual worker solves, matched front/back garment views and complete numerical receipts. Comparing preserves the current design; an explicit changed choice applies non-rib materials as one undoable edit, preserving rib trims, colors, prints, artwork and saved colorways. Already-used choices are disabled, and each new run adopts the current committed capture. Raw draft, worker/render retirement, retry and pending-image/import paths are covered. See `docs/2026-10-16-clothing-fabric-comparison-integration.md` for review, first failures and final gates. Final local and source/main CI pass 140 units and 172 native browser cases with project checks. This is controlled design exploration with the existing approximate solver, not integration of the independent swatch laws or physical fabric/fit calibration. Clothing remains ACTIVE.
-
-### Entered chest depth — 2026-10-17 (#276)
-
-Top draping now accepts optional straight front-to-back chest depth while preserving chest girth, legacy blank-field geometry, atomic raw drafts and owned results. Actual garment exports and matched fabric receipts use the changed proxy. Reviewed source and canonical main pass 145 unit and 177 native browser cases. [The integration record](2026-10-17-clothing-chest-depth-integration.md) preserves exact bounds, regression/review evidence and remaining anatomical/material/physical-fit limits. Clothing stays ACTIVE.
-
-### Direct artwork placement — 2026-10-17 (#277)
-
-Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. Corrected source and canonical main CI pass148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
-
-### Editable back-neck construction — 2026-10-17 (#278)
-
-The linked fit workflow now edits finished back-neck drop independently of the front through numeric input and a back-pattern keyboard/pointer handle. Actual opening geometry, neck-rib cutting length, tech-packH, drape and captured exports share the dimension. Omitted settings preserve original2cm geometry and existing draft/history/recovery rules. Local, source and main verification pass151 units and all188 native cases; [the integration record](2026-10-17-clothing-back-neck-integration.md) tracks full gates and limits. Hood side-pattern engineering and physical fit remain unfinished; Clothing stays ACTIVE.
-
-### Owner-requested solver investigation — 2026-10-17
-
-The owner asked to investigate [PPF Contact Solver](https://github.com/st-tech/ppf-contact-solver) for Clothing Studio. [The pinned source review and evaluation proposal](2026-10-17-clothing-ppf-contact-solver-research.md) identify a promising optional native backend for higher-quality shell/contact simulation. This is a candidate to evaluate, not a selected engine or completed integration. Upstream is offline and not production-ready; CPU/Metal support exists but is described as slow, and browser use needs a separate native compute path. Fabric presets use normalized conventions and do not establish measured equivalents of our library materials or physical fit.
-
-Scheduled material-physics work should consider a bounded coupon/contact and one-garment/two-material comparison, measuring actual latency, failure, strain and penetration while preserving physical units, material provenance, rest geometry, seams, UVs and owned design/export snapshots. Keep the responsive 3D workspace and current preview available while evaluating. No paid compute or remote upload model has been selected. Source review alone does not fulfill the material-physics requirement; Clothing remains ACTIVE.
-
-Research #279 supplies a [reproducible pinned CPU probe and evidence history](research/ppf-cpu/results/evaluation.md). The preliminary native build/contact-control run passed, but missed raw-frame/full-native-log retention; the next native run retained complete outputs and passed physics but CI failed in frame counting (two index maps were counted as frames). The corrected collector passes seven regressions, SHA-256-verified archive replay and fresh native CI39017488693. Accepted evidence retains26 output frames/220 native files, with422.63s build and6.36s tiny-fixture wall time. The bounded feasibility issue is complete; these are not garment performance or physical-material acceptance. Static-body contact is unverified by this cloth/cloth fixture; current driver code advertises support despite an older stale fixture comment. Do not treat this small feasibility experiment as a garment runtime benchmark or material calibration.
-
-Research #281 now measures genuine static-triangle contact with a frozen enabled/disabled CPU pair: enabled contact has zero wrong-side saved vertex-frames while the disabled control has200; all26 frames/238 native files are retained and independently audited. [Protocol, actual measurements and durable evidence](research/ppf-cpu/STATIC_COLLIDER.md) record successful native CI39035825816,421.91s build and2.912s tiny-fixture wall time. This admits one planar case only; continuous-time nonpenetration, curved bodies, garment/seam behavior and physical material accuracy remain unverified. Clothing remains ACTIVE with no new engine selected.
-
-Curved contact #282 adds a pinned native sheet-over-closed-convex-sphere experiment and [complete actual-input/raw-frame replay](research/ppf-cpu/CURVED_BODY.md). First native CI39056778354 passes; enabled contact has zero penetrating triangle-frames and68.714mm final height variation, while disabled contact has1454 penetrating triangle-frames. All38 raw frames/262 native files and9234 finite coordinates are verified. Observed build255.15s and tiny-fixture3.991s do not establish garment latency; anatomy, material calibration, seams/layers and continuous-time contact remain unverified. Clothing stays ACTIVE with the shipping solver unchanged.
-
-Native tensile #285 now supplies a [unit-aware coefficient derivation and independently replayed CPU experiment](research/ppf-cpu/TENSILE_RESPONSE.md): normalized stiffness500 vs2000 produces5.199842% vs1.299966% extension, while density-only1 vs.18kg/m² differs by at most4.58e−8m across saved coordinates. All453frames/1146nativefiles are retained; native CI39059244644 and36local harness tests pass. This proves bounded normalized response, not physical fabric calibration, bending/garment accuracy or engine adoption. Shipping app unchanged; Clothing stays ACTIVE.
-
-Native cantilever #287 adds [independently replayed CPU bending sensitivity](research/ppf-cpu/BENDING_RESPONSE.md): bend1 vs1000 yields89.819mm vs9.055mm tip descent at identical membrane/density settings, meeting all frozen clamp/strain/settling gates. Native CI39077437821 retains802frames/1764files; final54local harness tests pass. The same follow-up closes alternate-rest metadata admission gaps in the tensile replay, whose original evidence still passes. These are normalized fixtures, not physical fabric or garment calibration; shipping app unchanged and Clothing stays ACTIVE.
-
-### Actual garment candidate bridge — 2026-10-18 (#288)
-
-The research path now captures the actual fixed tee’s complete SI geometry/rest/seam/UV/material/body provenance and exposes why naive native rest mappings fail. Reviewed cut-rib and closed faceted-body candidates retain complete reproducible artifacts and explicit limits; [source/canonical integration evidence](2026-10-18-clothing-native-garment-integration.md) records actual gates. This advances the candidate adapter, not engine adoption or native garment/physical-material acceptance. Native ABI/seam/bending/mass/contact admission and the actual two-material comparison remain open in #288; the shipping preview is unchanged and Clothing stays ACTIVE.
-
-### Reusable entered bodies — 2026-10-17 (#280)
-
-Named top-body measurement profiles now provide explicit local Save, selection preview, deliberate Use, update/rename, confirmed delete and separate JSON backup/import. Body drafts and current garments are retained on refusal; using a profile follows actual worker/comparison/export geometry and retires old work. Reload/new concepts do not apply a profile automatically. This is a reuse workflow for the existing approximate body, not anatomical reconstruction or calibrated fit. [Workflow and verification](../apps/clothing-studio/docs/2026-10-17-top-body-profiles.md) records passing local production/source/main156-unit/195-browser gates; [the integration record](2026-10-17-clothing-body-profiles-integration.md) tracks canonical main acceptance. Clothing remains ACTIVE.
-
-### Native garment material and construction follow-through — 2026-10-19 (#290)
-
-The repaired native candidate now retains a controlled Young500/2000 one-second comparison with per-material61-frame identity across the observed requested environments. The [three-second serial-pair study](research/ppf-cpu/GARMENT_DURATION_STUDY.md) completes both cases on the requested-four host but times out at the unchanged300-second limit on the requested-one host (soft181/stiff168frames). This remains native failure. [Separate fixed-material sessions](research/ppf-cpu/GARMENT_FIXED_MATERIAL_STUDY.md) now complete all four declared jobs with independently replayed724raw frames/1852nativefiles. Each material matches all181frames across the observed hosts and all available previous-duration prefixes. Their separate300-second budgets do not retroactively complete the original serial pair or establish physical/construction acceptance.
-
-[Construction localization](research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) traces the existing full pair's peak positive extension to a shared underarm edge, with per-part distributions, original triangle/edge provenance and seam gaps. This makes the next construction investigation specific without treating low residual motion as low strain or physical acceptance. Representative garment/body coverage, physical references, calibrated fit and shipping-engine adoption remain open; Clothing stays ACTIVE.
-
-Triangle-wide [principal-stretch analysis](research/ppf-cpu/GARMENT_PRINCIPAL_STRAIN.md) now measures all in-plane directions of the unchanged rest geometry, independently checked against SVD for all4480faces/material. Peak final extension is40.885/26.339% for Young500/2000, larger than sampled-edge maxima and localized at another underarm triangle. Rest-area-weighted distributions retain the concentration of distortion. Construction quality remains open; these metrics do not establish stress, physical tolerances or fit.
-
-### Delivery note — 2026-10-20 (#295): named complete design copies
-
-Clothing now has a contextual **Saved designs** library for up to12 immutable named complete-project copies, explicit one-edit open, selected JSON backup and confirmed copy-only deletion. Private media and applied construction/grading/body data stay together; existing current-concept autosave, raw drafts and newer editing ownership remain protected. This advances reusable design exploration without cloud storage or a new schema. See `apps/clothing-studio/docs/2026-10-20-design-library-295.md` for executed checks and limits. Clothing remains ACTIVE; physical garment/material validation and broader professional product acceptance are separate outstanding gates. Project #8 remains skipped.
-
-### Construction research note — 2026-10-20 (#290)
-
-The captured native tee now has a reproducible welded-vertex link/corner-budget audit. All vertex links are connected manifold fans; both underarm junctions carry about628° intrinsic corner sums already present in the original styling-surface coordinates. This narrows the construction investigation without treating saddle curvature as a defect or rewriting rest lengths. See `docs/research/ppf-cpu/GARMENT_JUNCTIONS.md`. No new native solve, causal strain diagnosis, physical acceptance or shipping-engine change is claimed. Clothing remains ACTIVE; representative construction/body and physical references remain open. Project#8 remains skipped.
-
-## 6. Karaoke Studio
-
-Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
-
-Manual editing is the correction workflow. Users should ordinarily receive a usable result without supplying all lyrics or timing each line themselves. Existing waveform, SRT, cue editing and practice controls support reviewing and refining automatic results. Uncertain passages need understandable feedback and efficient correction; corrected text and timing must be preserved.
-
-Automatic transcription and alignment are central unfinished capabilities. Evaluate real-song transcription, synchronization and separation quality, plus the effort needed to correct results. Processing success and valid exported media alone do not establish a useful automatic karaoke experience. Model choices, supported material and acceptable quality thresholds remain to be designed and measured.
-
-This lyric-automation clarification applies to project 6, Karaoke Studio. Melody Studio retains the full-DAW direction above.
-
-
-### Automatic review timing correction — 2026-10-16 (#271)
-
-Karaoke's automatic review now stages corrected words and start/end seconds together, supports native playhead marks, and auditions the edited interval before a deliberate one-step Apply. Original recognition remains visible and unchanged; all hidden lines must validate, Cancel preserves the editor, and Save remains separate. Timing edits retire owned playback and late native play results. See `docs/2026-10-16-karaoke-review-timing-integration.md` for review, retained local failures and final software gates. Final source/main CI pass 206 Python, 131 TypeScript and 114 browser cases plus project checks; local browser verification passes 114 cases, with the local Python failure retained in that receipt. This improves the correction workflow; real-song alignment quality, physical latency and intended-user correction effort remain unverified in #241. Karaoke stays ACTIVE.
-
-
-### Whole-clip synchronization correction — 2026-10-16 (#272)
-
-Karaoke's cue editor now shifts every line by one explicit signed-seconds offset as a single unsaved Undo/Redo edit, preserving literal words, lengths, gaps, title and pasted drafts. Complete invalid or out-of-clip proposals refuse without clipping or retiring active work; a successful shift retires obsolete playback/import/timing work. Save and current exports remain separate. See `docs/2026-10-16-karaoke-timing-shift-integration.md` for review, first failures and final gates. Final local browser117/117 and TypeScript134/project checks pass; final source/main CI passes206 Python,134 TypeScript and117 browser cases plus project checks. The preceding local Python/Ruff limitations remain recorded. This is manual bulk correction, not delay detection or real-song alignment/effort acceptance. Karaoke remains ACTIVE.
-
-### Selected-passage synchronization correction — 2026-10-20 (#294)
-
-The existing timing-shift utility now offers an explicit selected first/last-line passage as well as All lines. Only the chosen cues move, with complete neighbor/clip validation, unchanged outside values/raw spellings and one unsaved Undo/Redo edit. Replacing or structurally changing cues and Undo/Redo require deliberate passage reselection. [Verification and retained failures](../apps/karaoke-studio/docs/2026-10-20-passage-timing-294.md) distinguish correction tooling from still-unverified real-song alignment/correction effort in #241. Karaoke stays ACTIVE against the automatic song-to-karaoke destination.
-
-## 7. Shot Studio
-
-### Owner update — 2026-10-14: deferred
-
-The owner asked to defer Shot Studio after reviewing the available apps. Set its status to DEFERRED and exclude it from scheduled/autonomous development until the owner explicitly resumes it. Do not choose browser polish, new features, export investigations or a replacement platform as an automatic continuation of this project. No replacement platform has been selected.
-
-Preserve the virtual-filmmaking vision, current source, tests, research, historical acceptance evidence and known unresolved export/headset limits for possible future use. Deferral does not establish completion or direct deletion or shutdown of the hosted test copy. Other projects retain their own direction and priorities.
-
-## 9. Duet
-
-Spotify integration and an automatically maintained shared musical timeline are the main points of Duet. The app turns a couple's listening activity into a musical history of their relationship.
-
-Notable listening activity automatically creates timeline entries, including both people listening to the same song, a newly heard song and a new favorite. These entries do not require an approval step before appearing. Users can manually add entries and edit or remove automatic entries. They can attach text memories and photos to songs and revisit those associations through the timeline.
-
-Timeline design must handle repeated observations and grouping so activity stays understandable. User edits and removal need durable behavior rather than being overwritten by repeated ingestion. Define what counts as shared, new and favorite, distinguish observed activity from inferred significance, and make those definitions understandable. Do not assume the two people listened simultaneously merely because they heard the same song.
-
-Verify Spotify's available APIs, access requirements, permissions, history coverage and policies before selecting an integration design. No provider capability is established by this vision. Authentication, shared-history consent, private photos and listening-data handling require deliberate design.
-
-Shared recommendations, occasion playlists and listening together support the Spotify/timeline experience. Existing uploaded-audio rooms and dated text memories are foundations, not fulfillment of the central integration and automatically populated timeline.
-
-Success means meaningful events appear from real listening activity with little effort, users can correct and curate their history, and song-linked text/photo memories remain easy to revisit. Test actual integration and timeline relevance as well as reliable storage.
-
-## 11. Motion Studio
-
-### Owner update — 2026-10-14: focused sections and contextual controls
-
-The owner confirmed the same crowded-page feedback for Motion Studio: use sections and modals to expose options and information more efficiently. Keep the artwork stage, timeline and essential drawing/playback actions prominent. Organize layer/exposure editing, pose/keyframe tools, stroke details, in-between reviews, project management, sharing and exports into focused sections or contextual panels/dialogs instead of one long page of controls. Use the selected artwork and task to reveal relevant options; exact grouping and navigation require subsequent design.
-
-Prioritize a usable draw-to-animation interaction flow when resuming Motion work. A user should be able to start or open artwork, draw, set movement, preview and find an export without reading every advanced feature. Preserve artwork, images, cels, poses, selection, pending drafts/gestures, history and recovery across navigation; opening or closing a dialog must not silently commit or discard edits. Check desktop/phone discovery, screen density, keyboard focus and clear close/back behavior. Retain the broader authored-animation and useful AI-assistance vision; this update records future work and Motion remains ACTIVE.
-
-### Focused workspace milestone delivered (2026-10-15, #263)
-
-Motion now opens around the artwork stage with contextual Draw, Layers, Poses, Drawings, Projects, Share, Export and Help sections and a real expanded workspace. Mounted raw fields, selection, history, reviewed in-betweens and owned work survive navigation; Back/Escape, playback stop and export cancellation stay reachable. Final-source CI passes 273 units and 197 native browser cases, including desktop/phone authoring and decoded exports. See `docs/2026-10-15-motion-workspace-integration.md` for integrated evidence, retained first failures and the portable-browser maximum-export limit. This addresses information density; useful learned assistance, live synchronization and intended-person evaluation remain ACTIVE.
-
-## 12. Style Studio
-
-### Owner update — 2026-10-14: guided, visual onboarding
-
-After trying Style Studio, the owner reported that the first screen contains too much information and that the app asks for too much manual entry. The requested direction is a screen-by-screen experience with picture-based preference choices at the beginning, similar to choosing favorite genres and artists during Spotify onboarding. Pinterest was suggested as a possible source of inspiration, alongside ready-made examples users can choose from.
-
-Style Studio remains a personal style assistant for matching existing taste, exploring a new style and dressing for an occasion. The next Style Studio milestone should make that experience approachable from the first visit. Existing wardrobe, feedback, saved-look and wear-history capabilities are foundations to reorganize around this flow.
-
-The revised experience should:
-
-- **Present one focused screen at a time.** Guide users through getting started, choosing visual preferences and reaching suggestions. Show only the information and controls relevant to the current step, with clear next/back navigation and preserved choices. Returning users should reach their looks or wardrobe without repeating onboarding. Detailed explanations, profile management, exports and advanced controls should be available when needed rather than filling the opening screen.
-- **Learn taste through pictures.** Begin with a manageable selection of outfit/style images that users can select, like, pass on or skip. Use the Spotify reference for the ease of choosing visual examples; exact screen counts, selection thresholds and interface details require subsequent design. Let users revisit and refine their choices. Show recognizable clothing and outfit imagery, rather than making abstract tags or long forms the primary way to express taste.
-- **Reduce required typing and setup.** Do not require users to name and tag a wardrobe, understand the model or enter every preference before receiving a useful first result. Use supplied examples and sensible, editable defaults to make first-use exploration possible. Add personal wardrobe pieces progressively when useful; keep detailed tags, notes and other optional information out of the critical path. Distinguish example outfits from clothes the user actually owns, and sample preferences from their explicit choices.
-- **Investigate Pinterest or a comparable visual source.** Assess whether a supported integration can let users select inspiration or bring in their own references. Verify actual API access, permissions, image-use rights, privacy and any costs before choosing an implementation. Pinterest is an option to evaluate, not an established capability or a mandatory dependency. A curated, appropriately licensed image collection should provide a useful onboarding path without a third-party account; unavailable integration must not block the guided visual experience.
-- **Turn choices into useful suggestions.** Visual selections must inform the user's retained preferences and subsequent results, rather than acting as a decorative tour. Explain results briefly and offer simple feedback to refine them. Keep early results honest about limited preference evidence and whether they use examples or the user's wardrobe; do not claim automatic clothing recognition or calibrated recommendation quality without evidence.
-
-Success means a new user can understand what to do, choose pictured examples and reach relevant-looking suggestions with little typing and without confronting every form at once. Evaluate the complete first-use journey on desktop and phone, including screen clarity, required input, time/effort to the first useful result, back/skip behavior, retained choices and recommendation usefulness. Passing existing storage or model tests alone does not establish that this usability problem is resolved.
-
-Scheduled development should read this update before selecting or resuming Style Studio work, reconcile older plans with it, and prioritize a coherent visual-onboarding-to-suggestions milestone over adding more fields or polishing the current all-in-one page. Preserve existing user profiles and useful functionality as the interface changes. This update records requested future work; the current application has not yet been redesigned and Style Studio remains ACTIVE. Other projects' direction and the existing portfolio focus remain in force.
-
-### Guided visual milestone delivered — 2026-10-15 (#264)
-
-Style now offers a no-typing pictured-choice → example-inspiration path, with twelve original outfit illustrations, explicit correctable votes and no inserted owned clothes or supplied personal preferences. Sparse tag matching and the existing sufficiently trained model are distinguished, including visible sample-label provenance. Focused screens, More tools and a real expanded view retain raw editor/history/operation owners; keyboard and restore-time navigation preserve deliberate choices. Final-source CI passes 64 units and 78 native browser cases. See `docs/2026-10-15-style-onboarding-integration.md` for integrated evidence, source research and retained failures. This addresses first-use information density and a first source of visual taste evidence; intended-user usefulness and the broader style-assistant goals remain ACTIVE.
-
-Milestone #265 continues that path into owned clothing: explicit top/bottom/shoes starters, visible editable defaults, optional actual photos, category progress and current-choice combinations reach saved looks and PNG/JSON/reload without typing. Draft/photo protection and piece-level discard preserve saved clothing. Source and integrated-main CI pass67 units and84 native cases with lint/types/build; see `docs/2026-10-15-style-quick-wardrobe-integration.md`. Declared defaults are not recognition, and software checks do not establish real-user taste relevance or fit. Style remains ACTIVE.
-
-## 13. Stock Notebook
-
-Retain the original stock-research vision: turn a broad investing idea into visible screening criteria and an understandable, source-linked research summary, distinguishing supplied facts, derived observations and generated claims.
-
-Use AI-model API calls to interpret users' natural-language screening requests. This requirement is specifically about interpretation; it is not a new requirement to purchase financial-data APIs or to use a model for generated investment analysis. Those are separate product and sourcing questions.
-
-Show the proposed interpretation as editable criteria, resolve ambiguity and unsupported requests, and require deliberate application before changing the screen. Model responses must map to validated supported operations; invented financial facts or silently changed constraints are not acceptable interpretations. Keep supplied data and existing manual/controlled-language tools usable when model access is unavailable.
-
-Use genuinely free model access if a suitable option is available. Verify pricing, quotas, data handling and overage behavior before choosing a provider; do not assume a free tier prevents charges. Paid AI-model API integration is deferred unless the owner later authorizes spending. If no suitable no-cost service is available, document that specific dependency and continue independent product work without claiming the interpretation milestone is complete.
-
-Success for this milestone means varied ordinary requests produce correct, inspectable screening criteria, uncertainty is handled usefully, and failure preserves the user's current work. Measure interpretation quality on representative requests rather than accepting any syntactically valid response. The earlier failed local paraphrase experiment remains evidence about that experiment; it does not replace the new API-based direction.
-
-## 16. Lens Studio
-
-### Owner update — 2026-10-14: focused sections and contextual controls
-
-The owner confirmed the same crowded-page feedback for Lens Studio: use focused sections and modals so the photo experiment is understandable without displaying every option and explanation at once. Keep the source/result comparison and essential framing controls prominent. Organize photo/project opening, focal/perspective settings, depth painting/selection or estimation, mask exchange, recovery/exports and detailed simulation information into discoverable sections and contextual panels/dialogs. Keep information needed to interpret a result available at the point of use. Exact grouping and navigation require subsequent design.
-
-Prioritize a coherent import-to-comparison flow when resuming Lens work. A user should be able to open a photo or demo, change framing or perspective, compare the result and find an export without confronting unrelated forms. Preserve source pixels, depth masks, applied settings, raw drafts, selection/history and recovery when navigating. Retain ownership/cancellation of pending image/model/render work so dismissed or superseded operations cannot apply later unexpectedly. Check desktop/phone discovery, keyboard/modal focus and clear close/back behavior. The original photo-simulation and depth/reconstruction goals remain in force; this records future work and Lens remains ACTIVE.
-
-### Delivery note — 2026-10-15 (#262)
-
-Lens now opens into a focused photo flow with Compare, Open, Depth, Mask exchange, Project & export and Help sections, plus a real expanded workspace. Navigation retains mounted raw fields, proposals/history and owned work; global cancellation/recovery and a direct phone framing shortcut remain reachable. Final source CI passes95 units and102 native browser cases. See `docs/2026-10-15-lens-workspace-integration.md` for integrated evidence, local baseline failures and verification-process limitations. This addresses the information-density milestone; intended-person usefulness and broader depth/reconstruction remain ACTIVE.
-
-## 17. Composure
-
-### Owner update — 2026-10-14: deferred pending platform reconsideration
-
-After trying the browser app, the owner said Composure does not work as a browser app and asked to defer it. Composure is now DEFERRED. This is the owner's assessment of the product/platform experience, not a newly diagnosed technical failure or a claim that its earlier automated checks failed.
-
-Exclude Composure from scheduled and autonomous development until the owner explicitly resumes it. Do not select browser polishing, new features, additional acceptance work or a platform migration as a way to continue this deferred project. The earlier goal of a heart-rate-driven horror game remains recorded, but a suitable platform and experience must be reconsidered before resumption; no native, desktop, mobile or game-engine replacement has been selected.
-
-Retain the existing source, tests, research and historical acceptance evidence for possible future use. Deferral is not completion, maintenance acceptance, deletion or an instruction to disable the hosted test copy. Other projects' direction and priorities remain unchanged.
-
-Clothing #290: [configured-step sensitivity](research/ppf-cpu/GARMENT_HALF_STEP_STUDY.md) completes both declared1/240 sessions (362actualframes/926verifiedfiles), retaining original rest/mass/body/seams/material and all prior failures. Final principal peaks40.912/26.335% persist close to the1/120 observations, with substantial early trajectory differences. This does not establish convergence, calibrated fabrics or physical fit. Clothing remains ACTIVE; construction quality, representative garments/bodies and independent physical evaluation remain open. Project #8 stays skipped.
+### Composure (`apps/composure`): owner-deferred 2026-10-14
+A heart-rate-driven horror escape game. The owner found it does not work as a browser app. The platform must be reconsidered before it resumes.

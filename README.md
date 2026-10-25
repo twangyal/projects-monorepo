@@ -1,30 +1,30 @@
 # Projects Monorepo
 
-An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized backlog and `AGENTS.md` defines the development policy.
+A portfolio workspace developed largely by autonomous coding agents. [`PROJECT_IDEAS.md`](PROJECT_IDEAS.md) is the prioritized backlog, [`docs/PRODUCT_DIRECTION.md`](docs/PRODUCT_DIRECTION.md) records each product's destination and the owner's decisions, and [`AGENTS.md`](AGENTS.md) defines how agents work here.
 
-The [product direction](docs/PRODUCT_DIRECTION.md) records the revised visions and completion standard. Twelve implemented apps remain in active development; Composure and Shot Studio are owner-deferred. Working prototypes and completed first milestones do not establish readiness for maintenance.
+## Current focus
 
-## Development branch
-
-`main` contains the complete portfolio and is the canonical base for new work. Follow `docs/PRODUCT_DIRECTION.md` before resuming an older task. Historical branch snapshots are retained as archive tags; short-lived task branches may be used for isolated changes.
-
-## Projects
+Development is concentrated on three apps. Everything else is paused.
 
 | Project | Status | Path |
 | --- | --- | --- |
-| Eye detector with agentic AI | Active | `apps/gaze-navigator` |
-| Melody Studio | Active | `apps/melody-studio` |
-| Git History | Active | `apps/git-history` |
-| Clothing Studio | Active | `apps/clothing-studio` |
-| Karaoke Studio | Active | `apps/karaoke-studio` |
-| Motion Studio | Active | `apps/motion-studio` |
-| Duet | Active | `apps/duet` |
-| Style Studio | Active | `apps/style-studio` |
-| Friendly Challenges | Active | `apps/friendly-challenges` |
+| Gaze Navigator (eye + voice web control) | **Active, priority** | `apps/gaze-navigator` |
+| Clothing Studio (3D garment design) | **Active, priority** | `apps/clothing-studio` |
+| Karaoke Studio (song to karaoke) | **Active, priority** | `apps/karaoke-studio` |
+| Melody Studio | Deferred | `apps/melody-studio` |
+| Motion Studio | Deferred | `apps/motion-studio` |
+| Duet | Deferred | `apps/duet` |
+| Git History | Deferred | `apps/git-history` |
+| Style Studio | Deferred | `apps/style-studio` |
+| Friendly Challenges | Deferred | `apps/friendly-challenges` |
+| Lens Studio | Deferred | `apps/lens-studio` |
+| Stock Notebook | Deferred | `apps/stock-notebook` |
+| Color Context Lab | Deferred | `apps/color-context-lab` |
 | Shot Studio | Deferred | `apps/shot-studio` |
-| Lens Studio | Active | `apps/lens-studio` |
-| Stock Notebook | Active | `apps/stock-notebook` |
 | Composure | Deferred | `apps/composure` |
-| Color Context Lab | Active | `apps/color-context-lab` |
 
-Each project is intentionally self-contained under `apps/`; see its README for run and verification instructions.
+Each app is self-contained under `apps/`. Its README explains how to run and verify it, and each has its own GitHub Actions workflow (see [`docs/CI.md`](docs/CI.md)).
+
+## History
+
+`main` is the only long-lived branch. On 2026-10-25 the repository was decluttered: dated acceptance receipts, test logs, evidence files, research archives (including the Clothing PPF solver study) and design plans were removed, and every README was rewritten. The full pre-cleanup tree is preserved at tag [`archive/pre-cleanup-2026-10-25`](https://github.com/twangyal/projects-monorepo/tree/archive/pre-cleanup-2026-10-25). Older branch snapshots are kept as other `archive/*` tags.

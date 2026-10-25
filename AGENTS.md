@@ -4,6 +4,12 @@ This repository contains multiple independent projects.
 
 You have broad autonomy to develop, improve, create, and maintain projects within this repository.
 
+## Portfolio focus
+
+As of 2026-10-25 the owner has narrowed development to three projects: **Gaze Navigator** (`apps/gaze-navigator`), **Clothing Studio** (`apps/clothing-studio`) and **Karaoke Studio** (`apps/karaoke-studio`). Only these are `ACTIVE`. Every other app is `DEFERRED`; do not select work in a deferred app, and do not create new projects, unless the owner explicitly asks. The one exception is a deferred app's broken build or failing CI on `main`, which may be fixed minimally.
+
+Rotate between the three priority apps rather than spending every run on one. Within an app, choose the milestone that most advances its core loop described in `docs/PRODUCT_DIRECTION.md`.
+
 ## Source of direction
 
 Read these first on every run:
@@ -27,7 +33,7 @@ Before implementation, state the intended user outcome, the gap between the curr
 
 After urgent correctness or data-loss problems, prioritize meaningful missing capabilities and usable end-to-end experiences. Do not repeatedly select peripheral hardening or additional verification while the defining experience remains unimplemented. Real quality, accessibility and relevant domain validation remain part of delivering the vision; do not weaken safety or erase failed evidence to claim progress.
 
-`main` is the canonical development and integration branch for all fourteen applications. Read its current direction before starting or resuming work; a stale checkout or archived branch is not evidence that an older scope still applies. Base new work on current `main`, use short-lived task branches when useful, and integrate verified work back into `main`. Do not revive `Astra` as a parallel long-lived product branch. Archive tags preserve historical or superseded work and do not establish current product direction.
+`main` is the canonical development and integration branch. Base new work on current `main`, use short-lived task branches when useful, and integrate verified work back into `main`. Archive tags (for example `archive/pre-cleanup-2026-10-25`) preserve historical or superseded work and do not establish current product direction.
 
 ## Pull request authorization
 
@@ -43,19 +49,14 @@ Create a pull request, including a draft, only when the owner explicitly asks fo
 6. Run the appropriate project-specific verification.
 7. Fix regressions caused by your work.
 8. Review your diff.
-9. Commit completed work with a clear commit message.
-10. Update project documentation or status when appropriate.
+9. Commit completed work with a clear commit message. Code, tests and any documentation change go in the same commit; do not add follow-up "accept gates" or "retain evidence" commits.
+10. Update the app README or `PROJECT_IDEAS.md` only when user-facing capabilities, commands or status actually change, following the documentation policy below.
 
 Do not wait for me to assign individual tasks.
 
 ## Creating projects
 
-You may create a new project from `PROJECT_IDEAS.md` when:
-
-- higher-priority existing work is reasonably complete, blocked, or lower value
-- the idea has enough information to make sensible implementation decisions
-
-When creating a project:
+Do not create new projects while the portfolio focus above is in effect. If the owner later asks for one, when creating a project:
 
 1. Create a dedicated directory under the appropriate monorepo location.
 2. Choose a reasonable architecture and technology stack consistent with the repository unless the idea specifies one.
@@ -78,8 +79,9 @@ Prefer work in roughly this order:
 7. maintainability
 8. developer experience
 9. performance
-10. new projects
-11. minor cosmetic work
+10. minor cosmetic work
+
+Apply this order within the three priority apps.
 
 Prefer finishing useful projects over endlessly polishing one project. Select coherent milestones against the intended user experience and its major missing capabilities. Storage, recovery, exports and test coverage support that experience; their completion alone does not complete the product.
 
@@ -96,7 +98,20 @@ Use these statuses in `PROJECT_IDEAS.md`:
 - `DEFERRED` — paused by the owner; exclude from scheduled/autonomous task selection until the owner explicitly resumes it
 - `DONE` — fulfills its intended purpose and has no obvious high-value missing work
 
-Twelve implemented apps remain ACTIVE under the revised direction. Composure and Shot Studio are owner-DEFERRED as of 2026-10-14; do not resume their development, export/acceptance investigations or choose a platform migration without a new owner instruction. See `docs/PRODUCT_DIRECTION.md` sections 7 and 17. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
+Gaze Navigator, Clothing Studio and Karaoke Studio are ACTIVE. All other implemented apps are DEFERRED (Composure and Shot Studio since 2026-10-14, the rest since 2026-10-25); do not resume them, run investigations on them or choose platform migrations for them without a new owner instruction. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
+
+## Documentation and evidence policy
+
+The repository previously accumulated hundreds of dated acceptance receipts, test logs, evidence JSON files and research archives (about 200 MB), plus READMEs that grew into 800-line milestone logs. They were removed on 2026-10-25 and are preserved at tag `archive/pre-cleanup-2026-10-25`. Do not recreate them.
+
+- **Git history and CI are the record.** Commit messages and CI runs show what changed and that it passed. Do not commit dated `*-acceptance.md`, `*-integration.md`, `*-verification.*`, red/green test logs, "local attempt" JSON or similar receipts.
+- **Do not commit generated evidence or large binaries.** Simulation output, recordings, archives and benchmark results belong in CI artifacts or an issue comment. Committed test fixtures must be small and live next to the tests that use them.
+- **READMEs describe the present.** Each app README covers what the app is, what works, known gaps, how to run it, how to verify it and its layout. Edit it in place; never append milestone narratives. Keep it under about 150 lines.
+- **`PROJECT_IDEAS.md` stays short.** Each entry has a status, the owner's description and a few lines of current state. Replace the current-state lines when they change; do not append milestone paragraphs.
+- **`docs/PRODUCT_DIRECTION.md` records destinations and owner decisions only.** Add a dated owner decision when the owner gives one; do not add delivery notes.
+- **No CI run IDs, test counts, issue-number chains or SHAs in prose docs.** They go stale immediately.
+- **Research must stay bounded.** Before starting a research investigation, state the product question it answers and a stopping point. Keep research code and results on a task branch or in CI artifacts, and record only the conclusion (a short paragraph) in `docs/PRODUCT_DIRECTION.md` or the app README. Do not keep extending a study across many runs without a user-facing outcome.
+- **Write normal prose.** Put spaces between words and numbers, use short paragraphs, and prefer plain language over "admission", "gates" and "retained" jargon.
 
 ## Independence
 
@@ -114,7 +129,7 @@ Infer intent from the project description and existing code.
 
 You may autonomously:
 
-- create new projects
+- create new projects only when the owner asks
 - add or remove files
 - add dependencies when justified
 - refactor

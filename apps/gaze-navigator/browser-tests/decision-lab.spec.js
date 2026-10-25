@@ -4,7 +4,7 @@ import { eligibleTargets } from '../src/decision-contract.js';
 import {readFile} from 'node:fs/promises';
 
 test('actual retained model report separates eligible decisions from policy rules without trusting benchmark metadata',async({page})=>{
-  const report=JSON.parse(await readFile(new URL('../docs/2026-10-03-tev1-report.json',import.meta.url),'utf8'));
+  const report=JSON.parse(await readFile(new URL('./fixtures/tev1-report.json',import.meta.url),'utf8'));
   report.benchmark.summary.modelEligible.correct=11;
   report.benchmark.summary.timing.eligibleMedianElapsedMs=0;
   await page.locator('#importReport').setInputFiles({name:'measured-with-untrusted-metadata.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(report))});

@@ -1,9 +1,0 @@
-{
-  "bytes": 99147,
-  "sha256": "65b7803437d3c6cdddd81fe23118b222a2bd2ee5b6f3b428e5d50093ae14041e",
-  "vertices": 2353,
-  "faces": 4480,
-  "sew_pairs": 22,
-  "maximum_structural_rest_error_m": 5.23247993995668e-08,
-  "status": "candidate_rest_mapping_only"
-}
