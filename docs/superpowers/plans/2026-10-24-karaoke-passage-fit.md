@@ -25,7 +25,7 @@ Preserve exact words/unselected times/raw drafts/title/paste on refusal and Undo
 - [x] Pure fit/model admission; review positive-gap collapse regressionRED→GREEN added.
 - [x] Contextual guarded UI;4focused native cases pass21.1s including decoded video.
 - [x] Final159TSunits/static/build,compileall; fresh reviewImportantgap repaired onepass. LocalPython205/206twice andseparateRSS1/1 retained;fullnative/canonicalpending. Source/docs/roadmap connected commit.
-- [ ] Observe canonical gates; actual acceptance and issue closure or durable pending handoff.
+- [x] Canonical exact-source gates observed:206Python/159TS/143browser, Ruff/compileall/lint/types/build pass. Final acceptance records both local Python failures and unknown final local-browser outcome after workspace reset. See docs/2026-10-24-karaoke-passage-fit-acceptance.md; #327 closes, KaraokeACTIVE/#241open/#8skip.
 
 ## Ledger
 
