@@ -22,7 +22,7 @@ Operate real websites by looking and speaking. It is for people who find a mouse
 ## Known gaps
 
 - The real end-to-end loop has not been evaluated with intended users: physical webcam gaze plus a real microphone on representative sites. Webcam accuracy, latency and calibration continuity in physical use are unmeasured.
-- On real sites, the pointer has stood in for gaze and typed text for speech so far.
+- On real sites, the pointer has stood in for gaze and typed text for speech so far. With simulated webcam error (120 px), scripted tasks drop to about half completed; a control just outside the circle is refused rather than offered.
 - WaterSheep matching is opt-in and only chooses targets. It needs a model download of about 158 MB on first use. The rule interpreter still misses many paraphrases; those end in a question or an explanation, not an action.
 - Custom ARIA comboboxes, listboxes, sliders and spinbuttons and cross-origin iframes are not controlled. Rich-text editors get dictation and word replacement, but not selection commands.
 - Spoken commands are English only. In Chrome, speech recognition depends on the browser vendor's service.
@@ -85,7 +85,8 @@ Browser tests start `python3 -m http.server` on port 4173 themselves. They use a
 
 - Password, one-time-code and payment-card fields stay writable, but their values are never shown in the panel, announced, spoken or sent to the WaterSheep model.
 - The navigator never records, uploads or stores audio, transcripts or page content. In Chrome and Edge, the browser's own speech recognition sends microphone audio to the browser vendor. Typed instructions work without a microphone.
-- **Known issue:** in the extension, WebGazer runs in the content script, so Chrome grants camera (and speech-recognition microphone) permission to *the website being viewed*, not to the extension, and WebGazer's `<video>` element is inserted into the page. Moving capture into an extension-owned context is planned.
+- In the extension, the camera and WebGazer run in an invisible extension frame (`extension/capture.html`), so camera access is granted to Gaze Navigator once (through its setup tab), not to each website, and pages cannot see the video. Only gaze points reach the page's content script, over a private extension port.
+- **Known issue:** speech recognition still runs in the page, so the microphone permission is asked for, and kept by, the website being viewed.
 - Webcam frames are processed in the browser by WebGazer and are not uploaded or stored. WebGazer's face models download from tfhub.dev. On the website, WebGazer itself loads from jsDelivr; the extension bundles it.
 - Extension state lives in extension storage, never in the website's storage. Navigator settings and camera calibration samples (small eye-patch images plus screen positions) are kept in in-memory session storage. "Stop camera" deletes the samples, and closing the browser discards them. The popup's stay-on and auto-start preferences are kept in extension local storage. The website version keeps settings in `sessionStorage` and recalibrates on every page.
 - The WaterSheep model is cached in Cache Storage: the extension's own cache, or the practice site's origin.

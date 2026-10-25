@@ -42,7 +42,7 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gap.** The extension supports a wide range of native form controls in software, but the real end-to-end loop (physical gaze tracking plus real speech on real sites) has not been evaluated with intended users. Prioritize making that loop dependable over adding further control types.
 
-**Fix first (review, 2026-10-25):** move camera and microphone capture out of the website's origin into an extension-owned context; never expose password field values in the panel, status or speech; edit rich-text fields without flattening them to plain text; make spoken dates, times and numbers ("November first", "two thirty") work, since the speech recognizer never produces literal `2026-11-01`; throttle context capture on large pages; and evaluate on real sites with realistic gaze error rather than a perfectly placed pointer.
+**Next (updated 2026-10-25):** with simulated webcam error (120 px), scripted real-site tasks fall from 15 of 17 to about half completed, with no unintended actions; nearly every failure is "no control called … is inside the gaze circle" while the control is visible nearby. Make near misses recoverable (offer the named control just outside the circle, or grow the circle when nothing matches) and measure with `scripts/evaluate-real-sites.mjs --gaze-error`. Move speech recognition into the extension's capture frame too, verified with a real microphone, so the microphone permission also belongs to the extension. "Next page" should not fall back to browser history when no pager is in view.
 
 ---
 
