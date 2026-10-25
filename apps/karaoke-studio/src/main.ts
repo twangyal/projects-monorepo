@@ -10,7 +10,7 @@ import { proposeBoundary, timingError } from './timing.ts';
 import { findCueIndices, nextCueMatch } from './find-cues.ts';
 import { fitCues } from './cue-fit.ts';
 import { splitCue, mergeCue, shiftCues, copyCues, insertCue, replaceCueWords, type CuePassage } from './cue-edit.ts';
-import { createPracticeRange, type PracticeMode } from './practice.ts';
+import { isRehearsalSpeed, createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
@@ -45,8 +45,8 @@ app.innerHTML = `
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
-        <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
-        <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at normal 1× speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
+        <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
+        <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
         <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
@@ -232,7 +232,7 @@ function controls() {
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy || !!timingOwner;
-  srtControls(); timingControls(); practiceControls(); autoControls(); wordReplaceControls();
+  srtControls(); timingControls(); practiceControls(); rehearsalControls(); autoControls(); wordReplaceControls();
   updateTimeline();
   archiveControls();
   restoreArchiveFocus();
@@ -374,6 +374,37 @@ for (const event of ['pause', 'ended', 'seeked', 'timeupdate', 'loadedmetadata']
 audio.addEventListener('error', () => { if (working) message('Could not play this local audio file. Refresh the project or check that the studio service is still running.', true); });
 void document.fonts.ready.then(draw);
 
+function rehearsalControls(): void {
+  const select = element<HTMLSelectElement>('playback-speed');
+  select.disabled = !working || timingBusy();
+  const rate = audio.playbackRate;
+  select.value = isRehearsalSpeed(rate) ? String(rate) : '';
+  element('playback-speed-status').textContent = isRehearsalSpeed(rate)
+    ? `Listening at ${rate}×. Lyrics and exports keep their original song times.`
+    : 'Unsupported player speed. Choose 0.5×, 0.75× or 1× before practicing.';
+}
+element('playback-speed').addEventListener('change', () => {
+  if (!working || timingBusy()) { rehearsalControls(); return; }
+  const rate = Number(element<HTMLSelectElement>('playback-speed').value);
+  if (!isRehearsalSpeed(rate)) { rehearsalControls(); return; }
+  if (audio.playbackRate !== rate) {
+    retirePractice('Playback speed changed. Choose Play once or Repeat range to begin again.');
+    retireTiming('Playback speed changed. Staged times were not applied; choose 1× before timing again.');
+    audio.preservesPitch = true;
+    audio.playbackRate = rate;
+  }
+  if (audio.defaultPlaybackRate !== rate) audio.defaultPlaybackRate = rate;
+  rehearsalControls(); practiceControls();
+});
+audio.addEventListener('ratechange', () => {
+  // Native controls are another deliberate speed choice. Keep the visible
+  // supported rate as the default used by the next same-clip track load.
+  const rate = audio.playbackRate;
+  if (isRehearsalSpeed(rate) && audio.defaultPlaybackRate !== rate) audio.defaultPlaybackRate = rate;
+  rehearsalControls();
+});
+audio.addEventListener('loadedmetadata', rehearsalControls);
+
 function track(kind: string) {
   if (!working) return;
   // Retire before capturing ordinary playback intent: switching away from a
@@ -411,7 +442,7 @@ function practiceMediaReady(checkEdits = true): boolean {
   const source = new URL(`/api/projects/${working.id}/audio/${currentTrack}`, location.href).href;
   return audio.src === source && audio.currentSrc === source && !audio.error && !audio.seeking
     && audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && Number.isFinite(audio.duration)
-    && Math.abs(audio.duration - working.duration) <= 1 / 44100 && audio.playbackRate === 1 && !audio.loop;
+    && Math.abs(audio.duration - working.duration) <= 1 / 44100 && isRehearsalSpeed(audio.playbackRate) && !audio.loop;
 }
 function practiceControls(): void {
   const first = element<HTMLSelectElement>('practice-first'), last = element<HTMLSelectElement>('practice-last');
@@ -1056,7 +1087,7 @@ async function openProject(id: string) {
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
-  if (working?.id !== project.id) { resetWordReplace(); findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
+  if (working?.id !== project.id) { audio.defaultPlaybackRate = 1; audio.playbackRate = 1; audio.preservesPitch = true; resetWordReplace(); findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
   resetLineInsert();
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();

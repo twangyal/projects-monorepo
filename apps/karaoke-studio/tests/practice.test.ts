@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPracticeRange, practiceBoundary, type PracticeMode, type PracticeRange } from '../src/practice.ts';
+import { createPracticeRange, practiceBoundary, isRehearsalSpeed, type PracticeMode, type PracticeRange } from '../src/practice.ts';
 import { MAX_DURATION, type Cue } from '../src/lyrics.ts';
 
 const supplied = (): Cue[] => [
@@ -137,4 +137,11 @@ test('boundary validates complete scalar range invariants before deciding', () =
   for (const invalid of [null, undefined, {}, [], 'range']) {
     assert.throws(() => practiceBoundary(invalid as unknown as PracticeRange, 'once', 5));
   }
+});
+
+
+test('rehearsal admits only fixed numeric half three-quarter and normal speeds', () => {
+  for (const rate of [.5, .75, 1]) assert.equal(isRehearsalSpeed(rate), true);
+  for (const rate of [0, -1, .25, 1.5, 2, NaN, Infinity, '0.5', null, undefined, {}, true])
+    assert.equal(isRehearsalSpeed(rate), false);
 });

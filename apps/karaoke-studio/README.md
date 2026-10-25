@@ -78,7 +78,7 @@ Choose **Original**, **Vocals**, or **Backing**, then select a **First line** an
 **Last line** under **Practice a lyric range**. **Play once** seeks to the first
 cue's exact start and pauses at the last cue's end. **Repeat range** returns to
 that start until you pause or stop. Instrumental gaps between selected lines are
-included and shown in the range summary. Playback stays at normal 1× speed;
+included and shown in the range summary. Playback uses the selected 0.5×,0.75× or normal1× listening speed;
 native media seeking can leave a short gap between repeats.
 
 **Pause practice** retains the range and position; **Resume practice** continues
@@ -604,7 +604,7 @@ This gives a correction path for the first-100-word heuristic; it does not estab
 
 ### Listen before applying automatic lyrics (#252)
 
-Choose **Review automatic lyrics** to audition the recognition result before replacing any editor cues. Each line has **Listen** (once) and **Repeat**, with **Pause/Resume reviewed passage** and **Stop reviewed passage**. Playback uses that recognized line's captured times on the selected Original, Vocals or Backing track at normal 1× speed. It works even while your title or cue times have invalid raw edits; those fields, pasted words, history and existing practice-range selection remain unchanged.
+Choose **Review automatic lyrics** to audition the recognition result before replacing any editor cues. Each line has **Listen** (once) and **Repeat**, with **Pause/Resume reviewed passage** and **Stop reviewed passage**. Playback uses that recognized line's captured times on the selected Original, Vocals or Backing track at the selected playback speed. It works even while your title or cue times have invalid raw edits; those fields, pasted words, history and existing practice-range selection remain unchanged.
 
 **Show only uncertain automatic lines** focuses the list on lines below the existing confidence threshold, keeping their original numbers. The count explicitly states that **Replace lyric cues still applies every recognized line**, including hidden ones, as one undoable edit. Listening/filtering does not apply or save anything. Changing the filter stops the current reviewed passage. Cancelling/replacing the review, changing lyrics/clip/track, starting other media work or leaving the page retires listening; delayed native playback results cannot revive it. Imported SRT retains its existing independent review behavior.
 
@@ -665,3 +665,12 @@ Open **Replace lyric words**, enter **Literal text to replace** and **Replacemen
 **Apply lyric word replacements** makes one unsaved Undo/Redo edit, retaining every cue time, unrelated numeric spelling, clip title and pasted draft. Use **Save lyrics** separately to persist the result for SRT/video. The entire current cue graph and proposed text must fit the existing limits; correct invalid cue times first. Empty replacement can remove a fragment, but a line cannot become empty. No-match, identical replacements and invalid proposals preserve history and playback. Successful Apply retires obsolete listening, import review and timing capture through the ordinary editing flow.
 
 Preview refreshes when current cues change. Apply checks the current proposal again; there is no delayed stale result. Utility fields clear after successful Apply and when opening another clip, to prevent accidental repeated application. They are session-only and are outside lyric history until applied. This improves manual correction tools, not measured recognition/alignment quality or user correction effort; #241 remains open. [Verification checkpoint](docs/2026-10-24-word-replacement.md).
+
+
+### Rehearse slowly (#328)
+
+Choose **Playback speed** beside the player: **0.5×**, **0.75×** or **1× — normal**. The choice applies to Original, Vocals and Backing listening, selected-range practice and automatic-review audition. Native browser pitch preservation is requested; sound quality varies by browser and has not been acoustically evaluated. Lyrics, word highlighting and repeat boundaries continue to use original song seconds. SRT, saved song data and MP4 audio/video keep their original timings and speed.
+
+Changing speed stops owned practice/audition and discards staged manual timing capture without applying it. Choose Play/Repeat again deliberately. It preserves the paused playhead, raw lyric edits, title, pasted draft and Undo/Redo; ordinary playback is not started by the control. The selected speed survives same-clip track changes, and opening a different clip resets to1×. Nothing about speed is saved in the song. Unsupported externally changed rates cannot start practice; choose a supported value again.
+
+Manual **Time lines while listening** still requires normal1× speed. Slower listening is a rehearsal utility, not a new alignment algorithm or evaluated improvement in recognition accuracy, correction effort or physical latency. Native repeat seeks retain their existing audible scheduling gaps. [Verification checkpoint](docs/2026-10-25-rehearsal-speed.md).

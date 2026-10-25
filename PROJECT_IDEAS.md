@@ -485,3 +485,9 @@ Karaoke at `apps/karaoke-studio` proportionally fits selected lyric cues into an
 Karaoke #327 review repairs positive-gap precision collapse before side effects;5model cases and4focused native workflows now support159TSunit/static/build passes. Local Python remains205/206 on both full runs (unchangedRSS testtimeout); separate1/1retry,compileall and pending fullnative/canonical gates are distinguished in the [record](apps/karaoke-studio/docs/2026-10-24-passage-fit.md). No thresholds/deadlines changed; KaraokeACTIVE/#241open/#8skip.
 
 Karaoke #327 canonical source`1e685b3` passes206Python/159TypeScript/all143browser cases, Ruff/compileall/lint/types/build ([run40159697764](https://github.com/twangyal/projects-monorepo/actions/runs/40159697764)). [Final acceptance](docs/2026-10-24-karaoke-passage-fit-acceptance.md) preserves two local205/206Python failures, separateRSS retry and unavailable final local-browser outcome after workspace reset. Passage-fit software milestone closes; KaraokeACTIVE/real-song multilingual#241open/#8skip.
+
+### 2026-10-25 — Karaoke slow rehearsal (#328)
+
+Karaoke at `apps/karaoke-studio` adds explicit native0.5×/0.75×/1× listening across tracks, practice and automatic-review audition, preserving source lyric times and exports. [Checkpoint](apps/karaoke-studio/docs/2026-10-25-rehearsal-speed.md) records baseline/RED and fixture corrections; final focused/full/canonical gates and fresh review remain pending. KaraokeACTIVE/#241open/#8skip.
+
+Karaoke #328 fresh review repairs native/custom speed default divergence after a nativeRED1expected/0.5observed track-load regression. Final160TSunits/lint/types/build and6focused native cases37.0s pass; noCritical/Minor/no rereview. Fresh149case local/canonical acceptance pending; earlier148case run interrupted before review rebuild. KaraokeACTIVE/#241open/#8skip.

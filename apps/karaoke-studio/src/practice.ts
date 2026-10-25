@@ -41,3 +41,9 @@ export function practiceBoundary(range: PracticeRange, mode: PracticeMode, curre
   if (currentTime < range.start) throw new Error('Playback moved before the practice range.');
   return currentTime < range.end ? 'continue' : mode === 'once' ? 'finish' : 'repeat';
 }
+
+
+/** Fixed browser-native rehearsal rates; timing capture still requires normal speed. */
+export function isRehearsalSpeed(value: unknown): value is 0.5 | 0.75 | 1 {
+  return value === 0.5 || value === 0.75 || value === 1;
+}

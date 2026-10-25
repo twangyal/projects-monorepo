@@ -427,3 +427,23 @@ test('changing automatic line exclusion retires playback and excluded audio rema
   await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
   await expect(page.locator('#cue-list textarea')).toHaveCount(3);
 }));
+
+
+test('automatic review audition uses the selected slow speed and speed changes retire only listening',async({page})=>withClip(page,async id=>{
+  const saved=await(await page.request.get(`/api/projects/${id}`)).json();
+  await page.getByLabel('Start line 3',{exact:true}).fill('');
+  const before=await editor(page);
+  const speed=page.getByLabel('Playback speed',{exact:true});await speed.selectOption('0.5');
+  await page.getByRole('button',{name:'Review automatic lyrics',exact:true}).click();
+  await page.getByRole('button',{name:'Repeat automatic line 1',exact:true}).click();
+  await expect.poll(()=>page.locator('#audio').evaluate(n=>!(n as HTMLAudioElement).paused)).toBe(true);
+  expect(await page.locator('#audio').evaluate(n=>(n as HTMLAudioElement).playbackRate)).toBe(.5);
+  await speed.selectOption('0.75');
+  await expect.poll(()=>page.locator('#audio').evaluate(n=>(n as HTMLAudioElement).paused)).toBe(true);
+  await expect(page.locator('#srt-review')).toBeVisible();
+  await page.getByRole('button',{name:'Listen to automatic line 1',exact:true}).click();
+  await expect.poll(()=>page.locator('#audio').evaluate(n=>!(n as HTMLAudioElement).paused)).toBe(true);
+  expect(await page.locator('#audio').evaluate(n=>(n as HTMLAudioElement).playbackRate)).toBe(.75);
+  await page.getByRole('button',{name:'Stop reviewed passage',exact:true}).click();
+  expect(await editor(page)).toEqual(before);expect(await(await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+}));

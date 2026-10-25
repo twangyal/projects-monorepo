@@ -1,4 +1,4 @@
-import { practiceBoundary, type PracticeMode, type PracticeRange } from './practice.ts';
+import { isRehearsalSpeed, practiceBoundary, type PracticeMode, type PracticeRange } from './practice.ts';
 
 // Native media clocks can quantize an exact requested seek. This allowance is
 // only for admitting our own seek, never for cue validation or end decisions.
@@ -8,6 +8,7 @@ type PracticePhase = 'seeking' | 'starting' | 'playing' | 'paused';
 interface Owner {
   range: Readonly<PracticeRange>;
   mode: PracticeMode;
+  speed: number;
   current: () => boolean;
   phase: PracticePhase;
   operation: number;
@@ -63,9 +64,9 @@ export class PracticeController {
   }
   start(range: Readonly<PracticeRange>, mode: PracticeMode, current: () => boolean): void {
     this.stop();
-    const owner: Owner = { range, mode, current, phase: 'seeking', operation: 0, target: null, abort: null };
+    const owner: Owner = { range, mode, speed: this.audio.playbackRate, current, phase: 'seeking', operation: 0, target: null, abort: null };
     this.owner = owner;
-    if (!this.valid(owner)) { this.stop('Practice cannot start until matching audio is loaded at normal 1× speed.'); return; }
+    if (!this.valid(owner)) { this.stop('Practice cannot start until matching audio is loaded at a supported rehearsal speed.'); return; }
     void this.begin(owner, range.start, true);
   }
   pause(): void {
@@ -88,7 +89,7 @@ export class PracticeController {
   }
   private valid(owner: Owner): boolean {
     return this.owner === owner && owner.current() && !document.hidden && !this.audio.error
-      && this.audio.playbackRate === 1 && !this.audio.loop;
+      && isRehearsalSpeed(owner.speed) && this.audio.playbackRate === owner.speed && !this.audio.loop;
   }
   private current(owner: Owner, operation: number): boolean {
     return this.valid(owner) && owner.operation === operation;
@@ -142,7 +143,8 @@ export class PracticeController {
     });
   }
   private playingText(owner: Owner): void {
-    this.publish(owner.mode === 'repeat' ? 'Repeating the selected range at normal 1× speed, including instrumental gaps.' : 'Playing the selected range once at normal 1× speed, including instrumental gaps.');
+    const speed = owner.speed === 1 ? 'normal 1×' : `${owner.speed}×`;
+    this.publish(`${owner.mode === 'repeat' ? 'Repeating the selected range' : 'Playing the selected range once'} at ${speed} speed, including instrumental gaps.`);
   }
   private boundary(owner: Owner): boolean {
     let time = this.audio.currentTime;
