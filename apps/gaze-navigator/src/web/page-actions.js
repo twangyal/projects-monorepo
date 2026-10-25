@@ -438,11 +438,69 @@ export function selectText(element, position, { text, occurrence = null } = {}) 
   return { ok: true, message: position === 'phrase' ? 'Text selected. Say “replace selected text with” followed by the correction.' : position === 'all' ? 'All text selected.' : `Cursor moved to the ${position}.` };
 }
 
+// The text node and offset at a textContent offset (text nodes in tree order make up textContent).
+function textPoint(element, offset) {
+  const walker = element.ownerDocument.createTreeWalker(element, 4 /* NodeFilter.SHOW_TEXT */);
+  let last = null;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (offset <= node.length) return [node, offset];
+    offset -= node.length;
+    last = node;
+  }
+  return last ? [last, last.length] : [element, element.childNodes.length];
+}
+
+// Rich-text editors (mail composers, comment boxes) keep their formatting and links: only the changed span
+// is replaced, through the browser's editing command so the site sees an ordinary insertion. Returns
+// whether the browser already fired the input events.
+function writeRichText(element, value) {
+  const before = element.textContent;
+  if (before === value) return true;
+  let start = 0;
+  while (start < before.length && start < value.length && before[start] === value[start]) start++;
+  let end = 0;
+  while (end < before.length - start && end < value.length - start && before[before.length - 1 - end] === value[value.length - 1 - end]) end++;
+  // Never split a surrogate pair at either boundary.
+  if (start > 0 && /[\uD800-\uDBFF]/.test(before[start - 1])) start--;
+  if (end > 0 && /[\uDC00-\uDFFF]/.test(before[before.length - end])) end--;
+  const document = element.ownerDocument;
+  const range = document.createRange();
+  range.setStart(...textPoint(element, start));
+  range.setEnd(...textPoint(element, before.length - end));
+  const inserted = value.slice(start, value.length - end);
+  const selection = document.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  let native = false;
+  try {
+    native = selection?.rangeCount === 1 && document.execCommand(inserted ? 'insertText' : 'delete', false, inserted);
+  } catch {
+    native = false;
+  }
+  if (native && element.textContent === value) return true;
+  // The site blocked or altered the native edit: replace just that span directly.
+  if (element.textContent !== before) return true;
+  range.deleteContents();
+  if (inserted) {
+    const node = document.createTextNode(inserted);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+  return false;
+}
+
 export function writeValue(element, value, { caret = value.length } = {}) {
   element.focus({ preventScroll: true });
+  const view = element.ownerDocument.defaultView;
+  if (!('value' in element && element.tagName !== 'BUTTON') && element.isContentEditable) {
+    if (!writeRichText(element, value)) element.dispatchEvent(new view.InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    return;
+  }
   if ('value' in element && element.tagName !== 'BUTTON') setNativeValue(element, value);
   else element.textContent = value;
-  const view = element.ownerDocument.defaultView;
   element.dispatchEvent(new view.InputEvent('input', { bubbles: true, inputType: 'insertText' }));
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
   if (typeof element.setSelectionRange === 'function' && element.type !== 'number' && element.type !== 'email') {
