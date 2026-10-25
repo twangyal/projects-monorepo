@@ -501,3 +501,5 @@ A [bounded quantum-clock discriminator](docs/research/melody-backed-recording/qu
 ### 2026-10-25 — Gaze explicit disclosure state (#329)
 
 Gaze at `apps/gaze-navigator` reconstructs explicit expand/collapse state requests after the prior uncommitted work was lost. Typed intent preserves unsupported target identity and uses native/site-owned activation with no-op suppression, focus/turn checks and captured ownership. [Checkpoint](apps/gaze-navigator/docs/2026-10-25-disclosure-state.md) records fresh RED/GREEN units/native evidence and pending full/installed-extension acceptance. GazeACTIVE; physical#132open; project#8skipped.
+
+Gaze #329 final source `a4bbc79` passes230units/syntax111/extension build and all828canonical browser cases across3shards, including actual injected repeat-expand/collapse across4viewports. Final local non-extension732cases pass independently. [Final acceptance](docs/2026-10-25-gaze-disclosure-acceptance.md) supersedes pending checkpoints and retains review repairs and earlier failed fixtures/setup. GazeACTIVE/physical#132open/#8skip.
