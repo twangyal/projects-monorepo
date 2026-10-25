@@ -25,7 +25,7 @@ Maintain4image/8layer/JSON budgets, one Undo edit, independent poses and resourc
 - [x] General model/legacy contract, independent decode/publication, contextual labels.
 - [x] Model/native boundary/resource/desktop/phone/animation/export/history checks.
 - [x] 287unit/lint/types/build; fresh review Important retention fixed one RED→GREENpass,9focused native pass. Initial214mixed-source full pass; final215full and canonical pending; docs/roadmap/source commit.
-- [ ] Canonical CI actual acceptance; update/close#326 according to results.
+- [x] Canonical40158311029 passes287units/check/types/build and215browsers on3811eea; final local215passes2.8min. Accept/close#326.
 
 ## Ledger
 
@@ -34,3 +34,5 @@ Base59242d4 clean app source. Existing `duplicateDrawingLayer` intentionally rej
 Pre-review fixture corrections: first native pass accidentally selected the reversed-list copy instead of source; use exact layer ID. Existing numeric fields commit on ordinary change, so use one changed pose coordinate for a three-step copy/pose/delete Undo oracle, valid raw pointer protection and invalid raw keyboard protection. Pagehide intentionally disables backup; assert no in-memory layer publication plus closed decoded bitmap and unchanged native saved project. Initial image-byte fixture exceeded the per-image bound before reaching project-file capacity; corrected to an admitted1.5MiB image. These are test-assumption corrections, not production fixes or relaxed app behavior.
 
 Review Important fixed: removed bitmap retention — repeated native copy/delete close count0→1RED/GREEN, source pixels/Undo/Redo remain. No Critical/Minor. Review boundaries: final full/canonical gates await observation; broader learned/intended-user acceptance remains unverified. No rereview or unrequested PR.
+
+Task1 complete: final source3811eea; canonical215/215browsers2.1min, local215/2152.8min,287units/static/build. Root integration record supersedes pending app checkpoint; MotionACTIVE/#8skip/noPR.
