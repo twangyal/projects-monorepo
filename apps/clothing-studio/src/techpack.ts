@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { BASE_NAMES, NECK_RIB_RATIO, POCKET_FOLD_CM, flare, partName, WAISTBAND_CM, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, NECK_RIB_RATIO, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -156,13 +156,13 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
     pom('G', 'Inseam', 'Crotch seam to hem along the inside leg', d.inseam, 0, 1),
     pom('H', 'Outseam', 'Top of the waistband to hem along the side seam', d.outseam, 0.5, 1),
     pom('I', 'Leg opening (½)', 'Along the hem edge', d.legOpening / 2, 0.5, 0.5),
-    pom('J', 'Waistband height', 'Finished', WAISTBAND_CM, 0, 0.25),
+    pom('J', 'Waistband height', 'Finished', d.waistbandHeight, 0, 0.25),
   ];
   const construction: ConstructionRow[] = [
     { area: 'Inseams', operation: '4-thread overlock, then topstitch', detail: 'Join each front leg to its back leg from hem to crotch' },
     { area: 'Side seams', operation: '4-thread overlock', detail: 'Waist to hem; insert the care label at the left side' },
     { area: 'Crotch seam', operation: 'Overlock, then double-stitch through the crotch', detail: 'Join the two legs from centre front waist through the crotch to centre back waist' },
-    { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(WAISTBAND_CM)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
+    { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(d.waistbandHeight)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
     { area: 'Leg hems', operation: shorts ? 'Double-turn 1.5 cm and edgestitch' : 'Double-turn 2 cm and edgestitch', detail: `Leg opening ${cm(d.legOpening)} around` },
   ];
   return {
@@ -294,10 +294,12 @@ function trouserDiagram(product: Product): string {
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.5" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="4.2" fill="#b5452b" font-weight="700">${code}</text>`;
   const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.5"/>`;
   const crotchY = d.rise, hemY = d.rise + d.inseam, centre = (d.frontHip + d.frontCrotch) / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 ${bx + back.width + 16} ${Math.max(front.height, back.height) + 16}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
-${outline(front, 0)}${outline(back, bx)}
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 ${-d.waistbandHeight - 8} ${bx + back.width + 16} ${Math.max(front.height, back.height) + d.waistbandHeight + 16}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
+<title>Finished waistband shown schematically above the front leg panel; H includes the band, J measures its finished height.</title>
+${outline(front, 0)}${outline(back, bx)}<rect data-finished-waistband="true" x="0.5" y="${-d.waistbandHeight}" width="${d.frontHip - 1}" height="${d.waistbandHeight}" fill="#e8e3d9" stroke="#333" stroke-width="0.5"/>
+${arrow(d.frontHip / 2, -d.waistbandHeight, d.frontHip / 2, 0, 'J', d.frontHip / 2 + 1.5, -d.waistbandHeight / 2 + 1.5)}
 ${arrow(0, d.hipDepth, d.frontHip, d.hipDepth, 'C', d.frontHip / 2 - 2, d.hipDepth - 1.5)}${arrow(d.frontHip + 2.5, 0, d.frontHip + 2.5, crotchY, 'D', d.frontHip + 4, crotchY / 2)}
-${arrow(centre + d.frontHem / 2 + 3, crotchY + 2, centre + d.frontHem / 2 + 3, hemY, 'G', centre + d.frontHem / 2 + 4.5, (crotchY + hemY) / 2)}${arrow(-3, 0, -3, hemY, 'H', -7.5, hemY / 2)}
+${arrow(centre + d.frontHem / 2 + 3, crotchY + 2, centre + d.frontHem / 2 + 3, hemY, 'G', centre + d.frontHem / 2 + 4.5, (crotchY + hemY) / 2)}${arrow(-3, -d.waistbandHeight, -3, hemY, 'H', -7.5, (hemY - d.waistbandHeight) / 2)}
 ${arrow(centre - d.frontHem / 2, hemY + 3, centre + d.frontHem / 2, hemY + 3, 'I', centre - 1.5, hemY + 7.5)}${arrow(0, crotchY + 2.5, d.frontHip + d.frontCrotch, crotchY + 2.5, 'F', (d.frontHip + d.frontCrotch) / 2 - 1.5, crotchY + 6.5)}
 ${arrow(bx + d.backHip + d.backCrotch + 2.5, 0, bx + d.backHip + d.backCrotch + 2.5, d.backRaise + crotchY, 'E', bx + d.backHip + d.backCrotch + 4, (d.backRaise + crotchY) / 2)}
 </svg>`;

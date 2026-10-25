@@ -7,7 +7,7 @@ import { decodeProductFile } from './media.ts';
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
-  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
+  WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
   chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
@@ -22,7 +22,7 @@ const PALETTE = ['#f4f2ec', '#1c1c1e', '#1f2a4f', '#3f5468', '#9fae91', '#d89476
 const DRAG_TYPE = 'application/x-clothing-swatch';
 // Shorts and trousers: input id, label and LIMITS key of each leg measurement.
 const LEG_FIELDS = [['product-waist', 'Waist, relaxed', 'waist'], ['product-hip', 'Hip', 'hip'], ['product-rise', 'Front rise', 'rise'],
-  ['product-inseam', 'Inseam', 'inseam'], ['product-leg-opening', 'Leg opening', 'legOpening']] as const;
+  ['product-inseam', 'Inseam', 'inseam'], ['product-leg-opening', 'Leg opening', 'legOpening'], ['product-waistband-height', 'Waistband height', 'waistbandHeight']] as const;
 type Swatch = { kind: 'material'; id: string } | { kind: 'color'; value: string } | { kind: 'print'; motif: PrintMotif };
 
 export const productMarkup = `<section class="panel product-panel" id="product-editor" aria-labelledby="product-heading">
@@ -69,7 +69,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Body length (cm)<input id="product-length" type="number" min="${LIMITS.length[0]}" max="${LIMITS.length[1]}" step="1"></label>
         <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="${LIMITS.sleeve[0]}" max="${LIMITS.sleeve[1]}" step="1"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
-      <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
+      <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="${key === 'waistbandHeight' ? '0.1' : '1'}"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
       <details class="fit-panel" id="fit-panel"><summary>Fit: shoulders, neck/hood, sleeves, hem & pocket</summary>
         <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm; shoulder drop defaults to 4 cm. Finished neck rib height defaults to 2 cm; the cutting strip is twice that height. Hood side dimensions default to 32 cm high and 26 cm wide. Side width scales the illustrative front/back projection; the neckline attachment and extra 3 cm crown loft remain. The hood still uses a modelled cloth metric, not a physically flattened hood. Sweatshirt/hoodie cuffs and hem bands default to 6 cm; edit each finished height independently while total sleeve/body lengths stay fixed.</p>
@@ -463,7 +463,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('apply-measurements').addEventListener('click', () => update(draft => {
     const value = (id: string) => Number(($(id) as HTMLInputElement).value);
     if (isBottoms(draft)) {
-      draft.measurements = Object.fromEntries(LEG_FIELDS.map(([id, , key]) => [key, value(id)])) as unknown as Product['measurements'];
+      draft.measurements = Object.fromEntries(LEG_FIELDS.map(([id, , key]) => [key, value(id)])
+        .filter(([key, value]) => key !== 'waistbandHeight' || value !== WAISTBAND_CM)) as unknown as Product['measurements'];
       return;
     }
     const m = { chest: value('product-chest'), length: value('product-length'), sleeve: value('product-sleeve') };
@@ -872,7 +873,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const bottoms = isBottoms(design);
     for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', !bottoms], ['top-modules', bottoms], ['leg-modules', !bottoms],
       ['artwork-controls', bottoms], ['artwork-note', !bottoms], ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
-    if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key]); }
+    if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key] ?? WAISTBAND_CM); }
     else {
       const m = topMeasurements(design);
       ($('product-chest') as HTMLInputElement).value = String(m.chest); ($('product-length') as HTMLInputElement).value = String(m.length); ($('product-sleeve') as HTMLInputElement).value = String(m.sleeve);

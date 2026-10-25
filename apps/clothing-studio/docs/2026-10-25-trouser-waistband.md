@@ -1,0 +1,21 @@
+# Linked shorts/trouser waistband height (#331)
+
+Outcome: a designer can author finished waistband height throughout the existing linked garment loop. The optional leg measurement is4–10cm, absent default4. Resolved trouserDimensions feeds the folded strip, styling band/UV height, framing/outseam and tech-pack J/construction. Fabric usage/range costing and captured exports already consume those patterns/meshes. Leg panels, rise/inseam, styles and elastic convention stay unchanged.
+
+UI uses the existing leg measurement draft group: Apply commits the complete group; raw failed edits remain available, navigation retains them and Discard resets them. Returning to4 omits the optional key so unrelated legacy measurement applies do not introduce a default override. Parser rejects explicit undefined, malformed values/accessors and unsupported top keys. Existing complete project validation/history/storage/backups carry the dimension.
+
+Baseline183Node units pass. Three new unit cases fail before implementation because the new measurement is unsupported. First implemented test pass exposed one test-only incorrect assumption: ProjectHistory.redo returns the current project at the endpoint, rather than null. Correcting that assertion yields186/186units. Lint/types/build and two focused native export/history/phone checks are still being observed; complete application/preflight/canonical gates follow separately.
+
+Ruling:4–10cm retains the existing3cm elastic convention; narrower bands require a separate elastic-width/construction design. Cost: narrower finished bands remain unavailable. Ruling: reuse the leg measurement Apply group instead of top-only Fit; cost: Apply commits all pending leg measurements together. The styling shell remains approximate, bottom draping is unavailable and old app versions can reject the new optional field. Software checks do not establish physical fit/manufacture or native-solver adoption. ClothingACTIVE/#290open/#8skip/noPR.
+
+## Review and observed verification
+
+Fresh read-only review found no Critical/Important source defect and one Minor coverage gap: direct UV-height/attachment-ring assertions, another-measurement default-omission, and new-field pending Undo/replacement assertions are not individually pinned. Current shared behavior was inspected; those assertions are deferred, not silently claimed covered. No rereview.
+
+The reviewer set aside the pre-existing trouser diagram limitation: H began at the leg waist seam, excluding the waistband; J was absent. Executor regraded that as Important for the newly edited dimension because the numeric H/J would contradict the visual measuring origin. One RED→GREEN fix pass adds a labelled schematic finished band, extends H from its top to the hem, includes J and expands the viewBox. Independent analytic SVG tests at4/7.5/10cm first fail0versus-4, then all4focused unit cases pass. This schematic is not a new flattened manufacturing pattern. Final187Node units pass; final static/build/full-native/canonical results are recorded after observation.
+
+Initial native cohort1pass/1desktop30s timeout stopped at the second backup, before export/history checks; no product cause is inferred. Unchanged rerun2/2passes44.2s, including actual SVG/GLB/POM/history/reload and phone drafts, without changing the timeout. That rerun predates the diagram repair; final229case local/canonical gates are separate. The initial history-endpoint unit mistake and first failed native outcome remain retained.
+
+Rulings on review exclusions: completed native/full-preflight acceptance requires actual executor/CI results, not review inspection; literal incomplete browser numeric edits such as7e were not tested (10.1 retention was), so no universal raw-input claim follows. Physical fit/elastic engineering/manufacture/bottom drape/native-solver adoption remain outside software acceptance. The pre-existing H/J diagram exclusion became the Important repair above. Cost if those limits are ignored: overstated real-use/engineering acceptance. ClothingACTIVE/#290open/#8skip/noPR.
+
+Final187units, lint, TypeScript and production build pass after the diagram repair. Full229case local browser run and local garment preflight remain running at publication; canonical checks are pending. No full-source native/preflight acceptance is inferred from the earlier2case rerun.

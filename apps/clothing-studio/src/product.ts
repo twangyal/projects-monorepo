@@ -102,7 +102,7 @@ export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder widt
   chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
-export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
+export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number; waistbandHeight?: number }
 export interface Spec { styleNumber: string; season: string; sampleSize: Size }
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 export type Size = typeof SIZES[number];
@@ -132,7 +132,7 @@ export interface Product {
 }
 
 export const LIMITS = {
-  chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
   fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
@@ -251,9 +251,11 @@ export function validateProduct(value: unknown): Product {
   if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
   let measurements: Measurements | LegMeasurements;
   if (base === 'trousers') {
-    const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening'], 'Leg measurements');
+    const band = !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, 'waistbandHeight');
+    const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening', ...(band ? ['waistbandHeight'] : [])], 'Leg measurements');
     measurements = { waist: finite(m.waist, LIMITS.waist, 'Waist (cm)'), hip: finite(m.hip, LIMITS.hip, 'Hip (cm)'), rise: finite(m.rise, LIMITS.rise, 'Front rise (cm)'),
-      inseam: finite(m.inseam, LIMITS.inseam, 'Inseam (cm)'), legOpening: finite(m.legOpening, LIMITS.legOpening, 'Leg opening (cm)') };
+      inseam: finite(m.inseam, LIMITS.inseam, 'Inseam (cm)'), legOpening: finite(m.legOpening, LIMITS.legOpening, 'Leg opening (cm)'),
+      ...(band ? { waistbandHeight: finite(m.waistbandHeight, LIMITS.waistbandHeight, 'Waistband height (cm)') } : {}) };
     if (measurements.hip < measurements.waist) fail('Hip must be at least the waist: the waistband has to pull on over the hips.');
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
@@ -424,7 +426,7 @@ export interface PatternPiece { part: PartId; outline: { x: number; y: number }[
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {
-  if (isBottoms(product)) return trouserDimensions(product).length + WAISTBAND_CM;
+  if (isBottoms(product)) return trouserDimensions(product).outseam;
   return topMeasurements(product).length + (product.base === 'hoodie' ? 30 : 0);
 }
 
@@ -439,11 +441,11 @@ export const LEG_PRESETS = [{ id: 'shorts', name: 'Shorts', inseam: 18 }, { id: 
  * waist wide enough to pass the hips, and an elastic in the waistband gathers them to the waist.
  */
 export function trouserDimensions(product: Product) {
-  const m = legMeasurements(product);
+  const m = legMeasurements(product), waistbandHeight = m.waistbandHeight ?? WAISTBAND_CM;
   const frontHip = m.hip / 4 + 1, backHip = m.hip / 4 + 2, frontCrotch = m.hip * 0.05, backCrotch = m.hip * 0.1;
   return {
-    ...m, frontHip, backHip, frontCrotch, backCrotch, hipDepth: m.rise * 0.7, backRaise: 3, length: m.rise + m.inseam,
-    outseam: m.rise + m.inseam + WAISTBAND_CM, frontHem: m.legOpening / 2 - 1, backHem: m.legOpening / 2 + 1,
+    ...m, waistbandHeight, frontHip, backHip, frontCrotch, backCrotch, hipDepth: m.rise * 0.7, backRaise: 3, length: m.rise + m.inseam,
+    outseam: m.rise + m.inseam + waistbandHeight, frontHem: m.legOpening / 2 - 1, backHem: m.legOpening / 2 + 1,
     // A leg is one front and one back panel; measured 2.5 cm below the crotch, after the crotch curve.
     thighHalf: (frontHip + frontCrotch + backHip + backCrotch) / 2 - 1,
     elastic: m.waist - 4, waistbandLength: m.hip + 6,
@@ -469,7 +471,7 @@ function trouserPieces(product: Product): PatternPiece[] {
     pts.push({ x: centre + hem / 2, y: hemY }, { x: centre - hem / 2, y: hemY }, { x: 0, y: hipY });
     return pts;
   };
-  const band = [{ x: 0, y: 0 }, { x: d.waistbandLength, y: 0 }, { x: d.waistbandLength, y: WAISTBAND_CM * 2 }, { x: 0, y: WAISTBAND_CM * 2 }];
+  const band = [{ x: 0, y: 0 }, { x: d.waistbandLength, y: 0 }, { x: d.waistbandLength, y: d.waistbandHeight * 2 }, { x: 0, y: d.waistbandHeight * 2 }];
   return [makePiece('front', panel(true), 2), makePiece('back', panel(false), 2), makePiece('waistband', band, 1)];
 }
 
@@ -502,7 +504,7 @@ function trouserMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     const x = sign * (-d.waistHalf + 2 * d.waistHalf * i / 16);
     ring.push({ x, y: d.length, z: height({ x, y: 0 }, sign) });
   }
-  neckRib(groups.get('waistband')!, ring, WAISTBAND_CM);
+  neckRib(groups.get('waistband')!, ring, d.waistbandHeight);
   return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
 }
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }

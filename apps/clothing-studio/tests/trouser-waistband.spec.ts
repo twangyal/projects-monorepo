@@ -1,0 +1,21 @@
+import {test,expect,type Page} from '@playwright/test';import{readFile}from'node:fs/promises';
+async function download(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();return readFile((await(await waiting).path())!);}
+async function backup(page:Page){return JSON.parse((await download(page,'Export project backup')).toString());}
+async function setup(page:Page){await page.goto('/');await page.getByRole('button',{name:'Templates',exact:true}).click();await page.getByRole('button',{name:/^Use the Pull-on shorts template/}).click();await page.getByRole('button',{name:'Patterns & measurements',exact:true}).click();}
+const height=(page:Page)=>page.getByLabel('Waistband height (cm)',{exact:true});
+function bandPoints(glb:Buffer){const len=glb.readUInt32LE(12),json=JSON.parse(glb.subarray(20,20+len).toString());const node=json.nodes.find((n:{name:string})=>n.name==='Waistband');const a=json.accessors[json.meshes[node.mesh].primitives[0].attributes.POSITION],v=json.bufferViews[a.bufferView],at=28+len+(v.byteOffset??0)+(a.byteOffset??0);return Array.from({length:a.count*3},(_,i)=>glb.readFloatLE(at+i*4));}
+test('trouser waistband height links native pattern GLB tech pack history and saved reload',async({page})=>{
+ await setup(page);await expect(height(page)).toHaveValue('4');const old=await backup(page);
+ await height(page).fill('7.5');await page.locator('#apply-measurements').click();await expect(page.locator('#message')).toContainText('Measurements applied');const next=await backup(page);expect(next.product.measurements).toEqual({...old.product.measurements,waistbandHeight:7.5});
+ const band=page.locator('[data-piece="waistband"] polygon');expect(await band.evaluate(p=>(p as SVGGraphicsElement).getBBox().height)).toBe(15);
+ const svg=(await download(page,'Download printable pattern (SVG, 1:1) ↓')).toString();expect(await page.evaluate(svg=>{const p=new DOMParser().parseFromString(svg,'image/svg+xml').querySelector('[data-piece="waistband"]')!.querySelectorAll('polygon')[1];const ys=p.getAttribute('points')!.trim().split(/\s+/).map(s=>Number(s.split(',')[1]));return Math.max(...ys)-Math.min(...ys);},svg)).toBe(15);
+ await page.getByRole('button',{name:'Exports',exact:true}).click();const points=bandPoints(await download(page,'Export 3D model (GLB) ↓')),ys=points.filter((_,i)=>i%3===1);expect(Math.max(...ys)-Math.min(...ys)).toBeCloseTo(7.5,4);
+ await page.getByRole('button',{name:'Tech pack',exact:true}).click();await expect(page.locator('#techpack-preview tr').filter({has:page.locator('td:first-child:text-is("J")')}).locator('td').nth(6)).toHaveText('7.5');await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Undo',exact:true}).click();expect((await backup(page)).product).toEqual(old.product);await page.getByRole('button',{name:'Redo',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Locally saved');await page.reload();expect((await backup(page)).product).toEqual(next.product);
+});
+test('phone waistband drafts survive navigation refuse bounds and default reset retains legacy absence',async({page})=>{
+ await page.setViewportSize({width:390,height:900});await setup(page);const old=await backup(page);
+ await height(page).fill('10.1');await page.getByRole('button',{name:'Materials & prints',exact:true}).click();await page.getByRole('button',{name:'Patterns & measurements',exact:true}).click();await expect(height(page)).toHaveValue('10.1');await page.locator('#apply-measurements').click();await expect(page.locator('#message')).toContainText('Waistband height');expect(await backup(page)).toEqual(old);await expect(height(page)).toHaveValue('10.1');
+ await page.getByRole('button',{name:'Discard all product drafts',exact:true}).click();await expect(height(page)).toHaveValue('4');await page.locator('#apply-measurements').click();expect((await backup(page)).product.measurements).toEqual(old.product.measurements);
+ await height(page).fill('10');await page.locator('#apply-measurements').click();await height(page).fill('4');await page.locator('#apply-measurements').click();expect((await backup(page)).product.measurements).toEqual(old.product.measurements);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
