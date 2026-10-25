@@ -23,14 +23,16 @@ No audio/source-recognition changes, paid service, PR or automatic save. Karaoke
 
 Files: src/cue-edit.ts,src/main.ts,tests/cue-edit.test.ts,tests/cue-edit.spec.ts,README/checkpoint/roadmap.
 Interface: removeCues(cues:Cue[],passage:CuePassage):Cue[]; no survivor normalization.
-- [ ] Baseline check; write missing function/native action RED.
-- [ ] Implement pure slice and selected-passage UI/ownership/history integration.
-- [ ] Units/static/build plus focused native desktop/phone/save/history/refusal; full project gates.
-- [ ] One fresh readonly final review and one Important/Critical RED→GREEN fix pass, no rereview.
-- [ ] Commit through connected GitHub; track canonical results and actual remaining work in #330.
+- [x] Baseline check; write missing function/native action RED.
+- [x] Implement pure slice and selected-passage UI/ownership/history integration.
+- [x] Units/static/build plus focused native desktop/phone/save/history/refusal; full project gates.
+- [x] One fresh readonly final review and one Important/Critical RED→GREEN fix pass, no rereview.
+- [x] Commit through connected GitHub; track canonical results and actual remaining work in #330.
 
 ## Ledger
 
 Ruling: reuse existing passage selection rather than introduce another range widget; correction tools stay in Shift lyric timing. Cost: removal discovery uses that existing panel. Inline execution under noninteractive authorization. No shared interfaces across tasks (one cohesive unit).
 Baseline160units; missingremoveCues API RED then161units/static/build GREEN. Fresh review1Important: handler accidentally registered inside control refresh; native success-status regression RED against built prior source, move listener once to module scope, final161units/static/build GREEN. One fix pass/no rereview/noMinor. Initial native fixture corrections and setup mistakes retained in app checkpoint. Local Python205/206 failure in unchanged RSS enforcement test (timeout instead of memory limit), no retry. Final native/full canonical pending.
 Ruling: physical-phone/recognition acceptance and full-gate claims are excluded from code review; rely on actual executor/CI checks and keep#241open. Cost: software viewport tests do not guarantee physical usability.
+
+Task 1: complete. Karaoke source e9714aa:161local units/static/build/all151local browser cases; canonical206Python/161TS/151browser and all static/build gates pass. Local205/206 Python RSS failure retained without retry. Acceptance docs/2026-10-25-karaoke-removal-acceptance.md.

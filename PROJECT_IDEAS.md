@@ -507,3 +507,5 @@ Gaze #329 final source `a4bbc79` passes230units/syntax111/extension build and al
 ### 2026-10-25 — Karaoke unwanted passage removal (#330)
 
 Karaoke at `apps/karaoke-studio` removes a selected first–last lyric range as one unsaved Undo/Redo edit, retaining literal survivors, exact raw timings/title/paste and explicit Save. Invalid selected lines can be removed; invalid survivors stay visible/save-blocking. [Checkpoint](apps/karaoke-studio/docs/2026-10-25-remove-passage.md) retains161unit/static/build checks, native history/save/phone checks, review repair and the unchanged local Python RSS failure. Full final-browser/canonical acceptance follows separately. KaraokeACTIVE/#241open/#8skip.
+
+Karaoke #330 final source `e9714aa` passes canonical206Python/161TypeScript units/static/build and all151browser cases. Final local151native cases independently pass7.9min; unchanged local Python RSS enforcement failure remains documented. [Final acceptance](docs/2026-10-25-karaoke-removal-acceptance.md) supersedes pending checkpoints and retains the review repair and all limitations. KaraokeACTIVE/recognition-quality#241open/#8skip.

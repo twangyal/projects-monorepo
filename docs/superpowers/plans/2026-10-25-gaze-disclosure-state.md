@@ -24,11 +24,11 @@ Gaze remains ACTIVE; physical input #132 remains open. Project #8 stays skipped.
 Files: src/web/{interpreter,page-context,page-actions,controller,instruction-suite,overlay}.js under apps/gaze-navigator; corresponding unit/native/extension tests and documentation.
 Interface: {type:'disclosure',targetId,expanded:boolean}; captureDisclosureSnapshot(element); setExpanded(element,expanded,snapshot,{isCurrent}).
 
-- [ ] Write and observe interpreter and native repeated-expand failures; include target identity and form-owner regressions.
-- [ ] Implement typed intent, admission/identity snapshot, website-owned state execution, controller integration and help.
-- [ ] Run all Node, syntax/build and focused native tests; retain failures honestly.
-- [ ] Fresh read-only final review; one Important/Critical RED→GREEN fix pass, no rereview.
-- [ ] Commit through connected GitHub tools; run canonical browser shards, record actual outcome and close only on acceptance.
+- [x] Write and observe interpreter and native repeated-expand failures; include target identity and form-owner regressions.
+- [x] Implement typed intent, admission/identity snapshot, website-owned state execution, controller integration and help.
+- [x] Run all Node, syntax/build and focused native tests; retain failures honestly.
+- [x] Fresh read-only final review; one Important/Critical RED→GREEN fix pass, no rereview.
+- [x] Commit through connected GitHub tools; run canonical browser shards, record actual outcome and close only on acceptance.
 
 ## Ledger
 
@@ -38,3 +38,5 @@ Pre-flight: one cohesive task; typed action and captured snapshot names match al
 
 Final review: two Important findings, no Critical/Minor. Fresh disabled-target and href-removal regressions RED→GREEN; final44/44 focused native,230/230 Node and syntax111/build pass. Full browser gates pending. See app checkpoint for every review exclusion/ruling, fixture/setup failures and acceptance limits. One fix pass; no rereview.
 Ruling: separate disclosure-only unavailable targets preserve ordinary context compatibility; unoutlined blocked candidates may add clarification. Cost: a user may need a smaller gaze circle. Review exclusions and their costs are recorded in the checkpoint.
+
+Task 1: complete. Gaze source a4bbc79:230units/static/build/all828canonical cases; final732local non-extension cases pass. Acceptance receipt docs/2026-10-25-gaze-disclosure-acceptance.md.
