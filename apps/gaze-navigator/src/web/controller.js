@@ -93,7 +93,7 @@ export function createController({ window, actions = pageActions, interpret = in
         if (result.ok) result = { ok: true, message: `Searching for "${action.text}".` };
         break;
       }
-      case 'edit': result = edit(element, target.name, action.edit); break;
+      case 'edit': result = edit(element, target.name, action.edit, Boolean(target.sensitive || actions.isSensitive?.(element))); break;
       case 'month':
       case 'week':
       case 'time':
@@ -161,7 +161,7 @@ export function createController({ window, actions = pageActions, interpret = in
     history.set(element, values);
   }
 
-  function edit(element, name, change) {
+  function edit(element, name, change, sensitive = false) {
     const before = actions.readValue(element) ?? '';
     const values = history.get(element) ?? [];
     const selection = change.kind === 'insert-selection' ? actions.readSelection(element) : null;
@@ -182,6 +182,8 @@ export function createController({ window, actions = pageActions, interpret = in
     else remember(element);
     actions.writeValue(element, after, change.kind === 'insert-selection'
       ? { caret: selection.start + change.text.length } : undefined);
+    // A sensitive field's text is never echoed: the message is shown, announced and may be spoken aloud.
+    if (sensitive) return { ok: true, message: after ? `${label} updated. Its text is hidden.` : `${label} cleared.` };
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 

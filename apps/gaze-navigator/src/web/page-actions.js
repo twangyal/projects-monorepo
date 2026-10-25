@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { isEditable, isSensitive, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -25,6 +25,8 @@ function setNativeValue(element, value) {
   if (setter) setter.call(element, value);
   else element.value = value;
 }
+
+export { isSensitive };
 
 export function readValue(element) {
   return 'value' in element && element.tagName !== 'BUTTON' ? element.value : element.textContent;

@@ -369,3 +369,16 @@ test('a consequential dropdown choice waits for deliberate confirmation', () => 
   controller.handle('choose Delete account from Action', context); assert.equal(controller.handle('confirm', { elements: [] }).performed, 'select-option');
   assert.deepEqual(page.log, [['option', 1]]);
 });
+
+test('edits to sensitive fields never echo their text', () => {
+  const page = fakePage();
+  const controller = createController({ window: {}, actions: page.actions });
+  const field = page.node('Password');
+  const context = { elements: [describe(1, field, { role: 'textbox', editable: true, sensitive: true, value: '' })] };
+  const typed = controller.handle('type hunter2', context);
+  assert.equal(typed.tone, 'success');
+  assert.doesNotMatch(typed.message, /hunter2/);
+  assert.match(typed.message, /hidden/);
+  assert.deepEqual(page.log.at(-1), ['write', 'Password', 'hunter2'], 'the text is still written');
+  assert.doesNotMatch(controller.handle('undo', context).message, /hunter2/);
+});

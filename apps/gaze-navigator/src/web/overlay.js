@@ -100,7 +100,9 @@ function deepActiveElement(document) {
 export function describeElement(element) {
   const role = element.nativeMonth ? 'Month field' : element.nativeWeek ? 'Week field' : element.nativeTime ? 'Time field' : element.nativeDate ? 'Date field' : element.nativeNumber ? 'Number field' : ROLE_LABELS[element.role] ?? element.role;
   const state = element.checked !== undefined ? (element.checked ? ', checked' : ', not checked') : '';
-  const value = element.options ? `, ${element.value || 'no choice'}` : element.editable && element.value ? `, contains "${element.value.slice(0, 40)}"` : '';
+  const value = element.options ? `, ${element.value || 'no choice'}`
+    : element.sensitive ? (element.hasValue ? ', contains hidden text' : '')
+    : element.editable && element.value ? `, contains "${element.value.slice(0, 40)}"` : '';
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 

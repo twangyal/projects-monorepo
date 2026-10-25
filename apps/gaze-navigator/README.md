@@ -83,6 +83,7 @@ Browser tests start `python3 -m http.server` on port 4173 themselves. They use a
 
 ## Data & privacy
 
+- Password, one-time-code and payment-card fields stay writable, but their values are never shown in the panel, announced, spoken or sent to the WaterSheep model.
 - The navigator never records, uploads or stores audio, transcripts or page content. In Chrome and Edge, the browser's own speech recognition sends microphone audio to the browser vendor. Typed instructions work without a microphone.
 - **Known issue:** in the extension, WebGazer runs in the content script, so Chrome grants camera (and speech-recognition microphone) permission to *the website being viewed*, not to the extension, and WebGazer's `<video>` element is inserted into the page. Moving capture into an extension-owned context is planned.
 - Webcam frames are processed in the browser by WebGazer and are not uploaded or stored. WebGazer's face models download from tfhub.dev. On the website, WebGazer itself loads from jsDelivr; the extension bundles it.

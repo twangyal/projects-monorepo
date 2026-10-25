@@ -25,7 +25,7 @@ const CANDIDATE_FLOOR = 0.15;
 const MAX_CANDIDATES = 3;
 
 const ROLE_NAMES = { link: 'link', button: 'button', textbox: 'text field', searchbox: 'search field', combobox: 'dropdown', checkbox: 'checkbox',
-  radio: 'radio button', tab: 'tab', menuitem: 'menu item', option: 'option', switch: 'switch', Clickable: 'clickable item' };
+  radio: 'radio button', tab: 'tab', menuitem: 'menu item', option: 'option', switch: 'switch', clickable: 'clickable item' };
 
 /** What the model is told about one control: its role, name and state, nothing else. */
 export function describeElement(element) {

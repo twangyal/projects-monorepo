@@ -46,6 +46,14 @@ export function roleOf(element) {
   return 'generic';
 }
 
+// Fields whose contents must never be shown, announced, spoken or described to a model: passwords and
+// one-time or payment codes. They stay writable; only their values are withheld.
+const SENSITIVE_AUTOCOMPLETE = /\b(current-password|new-password|one-time-code|cc-number|cc-csc|cc-exp(-month|-year)?)\b/;
+
+export function isSensitive(element) {
+  return element.tagName === 'INPUT' && (element.type === 'password' || SENSITIVE_AUTOCOMPLETE.test(element.getAttribute('autocomplete') ?? ''));
+}
+
 export function isEditable(element) {
   if (element.tagName === 'TEXTAREA') return !element.readOnly;
   if (element.tagName === 'INPUT') return TEXT_INPUTS.has(element.getAttribute('type') ?? '') && !element.readOnly;
@@ -311,6 +319,10 @@ function describe(element) {
     description.options = description.selectSnapshot.options.map(option => clean(option.label));
     description.consequentialOptions = description.options.map(label => CONSEQUENTIAL.test(label));
     description.value = clean(element.selectedOptions?.[0]?.label);
+  } else if (description.editable && isSensitive(element)) {
+    description.sensitive = true;
+    description.value = '';
+    description.hasValue = Boolean(element.value);
   } else if (description.editable) {
     description.value = element.value ?? element.textContent ?? '';
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {
