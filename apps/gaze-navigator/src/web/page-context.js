@@ -269,6 +269,12 @@ function disclosureLocked(element) {
   return false;
 }
 
+// Values/offsets stay local to the execution context, never model descriptions.
+export function captureTextSelectionSnapshot(element) {
+  return { ...captureRadioSnapshot(element), id: element.id, valueAttribute: element.getAttribute('value'),
+    value: element.value, start: element.selectionStart, end: element.selectionEnd, blocked: disclosureLocked(element) };
+}
+
 // Capture admission too: invalid ARIA cannot become actionable while pending.
 export function captureDisclosureSnapshot(element) {
   const details = element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS' ? element.parentElement : null;
@@ -326,6 +332,7 @@ function describe(element) {
       description[`${kind}Snapshot`] = captureNumberSnapshot(element);
     }
   }
+  if (['INPUT', 'TEXTAREA'].includes(element.tagName)) description.textSelectionSnapshot = captureTextSelectionSnapshot(element);
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").

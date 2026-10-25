@@ -496,3 +496,8 @@ test('injected runtime preserves repeated explicit expand and collapse state', a
  await look(page,page.locator('#faq-panel summary'));await typeInstruction(page,'collapse FAQ');
  await expect(status(page)).toContainText('Panel collapsed');await expect(page.locator('#faq-panel')).not.toHaveAttribute('open','');
 });
+
+
+test('installed deletion preserves selected native text Undo through overlay focus',async({context,worker})=>{
+ await worker.evaluate(()=>chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));const page=await context.newPage();await page.goto('http://shop.example/contact');await expect(status(page)).toContainText('Ready on');const field=page.locator('textarea');await field.fill('Keep 🌓 remove\nend');await field.evaluate(e=>e.setSelectionRange(8,14));await look(page,field);await typeInstruction(page,'delete selected text');await expect(status(page)).toContainText('Selected text removed');await expect(field).toHaveValue('Keep 🌓 \nend');await look(page,field);await typeInstruction(page,'undo');await expect(field).toHaveValue('Keep 🌓 remove\nend');
+});

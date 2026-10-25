@@ -47,7 +47,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
@@ -66,7 +66,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -81,6 +81,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'check': result = actions.setChecked(element, action.checked); break;
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
+      case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
       case 'select-option': result = typeof action.selected === 'boolean'
         ? actions.setMultipleOption(element, action.optionIndex, action.selected, target.selectSnapshot)
@@ -153,9 +154,9 @@ export function createController({ window, actions = pageActions, interpret = in
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null });
   }
 
-  function remember(element) {
+  function remember(element, before = actions.readValue(element)) {
     const values = history.get(element) ?? [];
-    values.push(actions.readValue(element));
+    values.push(before);
     if (values.length > HISTORY_LIMIT) values.shift();
     history.set(element, values);
   }

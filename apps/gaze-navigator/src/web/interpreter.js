@@ -262,6 +262,12 @@ export function interpret(utterance, context = { elements: [] }) {
   if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
     return chooseSelectionField(context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
   }
+  const deletion = /^(?:delete|remove|erase) (?:the )?(?:selected|highlighted) text(?: (?:in|from) (?:the )?(.+))?$/.exec(text);
+  if (deletion) {
+    const fields = { ...context, elements: context.disclosureElements ?? context.elements, focusedId: context.selectionFocusedId ?? context.focusedId };
+    const act = element => ({ type: 'delete-selection', targetId: element.id });
+    return deletion[1] ? chooseField(deletion[1], fields, act) : chooseSelectionField(fields, act);
+  }
   // Explicit website-tab selection never falls back to another control role.
   const tab = /^(?:select|choose|pick) (?:the )?(?:tab(?: (.+))?|(.+?) tab)$/.exec(text);
   if (tab) {

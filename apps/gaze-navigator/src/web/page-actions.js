@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, captureSelectSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { isEditable, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -351,6 +351,37 @@ export function readSelection(element) {
   const start = element.selectionStart;
   const end = element.selectionEnd;
   return Number.isInteger(start) && Number.isInteger(end) ? { start, end } : null;
+}
+
+/** Delete precisely the captured native selection; site events own the result. */
+export function deleteSelection(element, snapshot = captureTextSelectionSnapshot(element), { isCurrent = () => true, onWrite = () => {} } = {}) {
+  const available = () => element.type !== 'password' && element.isConnected && !!readSelection(element) && controlVisible(element);
+  const unchanged = (includeSelection = true) => {
+    const current = captureTextSelectionSnapshot(element);
+    return ['document', 'root', 'form', 'formOwner', 'type', 'role', 'name', 'group', 'id', ...(includeSelection ? ['valueAttribute', 'value', 'start', 'end'] : [])]
+      .every(key => current[key] === snapshot[key]) && current.frames.length === snapshot.frames.length &&
+      current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document && frame.element.isConnected);
+  };
+  const ready = () => !snapshot.blocked && isCurrent() && available() && unchanged();
+  const refused = () => ({ ok: false, message: 'Select nonempty text in an unchanged available native text field. Look at it and try again.' });
+  const { value, start, end } = snapshot;
+  const splitsPair = index => index > 0 && index < value.length && /[\uD800-\uDBFF]/.test(value[index - 1]) && /[\uDC00-\uDFFF]/.test(value[index]);
+  if (typeof value !== 'string' || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start >= end || end > value.length || splitsPair(start) || splitsPair(end) || !ready()) return refused();
+  element.focus({ preventScroll: true });
+  const tick = () => new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, 0));
+  return { message: 'Removing selected text…', followUp: (async () => {
+    await tick();
+    if (!ready() || !ownsFocus(element)) return refused();
+    const after = value.slice(0, start) + value.slice(end), view = element.ownerDocument.defaultView;
+    setNativeValue(element, after); element.setSelectionRange(start, start);
+    // Record immediately after the write, before site handlers can start Undo.
+    onWrite(value);
+    element.dispatchEvent(new view.InputEvent('input', { bubbles: true, composed: true, inputType: 'deleteContentBackward', data: null }));
+    if (available() && unchanged(false)) element.dispatchEvent(new view.Event('change', { bubbles: true }));
+    await tick();
+    const ok = isCurrent() && available() && unchanged(false) && element.value === after;
+    return { ok, wrote: true, message: ok ? 'Selected text removed. Say “undo” to restore it.' : 'The website did not retain the requested available text change. Check the field before continuing.' };
+  })() };
 }
 
 // Literal, nonoverlapping matches use the original string's UTF-16 offsets.

@@ -296,3 +296,9 @@ test('explicit disclosure requests retain state and preserve unsupported intende
   assert.equal(interpret('expand missing', page).targetQuery, undefined);
   assert.deepEqual(interpret('click FAQ',page), {type:'activate',targetId:1});
 });
+
+test('explicit selected-text deletion stays typed and preserves unavailable intended fields',()=>{
+ const page=context(element(1,'Message','textbox',{editable:true}));for(const text of ['delete selected text','remove the selected text','erase highlighted text','delete selected text from Message'])assert.deepEqual(interpret(text,page),{type:'delete-selection',targetId:1});
+ const blocked=element(13,'Locked message','textbox');assert.deepEqual(interpret('delete selected text',{...page,disclosureElements:[blocked,...page.elements],selectionFocusedId:13}),{type:'delete-selection',targetId:13});
+ const unknown=interpret('delete selected text from Missing',page);assert.equal(unknown.type,'unknown');assert.equal(unknown.unparsed,undefined);assert.equal(unknown.targetQuery,undefined);
+});

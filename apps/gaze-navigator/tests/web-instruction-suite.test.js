@@ -49,3 +49,8 @@ test('wrong disclosure state or target is unsafe in both scorers',async()=>{
  for(const got of [{type:'disclosure',targetId:1,expanded:false},{type:'disclosure',targetId:2,expanded:true},{type:'activate',targetId:1}])
   for(const result of [evaluateInterpreter(()=>got,suite),await evaluateInterpreterAsync(async()=>got,suite)])assert.equal(result.summary.unsafe,1);
 });
+
+test('wrong deletion is an unsafe page action in both evaluators',async()=>{
+ const {evaluateInterpreterAsync}=await import('../src/web/instruction-suite.js');const suite=[{id:1,category:'edit',context:'form',say:'delete selected text',expected:{type:'delete-selection',targetId:1}}];
+ for(const r of[evaluateInterpreter(()=>({type:'delete-selection',targetId:2}),suite),await evaluateInterpreterAsync(async()=>({type:'delete-selection',targetId:2}),suite)])assert.equal(r.summary.unsafe,1);
+});
