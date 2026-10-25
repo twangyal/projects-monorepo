@@ -1,500 +1,75 @@
 # Clothing Studio
 
-**Product direction (2026-10-08): ACTIVE.** The destination is a professional garment-design environment with linked 2D patterns, editable 3D garments, credible cloth simulation and personalized fitting. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+A browser garment-design workspace. It is for designers who want to go from a template to a styled 3D garment, linked pattern pieces, a tech pack and a costed range. You pick a base product, style each part in real-time 3D, adjust measurements and construction, drape tops on an approximate body, and export renders, 3D models, patterns and spreadsheets. It runs entirely in the browser: no account, backend or paid service.
 
-A local garment design workspace. **Style a garment in 3D**: start from a template, drag fabrics, colors and prints onto each part of a real-time 3D tee, place artwork, see the linked pattern pieces, and export renders or a 3D model. The concept tee sketchbook, photo overlay and measured skirt construction are still here. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
+**Status:** ACTIVE — portfolio priority. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
 
-The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape (see Drape on a body for tops), depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
+## What works today
 
-Physics candidate research: [PPF Contact Solver evaluation](../../docs/2026-10-17-clothing-ppf-contact-solver-research.md) reviews an optional native drape backend, material conventions and the next comparison milestone. A pinned native CPU contact feasibility run is now recorded in [the evidence report](../../docs/research/ppf-cpu/results/evaluation.md); garment performance and calibrated fabric behavior remain unverified. The shipping application still uses its browser-worker XPBD solver, with no PPF integration or new backend requirement.
+- **3D-first workspace.** The editable garment is the main screen. Focused tool sections cover Templates, Materials & prints, Artwork, Patterns & measurements, Body & drape, and Exports. Secondary dialogs open the tech pack, range plan, concept sketch and skirt construction. It works on desktop and phone.
+- **Base products and templates**: T-shirt (Blank tee, Breton stripe, Ringer tee, Garden print), Crew sweatshirt, Pullover hoodie, Pull-on shorts and Straight trousers. Modules switch hem shape, sleeve length and a chest pocket.
+- **Part-by-part styling**: drag fabrics, colours and prints onto parts in 3D, or pick a part and click. The library has 8 fabrics with weight and composition, plus 6 print motifs. Repeat layout and size are in real centimetres. You can upload up to 6 of your own repeat motifs, and front/back artwork with size, position and rotation. Artwork can be placed by clicking the 3D garment.
+- **Describe a style**: a local, deterministic text parser (no AI). It covers colour names, fabrics, motifs, stripe direction, repeat size and layout, applies to one part or all parts, and lists the words it did not understand.
+- **Linked measurements and fit**: body measurements, plus points of measure (shoulder, neck, armhole, hem, sleeve opening, shoulder drop, back neck, rib/cuff/hem-band heights, hood size, pocket placement, waistband height). These update the 3D garment, pattern pieces and tech pack together. Pattern handles can be dragged or moved with the keyboard.
+- **Drape on a body** for tees, sweatshirts and hoodies. An XPBD cloth solver runs in a Web Worker on a measurement-driven body proxy (chest, optional waist/hip girths and chest depth). Fabric weight and knit/weave structure change the result. You can compare two fabrics on the same garment, and save body profiles by name.
+- **Material experiments**: tensile, bending and membrane swatch comparisons with SI-unit result downloads. These are illustrative and do not feed the garment solver.
+- **Tech pack**: bill of materials with estimated consumption, graded points of measure (XS–XL) with a diagram, and construction steps. Exports as Excel (`.xlsx`) or a printable self-contained HTML file.
+- **Colorways and range plan**: up to 8 named colorways with renders, plus costing inputs (fabric price per metre, make, trims, print, retail). The range plan shows unit cost, margin and totals, and exports to Excel.
+- **Exports**: front/back PNG renders, GLB 3D model (styled or draped), DXF pattern (AutoCAD R12, cut/sew/grain/text layers, 1 cm seam allowance), and a 1:1 printable SVG pattern.
+- **Measured two-panel skirt** (dialog): waist/hem/slant input, optional waistband, seam and hem allowances, and linear size grading. Exports include a full-size SVG, A4/US Letter tiled print HTML, and rigid or draped OBJ. Its drape simulation offers four fabric presets.
+- **Concept sketchbook** (dialog): tee sketching, a photo overlay, and PNG/SVG/JSON export. Edits have Undo/Redo, the current project autosaves locally, and a library holds up to 12 saved named copies.
 
-## Run
+## Known gaps
 
-Use Node **22.18+** (CI uses Node 24) and npm:
+- Fabric parameters are approximate relative values, not measured fabric data, and drape is not calibrated against reference drapes. Different fabrics differ, but not yet convincingly across garments.
+- Bottoms are not draped. There is no cloth-to-cloth contact, so a hood lies over the back as a single layer. The body is a proxy with assumed heights and limbs, not a personalized avatar.
+- 3D garments are styling shells built from measurements, not simulated from sewn pattern pieces. Patterns are simplified finished shapes, not graded production patterns. Hood and pocket shapes use fixed proportions.
+- Describe a style is a keyword parser. AI interpretation has not been built.
+- No layered outfits, darts or pleats, no sketch-to-garment or reference-to-garment flow, and no rendering beyond the WebGL preview.
+- Consumption, grading, construction steps and costing defaults are starting values. Confirm them with a marker, supplier quotes and a fit sample.
+- An evaluation of the PPF Contact Solver did not lead to adopting it (see the direction doc). The app uses its own XPBD solver.
+
+## Run locally
+
+Prerequisites: Node.js 22.18+ (`engines`; CI uses 24) and npm. You need a current browser with WebGL, IndexedDB, Canvas and `createImageBitmap`. Without WebGL, pattern editing still works.
 
 ```sh
+cd apps/clothing-studio
 npm ci
-npm run dev
+npm run dev        # Vite dev server on 127.0.0.1; open the printed URL
 ```
 
-Open the local URL printed by Vite. For a production build:
-
-```sh
-npm run build
-npm run preview
-```
-
-The built `dist/` directory can be served by a static web server. Use a current browser with IndexedDB, SVG, Canvas and `createImageBitmap`; Chromium is automated below. Photo decoding can vary between browsers. No external assets, telemetry, or network requests are needed by the production app. The development server uses its local hot-reload connection.
-
-## Focused garment workspace (#255)
-
-The studio opens on the **3D garment**. Select its parts directly or with the part buttons, orbit, or choose a camera view. The tool bar opens one task at a time:
-
-- **Templates**, **Materials & prints**, **Artwork**, **Patterns & measurements**, **Body & drape**, and **Exports** keep the garment beside the task on desktop. On a phone the task follows the garment; **Back to garment** returns to its tool button.
-- **Tech pack**, **Range plan**, **Concept sketch**, and **Skirt construction** open accessible secondary dialogs. Escape or **Back to garment** closes them and returns keyboard focus. Validation and live feedback appear inside the active task, then return to the workspace when it closes.
-- **Show all tools** opens an expanded workspace for cross-tool work. **Focus on garment** returns to the uncluttered view. This is a session view choice, not project data.
-
-Switching or closing a task does not apply, discard or recreate fields: unapplied drafts, pending image decoding and the mounted garment stay intact. Existing Apply/Discard, replacement/history guards, Save, upload ownership and captured export rules still apply. View changes do not add Undo steps. Body simulation remains the existing approximate material-dependent XPBD model; this layout does not calibrate fabric properties or establish physical fit. “Describe a style” remains the existing local parser; AI interpretation remains future work; #257 adds editable horizontal/vertical stripe direction to this deterministic interpreter.
-
-The original sketch/photo and skirt capabilities remain available through their named dialogs. Existing automated feature gates explicitly enter the real **Show all tools** view through a browser helper; independent focused-workspace tests start in the actual default and exercise navigation, dialogs, phone layout, raw drafts, validation feedback and held native artwork decoding. See [workspace verification](docs/2026-10-14-focused-workspace-255.md).
-
-## Style a garment in 3D
-
-**3D product design** follows the approachable workflow of web-based product design tools such as Fabra: start from a product or template, style it part by part in real-time 3D, and export. See the [research and roadmap](docs/2026-10-13-fabra-research.md).
-
-1. **Choose a template**: **Blank tee**, **Breton stripe**, **Ringer tee** or **Garden print**. Templates are remixable starting points. Replacing a design asks first and can be undone.
-2. **Style each part.** The garment's parts are the front body, back body, left and right sleeves and the neck rib.
-   - Drag a fabric, color or print from the library onto a part of the 3D garment, or select a part (click it, use the part buttons, or click its pattern piece) and click a library item.
-   - The inspector sets the selected part's fabric, color, print, print color, **Repeat** (standard, half drop, half brick or mirror) and **Repeat size**.
-   - **Use this style on every part** copies the style to all parts; the neck rib keeps its rib knit.
-3. **The fabric library** has 8 fabrics with weight and composition, from cotton jersey (180 gsm) to denim twill (340 gsm). Each has a procedural knit or weave structure. Prints come in 6 motifs. Fabric structure and prints are drawn at their real size in centimetres, so a 2 cm stripe is 2 cm on the garment and on the pattern.
-4. **Measurements**: chest, body length, sleeve length and crew or V neckline. They reshape the 3D garment and the **linked pattern pieces**. Those are finished flat pieces, without seam allowance, dimensioned in cm and filled with the same fabrics.
-5. **Artwork**: upload a PNG (transparency kept), JPEG or WebP for the front or back. Set its width and position in cm from the centre and below the shoulder, plus **Artwork rotation (degrees)** from −180 to 180. Positive angles turn clockwise from outside the selected side, about the existing artwork centre. **Apply placement** commits the complete placement as one Undo step; rotation drafts survive part selection and redraws. Old artwork stays upright. The live shell or draped top, PNG/GLB and tech-pack renders use the same rotated decal; tech-pack placement names the angle. Artwork is clipped to its supporting garment surface. See [rotation verification](docs/2026-10-14-artwork-rotation-254.md).
-6. **View and export**: orbit by dragging, or use **Front**, **Back**, **Left** and **Right**. **Export front/back render PNG** saves a render, and **Export 3D model (GLB)** saves the styled garment, with its named parts and artwork, for other 3D tools.
-
-**Edit back-neck depth (#278):** under **Patterns & measurements → Fit**, change **Back neck drop (cm)** from 1 to 12 cm and **Apply fit**, or drag the **Back neck** handle on the back pattern. Arrow Up/Down nudges that handle by 0.5 cm with one Undo step and retains keyboard focus. The front neck remains independently editable. Pattern outlines, the actual 3D opening, neck-rib cutting length, tech-pack point H, saved backups and captured exports use the same dimension. Untouched projects retain the original 2 cm back opening. Raw fit drafts survive navigation and block handles until applied or discarded; **Back to proportional** removes saved fit overrides, including the back neck. This is finished geometry, not fit/manufacturing acceptance; hood side patterns retain their existing approximate construction.
-
-**Edit hoodie side height (#315):** on a pullover hoodie, open **Patterns & measurements → Fit** and set **Hood side height (cm)** from 24–44, then **Apply fit**. The original default is 32 cm. This is the finished side-pattern base-to-top dimension, without seam allowance. It changes the linked hood pattern, illustrative 3D loft/UV height, cloth rest construction, tech-pack K/assembly notes, estimated fabric consumption and captured exports. Other garment parts, materials and artwork stay unchanged. Existing raw-draft guards, Apply/Discard, Undo/Redo, Back to proportional, save/reload and complete backups apply. Other tops hide this control and reject a hood override. Old app versions may reject edited backups with the new optional fit field; keep a current complete backup.
-
-The existing loft keeps its extra 3 cm crown rise and approximate neck/side construction; the entered panel height is not a measured anatomical hood height or proof of seam matching, physical fit or manufacturability. See [hood-height verification](docs/2026-10-23-hood-height.md).
-
-**Edit cuffs and hem bands (#302):** on a crew sweatshirt or hoodie, open **Patterns & measurements → Fit** and set **Cuff height (cm)** and **Hem band height (cm)** independently from 2–12 cm. Both default to 6 cm. **Apply fit** changes the fabric/trim seams while total sleeve and body lengths stay fixed; folded strips are twice the finished height. The cuff must leave at least 2 cm of measured sleeve fabric, and the hem must retain underarm clearance. The hoodie pocket follows the hem-band seam. Actual 3D trim regions, existing cloth construction, GLB and tech-pack L/M follow the same values. Complete backups/autosave/reload, Undo/Redo and **Back to proportional** retain or reset them with the other Fit settings. Invalid drafts stay visible and preserve the design; tees hide these band-only controls. Rib stretch ratios and physical fit still require material/toile validation.
-
-**Pick an artwork centre in 3D (#277):** after uploading front/back artwork, open **Artwork** and choose **Pick artwork centre in 3D**. Click or tap that visible body panel to fill position drafts while retaining width and rotation; drag still orbits. Review the centimetres and choose **Apply placement** for one Undo step. The point denotes the image centre; the existing Below shoulder field still describes its top edge. Escape, leaving the tool, changing side or changing the committed design cancels picking. Empty space, an occluding body/other part or an invalid width refuses. Numeric fields remain the keyboard alternative. Surface coordinates follow the original fabric even on a draped top. This places existing artwork; it does not generate or warp image content.
-
-Every change is one Undo/Redo step and is saved with the project and its backups. Projects without a 3D design remain valid.
-
-Uploaded motifs and artwork are inspected before decoding; saved assets must have bounded containers and matching encoded, declared and decoded dimensions. Tiny logos retain their size. Invalid backup/restore assets preserve current work and protect the saved record. See [raster admission verification](docs/2026-10-13-product-raster-247.md).
-
-Unapplied product measurements, fit, artwork placement, tech-pack details and costing stay in their fields across part selection, styling and image redraws. **Apply** commits its group; **Discard all product drafts** resets every pending product field without editing the garment. New template/project, backup replacement and Undo/Redo require finishing these drafts first. Artwork side and fit handles require finishing their respective drafts. Costing's material-price list refreshes after Apply/Discard. Drafts are session-only and not included in autosave or exports; commit them before reloading. [Draft verification](docs/2026-10-13-product-drafts-247.md) records the boundaries.
-
-Front/back PNG, GLB and printable tech-pack exports capture the committed design and concept filename before preparing images. Each uses an independent scene, leaves the visible camera and editing available, and releases temporary resources on success or failure. Only the initiating export button is busy. See [standalone export verification](docs/2026-10-13-standalone-snapshots-250.md).
-
-Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
-
-
-How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape. To see a top worn, use **Drape on a body** (below). Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
-
-See [3D product editor verification](docs/2026-10-13-product-editor.md).
-
-### Reuse top-body measurements (#280)
-
-**Body & drape → Saved body profiles** saves named applied measurements for another design or visit. Select to preview, choose **Use selected body profile** to apply, and update/rename or confirm deletion deliberately. Profiles survive reload but never apply automatically. Download/import a separate JSON backup; it contains private measurements. Body drafts must be applied or discarded first. Garment data and Undo stay unchanged. See [workflow, storage recovery and limits](docs/2026-10-17-top-body-profiles.md). These profiles reuse the existing approximate body, not an anatomical avatar or physical-fit validation.
-
-### Drape on a body (#248)
-
-**Drape on a body** shows how a top hangs. It works for tees, sweatshirts and hoodies:
-
-1. Enter the body's chest girth, then choose **Apply body settings** or **Drape on a body**. The default is the garment chest minus 10 cm, and 70–140 cm is supported.
-2. Choose **Drape on a body**. The simulation runs in a background worker and takes a few seconds.
-3. The 3D view shows the garment settled on a body, with its fabrics, prints and artwork. The status reports the ease at the chest and how much of the garment rests on the body.
-
-The drape stays while only colours or prints change. Changing measurements, fit, modules, neckline or a part's fabric drapes the garment again automatically. **Show styling shell** returns to the shell. Body settings are view-only for this session. Unapplied input survives selection/redraw; **Discard all product drafts** restores it, and replacement/history require Apply/Discard. While a simulation is pending, PNG/GLB/printable export asks you to wait or show the shell. Once settled, those exports capture the draped garment without the body proxy; flat pattern and measurement exports remain the design’s cutting/construction data. Artwork follows its original fabric triangles through deformation. Worker failure requires deliberate retry; changing to bottoms, replacing/travelling a project or leaving retires pending work.
-
-How the drape is made:
-- **Cloth.** The garment's own 3D parts become one cloth, sewn where they meet.
-  - Rest lengths are flat fabric lengths from the silhouette, unfolded across front-to-back seams so seams hold no crease.
-  - The neck rib follows the flat neckline.
-  - The hood keeps its modelled height.
-  - Pockets ride on the front body.
-- **Solver.** An XPBD solver adds gravity, stretch, bending and friction against the body. The cloth starts as the styling shell and shrinks onto a body that grows inside it, then settles under gravity.
-- **Body proxy.** It is built from chest girth plus optional waist/hip girths and chest depth: stadium-shaped torso sections with assumed heights and hip depth, sloped shoulders, neck and head. Blank optional fields retain chest-based proportions. Its arms are posed along the sleeves and tapered to fit inside them.
-- **Fabric.** Weight comes from each part's material (g/m²). Stretch and bending come from its construction: knits stretch most, twill and canvas bend least.
-
-**Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a measurement proxy with assumed heights, depths and limbs, not a personalized anatomical avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
-
-
-### Shoulder slope in linked construction (#296)
-
-In **Patterns & measurements → Fit**, edit **Shoulder drop (cm)** from 1–8 cm, measured vertically from the high-point shoulder line to the armhole shoulder point. The separate vertical **Shoulder height** pattern handle sits at the right front shoulder; drag it or use Up/Down for half-centimetre steps. The left shoulder handle still controls width. Armhole depth remains measured below the shoulder point, so changing drop moves the underarm with it.
-
-Apply commits the complete Fit group as one undoable edit. Pending drafts, invalid-geometry refusal, reset, backups and reload follow the other fit controls. The actual front/back shoulder seams, styling mesh, drape input, captured GLB and tech-pack **U** share the value. Absent settings retain exactly the original 4 cm drop. U stays constant across the existing size grades. These are simplified finished dimensions with no seam allowance; this does not establish sleeve-cap matching, physical fit or production readiness.
-
-### Chest-pocket construction (#297)
-
-Enable **Chest pocket** on a tee or sweatshirt, then use **Patterns & measurements → Fit** to edit finished width (6–20 cm), height (6–24 cm), horizontal centre offset (−22–22 cm) and top placement below the high-point shoulder line (8–45 cm). Positive offset is toward the wearer’s left; negative is toward the right. The finished bounding rectangle must remain at least 0.5 cm inside the actual front sewing outline, including the neckline and armhole. Invalid combinations are refused together and keep raw drafts. Apply or discard Fit drafts before changing modules.
-
-The patch mesh, drape input, GLB, pattern with its 2.5 cm top facing, consumption and tech-pack P/Q/R/V use the same dimensions. Untouched placement remains derived from shoulder/armhole dimensions; an authored placement stays fixed. Removing the pocket retains its settings for re-enabling; Reset Fit clears them. Undo, redo, backups and reload retain the complete edit. Legacy absent values retain exact geometry. These are simplified finished construction dimensions, without seam allowance or physical-fit guarantees. Hoodie kangaroo pockets remain separate.
-
-### Compare fabrics on the same garment (#270)
-
-**Body & drape → Compare fabrics on this garment** runs two chosen fabrics on the same committed top and entered body, showing matched front/back draped views and numerical diagnostics. Comparison preserves the design; **Use [fabric]** applies the chosen fabric to non-rib parts as one undoable edit. Colors, prints, artwork, rib trims and saved colorways are retained. Download the complete captured numerical receipt, or cancel and retry without changing the project. This uses the current approximate garment physics, not calibrated fabric data or the independent swatch laws. See [workflow, ownership and limits](docs/2026-10-16-garment-fabric-comparison.md).
-
-### Entered torso girths (#269)
-
-**Body & drape → Waist, hip and depth (optional)** accepts independent waist/hip girths for the top proxy. Blank uses the existing chest-based proportions. Apply validates all body fields together, preserves raw drafts and reruns the owned garment worker when accepted girths change. Body dimensions remain session-only; body heights, hip depth, limbs and fabric/contact are still approximate. Captured garment exports retain the actual draped positions. See [geometry, workflow and limits](docs/2026-10-16-top-body-shape.md).
-
-### Entered chest depth (#276)
-
-Under **Body & drape → Waist, hip and depth (optional)**, enter **Chest front-to-back depth** as a straight distance at chest level, not a curved tape arc. Blank keeps the original proportions exactly. The proxy accepts 10–44 cm, also bounded by chest girth ÷ π: a stadium section cannot be deeper than the circle of the same circumference. Apply validates chest, waist, hip and depth together; rejected values remain editable until corrected or discarded.
-
-Entered depth changes chest width while preserving chest circumference. Waist uses the same depth/width ratio at its own girth; hip depth/width remains the existing assumption. The changed proxy reaches actual worker draping, cached-result retirement, garment PNG/GLB snapshots and matched fabric comparisons, whose numerical receipt retains captured depth. These are session-only settings. This does not add anatomical reconstruction, measured shoulder/arm geometry, calibrated materials or physical-fit acceptance. See [geometry and validation](docs/2026-10-17-chest-depth.md).
-
-### Controlled material swatches (#266)
-
-In **Body & drape**, expand **Tensile swatch comparison** to compare two clearly illustrative axial materials under the same force. Choose coupon dimensions, warp/weft grain and8/16elements, run the worker, inspect actual-scale deformation and download complete SI inputs/results. Material extensional coefficient and coupon force/extension stiffness are reported separately. Changing inputs invalidates export; Cancel retires pending work. The experiment is session-only and preserves garment edits. It does not change the garment solver or establish calibrated cloth, bending, shear, contact or fit. See [model, checks and limits](docs/2026-10-15-tensile-swatches.md).
-
-### Controlled bending swatches (#267)
-
-**Body & drape → Bending swatch comparison** compares two illustrative directional cantilevers under a small end force. Adjust dimensions, grain and8/16 cubic beam elements, inspect the actual-scale curve, and download complete SI results including energy, rotation and signed support reactions plus labeled magnitudes. Cancellation, invalidation and retry preserve the garment and pending photo/import owners. These bending coefficients are independent of tensile stiffness and density; no garment-physics calibration or fit is established. See [model, numerical checks and limits](docs/2026-10-15-bending-swatches.md).
-
-### Coupled membrane swatches (#268)
-
-**Body & drape → Membrane swatch comparison** compares illustrative warp/weft/bias response under uniform axial traction, including transverse contraction and engineering shear. Choose4×4/8×8 cells and either triangle diagonal, inspect actual-scale meshes, and export complete SI profiles/nodes/strains/stress-resultants/energy/reactions. The left edge can contract; this is a small-strain affine membrane experiment, not calibrated cloth or a garment-solver change. Current-input-only export and owned cancellation/retry preserve the garment. See [model, boundary convention and limits](docs/2026-10-16-membrane-swatches.md).
-
-### Automatic tech pack (#227)
-
-Below the 3D editor, **Factory-ready tech pack** is generated from the design and updates with every change.
-
-- **Details**: **Style number**, **Season** and **Sample size** (XS–XL). Use **Apply details** to save them with the design as one undoable edit.
-- **Bill of materials**: one line per distinct fabric, color and print. Each line gives the composition, weight, the parts it covers, and consumption. Consumption is estimated from the pattern-piece areas plus 15% for seam allowance and cutting waste, in m² and in linear metres at 150 cm wide. Then come trims (thread, neck label, care label) and each artwork, with its print size and placement.
-- **Points of measure A–K and U**: chest, body length, sleeve length, armhole depth, shoulder, neck width, front and back neck drop, hem, sleeve opening, rib height and shoulder drop.
-  - They come from the same dimensions as the 3D garment and pattern pieces.
-  - Each has a tolerance and is graded XS–XL around the sample size.
-  - A measurement diagram labels each point.
-- **Construction**: seam-by-seam operations, with a mitred V or a shoulder-joined crew rib, and artwork application.
-- **Download tech pack (Excel)** saves an `.xlsx` workbook with Cover, Bill of materials, Points of measure and Construction sheets. Measurements are numeric cells.
-- **Download printable tech pack** saves a self-contained HTML document with front and back renders, the tables and the diagram. Open it in a browser and print, or save it as a PDF.
-
-Consumption, grading and construction are standard starting values for a basic tee. Confirm them with a marker and a fit sample. See [tech pack verification](docs/2026-10-13-tech-pack.md).
-
-### Colorways and range plan (#230)
-
-Below the tech pack, **Colorways and costing** turns one garment into a small range.
-
-- **Save as colorway** stores the current part styling under a name (up to 8). Each colorway card shows its own front render. **Show in editor** restyles the garment with it, **Update** replaces it with the current styling, and **Delete** removes it. Every change is one undoable, saved edit. Renders are made in a separate scene, so the garment you are editing never changes on screen.
-- **Saved name for …** and **Units for …** edit a colorway’s name and planned quantity. Choose **Apply colorway details** to validate and commit every card together as one undoable change, or **Discard colorway details** to restore this group. Blank names/quantities, fractional quantities and values outside 0–1,000,000 refuse without partially changing the collection. Other pending groups remain intact. Drafts survive styling and closing/reopening Range plan; finish or discard them before deletion, replacement or history. The plan, backups and Excel use applied details. See [editing verification](docs/2026-10-20-colorway-details-292.md).
-- **Costing inputs**: the currency (USD, EUR, GBP), retail price, make (CMT) per unit, trims per unit, print cost per placed artwork, and a price per metre of 150 cm fabric for each fabric in use. The defaults are indicative placeholders; replace them with supplier quotes, then **Apply costing**.
-- The **range plan** lists each colorway with these figures, plus totals:
-  - fabric cost (each fabric's estimated metres, from the same pattern-area consumption as the tech pack's bill of materials, times its price);
-  - trims, print and make;
-  - unit cost, retail and margin;
-  - units, total cost and revenue.
-
-  Until a colorway is saved, it shows the current design. Totals multiply the unit cost shown, rounded to the cent.
-- **Download range plan (Excel)** saves the plan, the fabric costing per colorway, and notes on the estimates.
-
-See [colorway and range plan verification](docs/2026-10-13-colorways-range-plan.md).
-
-### Sweatshirts and hoodies (#234)
-
-Besides the T-shirt, two base products ship with templates:
-
-- the **Crew sweatshirt**: French terry with rib neck, cuffs and hem band;
-- the **Pullover hoodie**: a hood, a kangaroo pocket, rib cuffs and hem band.
-
-Each base has its own parts:
-
-| Base | Parts |
-| --- | --- |
-| Sweatshirt | front, back, sleeves, neck rib, left and right cuffs, hem band |
-| Hoodie | front, back, sleeves, cuffs, hem band, hood, pocket |
-
-Each part takes fabrics, colors, prints and uploaded motifs like any other, and colorways, costing and the tech pack follow it.
-
-- **3D.** Long sleeves hang at a relaxed angle and taper into 6 cm rib cuffs. A 6 cm hem band finishes the body, and both are split from the same seam-joined shell, so the seams stay exact. The hood is a shell lofted from the sides and back of the neck opening to a closed crown, leaving the face open. The pocket is a patch slightly proud of the front body, above the hem band.
-- **Pattern.** The body and sleeves end above their bands. The rib cuffs and hem band are cut on the fold, about 15% shorter than the edge they finish. The hood side panel is cut 2, and the pocket is a trapezoid.
-- **Tech pack.** Points of measure add cuff height and hem band height, plus hood height, hood width and pocket width for the hoodie. Construction lists cuffs, hem band, hood and pocket instead of turned hems and a neck rib where they apply.
-- **Use this style on every part** keeps all rib trims in rib knit. A hoodie has no V-neck option.
-
-These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
-
-### Describe a style (#245)
-
-Type a description in **Describe a style**, for example "navy breton stripe on heavyweight ecru jersey", "small white polka dots on navy, half-drop" or "washed indigo denim". **Apply to this part** (or Enter) styles the selected part. **Apply to every part** styles them all; rib trims keep their rib knit and stay plain. Either is one undoable edit.
-
-The description is read locally and deterministically, with no network or model, so the same words always give the same style. It recognizes:
-- **colours:** about 90 names, light/pale/pastel/soft/dark/deep/muted/dusty/washed/faded/bright/vivid/neon variants, and `#rrggbb`;
-- **fabrics:** the library's fabrics by name or synonym (heavyweight, slub, rib, piqué/polo, terry/fleece, linen, denim/twill, jersey/cotton);
-- **motifs:** stripe/breton, dots/polka, gingham/check/plaid, floral/ditsy, geometric, waves;
-- **stripe direction (#257):** “navy vertical stripes” sets a vertical built-in stripe. “horizontal stripes” restores horizontal; the Stripe direction selector offers the same reversible edit. Existing stripes keep their direction when omitted, and old projects remain horizontal. Conflicting horizontal/vertical wording is refused without changing the design. Direction is shared by the 3D fabric, linked pattern, rendered PNG, embedded GLB texture and tech-pack label; this is visual print orientation, independent of physical grain. Other motifs and arbitrary angles are not supported by this control.
-- **repeat sizes:** tiny to huge, or in cm/mm;
-- **layouts:** standard, half-drop, half-brick, mirror.
-
-With a print, "X on Y" or the colour next to the motif word sets the print colour, and the other colour is the ground. Anything not mentioned stays as it was, so "mustard" recolours a printed part and keeps its print. The panel lists what was understood and which words were not, and a description with nothing recognizable changes nothing.
-
-### Fit: edit points of measure (#243)
-
-Open **Fit** under the measurements to set a top's points of measure directly at the sample size:
-- shoulder width;
-- neck width;
-- front neck drop;
-- armhole depth;
-- hem width (½);
-- sleeve opening (½).
-
-**Apply fit** updates the linked pattern pieces, the 3D garment, the DXF and SVG export, consumption and the tech pack together. Only values you change are stored; the others keep scaling with the chest, and **Back to proportional** clears them.
-
-**Edit on the pattern.** The front pattern piece has handles on its shoulder point, neck point, front neck, underarm and hem corner. Drag one, or focus it and use the arrow keys (0.5 cm steps), to change the matching measurement. Each change is one undoable edit, and a value that would not make a garment is refused and snaps back. The handles are keyboard sliders with their measurement as the value.
-
-- **Shape.** The side seams run straight from the underarm to the hem width, so a narrower hem tapers the body and a wider one makes an A-line. A flared piece is laid out from x = 0 like the others. On sweatshirts and hoodies the hem band follows the hem width.
-- **Sleeves.** The sleeve cap follows the armhole depth, and the sleeve opening sets the cuff.
-- **Checks.** Validation keeps a garment:
-  - the neck at least 8 cm narrower than the shoulders;
-  - the shoulders at most 8 cm past the chest on each side;
-  - the front neck above the underarm;
-  - the armhole at least 12 cm above the hem;
-  - the hem between 0.7 and 1.6 times the chest width;
-  - the sleeve opening narrower than the armhole.
-- **Consistency.** The pattern's shoulder point now sits where the 3D shell and the tech pack's shoulder width put it. Before #243 it sat at the panel edge.
-
-### Shorts and trousers (#239)
-
-The **Pull-on shorts** and **Straight trousers** templates use the trousers base: pull-on, with an elasticated waistband. Their parts are the front legs, back legs and waistband, each styled like any other part.
-
-- **Measurements.** Waist (relaxed), hip, front rise, inseam and leg opening replace chest, length and sleeve. The waistband has to pull on over the hips, so the hip must be at least the waist; the leg opening must fit the thigh. **Leg: Shorts, Cropped or Full length** set the inseam to 18, 58 or 78 cm.
-- **3D.** Two legs are joined at the side seams and inseams and meet at the crotch. They are open at the hems, and the waistband sits on the open waist. The view re-frames when the garment's height changes.
-- **Pattern.** The front and back leg panels are each cut as a mirrored pair. The back has the longer crotch extension and rises 3 cm higher at the centre back. The waistband is cut on the fold, long enough to pass the hips. DXF and SVG export include them.
-- **Tech pack.** Points of measure:
-  - waist, relaxed and extended;
-  - hip;
-  - front and back rise, measured along the centre seams;
-  - thigh;
-  - inseam and outseam;
-  - leg opening;
-  - waistband height.
-
-  The bill of materials adds the waistband elastic (relaxed waist less 4 cm) and labels. Construction covers inseams, side seams, crotch seam, elasticated waistband and leg hems, and the diagram shows the leg panels.
-- **Artwork placement** is for tops for now.
-
-### Modules (#237)
-
-The **Modules** controls in the inspector switch parts of a base product. Every view follows the change: the 3D garment, the linked pattern pieces, the DXF and SVG pattern, the tech pack, consumption and costing. Each switch is one undoable edit and is saved with the project.
-
-- **Hem: Straight or Curved shirttail.** A curved hem rises 4 cm at the side seams; body length is still measured at the centre. The tech pack adds side length (S) and hem curve drop (T), and the hem instruction becomes a 1.5 cm turn-back that follows the curve. Sweatshirts and hoodies have a rib hem band, so their hem stays straight.
-- **Add a chest pocket.** A patch pocket starts on the wearer's left chest of a tee or sweatshirt; its dimensions and signed placement are editable in Fit. It is a part like any other: it starts in the front body's style (in every colorway too) and can then take its own fabric, colour and print. Its pattern piece includes a 2.5 cm facing at the top. The tech pack adds pocket width, height and placement (P, Q, R), drawn on the measurement diagram, and signed centre offset (V), plus a construction step. A hoodie has its kangaroo pocket instead.
-- **Sleeve: Short, Elbow or Long** set the sleeve length to 21, 35 or 60 cm. The measurement stays editable.
-
-Projects saved before #237 open with a straight hem and no chest pocket.
-
-### Pattern export (#235)
-
-Under the linked pattern pieces:
-
-- **Download pattern (DXF)** saves every piece for cutting software and plotters. It is AutoCAD R12 ASCII, in millimetres with y up, on these layers:
-  - `CUT`: the cutting line, with a 1 cm seam allowance;
-  - `SEW`: the finished sewing line;
-  - `GRAIN`: the grainline;
-  - `TEXT`: the piece name, product, base, sample size, cut count (marked "(mirror)" for paired pieces) and fabric.
-- **Download printable pattern (SVG, 1:1)** saves the same pieces in centimetres: a solid cutting line, a dashed sewing line, grainline arrows, labels, and a 10 cm square to confirm the print scale.
-
-The seam allowance is mitred at corners and bevelled at very sharp ones. DXF text is plain ASCII; other characters are written as `\U+XXXX` escapes, which CAD readers decode. An independent DXF reader, ezdxf 1.3.5, opened a hoodie export with 0 errors: 9 closed cutting and 9 closed sewing polylines, the front cutting line 601.5 × 682.3 mm, and "Café" decoded correctly. The pieces are still the simplified styling patterns described above, not graded production patterns.
-
-### Your own repeat prints (#231)
-
-**Upload your own motif**, under **Prints** in the library, turns a PNG, JPEG or WebP image into a repeat print.
-
-- The image is scaled to at most 768 px and 600 KB, and transparency is kept. The motif is applied to the selected part and joins the library, where you can click or drag it onto any part, including in colorways.
-- It repeats with the same **Repeat** layouts (standard, half drop, half brick, mirror) and **Repeat size** in cm as library prints. It appears on the 3D garment, the linked pattern pieces and colorway renders. Each repeat cell holds the motif at 85% of the cell, in proportion.
-- Uploaded motifs keep their own colours, so **Print color** is disabled for them. The tech pack lists them as printed from supplied artwork.
-- A design holds up to 6 motifs. **×** removes one and clears every print that used it, including in colorways, as one undoable edit.
-
-## Create a concept
-
-1. Name the project and adjust body width, body length, sleeve length, and neckline. Silhouette values are drawing units, not physical measurements.
-2. Choose a color and plain/striped/woven visual appearance. Draw with a mouse, pen or touch; strokes are clipped to the garment. Reshaping keeps marks in the same canvas position, revealing/hiding marks at the new outline.
-3. Upload a PNG, JPEG or still WebP photo, or use the included silhouette. Drag the preview to place the garment. Labeled fields control position, width, height, rotation and opacity. Focus the preview and use arrow keys to move 1%; Shift + arrow moves 5%.
-4. Export a transparent garment PNG, an editable garment SVG, a composed preview PNG, or a complete JSON project backup. Open a backup to restore the photo, sketch, colors, note and placement.
-
-**Export garment SVG** downloads the same 400×440 transparent garment illustration as vector paths: silhouette, plain/striped/woven pattern and clipped sketch strokes. Open it in a vector editor to recolor or continue drawing. The file has no external resources and is bounded at 1 MiB, including the maximum 100 strokes and 12,000 points. Geometry uses the renderer's six-decimal drawing precision; drawing units are not physical measurements. Its escaped title is accessible text. Photos, placement, the sample figure and concept notes remain in the complete JSON backup. SVG is an illustration export; use JSON to reopen editable work in Clothing Studio. Export cancels an unfinished sketch/placement preview and uses committed art without adding a history edit.
-
-PNG exports retain the artwork and filename from the concept snapshot captured when export starts. You can rename, start a new concept or open a backup while encoding finishes; the pending download remains named for its original concept. See [snapshot verification](docs/2026-10-08-png-snapshot.md).
-
-Undo/redo keeps the latest **40 edits** in this session. It includes sketch gestures, placement, clear, photo replacement and starting a new concept. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text/number fields; those fields retain native editing shortcuts. A blank concept name becomes “Untitled concept.” New edits after undo discard the redo branch.
-
-## Local saving and image handling
-
-**Saved designs** opens a separate local library from the3D workspace. Enter a **Saved design name** and choose **Save named copy** to capture the complete applied concept, including photo, sketch, garment details, artwork, measured construction, grading and body measurements. Up to12 immutable copies fit in the library, each within the existing6MiB JSON limit. Names use1–80 printable characters and must differ ignoring case. Use a new version name to save later edits; copies are never overwritten automatically.
-
-Select a saved design deliberately, then **Open selected design** and confirm to replace the current concept as one undoable edit. Apply/discard pending concept, product, construction, grading and body drafts first. Newer editing retires an unfinished open. **Download selected backup** exports that copy as an ordinary complete-project JSON file; **Delete selected design** confirms deletion of only that copy. Closing the dialog retains its name field. Refresh the list after changes in another tab; no copy opens automatically. Copies include private photos, artwork and measurements in this browser. Keep downloaded backups because clearing browser data removes the library. This library is separate from the single current-concept autosave below. [Workflow and verification](docs/2026-10-20-design-library-295.md).
-
-- A single current project autosaves committed edits to IndexedDB after startup successfully restores or confirms no saved concept exists. Failed or superseded startup restoration protects the previous saved concept while current work remains editable in memory. **Replace saved concept** requires confirmation and enables autosave only after its native write succeeds; cancel or failure keeps protection active. Export the current backup before reloading memory-only work. Edits made during replacement are saved afterward; canceled sketch and placement previews are never persisted. Wait for **Locally saved** before closing the page. Undo history is session-only. Multiple tabs share the same local save; the last successful write wins.
-- Load, save and clear transactions have a nominal **10-second deadline** from native transaction creation, including time queued behind another tab. Pending work is aborted and the save queue waits for native rollback before retrying. If native completion already happened, its eventual callback reports the actual result. Browser scheduling may delay timers and terminal callbacks; this is transaction recovery, not cross-tab conflict prevention.
-- Storage restrictions, quota failures and invalid saved data are reported. The active concept remains available and can be exported as a backup. Browser data can be cleared by the browser or user; keep a backup for work you want to retain.
-- Photo import accepts up to **10 MiB**, **16 million pixels**, and **8000 pixels on either edge**. Header bounds are checked before browser decoding. Photos are resized to at most **1200 pixels per edge** and normalized as JPEG, flattening transparency onto white and discarding original metadata. Your original file is not modified.
-- Invalid containers, unsupported types, conflicting dimensions and undecodable data are rejected without replacing the active concept. Browsers can recover some damaged JPEGs, so successful decoding does not guarantee that every source pixel was intact; review the resulting preview.
-- Backups are capped at **6 MiB**. Embedded photos must be bounded normalized JPEG data with dimensions matching the image. Names/notes, numeric ranges, colors, stroke data and version are validated; imported markup and external image URLs are not accepted.
-- Sketches allow **100 strokes**, at most **1000 points per stroke**, and **12,000 total points**. Garment PNGs are 400×440; preview PNGs follow the resized photo dimensions, or 600×800 for the sample. No export exceeds 2048 pixels on an edge.
-- Cancelled or superseded imports cannot replace your current work. Typing (even a changed-back draft), editing controls, starting a sketch/placement gesture, undo/redo, another import or leaving the page retires a pending photo/backup import. Late completion preserves current fields, focus, artwork and history. Start the import again when you want to replace that newer work. Startup restore cannot overwrite editing that begins while a saved photo is decoding.
+Production build: `npm run build`, then `npm run preview`. The `dist/` output can be served by any static server. The production app makes no network requests.
 
 ## Verify
 
 ```sh
-npm run check             # unit tests, ESLint, TypeScript, production build
+npm test               # Node unit tests (tests/*.test.ts)
+npm run lint           # ESLint
+npm run typecheck      # tsc --noEmit
+npm run build          # typecheck + Vite production build
+npm run check          # test + lint + build
 npx playwright install chromium
-npm run test:browser      # starts and tests a production preview automatically
+npm run test:browser   # builds with the storage test harness, serves a preview on port 4186, runs tests/*.spec.ts
 ```
 
-To use an existing Chromium binary:
-
-```sh
-CHROMIUM_PATH=/usr/bin/chromium npm run test:browser
-```
-
-Unit tests cover project validation, immutable bounded history, geometry/escaping, clipping, and image-header resource limits. Browser tests exercise the actual create/sketch/photo/backup/export workflow, local restore, invalid data preservation, cancellation/replacement races, storage failure, active-draft restore protection, portrait layout, keyboard controls and a narrow viewport. PNG checks verify dimensions and transparency. Tests generate synthetic photos locally and do not access personal files or services.
-
-The app is independent of other monorepo projects. Source modules separate the validated project model, SVG/PNG graphics, photo processing, persistence and workspace interactions; no shared backend or framework is needed.
-
-
-Startup recovery (#49) was verified on 2026-10-04 at `593f67aa880b7e84eb646bb26266d0955c2b5746` in [run 37197789513](https://github.com/twangyal/projects-monorepo/actions/runs/37197789513): 36 unit tests, lint/typecheck/build and all 17 production Chromium cases passed. Independent review found and reproduced a pending-replacement gesture race in two native cases before its committed-history correction. See [verification evidence](docs/2026-10-04-startup-recovery-verification.json).
-
-The final presence-boundary correction at `f83e1b6` distinguishes a stored `undefined` from an absent key, keeping invalid records protected until explicit replacement. The added native case failed before this fix, and [run 37198211480](https://github.com/twangyal/projects-monorepo/actions/runs/37198211480) passes all 36 unit and 18 browser cases with lint/typecheck/build.
-
-
-Vector illustration export (#92) is complete: [PR #94](https://github.com/twangyal/projects-monorepo/pull/94), implementation `fc5de6a`, passes **39 unit and 24 native browser cases**, lint/typecheck/build in [run 37217988856](https://github.com/twangyal/projects-monorepo/actions/runs/37217988856). Actual downloaded vectors match PNG raster hashes for plain, stripe and weave; literal red/green/transparent pixels separately check artwork and clipping. The 100-stroke/12,000-point fixture exports a 280,872-byte SVG and preserves its exact complete backup. Native keyboard export cancels an unfinished gesture without losing redo; 390px layout and external-resource absence are verified. [The verification record](docs/2026-10-04-vector-export-verification.json) records exact checkout and claim limits.
-
-
-Held transaction recovery (#101) now preserves the native saved record and releases ordered autosaves after rollback. The four original #102 regression cases remain unchanged. Three independent native cases verify complete photo/sketch retention during timed-out clear, synchronous failure after a real `put`, and a deliberately delayed rollback callback. The complete local gate passes **39 unit and 31 Chromium cases**, lint, type checking and production build. The test harness is excluded from ordinary production builds. See [verification record](docs/2026-10-05-storage-deadline-verification.json) for first failures, CI status and timing limits.
-
-Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37250018943) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37250023195) CI pass the full 39-unit/31-browser gate at implementation `cdfcc3545ed880f99a7276d1b73aeb9e5f7b8d48`.
-
-
-Pending import ownership (#118) fixes three reproduced whole-concept data-loss paths:
-an older backup could replace a newer committed title, unblurred placement draft
-or active sketch, then autosave itself. Imports now retire on newer editing intent
-without normalizing controls or canceling the new gesture. Native photo processing
-still closes its real bitmaps; old success/error/finalization cannot publish or
-release a newer operation. Normal imports remain single reversible edits.
-
-The local gate passes **39 units and 39 native browser cases**, lint, type checking
-and normal production build. Eight independently authored cases verify complete
-original JPEG/stroke/placement graphs, actual downloads and PNG pixels, raw fields,
-text selection, Undo/Redo, native pointer gestures, held genuine file/image results,
-cancellation and fresh retry. Controlled page-transition events verify ownership
-policy only. The first full run's two hardcoded-test-port failures remain preserved;
-only those tests' exact origin was corrected. See the [verification receipt](docs/2026-10-05-import-ownership-verification.json)
-for original failures and published CI status.
-
-Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37251968052)
-and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37251970510) CI
-pass the complete 39-unit/39-browser gate at
-`0c249520c7d3de30096f81335d4329793aa3e855`. The [CI receipt](docs/2026-10-05-import-ownership-ci.json)
-confirms the actual PR checkout has the identical implementation tree.
-
-Independent #118 retention acceptance adds an original 1200×1200 photo and 100-stroke/12,000-point complete graph. A held exact 6 MiB File read cannot replace a newer title; complete native backups and three actual garment PNG downloads remain byte-identical through a fresh Chromium process. Input whitespace padding tests file admission, not artwork size or peak memory. The published implementation is preserved. The local full gate passes **39 units and 40 browser cases**, lint/typecheck/build. See [retention evidence](docs/2026-10-05-import-retention.json); the added check's published CI is pending.
-
-## Measured skirt construction
-
-The **Draft a two-panel skirt** workspace is separate from the tee illustration and photo overlay. Enter garment waist circumference (50–150cm), hem circumference (70–300cm), and **slant seam length** (20–120cm), including your intended ease in the garment circumferences. Slant is the length along the fabric, not the assembled vertical height. Hem must exceed waist by at least 5cm; combinations that cannot form a positive-height conical frustum refuse.
-
-**Apply measured pattern** creates two matching annular-sector panels. Each has half the complete waist/hem arc length and two side seams of the entered slant length. Join the two pairs of side edges to form the shell. Parameters, rather than arbitrary drawing units, determine physical geometry. The draft is retained alongside the complete photo, sketch, tee, note and placement, with one-edit Undo/Redo, autosave, backup/import and reload. Earlier backups keep their original field absence.
-
-Raw settings remain unapplied until Apply. Invalid settings stay editable; **Discard pattern edits** restores committed values. Finish other raw fields and active gestures first. Construction editing intent retires older pending imports. **Export full-size pattern SVG** exports committed settings only, with two labeled pieces, grainlines, seam lengths and a **5cm×5cm** calibration square. SVG dimensions are in millimetres; the geometry is in centimetres. Open in a vector editor or print at 100%, checking the calibration square. The SVG export is one large sheet. For a home printer, use **Export A4 tiled pattern** or **Export US Letter tiled pattern** to download a self-contained HTML file. Open that file in your browser and print on its labelled paper at 100%, disabling fit-to-page and browser headers/footers. The first page has a 5cm square (measure between stroke centres) and assembly instructions. The remaining pages show numbered row/column pieces of the original sheet with 1cm overlap, repeated alignment crosses and trim borders. Assemble columns left to right and rows top to bottom. Both measured stitching and saved cutting lines are retained. The export uses no scripts/network resources or private artwork/metadata, and does not change the concept or history. Printing is bounded to 256 tiles and 2MB of UTF-8 HTML; all admitted skirt extremes have been checked within those limits. Graded sets currently retain the single-sheet SVG export.
-
-The saved base measurements describe **stitch lines**. Optional **Seam / waist allowance** (0–2.5cm) and **Hem allowance** (0–5cm) add separate cutting lines. Zero is the default: earlier projects retain their original absent allowance field. Apply stores both settings as one complete, undoable concept edit; graded exports inherit the same allowance choices for every relative size. With nonzero allowances, solid orange lines mark cutting and dashed green lines mark stitching. Side edges offset outward by the seam allowance, the waist arc offsets inward by that amount, and the hem arc offsets outward by the hem allowance; corners are intersections of those parallel lines and concentric arcs. The measured stitch dimensions and assembled rigid shell stay unchanged. The SVG expands to contain the cutting pieces, including wide arcs. This is a [constant normal offset](https://mathworld.wolfram.com/ParallelCurves.html), not a validated garment construction method.
-
-An optional measured waistband is now provided; closure mechanics and body fitting are not simulated. They are a construction study, not a sewing-ready pattern or validated physical fit. Add those details and validate a toile before cutting final fabric. The linked rigid geometric shell is a foundation for further construction; material simulation, personalized avatars, editable darts/pleats, AI creation and manufacturing evaluation remain ACTIVE product work. Geometry derives from arc length and the [right conical-frustum slant/height relation](https://mathworld.wolfram.com/ConicalFrustum.html); this mathematical reference does not establish garment fit.
-
-### Add a measured waistband (#192)
-
-Enable **Include measured waistband**, enter **Finished waistband height** (2–10cm) and **Waistband closure extension** (0–5cm), then choose **Apply measured pattern**. The straight folded piece has stitch length equal to garment waist plus extension and stitch height twice the finished height. The saved seam allowance applies to all four edges; the skirt's hem allowance does not apply to the band. A fold line, grain direction and extension mark are labelled. Zero extension is permitted as a construction study; this does not create a working fastening or ensure that the garment can be put on.
-
-The full-scale, A4/Letter tiled and relative graded exports include the band. Relative waist changes resize its attachment length; finished height and extension stay the same in every derived size. Earlier concepts keep the absent optional field. Unchecking and applying removes it in one undoable edit; invalid settings remain raw, and Apply/Discard, backups, autosave and reload preserve the complete concept.
-
-The 3D preview/OBJ adds a 32-quad rigid ring of the entered finished height above the skirt waist. Its circular waist matches the shell; the 2D closure extension, folds, fastening mechanics, thickness and cloth/body contact are not modelled. With a band the combined surface has 128 vertices and 64 quads; without one the original 64/32 shell remains. Review materials, closure construction and a physical toile before production. This is an intermediate construction milestone ([#192](https://github.com/twangyal/projects-monorepo/issues/192)), not validated manufacture or the full garment-design destination.
-
-### Linked rigid shell and surface export (#167)
-
-The committed skirt measurements also assemble into a rotatable **Rigid 3D construction preview**. The same circumference radii and slant/height relation drive both views; two opposite joining seams identify the front/back panels. Use rotation buttons or Left/Right arrows on the focused preview. Rotation is session-only: it does not edit, save or consume Undo/Redo. Raw measurement drafts leave both committed views unchanged until Apply; Apply, Undo/Redo, import and reload update both together. The 32-segment approximation uses 64 vertices and 32 outward-facing quads; circumference measurements describe the underlying circles, not the shorter polygonal rim perimeter. Dashed seam guides include the far side.
-
-**Export construction OBJ** exports the committed surface independently of camera rotation. Apply/discard raw pattern edits and finish other raw fields first. OBJ includes named Front_Panel/Back_Panel groups and two seam lines, without external materials or photos. Coordinates are **centimetres**, with origin at the waist centre and **+Y pointing toward the hem**; OBJ itself has no universal unit metadata, so configure your importing tool accordingly. This open rigid surface has no thickness, allowances, functional closure, cloth drape, material physics, body or fit validation. An enabled waistband adds a separate rigid cylindrical surface; its 2D closure extension is excluded from 3D. The original tee illustration remains separate.
-
-Local verification passes 48 unit and 57 native browser cases, lint, typecheck and production build. Native cases verify actual SVG projection coordinates, linkage/history/saved reload, unapplied fields, raw placement before blur, keyboard/mobile rotation and real OBJ downloads. See [construction evidence](docs/2026-10-09-linked-construction.md). Professional garment modelling and real production evaluation remain ACTIVE work.
-
-### Saved relative size grading (#168)
-
-Apply a measured base, then enter **waist/hem/slant increments per size** (-20..20cm) and **1–3 steps on each side of base**. Apply grading rule saves a manual linear rule alongside the complete concept; the table shows 3–7 relative measurement sets. At least one increment must be nonzero. Negative increments are supported; relative labels do not promise that higher offsets are larger or correspond to standardized body sizes.
-
-Every derived size must satisfy the same measured-skirt limits. A base edit that invalidates any saved graded size refuses, retaining your raw input, existing views and Undo/Redo. Apply/Discard grading edits affects its own drafts. **Remove grading rule** is undoable and retains the base, artwork and unapplied pattern measurements; use it to return to single-size construction or revise the base beyond an old grading range. Rule changes, removal, backup/import, autosave and reload preserve the complete concept. Legacy projects retain absent optional fields.
-
-**Export graded pattern set SVG** produces one large full-scale sheet containing all labelled sizes, two panels per size, individual 5cm calibration squares, cm measurements and mm physical dimensions. It exports committed rules/base only; apply/discard raw rule/base drafts and finish other fields/gestures first. The base's explicit seam/hem allowances accompany every size, with separate cut/stitch labels. There is no graded-set page tiling, standardized grading system, body fitting or manufacture validation. Review the chosen increments and validate each size physically before production. [Grading evidence](docs/2026-10-09-size-grading.md) records checks and failure repairs.
-
-The grading milestone passes the complete52unit/62native-browser local gate with lint/typecheck/build, including actual original photo/sketch retention, malformed import refusal and full physical size-set downloads. Hosted publication is tracked in issue168.
-
-
-Milestone #182 adds saved cutting allowances. The complete local gate passes 55 unit and 65 production Chromium cases plus lint/typecheck/build; see [cutting allowance evidence](docs/2026-10-11-cutting-allowances/README.md). Physical toile evaluation and the broader professional garment-design vision remain ACTIVE.
-
-Milestone #183 adds home-printer A4/US Letter base-pattern tiling. Native checks verify the real downloaded HTML, physical SVG calibration and actual Chromium PDF page dimensions/counts, with complete artwork/history and raw drafts retained. See [tiled print evidence](docs/2026-10-11-tiled-print/README.md). Physical printer output and toile acceptance remain untested.
-
-## Fabric drape simulation (#219)
-
-**Fabric drape simulation** shows how the applied skirt actually hangs.
-
-1. Choose a **Fabric**. The choice is saved with the skirt as one undoable edit and kept when you change the pattern.
-2. **Simulate drape** runs a cloth solver in a background worker, taking about 2–3 s in desktop Chromium. **Cancel simulation** stops it without changing anything.
-3. The shaded view shows the settled folds. Rotate it with the buttons or the arrow keys, optionally showing the body proxy.
-4. **Export draped OBJ** writes the settled surface in centimetres, with front and back panel groups.
-
-How it works:
-- **Mesh.** Both panels are meshed directly from their flat annular-sector patterns, 24 rows down the slant and 48 columns per panel. Every rest length is therefore a real fabric distance, and the assembled cone starts unstretched.
-- **Solver.** An extended position-based (XPBD) solver settles the cloth under gravity for 4 simulated seconds. It uses stretch, shear and two-segment bending constraints, and long-range warp attachments for woven fabric that barely stretches. The waist row is held at the waistline.
-- **Body.** The fabric is kept outside a body surface of revolution: your entered waist, hip and waist-to-hip depth, constant below the hip (legs together). With no profile saved, it assumes a waist 2 cm smaller than the garment and a hip 20 cm larger, and says so.
-- **Results.** The panel reports:
-  - folds around the hem;
-  - hem flare relative to the rigid cone;
-  - hem drop;
-  - largest fabric stretch;
-  - closest approach to the body.
-
-| Fabric preset | Weight | Character |
-| --- | --- | --- |
-| Chiffon | 50 g/m² | very low bending stiffness |
-| Cotton poplin | 120 g/m² | |
-| Linen | 190 g/m² | |
-| Denim | 380 g/m² | very stiff |
-
-These are **approximate typical values with relative stiffnesses, not measured fabric data** (professional tools calibrate from fabric test instruments). The simulation has no friction, wind, motion, collisions of the fabric with itself, or thickness beyond a 4 mm contact offset. On the same skirt, softer fabric consistently forms more and narrower folds and hangs closer to the body; see [drape verification](docs/2026-10-13-drape.md). Validate drape and fit with a physical toile.
-
-## Entered body measurement comparison
-
-Enable **Use body measurements**, enter waist and hip circumferences plus the vertical **waist-to-hip depth**, then **Apply body measurements**. The optional profile travels with JSON backups, autosave and Undo/Redo. Uncheck and apply to remove it; Discard restores the committed profile. Legacy concepts have no profile. Finish other raw concept, pattern and grading edits before applying a profile.
-
-The linked preview adds an open, two-ring circular measurement proxy at the skirt waist and entered hip depth. Waist and hip differences are garment circumference minus entered body circumference, in centimetres. The hip comparison interpolates the rigid skirt's circumference at that vertical depth; a skirt ending above it reports no comparison rather than extrapolating. Negative, zero and positive values describe geometry only. Display rings use 32 straight segments around nominal circular measurements; they are not anatomical body scans or exact polygon perimeter measurements. The two-decimal readout does not establish measurement accuracy or suitable wearing ease.
-
-**Transparent garment comparison** and rotation are view-only. Full-size/tiled pattern SVGs and construction OBJ remain garment-only, independent of the profile or transparency. The proxy does not model anatomical shape, cloth drape, collisions, contact, comfort, mobility or manufacturing fit. Personalized avatars and validated cloth/body fitting remain ACTIVE work. Supported entered ranges: waist 50–180cm, hip 50–220cm, depth 5–40cm; other ranges require a future validated geometry design. See [#201](https://github.com/twangyal/projects-monorepo/issues/201).
-
-[Body comparison evidence](docs/2026-10-12-body-measurements.md) records the local verification and physical limits.
-
-When a profile and grading rule are saved, the **Committed relative sizes** table also shows waist and hip differences for every derived size. Values are garment minus entered body circumferences in cm; negative means smaller, zero equal, positive larger. Each size independently reports **Not reached** when it ends above the entered hip depth. Profile edits and history update every row; removing the profile restores the original garment-only columns. The focusable table scrolls horizontally on narrow screens. These comparisons are geometry only and do not recommend a comfortable size or validate physical fit. Graded pattern exports retain their original garment-only bytes. Tracked in [#202](https://github.com/twangyal/projects-monorepo/issues/202).
-
-### Native garment research capture (#288)
-
-The research-only fixed tee capture retains the application’s full topology, seam maps, UVs, rest constraints, masses, collision clearance and entered-body primitives. [Reproduction and admission](../../docs/research/ppf-cpu/GARMENT_BRIDGE.md) quantify why direct-shell and fully flattened native rest mappings are unsuitable. No new native garment solver is enabled; the current preview remains in use.
-
-Research follow-through #290 retains the original [browser warm-start failure](../../docs/research/ppf-cpu/GARMENT_WARM_START.md) and adds a declared initial-only outward preparation with a complete float32 triangle-surface clearance gate. The [cleared native experiment](../../docs/research/ppf-cpu/GARMENT_CLEARANCE.md) completes both material cases with retained0.3-second and one-second observations, captured mass preserved and full raw archives/independent replay. These are research fixtures; the shipping preview remains in use.
-
-The [same-material control](../../docs/research/ppf-cpu/GARMENT_REPEATABILITY.md) measures17.445/26.695mm maximum saved-vertex divergence in unchanged-backend pairs under requested one/four-thread settings. A declared research-only ordered-map repair then reproduces all61saved frames in four same-material sessions. The [controlled repaired material cohort](../../docs/research/ppf-cpu/GARMENT_MATERIAL_COHORT.md) now reproduces each Young500/2000 trajectory across two observed hosts, with18.165mm final inter-material RMS separation and only Young differing within each pair. Full archives, source-derived geometry and semantic replay tests are retained. Separate hosts do not isolate causal thread effects; normalized Young is not calibrated fabric.
-
-The [three-second observation](../../docs/research/ppf-cpu/GARMENT_DURATION_STUDY.md) completes both materials on the requested-four host; the requested-one pair hits its unchanged300-second limit after soft181/stiff168frames (2.783s). All available cross-host prefixes match, and later saved motion windows are lower. Complete and partial native outcomes remain distinct in the retained lossless archives and replay. Sustained settling, seam/construction quality, representative garment/body coverage, physical fit and engine adoption remain separate research gates.
-
-Native construction research #290 now [locates the retained three-second strain](../../docs/research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) at a shared underarm edge, with per-part distributions, original triangle provenance and seam gaps. This explains the location of a bounded observation; physical construction quality and calibrated fit remain unverified.
-
-The [separate fixed-material three-second study](../../docs/research/ppf-cpu/GARMENT_FIXED_MATERIAL_STUDY.md) now completes soft/stiff sessions under both requested environments, with724new raw frames/1852verified native files and full official archives. Every material matches181/181frames across the observed hosts and all available prior-duration prefixes. This completes the separately budgeted execution study; the original serial timeout remains failure, and underarm construction quality, physical references and engine adoption remain open.
-
-Configured-step research #290 now retains [two complete native half-step sessions](../../docs/research/ppf-cpu/GARMENT_HALF_STEP_STUDY.md) with362frames/926verified native files. Final principal peaks40.912/26.335% remain near the original40.885/26.339%, while early saved vertices differ by up to169.970/150.132mm. This is a bounded sensitivity observation, not timestep convergence or physical fit; construction, representative garments/bodies and physical references remain open.
-
-The [rest-junction construction audit](../../docs/research/ppf-cpu/GARMENT_JUNCTIONS.md) checks the captured native vertex fans and original authored coordinates. Both underarm junctions have about628° intrinsic corner sums already present in the source styling metric; no disconnected/nonmanifold vertex fan is found. This is not proof of a causal defect or a native solver improvement. Rest geometry, prior experiments and the shipping solver remain unchanged.
-
-Gravity-only research #290 now retains [a completed normal/zero-gravity pair](../../docs/research/ppf-cpu/GARMENT_GRAVITY.md) with 362 real frames and 926 verified native files. All 46 input arrays and recorded executable digests match; only session gravity differs. Final peak principal strain is 40.885% / 20.759% at the same underarm triangle. Substantial strain persists without weight in this fixture, while separate CPU models preclude precise causal effect-size claims. Original rest geometry and shipping behavior remain unchanged; construction/pose/contact causes and physical validation remain open.
-
-Startup-preparation research #290 retains [a fresh reference/smoothed native pair](../../docs/research/ppf-cpu/GARMENT_PREPARATION.md):362actual frames/926verified files. A frozen smoothed5mm outward preparation reduces initial peak absolute principal strain47.891%→42.015% after the same6mm clearance gate, but final peaks40.885%/40.849% persist at the same underarm triangle; final shape RMS difference is0.044mm. Only initial geometry and captured-inertia density coefficients differ. Full raw archives,12static exploration controls, stage localization and exact replay are retained. This candidate does not resolve the persistent construction observation; separate hosts, physical calibration and representative coverage remain limits. Clothing stays ACTIVE; shipping behavior is unchanged.
-
-Fixed-garment bending research #290 retains [a completed bend20/bend0 native pair](../../docs/research/ppf-cpu/GARMENT_BENDING_STUDY.md):362real frames/926verified files, with only the bending-coefficient array differing. Final peak principal strain changes40.885%→37.665% but persists at the same underarm triangle; final shape RMS difference is3.645mm. Zero bending is a constitutive-block diagnostic, not a calibrated fabric or construction fix. Separate hosts and stiffness-proportional damping constrain interpretation. Original rest/pose/mass/body/seams/contact and shipping behavior remain unchanged; construction, representative coverage and physical validation remain open. Clothing stays ACTIVE.
-
-## Finished neck-rib height (#301)
-
-For a tee or crew sweatshirt, open **Patterns & measurements → Fit**, set **Neck rib height (cm)** from **1 to 4**, then **Apply fit**. This is the finished height: the cut-on-fold rib strip is twice as high. The neck opening and its existing 15% rib-length reduction assumption stay unchanged. A hoodie has a hood instead of a neck rib, so this control is hidden and incompatible imported overrides refuse.
-
-Omitted values retain the original 2 cm height and exact legacy patterns/meshes. The linked strip, actual 3D neckband, garment-drape rest construction, exported GLB and tech-pack K use the applied height. Apply/reset are complete undoable Fit edits, retained in backups, saved designs, browser recovery and reload. Invalid raw drafts remain editable through navigation; explicit Apply refuses them without changing the garment. Back to proportional restores 2 cm and can be undone. Height stays constant across size grades. These are simplified finished dimensions without seam allowance; rib stretch, manufacturing suitability, drape calibration and physical fit remain unverified. [Verification record](../../docs/2026-10-22-clothing-neck-rib-height.md).
-
-## Hood side width (#322)
-
-For a hoodie, open **Patterns & measurements → Fit** and edit **Hood side width (cm)** from20 to34cm (default26). Apply with the other fit fields, or use Reset fit to restore defaults. Untouched/default width is omitted from saved overrides. Undo/Redo, browser saves and complete backups retain applied width; raw/invalid values survive navigation until Apply/Discard.
-
-The hood side pattern and tech-pack point N use this horizontal width, excluding seam allowance. Fabric usage follows the changed piece. The illustrative3D hood scales its front/back projection proportionally while keeping its neckline attachment, lateral span, height and crown loft. Existing drape and captured GLB/PNG exports consume that modelled geometry. This does not create a fully flattened hood or establish pattern-to-shell geodesic/seam agreement or physical fit; the hood retains the existing modelled cloth metric. Native/physical construction acceptance remains open in #290. Other garment parts remain unchanged. Older readers may reject backups containing the new optional fit field.
-
-### Edit shorts and trouser waistband height (#331)
-
-Choose **Pull-on shorts** or **Straight trousers**, open **Patterns & measurements**, and set **Waistband height (cm)** from4–10 before **Apply measurements**. The default is4cm. This is the finished height above the existing leg waist seam: front/back leg panels, rise and inseam remain unchanged, while overall height/outseam, folded pattern strip (twice finished height), actual3D waistband/UVs, estimated material usage/costing and tech-pack J/construction follow it. Existing measurement drafts, Apply/Discard, Undo/Redo, saved projects and complete backups apply. Setting4 in the editor removes the optional override; untouched legacy projects keep exact4cm geometry.
-
-The range retains the existing3cm elastic convention; narrower bands would need a separately designed elastic/construction workflow. This does not add bottom draping or establish elastic engineering, physical fit or manufacture readiness. Old app versions may reject backups containing the new optional measurement; keep a current complete backup.
+Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser, and `CLOTHING_TEST_PORT` to change the port. CI: `.github/workflows/clothing-studio.yml` (`npm run check`, then the browser tests).
+
+## Project layout
+
+- `src/main.ts`, `src/workspace.ts`: app shell and the focused-workspace navigation.
+- `src/product.ts`, `src/product-view.ts`, `src/product-3d.ts`: base products, templates, fabrics and measurements; the product editor UI; the three.js garment.
+- `src/garment-drape.ts`, `src/garment-drape.worker.ts`, `src/garment-comparison*.ts`: top draping and fabric comparison.
+- `src/drape*.ts`, `src/construction*.ts`, `src/grading*.ts`, `src/print-pattern.ts`: skirt drape, construction, grading and tiled printing.
+- `src/techpack.ts`, `src/range.ts`, `src/pattern-export.ts`: tech pack, range plan and costing, DXF/SVG export.
+- `src/style-prompt.ts`: Describe a style parser.
+- `src/tensile*.ts`, `src/bending*.ts`, `src/membrane*.ts`: swatch experiments (each with its worker).
+- `src/model.ts`, `src/storage.ts`, `src/design-library*.ts`, `src/top-body-profiles*.ts`, `src/media.ts`: project model and validation, persistence, image admission.
+- `src/native-garment-*.ts`, `scripts/export-native-*.ts`: research-only export of a fixed synthetic garment, left from the solver study.
+- `tests/`: unit tests (`*.test.ts`) and Playwright specs (`*.spec.ts`).
+
+## Data & privacy
+
+- Everything stays in the browser. The current project autosaves to IndexedDB (`clothing-studio`), and saved named copies go to a second IndexedDB database (`clothing-studio-designs`). Saved body profiles are kept in `localStorage`. Unapplied drafts and Undo history last only for the session.
+- Uploaded photos are resized to at most 1200 px and re-encoded as JPEG without metadata. Motifs and artwork are size-checked before decoding. Nothing is uploaded.
+- Saved designs, backups and body-profile exports contain your photos, artwork and measurements. Clearing browser data removes the local library, so keep downloaded JSON backups of work you want to keep. Several tabs share one autosave, and the last write wins.

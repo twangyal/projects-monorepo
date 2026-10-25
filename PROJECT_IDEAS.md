@@ -82,7 +82,7 @@ Status: ACTIVE (priority)
 
 Description: Karaoke Studio should make the song-to-karaoke process as automatic as possible: upload a song, separate vocals and backing, automatically transcribe the sung lyrics, synchronize them with the music, and produce a usable preview for export. Users can edit words, line breaks and timings when mistakes occur. Manual tools support correction of automatic results; supplying all lyrics and manually timing each line must not define the normal intended workflow. Success includes real-song separation, transcription and alignment quality and low correction effort, alongside reliable exports. Automatic lyrics and synchronization are core unfinished milestones.
 
-Current state: Local songs up to 10 minutes. Vocal/backing separation uses a checksum-pinned MDX-Net ONNX model, and English lyrics are recognized automatically with word timing. Review tools fix words, timings and passages (insert, remove, fit, shift, find/replace, exclusions), with slow rehearsal and saved projects. Exports cover backing WAV, SRT and synchronized MP4. Missing: measured transcription and alignment quality on real songs, multilingual lyrics, and real-user correction-effort evaluation.
+Current state: Local songs up to 10 minutes. Vocal/backing separation uses a checksum-pinned MDX-Net ONNX model, and lyrics (English plus other European languages) are recognized automatically with word timing by Parakeet via sherpa-onnx. Review tools fix words, timings and passages (insert, remove, fit, shift, find/replace, exclusions), with slow rehearsal and saved projects. Exports cover backing WAV, SRT and synchronized MP4. Missing: automatic lyrics accurate enough to skip pasting (about 31% word error on a developer benchmark), non-European languages, and real-user correction-effort evaluation.
 
 ## 7. Direct a movie in VR
 
@@ -161,7 +161,7 @@ Status: BLOCKED
 
 Description: A note-reading app that adapts to an individual's handwriting using sample pages and user corrections. Users upload photographed or scanned notes and receive editable, searchable text, with uncertain words highlighted for review. Personalization focuses on recurring letter shapes, abbreviations, and vocabulary so the system becomes better suited to that person's writing. The goal is to make handwritten notes easier to read, find, and organize. A portfolio version would demonstrate initial personalization, note transcription, correction, and comparison with a general handwriting-recognition baseline.
 
-Blocker: No licensed, checksummed handwriting-recognition model weights were obtainable from admitted sources in this environment. The feasibility corpus is preserved at tag `archive/pre-cleanup-2026-10-25` (`docs/research/handwriting-feasibility`).
+Blocker: No licensed, checksummed handwriting-recognition model weights were obtainable from admitted sources in this environment. The feasibility corpus is preserved on the `archive/pre-cleanup-2026-10-25` branch (`docs/research/handwriting-feasibility`).
 
 ## 16. Focal length converter
 

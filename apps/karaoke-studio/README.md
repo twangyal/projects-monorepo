@@ -1,680 +1,106 @@
 # Karaoke Studio
 
-**Product direction (2026-10-08): ACTIVE.** The destination is an automatic song-to-karaoke workflow with lyric transcription and synchronization, followed by user correction when needed. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+A local song-to-karaoke maker. Upload a song and it separates vocals from backing, transcribes and times the sung lyrics from the separated vocals, and gives you a word-by-word preview ready to export as a karaoke video. You then correct the words and timing the recognizer got wrong. It is for anyone making karaoke tracks from their own audio. Everything runs on a local Python service with local models.
 
-A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with a pretrained MDX-Net vocal model (UVR-MDX-NET-Voc_FT), then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics cover English and 24 other European languages and are imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
+**Status:** ACTIVE — portfolio priority. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
 
-## Install and run
+## What works today
 
-Use **Linux with procfs available**, **Python 3.11**, **Node.js 22.18+** (CI uses Node 24), and **FFmpeg/ffprobe** on your PATH. FFmpeg needs H.264/libx264 and AAC encoders. Media jobs use Linux directory handles and POSIX process/resource controls; other platforms are unsupported by this storage implementation.
+- **Upload** a WAV, MP3, FLAC or Ogg song of 1–600 seconds, up to 128 MiB. It is decoded to 44.1 kHz stereo.
+- **Vocal separation** with the UVR-MDX-NET-Voc_FT model (ONNX Runtime, CPU). Audition Original, Vocals or Backing, and download the backing WAV. Jobs can be cancelled.
+- **Automatic lyrics**: Silero VAD plus NVIDIA Parakeet TDT 0.6B (via sherpa-onnx) recognize the separated vocals. English uses Parakeet v2. Other European languages use v3, chosen by checking whether the first words look English. The result is saved as timed lyric lines, so preview and export work straight away. Lines with low confidence (average below 0.7) are flagged.
+- **Review automatic lyrics** before applying them. Listen to or repeat each line, show only uncertain lines, correct words and start/end times, and exclude false lines. **Transcribe again** forces the English or multilingual model.
+- **Paste real lyrics** and use **Create draft timings** to align each line to where it was sung. Lines that were not clearly heard are named. You can also import an existing SRT after reviewing it.
+- **Timing correction**: an original-audio waveform with draggable cue handles and keyboard nudges, mark start/end at the playhead, and play a single line. **Time lines while listening** taps out line timings during playback. You can also shift all lines or a passage, fit a passage to a time window, and copy a passage such as a chorus to a new time.
+- **Text correction**: split at caret and playhead, merge with the next line, add a missed line, remove a passage, find a line, and replace words throughout the lyrics. Up to 30 unsaved edits can be undone or redone.
+- **Practice**: play or repeat a range of lines on any track, at 0.5×, 0.75× or 1× speed.
+- **Word-by-word highlighting** in the preview and in the exported video. Word times come from recognition, with words that were not heard estimated by length.
+- **Export** a 1280×720, 24 fps H.264/AAC MP4 with the backing track and lyric cards, plus SRT subtitles.
+- **Local library** of up to 20 saved clips that survives restarts. **Back up saved clip** writes a portable `.karaoke.zip` (audio, stems, lyrics); **Import project archive** restores one into any library.
 
-From the repository root:
+## Known gaps
+
+- Transcription and alignment quality on real songs has not been evaluated with users, and the effort needed to correct them has not been measured. A developer benchmark (`scripts/evaluate_lyrics.py` on JamendoLyrics) found roughly 31% word error on English songs, with large variation between songs. Recognition is a starting point, not a finished transcript.
+- Multilingual lyrics are unfinished. Only 25 European languages are covered, mixed-language songs are not handled, and the bundled font lacks many scripts (for example Tibetan), which show as missing-glyph boxes in videos.
+- Separated stems are estimates. Leftover singing or lost instruments can remain, and anything the model misses as vocals stays in the backing.
+- Separation is slow on CPU: a ten-minute song takes roughly as long as the song itself on 4 cores. No GPU path.
+- Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Linux only (it needs procfs and POSIX process controls). Recognized word data (`transcript.json`) is not included in archives; transcribe a restored clip again.
+
+## Run locally
+
+Prerequisites: Linux with procfs, Python 3.11 (`requires-python >=3.11,<3.12`), Node.js 22.18+ (CI uses 24), and FFmpeg/ffprobe on `PATH` with libx264 and AAC encoders (for example `sudo apt-get install ffmpeg`).
 
 ```sh
 cd apps/karaoke-studio
 python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements-core.txt
-python -m pip install -r requirements-ml.lock.txt
+python -m pip install -r requirements-core.txt        # Pillow
+python -m pip install -r requirements-ml.lock.txt     # ONNX Runtime, sherpa-onnx, NumPy, SciPy (~360 MB)
 npm ci
 npm run build
 ```
 
-The core dependency is Pillow; the separate ML lock installs ONNX Runtime 1.31.0, sherpa-onnx 1.13.8, NumPy, SciPy and their pinned dependencies (about 360 MB; before #236 it also needed TensorFlow and Spleeter, about 2 GB). Use the same Python 3.11 environment to start the service, because its model subprocess uses that interpreter. Installation requires network access; no paid service or GPU is required. On Ubuntu, FFmpeg can be installed with `sudo apt-get install ffmpeg`.
-
-Explicitly set up the model cache outside Git, then start the service:
+**Models.** The models are not in the repository and the service never downloads them at startup. Install them into a cache outside Git:
 
 ```sh
-python scripts/setup_model.py --model-dir "$HOME/.cache/karaoke-studio/models"
+python scripts/setup_model.py        --model-dir "$HOME/.cache/karaoke-studio/models"
 python scripts/setup_lyrics_model.py --model-dir "$HOME/.cache/karaoke-studio/models"
-python -m karaoke \
-  --model-dir "$HOME/.cache/karaoke-studio/models" \
-  --data-dir "$HOME/.local/share/karaoke-studio" \
-  --port 8765
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The loopback service serves the production `dist/` build and its API from the same origin. `npm run dev` watches and rebuilds that production output; run it in a second terminal while the Python service is running, then refresh the browser after a rebuild. It does not start a separate browser-facing Vite server.
-
-The lyric recognition setup downloads about 483 MB and installs about 662 MB; without it the studio still works, and clips start without lyrics. Startup never downloads models. Missing/corrupt weights disable new separation with setup guidance; install missing ML packages into the service's active environment. The service processes one separation or video-export job at a time. **Cancel job** stops pending work and cleans partial output while preserving completed clips. Stopping the service cancels active workers too.
-
-## Make a karaoke song
-
-1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–600 seconds** (ten minutes), at most **128 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
-2. Wait for separation and lyric recognition, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
-3. The clip opens with **automatically recognized, timed lyric lines** already saved, so the preview and export work straight away. Listen and correct misheard words and timing. If you have the real lyrics, paste them one line per cue and press **Create draft timings**: each line is aligned to where it was sung, and lines whose words were not clearly heard are named so you can check them. Without recognized lyrics, pasted lines are evenly spaced instead. You can also choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues.
-4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview lights up the active line **word by word** as it is sung, shows upcoming text, and displays an instrumental break between cues. The exported video highlights words the same way (see [Word-by-word highlighting](#word-by-word-highlighting)).
-5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
-
-Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
-
-To break a supplied phrase into shorter cues, pause or seek the audio inside its
-interval, place a single text caret between its words, then choose **Split at
-caret and playhead**. Both literal text halves keep their original outer times.
-The playhead becomes their shared boundary; no words or spacing are generated.
-Whitespace-only halves, selected text ranges and cuts inside an emoji are refused.
-**Merge with next** joins the two literal texts with one newline and spans both
-intervals, including any instrumental gap. These actions validate the entire
-proposal before changing the editor, preserve unrelated numeric spellings and
-pasted drafts, and make one unsaved Undo/Redo edit. Save lyrics when ready.
-The last line has no next line to merge. Existing cue and character limits apply
-to the complete result. [Published acceptance](docs/2026-10-05-cue-edit-acceptance.json)
-records the original corrected push/PR checks and the later successful
-166 Python / 116 TypeScript / 91 native-case PR gate, including all four supplied-text
-cue-edit cases. Complementary unpublished tests are excluded from these counts.
-
-**Undo lyric edit** and **Redo lyric edit** recover up to **30 unsaved edits**:
-title/text/timing corrections, removed lines, pasted words, draft generation, and
-discarded pastes. Typing in one field counts as one edit until you leave it.
-Empty/invalid timing values are preserved for correction, with save/export still
-blocked. Undoing back to the saved title and cues clears the lyric-edit warning;
-unapplied pasted words keep their separate unsaved warning. A new edit after undo
-clears redo. Saving successfully, opening another clip, deleting the selected clip,
-or reloading resets this session-only history. Failed requests retain it. History
-does not undo saved server revisions, media jobs, or permanent clip deletion.
-
-### Practice a lyric range
-
-Choose **Original**, **Vocals**, or **Backing**, then select a **First line** and
-**Last line** under **Practice a lyric range**. **Play once** seeks to the first
-cue's exact start and pauses at the last cue's end. **Repeat range** returns to
-that start until you pause or stop. Instrumental gaps between selected lines are
-included and shown in the range summary. Playback uses the selected 0.5×,0.75× or normal1× listening speed;
-native media seeking can leave a short gap between repeats.
-
-**Pause practice** retains the range and position; **Resume practice** continues
-from there. **Stop practice** leaves the playhead where it is. Changing the
-range, track, clip, lyrics, playback position or speed stops practice. Leaving
-the page also stops it; returning never starts playback automatically.
-
-Practice uses valid current cue edits, including unsaved timings. Unapplied
-pasted words remain separate. It changes no lyric text, Undo/Redo history,
-saved revision, original audio, SRT or exported video. Choose **Save lyrics**
-separately when you want to retain edits. A reversed range or invalid cue graph
-must be corrected before practice can start. This flow does not record your
-voice, score singing, change pitch or stretch audio.
-
-### Time supplied lines while listening
-
-With valid supplied cue text and an audio track loaded, choose **Begin timing session**
-under **Time lines while listening**. Press Play in the audio player, then use
-**Mark line start** and **Mark line end** as you hear each line. The same button
-advances through every existing cue in order. Focus it and press Enter or Space
-for keyboard timing; release between marks. Holding a key records only one mark.
-Beginning a session does not start playback or move the playhead.
-
-Marks use the player's current position at normal speed, without rounding. Gaps
-and adjacent lines are allowed; each end must follow its start. Pause and resume
-retain staged marks. Seeking, switching tracks/clips, editing, changing playback
-speed, looping or leaving the page cancels the session to prevent stale timing.
-At the natural end of the song, an open final line offers **End final line at clip
-end**. This explicit action closes it at the exact project duration. Earlier
-unfinished lines cannot be applied as a partial result.
-
-The complete review pauses playback. **Apply captured timings** replaces only cue times
-as one unsaved Undo/Redo edit; **Cancel timing session** leaves the editor intact. Titles,
-literal multiline text and unapplied pasted words remain unchanged. Existing
-invalid numeric fields do not prevent timing valid cue text, and Undo restores
-their original spelling. Unapplied pasted words still need to be used or discarded
-before saving. Press **Save lyrics** explicitly when ready; staged marks and
-session history do not survive a reload. This is manual line timing, with no
-automatic speech recognition or compensation for physical playback/input latency.
-
-### Fit drifting passage timing (#327)
-
-Open **Shift lyric timing**, choose **Selected passage**, then choose its first and last line. Enter **Fit passage start (seconds)** and **Fit passage end (seconds)** and choose **Fit selected passage timing**. The selected cues fill that window: line lengths and their internal gaps change by the same proportion, while literal words and other lines stay unchanged. A single selected line takes the supplied interval. This corrects cue-level drift; it does not stretch audio or change the song’s tempo, recognition source or word-level alignment method.
-
-The complete current editor must be valid, and the result must fit the clip without overlapping neighbors or collapsing a cue below floating-point precision. Endpoints can touch neighboring lines. Malformed or unchanged windows, invalid words/times and stale selections refuse without changing raw fields, listening, pending review or history. A valid fit stops obsolete listening/review/timing work and makes one unsaved Undo/Redo edit. Undo restores the exact prior title, pasted draft and numeric spelling. **Save lyrics** is separate; saved SRT/video use the new cue intervals. Window fields are session-only and reset when a different clip opens. See [implementation and verification](docs/2026-10-24-passage-fit.md).
-
-### Import existing timed lyrics
-
-With a clip open, choose **Import timed lyrics (SRT)** and review every cue before
-pressing **Replace lyric cues**. The replacement is one unsaved Undo/Redo edit.
-Your clip title, audio and unapplied pasted words stay intact; an unapplied paste
-still needs to be used or discarded before saving. Press **Save lyrics** when the
-result is ready. Cancel, invalid input and superseded reads keep the current
-editor and saved revision intact. Editing or changing clips invalidates an old
-review. Reading and reviewing the file sends no lyrics to a service.
-
-Supported files are **UTF-8, at most 128 KiB**, with an optional leading BOM,
-LF or CRLF line endings, consecutive cue numbers starting at 1 and exact
-`HH:MM:SS,mmm --> HH:MM:SS,mmm` timestamps. Every interval must fit the current
-clip. Gaps and adjacent cues are allowed; overlaps, zero-length cues, VTT,
-timestamp settings and unsupported formatting are rejected without partial
-import. The existing 200-cue, 240-character-per-cue and 20,000-character total
-limits apply, counting Unicode code points and preserved intra-cue newlines.
-
-Multiline cues remain editable as multiline text. Empty or space/tab-only lines
-separate subtitle blocks; other whitespace-only lines and unsupported control
-characters are rejected. Meaningful text retains its spacing. Raw `<` and `>`
-are rejected: escape literal brackets as `&lt;` and `&gt;`. Those two escapes and
-`&amp;` decode exactly once, matching this app's SRT exports; other ampersand
-sequences stay literal. Imported text is never evaluated as HTML or styling.
-SRT represents milliseconds: exported pre-existing fractional timings are
-rounded by the existing exporter. Submillisecond source intervals can round to
-overlapping cues, and a boundary can round beyond the clip's exact duration;
-such files need correction before import. Complete clip archives
-remain the way to preserve original timing precision and all audio together.
-
-### Timing with the waveform
-
-The waveform always shows the **original recording**, including while you listen
-to the vocal or backing estimate. Its peaks represent amplitude in both stereo
-channels; they do not detect words or provide automatic lyric alignment. Select
-a cue to center the detail view. **Previous window**, **Next window** and
-**Center on playhead** move the view without changing the lyrics. Seeking does
-not automatically start playback.
-
-A completed handle drag is one undoable lyric edit. Arrow keys move a focused
-handle by 10 ms, or 100 ms with Shift; holding a key remains one edit until release.
-Movement preserves an existing boundary's fractional precision. Other cue
-boundaries and text are unchanged. Overlap or a zero-length cue is rejected;
-gaps and exactly adjacent cues are allowed. Escape, lost pointer capture,
-switching views/tracks/projects or another edit cancels an unfinished gesture.
-Invalid numeric timings disable the handles until corrected; waveform navigation
-and the original numeric fields remain available. Waveform activity does not
-replace your input fields or clear incomplete text/timing drafts.
-
-Waveform loading streams the local normalized WAV in a browser worker. Each
-441-frame/10 ms bin retains exact signed 16-bit minimum and maximum values across
-both channels, including opposite-phase audio. A ten-minute song has 60,000
-bins and 240,000 bytes of peak data. The final partial bin uses only real samples.
-Container overhead is limited to 4 KiB, and the whole load has a 30-second deadline.
-**Stop waveform** releases pending work; **Retry waveform** starts a new attempt.
-Playback and manual timing continue to work after a stopped or failed load.
-Peaks are temporary and are recomputed when a project is reopened. No model,
-network service, project migration or extra setup is needed for this view.
-
-Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; saved or estimated word starts drive word-by-word highlighting within each line. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
-
-## Local projects and backups
-
-Completed projects persist in the supplied data directory and reopen from **Saved clips** after a service restart. There is no account, cloud backup, browser-storage dependency, or external song upload. Only one service instance can use a data directory at a time; an exclusive lock prevents a second instance from interfering with its files.
-
-A successful Save acknowledgment must identify this clip and contain the exact submitted title, cues, duration and next revision. An unreadable or mismatched reply leaves your raw fields, unsaved state and Undo/Redo history intact. The service may already have committed the change: inspect the saved clip before another deliberate save. Save never repeats the PUT automatically. An unreadable accepted archive reply similarly retains the uncertain-restore guard until you explicitly check restore status.
-
-Stop the service before moving, replacing, or linking storage directories. The
-running service retains handles to its owned directories and rejects changed
-library/project paths with recovery guidance. Restore the original directories
-before restarting; existing projects are preserved. Temporary-job and selected
-deletion cleanup stay anchored to owned storage even when a parent path moves.
-Media children inherit only their job's open directory handles; procfs paths keep
-their reads/writes in those directories while processing. This protects against
-parent-directory replacement; it does not sandbox arbitrary same-user changes
-to individual files inside owned storage.
-
-Jobs stay **running** through temporary cleanup. A terminal job status means the
-single worker has been released, so a new job can start immediately. Cancellation
-after result publication does not relabel an already saved project as cancelled.
-
-The library holds at most **20 completed projects**; reaching the limit preserves existing work and refuses new clips. **Delete selected clip** asks for explicit confirmation, removes only that selected project's media and metadata, and frees a library slot. Download or back up anything you want to keep first.
-
-### Portable editable clips
-
-Choose **Back up saved clip**, then **Download saved archive**, to keep a `.karaoke.zip` containing the saved title, lyric cues/revision, original audio, estimated vocals/backing and recognized processing metadata. Unsent title, pasted lyrics and numeric timing drafts are not included or implicitly saved. They stay available while the backup runs. An archive is tied to that saved revision; saving later edits makes an older cached download unavailable until you back up again.
-
-Use **Import project archive** to add a restored clip to the current library with a fresh ID. It preserves the saved revision, cue text/times and every WAV byte, without running separation or requiring model readiness. The current editor, waveform, audio position and unsaved drafts stay open. **Open imported clip** is a separate action and asks before leaving unsaved work. Failed or canceled imports do not replace existing clips. The normal 20-clip limit still applies.
-
-Cancel an accepted archive job with the existing job control. **Cancel archive upload** stops the browser request, but a lost response can leave acceptance uncertain. Use **Check restore status** to inspect the current library/job before retrying; it preserves the editor and does not repeat the import or cancel unrelated work. It also retries a failed provenance read. Ordinary editing/audio/video remain usable when provenance is unavailable, while archive backup waits for that check to recover.
-
-This is a versioned, uncompressed application format, limited to **306.8 MiB** (three maximum WAVs plus 4 MiB), not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–600-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 360-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
-
-The archive is **unencrypted private audio and lyrics**. Checksums detect corruption, not authentic provenance, media rights or separation quality. Imported audio and processing claims remain visibly **unverified** after restart and re-export; they never change local model readiness. Missing metadata is identified separately. Unrecognized/private processing metadata or a malformed provenance sidecar blocks backup visibly without changing the project. Stored local metadata is also not independently authenticated.
-
-One completed archive cache per clip is retained, up to an additional 3,200 MiB across a full 20-clip library. Replacement publishes only a complete archive; failure preserves the previous cache. The existing free-space admission remains in force. Downloaded archives can be restored into a different `--data-dir` library. WAV/SRT/MP4 downloads alone do not preserve the whole editable clip.
-
-For a whole-library backup, stop the service and copy the data directory, including project metadata, audio and any imported-provenance sidecars. Retain the backed-up directory when starting a new library after reaching the clip cap.
-
-## Automatic lyrics
-
-After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B (int8) through sherpa-onnx, in a network-denied, resource-limited worker. **Songs in English and 24 other European languages** are recognized: v2 for English, which it recognizes best, and v3 for the others. The multilingual model hears a song's first 100 words; if they read as English, the English model recognizes the song again. The panel names the model that heard the clip. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only about 30% of the time.
-
-- **Review automatic lyrics** shows every recognized line, with unsure lines marked. Listen once or repeat a passage, pause/resume/stop, and filter uncertain lines. Correct words in **Reviewed lyric line** while listening; **Originally recognized words** retains the source text. Filtering or opening the same review retains these staged corrections. Use **Exclude automatic line** to omit a false recognition without erasing its staged words or timing; uncheck it to restore the line. Included lines, including hidden ones, must contain valid text and timing before **Replace lyric cues** applies them as one undoable, unsaved edit. Original numbering stays visible; excluding every line explicitly clears the cue list. Changing inclusion stops reviewed playback, but excluded passages can still be auditioned. The title, pasted draft and previous raw fields remain recoverable with Undo. **Cancel lyric import** discards reviewed corrections and exclusions; a fresh review starts with every original recognized line included. Start/end seconds can also be corrected in this review; split/merge remains in the main editor after Apply. Nothing is saved until **Save lyrics**. See [review correction verification](docs/2026-10-14-review-corrections-253.md).
-- **Create draft timings** with pasted lyrics aligns each line to where its words were sung. The exact text you pasted is kept. Lines that were not clearly heard are named and placed over the unmatched singing between their neighbours.
-- **Transcribe lyrics** (or **Transcribe again**) recognizes an existing or restored clip as a cancellable job. It never changes saved lyrics.
-- Recognized words are stored beside the clip as `transcript.json`. Portable archives do not include them; transcribe a restored clip again.
-
-**Measured on 20 English JamendoLyrics songs with reference timings** (5,693 words), running the production path:
-
-- **Recognition:** 30.9% word error rate overall with the MDX-Net vocals (41.9% with Spleeter's, before #236). Songs range from 12.3% to 85.7%, with distorted vocals and dense backing vocals the hardest.
-- **Word timing:** correctly recognized words start a median 0.06 s from the reference; 96.8% are within 0.3 s.
-- **Automatic lines:** 78.5% of reference lines have an automatic line starting within 1 s (76.4% before).
-- **Pasted lyrics:** a median 0.10 s start error, with 86.9% of lines within 1 s (0.14 s and 78.1% before). Of the lines the studio reports as heard, 97.5% are within 1 s.
-- **Speed:** recognition takes about 0.09 s per second of audio on 4 CPU cores, after separation.
-
-See [the design and evaluation notes](docs/2026-10-13-automatic-lyrics.md), the [per-song results with MDX-Net vocals](docs/2026-10-13-lyrics-with-mdx-evaluation.json) and the [earlier Spleeter results](docs/2026-10-13-automatic-lyrics-evaluation.json). Re-run them with `python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir MODELS --work /tmp/work`.
-
-**Other languages** (JamendoLyrics, songs evaluated on their first 120 s, same production path):
-
-| Songs | Multilingual model (v3) | English model (v2) |
-| --- | --- | --- |
-| 20 English (first 300 s) | 42.3% WER | **30.9%** |
-| 19 French | **44.1%** | 91.5% |
-| 10 German | **25.4%** | 95.7% |
-| 10 Spanish | **46.2%** | 86.5% |
-
-Choosing by the first 100 recognized words picked the better model for all 59 songs, and the production path with both models installed reproduced each language's better WER exactly: English songs began with 28–46% distinctive English function words, the others with at most 9% (threshold 18%). See [the multilingual evaluation](docs/2026-10-13-multilingual-lyrics.md).
-
-**Model setup.** `python scripts/setup_lyrics_model.py --model-dir MODELS` downloads both pinned archives from the sherpa-onnx GitHub releases:
-
-- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2` (English), 482,468,385 bytes, SHA-256 `157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad`, published as `MODELS/lyrics-asr`;
-- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2` (multilingual), 487,170,055 bytes, SHA-256 `5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf`, published as `MODELS/lyrics-asr-v3`;
-- `silero_vad.onnx`, SHA-256 `9e2449e1…1fd6`, beside each.
-
-It verifies every extracted file against its pinned checksum before publishing a directory. `--only english` or `--only multilingual` installs one; automatic lyrics then use it for every song. An existing English-only install keeps working, and running setup again adds the multilingual model. Pass `--archive` (once per archive) and `--vad` to reuse existing official files. Licenses:
-
-- Parakeet TDT 0.6B v2 and v3: CC-BY-4.0 (NVIDIA);
-- sherpa-onnx: Apache-2.0;
-- Silero VAD: MIT.
-
-No weights are stored in this repository.
-
-### Word-by-word highlighting
-
-The preview and the exported MP4 colour each word as it starts being sung, like a karaoke screen. The timing comes from the studio, so the preview shows exactly what the video will show, including unsaved but valid corrections.
-
-- Each line's words are matched to the words recognized while that line plays. Matching tolerates near-miss spellings, so corrected or pasted text still follows the singing.
-- Words that were not heard are placed between their heard neighbours in proportion to their length.
-- A line without recognized words (no model, a restored archive, or an instrumental passage) is spread across its interval from its start, by word length.
-- Words never run backwards and stay inside their line. A line highlights in at most 16 steps, so very long lines advance in word groups.
-- Retiming a line moves its highlighting with it. Words keep their recognized times when those fall inside the new interval, and are clamped to it otherwise.
-
-Measured on the 20 JamendoLyrics songs (5,693 words): with correctly timed lines, highlights start a median **0.068 s** from the sung word, with 90% within 0.3 s; length estimates alone give 0.136 s and 75%. With automatically aligned pasted lyrics, the median is 0.109 s and 71% are within 0.3 s, limited by misplaced lines. See [the word-highlighting notes](docs/2026-10-13-word-highlighting.md).
-
-## Ten-minute songs (#233)
-
-Songs up to **10 minutes (600 s)** and **128 MiB** are supported; before #233 the limit was 5 minutes. All limits that follow from duration were raised together: decoded and WAV sizes, the 22 separation windows, waveform frames, portable archives (306.8 MiB), and the job scratch budget (1.6 GiB). The worker's wall-clock limit is now 30 minutes (raised again in #236 for the slower, better separation model). The video deadline stays at 10 minutes.
-
-**Measured with the real models** (2026-10-13, 4 CPU cores) on a 600-second input made of three English JamendoLyrics songs back to back:
-
-| Step | Result |
-| --- | --- |
-| Separation | 245 s for 22 windows with Spleeter (CPU 245 s, peak memory 1.27 GiB); with the MDX-Net model since #236, 589 s (worker 550 s, peak memory 1.38 GiB) |
-| Recognition | 61 s, peak memory 1.32 GiB; 40.2% WER on the 716 reference words, compared with 30–49% for the same songs run singly; median word onset error 0.068 s, 95.7% within 0.3 s |
-| Video export | 130 s for 127 automatic lines (578 highlight steps), producing a 17 MB MP4 |
-
-Recognition and timing quality held over the full length.
-
-Through the real service in Chromium, the same song went from upload to 127 timed lyric lines in 315 s and exported a 599.96 s MP4 in 144 s. Details are in [the ten-minute notes](docs/2026-10-13-ten-minute-songs.md).
-
-
-
-## Vocal separation (#236)
-
-Separation uses **UVR-MDX-NET-Voc_FT**, an MDX-Net vocal model from the Ultimate Vocal Remover project, in the ONNX conversion published by sherpa-onnx. It replaced Spleeter 2-stems after a reference-stem comparison on the 50 MUSDB18 test excerpts (global SDR in dB, higher is better):
-
-| Separator | Vocals SDR median (mean) | Backing SDR median (mean) |
-| --- | --- | --- |
-| Spleeter 2-stems (before #236) | 6.46 (6.39) | 11.50 (11.39) |
-| UVR_MDXNET_1_9703 | 7.51 (6.75) | 11.85 (11.95) |
-| **UVR-MDX-NET-Voc_FT (now)** | **9.96 (9.00)** | **14.06 (14.20)** |
-
-The new model is better on 45 of 50 tracks for vocals and 46 of 50 for the backing, by a median of 2.9 dB and 3.2 dB. Roughly, less singing leaks into the karaoke backing and the vocals used for lyric recognition are cleaner. It costs time: a 10-minute song separates in about 9 to 10 minutes on 4 CPU cores, where Spleeter took about 4. See [the separation notes](docs/2026-10-13-separation-quality.md).
-
-Setup downloads the model from the [sherpa-onnx release](https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx), **66,762,795 bytes**, and verifies its pinned SHA-256 before publishing it to `MODEL_DIR/mdx`:
-
-```text
-e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4
-```
-
-An existing copy can be reused without downloading:
+- `setup_model.py` downloads `UVR-MDX-NET-Voc_FT.onnx` (66,762,795 bytes) from the sherpa-onnx `source-separation-models` release into `MODELS/mdx`. It checks the pinned SHA-256 `e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4`. Use `--model PATH` to reuse an existing copy.
+- `setup_lyrics_model.py` downloads two archives (about 483 MB each) from the sherpa-onnx `asr-models` release, plus `silero_vad.onnx`. Parakeet v2 (English) goes into `MODELS/lyrics-asr`, and v3 (multilingual) into `MODELS/lyrics-asr-v3`. Every archive and extracted file is checked against a pinned SHA-256 before it is published. `--only english|multilingual` installs one model, and `--archive PATH` / `--vad PATH` reuse files you already have.
+- Without separation weights, new uploads are refused with setup guidance. Without lyric models, clips start with no lyrics.
+
+**Start the service** with the same Python environment:
 
 ```sh
-python scripts/setup_model.py \
-  --model-dir "$HOME/.cache/karaoke-studio/models" \
-  --model /path/to/UVR-MDX-NET-Voc_FT.onnx
+python -m karaoke --model-dir "$HOME/.cache/karaoke-studio/models" \
+  --data-dir "$HOME/.local/share/karaoke-studio" --port 8765
 ```
 
-The model comes from the Ultimate Vocal Remover project ([model repository](https://github.com/TRvlvr/model_repo/releases); the UVR application is MIT-licensed), converted to ONNX by sherpa-onnx (Apache-2.0). A separate license for the weights was not established from those publications. Weights are not bundled in this repository. An existing Spleeter cache (`MODEL_DIR/2stems`) is no longer used and can be deleted; run setup once after upgrading. Projects separated with Spleeter, and archives containing them, still open, play, export and restore.
+Open http://127.0.0.1:8765. The service serves the built `dist/` and its API from the same origin. For UI work, `npm run dev` rebuilds `dist/` on change (`vite build --watch`); refresh the page after each rebuild. The service runs one separation, transcription or export job at a time, and only one service can use a data directory.
 
-After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker that runs ONNX Runtime with up to four threads. It processes 30-second windows with two-second overlaps (at most 22 windows for ten minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Inside a window the model runs on 5.8-second segments, one at a time, each with 70 ms of context on both sides that is discarded, so segments join without seams and memory stays near 1.4 GiB whatever the song length. Exact source sample count and positions are preserved. The backing is the source minus the estimated vocals.
+## Verify
 
-Worker limits are 30 minutes of wall time, four threads' worth of CPU time for that period and 3 GiB observed RSS (a ten-minute song used 550 s and 1.4 GiB on 4 cores). Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may still time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
-
-Uploads/exports require at least 2 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum (ten-minute) song's three WAV files use about 302.8 MiB. Temporary float stems add about 403.8 MiB, with a conservative maximum separation working set around 834.6 MiB on disk including a 128 MiB upload, before small headers. Twenty maximum-duration projects need about 5.9 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
-
-Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain; because the backing is the source minus the estimated vocals, anything the model misses as vocals stays in the backing. The reference-stem scores above come from 7-second excerpts of 50 songs; they are not a guarantee for any one song. Broader device testing and subjective listening remain future work.
-
-## Lyric practice acceptance (#125)
-
-Local verification passes **166 Python tests** on Python 3.11, **116 TypeScript
-tests**, lint/type/build and **all 91 production Chromium cases** in one full
-regression. Twelve practice cases cover actual PCM playback, strict fractional
-ranges, instrumental gaps, native controls, late responses/completions, raw
-drafts and saved-byte preservation. Controlled lifecycle and play-refusal faults
-are labeled separately from actual native playback. The first published
-[push](https://github.com/twangyal/projects-monorepo/actions/runs/37268889825) and
-[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37268892275) checks
-pass the same **166/116/91** counts at `7eecfa65d51feb3a7f390b437c7a275daac98a21`.
-The actual PR checkout has the identical tree, and all thirteen project PR
-workflows pass. See the [CI receipt](docs/2026-10-05-practice-ci.json).
-
-An independent maximum uses three original five-minute stereo WAVs, 200 cues
-and 20,000 lyric code points. Two real 297–300 second repeats, pause/resume,
-track switching and 390 px keyboard operation pass the frozen 150 ms observation
-limits. Exact **158,790,479-byte archives**, **29,891-byte SRTs** and all three
-**52,920,044-byte WAVs** survive fresh-browser reopening unchanged. This is a
-full-capacity short-range practice check, not another five-minute playback or
-video-export run; no new model inference is claimed.
-
-The [verification receipt](docs/2026-10-05-practice-verification.json),
-[native oracle](docs/2026-10-05-practice-oracle.json) and
-[maximum receipt](docs/2026-10-05-practice-maximum.json) retain original failures,
-measurements and hashes. The first native run exposed a duplicated accessibility
-label and controls remaining disabled after visibility returned; both are fixed.
-It also disproved a fixture assumption: immediate native play/pause fulfilled
-instead of raising an error. The refusal subcase now uses explicitly controlled
-injection while delayed genuine play completion is still checked independently.
-
-## Fast verification and CI
-
-Fast checks require Python 3.11, FFmpeg, the core dependency, and Ruff; they do **not** require ONNX Runtime or model weights (NumPy, in the dev requirements, runs the separator's signal-processing tests with stand-in models):
+Fast checks do not need ONNX Runtime or model weights:
 
 ```sh
-python -m pip install -r requirements-core.txt -r requirements-dev.txt
+python -m pip install -r requirements-core.txt -r requirements-dev.txt   # Pillow, Ruff, NumPy
 python -m unittest discover -s tests -v
 python -m compileall -q karaoke scripts tests
 ruff check .
-npm run test
-npm run lint
-npm run typecheck
+npm test               # Node unit tests (tests/*.test.ts)
+npm run lint           # ESLint
+npm run typecheck      # tsc --noEmit
 npm run build
 npx playwright install chromium
-npm run test:browser
+npm run test:browser   # production build + test service (port 4188) with a fake separator, real FFmpeg export
 ```
 
-For an existing Chromium executable, use `CHROMIUM_PATH=/path/to/chromium npm run test:browser`. Playwright builds the production UI and starts the test HTTP service on port 4188. Its separator is explicitly **fake** and copies fixture WAV audio; the resulting video export uses real Pillow/FFmpeg. HTTP unit tests also inject test callbacks. These tests verify workflow, persistence, request validation, cancellation, export structure, and lyric-frame boundaries; they do not demonstrate model separation quality.
+Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser. `KARAOKE_ARCHIVE_NO_MODEL=1 npm run test:browser -- tests/archive.spec.ts` runs the archive cases with no model available. CI: `.github/workflows/karaoke-studio.yml`, which does not install ML dependencies or models.
 
-The path-scoped GitHub workflow uses Node 24, Python 3.11, FFmpeg, Pillow, and Ruff, then runs Python/TypeScript checks and production Chromium tests. Normal CI neither installs ML dependencies nor downloads the model.
+With models installed, `python scripts/smoke_model.py --model-dir MODELS --work-dir /tmp/karaoke-smoke --seconds 10` runs real offline separation on synthetic audio. `python scripts/smoke_archive.py --work-dir DIR --report FILE` checks archive transfer between two services. `scripts/evaluate_lyrics.py` and `scripts/evaluate_separation.py` are the quality benchmarks. A passing fake-separator browser suite does not show real separation quality, so also try a real song end to end: upload, correct, save, reopen and export.
 
-Run the archive cases with model readiness explicitly disabled:
+## Project layout
 
-```sh
-KARAOKE_ARCHIVE_NO_MODEL=1 CHROMIUM_PATH=/path/to/chromium npm run test:browser -- tests/archive.spec.ts
-```
+- `karaoke/server.py`: loopback HTTP service, project library, job queue and archive import.
+- `karaoke/pipeline.py`, `mdx.py`, `chunks.py`, `worker.py`: decoding, windowed MDX-Net separation and the sandboxed worker.
+- `karaoke/transcription.py`, `transcribe_worker.py`, `lyrics_auto.py`: model registry, recognition worker, and grouping recognized words into lines.
+- `karaoke/video.py`, `archive.py`, `model.py`, `limits.py`, `jobs.py`, `media_io.py`: video rendering, the `.karaoke.zip` format, validation, limits, job control and directory-anchored I/O.
+- `src/main.ts`: the browser UI. Other `src/*.ts` modules handle cue editing, alignment and word timing, SRT, practice, the waveform worker and review.
+- `scripts/`: model setup, smoke tests and evaluations.
+- `tests/`: Python tests (`test_*.py`), TypeScript unit tests (`*.test.ts`), Playwright specs (`*.spec.ts`) and test servers.
+- `assets/`: bundled DejaVu Sans font and its licence.
 
-The independent portability smoke starts two production service processes with separation forbidden, transfers an actual archive, restarts the destination service, and checks the saved record, WAV bytes, provenance, SRT and decoded MP4. Its default five-second fixture needs no weights; the work directory must be new or empty:
+## Data & privacy
 
-```sh
-python scripts/smoke_archive.py --work-dir /tmp/karaoke-archive-smoke --report /tmp/karaoke-archive-report.json
-```
+- Songs, stems, lyrics, recognition output and videos are stored only in `--data-dir`. There is no account or cloud upload, and the app does not rely on browser storage. The service binds to `127.0.0.1` only.
+- After setup, separation and recognition run offline in resource-limited worker processes that refuse network calls.
+- Archives are unencrypted and contain your private audio and lyrics. Checksums detect corruption only, and imported clips are marked as unverified. To back up the whole library, stop the service and copy the data directory.
 
-To check an existing full-song project, add `--source-project /path/to/library/projects/PROJECT_ID`. It copies the supplied project into private smoke libraries and never modifies that source. The supplied final cue must have a preceding gap so the independent video check can distinguish active lyrics from a blank card. `--skip-video` is available for archive-only diagnosis and does not constitute complete media acceptance.
+## Licences and attribution
 
-## Real-model verification
-
-With the ML environment and verified cache installed:
-
-```sh
-python scripts/smoke_model.py \
-  --model-dir "$HOME/.cache/karaoke-studio/models" \
-  --work-dir /tmp/karaoke-smoke \
-  --seconds 10
-```
-
-This runs actual offline separation on original synthetic audio, checks matching non-silent stems and duration, and writes media, processing metadata, and `smoke-report.json` under a generated directory. It is separate from fast tests.
-
-For an optional local copy of the official [singing example](https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3), add `--licensed-sample /path/to/audio_example.mp3`. The sample is an excerpt of *Slow Motion Dream*, Steven M Bryant, ©2011, featuring CSoul, Alex Beroza, and Robert Siekawitch, licensed CC BY 3.0; retain its [attribution](http://dig.ccmixter.org/files/stevieb357/34740) when sharing the excerpt or derived stems. The smoke script reads this file locally and does not download it.
-
-Also verify the production service manually with real separation: upload → audition stems → correct/save timings → reopen → export/download MP4. Inspect the video and listen back. A passing fake browser suite alone is insufficient evidence for that real-model flow.
-
-The initial [verification notes](docs/verification.md) record observed Linux real-model and production-browser checks, including the licensed singing example, seeking, cue boundaries, and exported video structure. [Measured smoke reports](docs/2026-10-03-model-smoke.json) preserve runtime, memory, duration, and offline-worker evidence. These results do not establish reference-stem separation accuracy or compatibility on other systems.
-
-
-## Full-song verification (2026-10-04)
-
-The full-song milestone ([#33](https://github.com/twangyal/projects-monorepo/issues/33)) passed 114 Python tests, 18 TypeScript tests, Ruff, ESLint, type checking and the production build. All 17 production browser cases passed together in [CI](https://github.com/twangyal/projects-monorepo/actions/runs/37167470645) at `8be72d1`; all 11 project workflows passed at that commit. Fast browser separation remains explicitly fake; real audio/video codecs and downloaded files are exercised.
-
-Actual **offline Spleeter** ran on the existing verified cache in Python 3.11.16, TensorFlow 2.12.1 and Spleeter 2.4.2, on a four-CPU-quota/16 GiB Debian 13 environment:
-
-| Original synthetic input | Windows | Exact output frames per stem | Measured completion | Peak worker RSS |
-| --- | --- | --- | --- | --- |
-| 30 seconds + 1 frame | 2 | 1,323,001 | 13.34 s pipeline | 1,204 MiB |
-| 180 seconds | 7 | 7,938,000 | 48.79 s pipeline | 1,279 MiB |
-| 300 seconds | 11 | 13,230,000 | 75.48 s browser upload-to-ready; 63.80 s worker | 1,290 MiB |
-
-These are individual local observations, with different pipeline/UI measurement boundaries, not cross-device speed guarantees. All recorded workers reported zero intercepted network attempts. Both stems retained the exact decoded frame count and used one recorded shared gain. Cancelling a real 300-second job after its third completed window reaped all three captured media subprocesses and removed generated work while preserving the uploaded source; cleanup and verification completed about 0.11 seconds after cancellation.
-
-The actual 300-second production flow saved supplied lyrics across two inference-window boundaries and near the end, sought/switched all three tracks, reopened after a real service restart, and downloaded SRT plus an **8,216,851-byte MP4**. Independent decoding verified H.264/AAC, 1280×720 at 24 fps, 7,200 video frames, 300-second audio/video duration, 13 cue/gap/boundary frame checks including the actual final frame, and non-silent decoded AAC at 299 seconds. Desktop/mobile screenshots were inspected. The maximum video's export timing was not retained after a verification-script reporting error, so no encoding-speed figure is claimed.
-
-Reproduce real inference separately from the fast suite:
-
-```sh
-python scripts/smoke_model.py --model-dir /path/to/verified/models --work-dir /tmp/karaoke-smoke --seconds 180
-python scripts/smoke_model.py --model-dir /path/to/verified/models --work-dir /tmp/karaoke-smoke --seconds 300
-python scripts/smoke_model.py --model-dir /path/to/verified/models --work-dir /tmp/karaoke-smoke --seconds 30.00002267573696
-python scripts/smoke_model.py --model-dir /path/to/verified/models --work-dir /tmp/karaoke-smoke --seconds 300 --cancel-after-window 3
-```
-
-The runner checks exact non-silent PCM, distinct stems, finite common gain, offline/runtime metadata and sampled disk use without retaining entire songs in memory. Synthetic waveforms validate processing and timeline plumbing; neither they nor overlap arithmetic establish real-song isolation quality or inaudible seams. Subjective boundary listening and reference-stem quality evaluation were **not performed**. See [the complete measured evidence](docs/2026-10-04-full-song-verification.json); the earlier ten-second licensed singing example remains historical evidence for its original short-clip run.
-
-## Waveform timing verification (2026-10-04)
-
-The waveform milestone ([#54](https://github.com/twangyal/projects-monorepo/issues/54)) passed **114 Python, 51 TypeScript and 31 production browser tests**, Ruff, ESLint, type checking and the production build. All twelve project workflows passed at `27bbc557`; the [Karaoke CI run](https://github.com/twangyal/projects-monorepo/actions/runs/37178106328) used Chromium 153. Coverage includes independent PCM extrema, bounded streaming failures, cancellation/retry, pointer/keyboard edits, undo/redo, preserved raw drafts, mobile endpoint handles and lifecycle cleanup. A deterministic resize regression releases a gesture before deferred geometry notifications arrive, ensuring a moved viewport or canvas cannot commit stale timing.
-
-A separate native Chromium 151 run used a private copy of the existing **300-second real-Spleeter project** from #33. The worker reduced 13,230,000 stereo frames to 30,000 amplitude bins (120,000 bytes) in an observed 208 ms; every bin matched an independent Python PCM reducer by SHA-256. Fourteen animation frames continued during loading, with a largest observed gap of 16.8 ms. These are single local observations, not performance guarantees. Switching audition stems retained the original waveform.
-
-Actual pointer and held-key edits moved the last cue to **298.2–300 seconds**, with exact undo/redo, explicit save, reload and real process restart. A transient maximum 200-cue draft remained usable at 390 px and was undone without changing saved work. The production service exported an **8,213,246-byte, 300-second H.264/AAC MP4** in an observed 35.59 seconds. Independent decoding checked fifteen cue/gap frames, the changed late boundaries, frame 7,199 and non-silent AAC at 299 seconds. SRT retained the exact edited times; all seven original fixture files remained byte-identical.
-
-See [the measured waveform evidence](docs/2026-10-04-waveform-verification.json). No new inference was needed for this timing milestone. It establishes timeline and export behavior, not subjective separation quality. Controlled persisted-page lifecycle tests do not establish native BFCache admission.
-
-## Editable archive verification (2026-10-04)
-
-The portability milestone ([#59](https://github.com/twangyal/projects-monorepo/issues/59)) passes **166 Python tests, 51 TypeScript tests and 44 production browser cases**, plus Ruff, ESLint, type checking and the production build. The archive browser suite also passes with model readiness explicitly false: twelve cases pass and the legacy separation-only case is intentionally skipped. Independent binary fixtures verify the archive contract; real HTTP tests cover atomic publication, output replacement, stale revisions, cancellation, upload shutdown, quota and retained storage ownership.
-
-The native regressions keep invalid raw timings, Unicode title/cue/paste drafts, undo/redo, actual input nodes and audio state through backup and restore. They also cover uncertain upload acceptance without replay, delayed/duplicate terminal responses, provenance retry and explicit opening. Concrete focus-loss and unsolicited observed-job video-download failures were reproduced before their fixes. Existing separation, waveform and video flows remain covered by the unchanged preceding 31 browser cases.
-
-All twelve project workflows passed at `042218218f02b82a1082af485eb33ee06e08c67c`; the [Karaoke workflow](https://github.com/twangyal/projects-monorepo/actions/runs/37184306831) ran all 44 browser cases in Chromium 153. A separate production-service run moved a **158,779,475-byte archive** containing three exact 52,920,044-byte WAVs, 200 cues and saved revision 7 into a different library. The imported record survived actual process restarts and re-export with permanently unverified provenance; source files remained byte-identical and separation was forbidden.
-
-The restored five-minute clip produced an **8,491,153-byte H.264/AAC MP4** with 7,200 frames. Independent decoding verified the final cue at 299.25 seconds, the preceding instrumental gap at 298.25 seconds and non-silent late backing audio. A glyph/color oracle models the declared chroma subsampling, matches over 99.6% of sampled core pixels and rejects swapped, incorrect and blank text. It checks these late cards, not every lyric. The bundled font still lacks Tibetan glyphs; archive/SRT Unicode bytes are exact, while the video displays missing-glyph boxes for those characters.
-
-The first large-run metrics sampler raced normal temporary-directory cleanup after the video was published. The helper now tolerates disappearing scratch files and always reaps its services on sampling errors. Recovery independently checked the retained video and restarted the service without another encode. Original encode timing, memory/disk peaks and terminal cancellation status were not retained and are not claimed. The separate five-second smoke observed a canceled backup preserving the previous cache and project with no remaining job files.
-
-A native Chromium 151 run downloaded the full archive and uploaded it as an actual browser File into the second library. Invalid draft fields, their DOM nodes, focus, redo history and audio position survived; accepting **Open imported clip** was a separate decision. The restored final cue moved from 298.50 to **298.51 seconds** with keyboard timing, Undo/Redo and Save, then survived another real service restart at revision 8. Its downloaded 200-cue SRT retained the edited interval and literal text. Desktop and 390-pixel screenshots were inspected with no overflow, page errors or external requests. The observed backup/download and upload/restore checks took 1.41 and 1.90 seconds respectively on this local warm-cache fixture; these are not performance guarantees.
-
-See [the complete portability evidence](docs/2026-10-04-portability-verification.json), including original validation-helper failures, recovered media facts and explicit measurement limits. No new inference, model download or separation-quality evaluation was performed.
-
-## Reviewed SRT import verification (2026-10-04)
-
-Issue [#105](https://github.com/twangyal/projects-monorepo/issues/105) adds the
-reviewed import flow in version 0.4.0. Local checks pass **166 Python tests,
-66 TypeScript tests and 61 production browser cases**, plus compilation, Ruff,
-ESLint, type checking and build. The 17 new browser cases and all 44 unchanged
-existing cases each pass their first final-source run. Literal independent
-fixtures verify complete review, exact text/times, raw-field Undo/Redo,
-superseded File reads, failed saves, waveform edits, manual persistence and real
-SRT/ZIP downloads. The native four-second archive preserves all three WAV hashes.
-
-The deadline test advances a controlled browser clock; lifecycle tests dispatch
-page events and do not establish physical BFCache admission. Existing Spleeter
-inference evidence remains separate. See the [local verification receipt](docs/2026-10-04-srt-import-verification.json)
-and [new native evidence](docs/2026-10-04-srt-import-native.json). Both push and PR
-CI at `6ec2f2cf827c16eb591d5721a87ac50813b73b49` pass the complete 166/66/61
-suites and static/build checks; the PR merge has the identical tree. The
-[CI receipt](docs/2026-10-04-srt-import-ci.json) preserves exact checkouts and
-log hashes. Twelve of thirteen project PR workflows passed at that head; the
-separate Motion fixture-readiness failure remains tracked in #106.
-
-The separate maximum run imports **200 cues / 20,000 Unicode code points** into
-an original 300-second clip from an exact **128 KiB** UTF-8 File. One extra byte
-is refused without changing the editor. Complete review, one Undo/Redo, manual
-Save and actual SRT export retain every supported literal text value and timing.
-The **158,790,486-byte archive** restores through a real browser File into a new
-clip, then survives a complete service and Chromium restart with exact cues,
-**30,691-byte SRT** and all three original **52,920,044-byte WAVs**.
-
-A separate original six-second clip produces a **193,273-byte H.264/AAC MP4**
-with 144 frames. Fourteen independently decoded cue/gap/boundary samples match
-original glyph and color masks, reject wrong/blank text controls and retain
-non-silent late audio. Minimum sampled glyph coverage is 99.632%; sampled spatial
-precision is 100%. This checks the declared samples, not every lyric in a
-five-minute video. No inference was run. The corrected full acceptance took
-17.533 seconds locally; this is not a speed or peak-memory guarantee.
-
-The first two attempts exposed runner errors: FFmpeg requires `0.5` rather than
-`.5` for the audio sample duration, and Playwright's in-memory upload buffers are
-limited to 50 MiB. The runner now passes the already-downloaded archive path to
-the same native File input. Original fixtures, pixel/text/timing expectations
-and product source stayed unchanged; both failures are retained in the
-[maximum receipt](docs/2026-10-04-srt-import-maximum.json). Source-byte capacity
-uses declared trailing empty lines; the decoded lyrics still reach both limits.
-
-To reproduce with new output directories after building the app:
-
-```sh
-KARAOKE_SRT_FIXTURES=/tmp/karaoke-srt-fixtures node scripts/smoke_srt_import.mjs --fixtures-only
-KARAOKE_SRT_FIXTURES=/tmp/karaoke-srt-fixtures KARAOKE_SRT_OUTPUT=/tmp/karaoke-srt-run CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_srt_import.mjs --run-existing
-```
-
-The runner starts and stops its own local no-model service and browser profile,
-using only its newly generated synthetic audio library. It never opens your
-normal library. Set `KARAOKE_PYTHON` if a different core-test Python executable is
-needed; omit `CHROMIUM_PATH` to use Playwright's installed browser.
-
-### Sequential timing verification (#115)
-
-The supplied-line timing flow passes **86 TypeScript tests**, **166 Python tests**,
-lint/type/build and **all 75 native browser cases** in one local full regression.
-Both published-head push and PR CI pass the same counts and static/build gates;
-all thirteen project PR workflows pass, with the actual PR checkout tree matching
-the implementation. The fourteen original new cases also passed their first
-separate invocation, including a real 144-frame H.264/AAC export.
-
-The independent maximum records **400 trusted actions during 300.168 seconds of
-actual playback**, retaining all 200 supplied cues and 20,000 Unicode code points.
-Complete review, one Apply/Undo/Redo and explicit Save preserve literal text and
-raw drafts. Its **158,792,632-byte archive**, exact 29,891-byte SRT and all three
-52,920,044-byte original WAVs survive an actual same-origin service restart and a
-new Chromium process. The **12,560,208-byte five-minute H.264/AAC video** passes
-all 7,200 frame timestamps, full audio/video decode, 13,230,080 decoded stereo PCM
-frames (80 padding frames), fifteen independent glyph/boundary/final-frame checks
-and non-silent late audio. Export/download took 41.909 seconds; independent media
-inspection took 16.577 seconds. These measured times are not general performance
-guarantees or physical synchronization accuracy.
-
-Two verification failures remain explicit. The first maximum stopped after 148
-marks because locator actionability work exceeded the original 150 ms scheduling
-bound. Pre-positioning a hit-tested trusted mouse action retained that bound;
-the next 400-action run had at most 41.955 ms scheduling lateness and 3.742 ms
-clock-observation difference, below the unchanged 20 ms observation limit. Its
-last audio-inspection command then used an unsupported FFmpeg `.5` duration.
-Changing only that argument to `0.5` allowed the **same captured video** to pass
-inspection, followed by separate saved-state and restart checks. This is staged
-acceptance, not an uninterrupted all-green second invocation. Product source,
-original media/text and acceptance tolerances were unchanged.
-
-See the [root verification](docs/2026-10-04-sequential-timing-verification.json),
-[native evidence](docs/2026-10-04-sequential-timing-native.json),
-[maximum receipt](docs/2026-10-04-sequential-timing-maximum.json),
-[CI receipt](docs/2026-10-04-sequential-timing-ci.json),
-[pure oracle](docs/2026-10-04-sequential-timing-oracle.json) and
-[UI review](docs/2026-10-04-sequential-timing-client-review.json).
-
-The standalone maximum runner needs installed Playwright/Chromium, core Python
-with Pillow, FFmpeg/ffprobe and fresh output directories. From this app directory,
-set `KARAOKE_TIMING_FIXTURES` and run
-`node scripts/smoke_sequential_timing.mjs --fixtures-only`. Copy its generated
-`library/` to a new `KARAOKE_TIMING_LIBRARY` directory, then separately start
-`python3 -u tests/srt_smoke_server.py --serve /absolute/library --port 8766`.
-This synthetic test service forbids inference and serves the existing production
-build. Set `KARAOKE_TIMING_SERVICE_PID` to that Python process, `KARAOKE_TIMING_ORIGIN`
-to `http://127.0.0.1:8766`, `KARAOKE_TIMING_OUTPUT` to a fresh directory and
-`CHROMIUM_PATH` to the browser executable. Run the script with `--capture`, which
-listens for a real five minutes. After a successful capture, gracefully restart
-that owned service on the same port/library, update its PID variable and run
-`--verify-restart`. Optional `KARAOKE_PYTHON` selects the core interpreter. The
-runner owns its browsers, never its service, and neither generates model stems
-nor claims subjective alignment quality.
-
-
-### Canonical handoff review (#242)
-
-Songs producing more than 200 short automatic lines are regrouped into longer contiguous lines so the whole song remains represented. Complete text beyond the existing character/cue bounds is refused rather than silently cropped. Alignment and word-highlighting matching share a one-million-cell computation ceiling per request; beyond it, all supplied words remain and unmatched timing estimates are flagged for correction. Submillisecond cue boundaries remain valid. Recognition refresh retires cached and pending preview timings even when saved cues are unchanged.
-
-The original branch gate and real-song reports describe their exact measured snapshots. Current integration evidence and retained local verification limits are recorded in [handoff verification](docs/2026-10-13-integration-242.md). These English-only results do not establish multilingual lyrics or uniformly accurate recognition.
-
-
-### Correcting the recognition language (#251)
-
-Uploads and **Automatic language choice** use the existing automatic recognizer selection. If a song is misclassified, choose **English** or **Multilingual (25 European languages)** under **Recognition for this retry**, then use **Transcribe again**. The chosen model hears the entire separated vocal track without the language-detection pass. This is a model choice, not a forced language within the multilingual model.
-
-The requested model must already be installed and checksum verified. A missing model fails with its explicit setup command; no other model is substituted. Retrying refreshes the recognized words but keeps saved cues, current corrections, title and pasted words. Use **Review automatic lyrics** and **Replace lyric cues** to apply a result as one undoable edit, then save separately. Failed or cancelled retries keep the earlier transcript. The choice resets to Automatic when opening a clip and is not stored in project archives.
-
-This gives a correction path for the first-100-word heuristic; it does not establish quality for mixed-language songs or the other unmeasured languages. Multilingual word-onset/line-alignment measurements and user-measured correction effort remain open. See [verification notes](docs/2026-10-14-recognizer-choice-251.md).
-
-
-### Listen before applying automatic lyrics (#252)
-
-Choose **Review automatic lyrics** to audition the recognition result before replacing any editor cues. Each line has **Listen** (once) and **Repeat**, with **Pause/Resume reviewed passage** and **Stop reviewed passage**. Playback uses that recognized line's captured times on the selected Original, Vocals or Backing track at the selected playback speed. It works even while your title or cue times have invalid raw edits; those fields, pasted words, history and existing practice-range selection remain unchanged.
-
-**Show only uncertain automatic lines** focuses the list on lines below the existing confidence threshold, keeping their original numbers. The count explicitly states that **Replace lyric cues still applies every recognized line**, including hidden ones, as one undoable edit. Listening/filtering does not apply or save anything. Changing the filter stops the current reviewed passage. Cancelling/replacing the review, changing lyrics/clip/track, starting other media work or leaving the page retires listening; delayed native playback results cannot revive it. Imported SRT retains its existing independent review behavior.
-
-Confidence is a model signal, not a guarantee that unflagged lyrics are correct. This supplies a faster review path; reduced real-user correction effort has not been measured. See [verification notes](docs/2026-10-14-automatic-audition-252.md).
-
-### Correct timing during automatic review (#271)
-
-Each automatic line keeps its original recognized times above **Reviewed start/end line (seconds)**. Edit those seconds or use **Mark reviewed start/end at playhead** after listening or seeking. Marks take the current native player time without rounding; they do not compensate for output/input latency. Timing fields retain raw invalid values so you can correct them. Editing a timing or marking a boundary stops a reviewed passage; choose Listen or Repeat deliberately to audition the staged interval.
-
-Listen/Repeat needs a valid interval for that line, independently of other invalid lines or words. **Replace lyric cues** requires all reviewed words and times to be valid, ordered, nonoverlapping and within the clip, including hidden lines. Filtering and reopening the same review retain staged values. Apply replaces all words/times together as one unsaved Undo/Redo edit; title, pasted words and exact previous main-editor fields remain recoverable. Save is separate. Cancel discards this review only, and a fresh review restores the source recognition. Saving corrected times does not rewrite recognition.
-
-The controls support keyboard use and narrow layouts. This is manual correction of automatic results, not a new recognizer, alignment algorithm, recording tool or measured correction-effort improvement. Real-song evaluation remains open in #241. See [timing review verification](docs/2026-10-16-review-timing-271.md).
-
-### Move every lyric line earlier or later (#272)
-
-Open **Shift lyric timing**, leave **Timing shift scope** at **All lines**, enter a signed **Timing shift (seconds)**, then choose **Shift all lyric times**. Positive values move the current editor's cues later; negative values move them earlier. The same offset reaches every boundary, retaining literal words, cue lengths and instrumental gaps. It works with recognized, imported and manually timed cues. Unapplied pasted words are kept and are not included.
-
-All current cue words and times must be valid, and the complete result must stay within the clip. Blank, zero, nonfinite, nondecimal or unrepresentably small offsets and out-of-clip results are refused without clipping, saving, changing history or cancelling pending review/listening. Invalid raw offset text remains available for correction. A successful shift retires obsolete audition, import review and timing capture, then makes one unsaved Undo/Redo edit. Undo recovers exact previous main-editor numeric spelling, title and pasted draft. Use **Save lyrics** separately, then export current SRT/video as usual. The utility offset resets when a different clip opens; it is not saved as project data.
-
-This is a deliberate manual synchronization adjustment, not a new alignment algorithm, playback-latency calibration or measured improvement in real-song quality. See [bulk timing verification](docs/2026-10-16-timing-shift-272.md).
-
-### Correct one passage’s timing (#294)
-
-Open **Shift lyric timing**, set **Timing shift scope** to **Selected passage**, and choose its first and last lyric lines. The numbered choices show the current words; a passage may contain one line. Enter a signed **Timing shift (seconds)** and choose **Shift selected lyric times**. Only that inclusive range moves. Other cues, their literal words and their raw numeric spellings stay unchanged; selected cue lengths and internal gaps move together. The complete result must remain ordered, nonoverlapping and inside the clip, including both untouched neighboring lines. Nothing is cropped.
-
-A successful shift makes one unsaved Undo/Redo edit and stops obsolete listening/import/timing work. Refusals preserve current edits, Redo, pending review and playback. Title and pasted drafts are kept; Save lyrics remains separate. Replacing, splitting, merging, removing, or Undo/Redo-ing cues clears the passage endpoints so you choose the intended lines again. An ordinary word or timing correction keeps the same line identities and refreshes their displayed words. Opening a different clip resets scope to All lines and clears the offset. Scope/endpoints are session utilities, not saved project data.
-
-This is manual passage correction, not automatic delay detection or an evaluated alignment-quality improvement. Real-song timing and correction-effort evaluation remains open in #241. [Verification and limits](docs/2026-10-20-passage-timing-294.md).
-
-
-### Repeat a corrected chorus or verse
-
-Open **Shift lyric timing**, choose **Selected passage**, and select the first and last lines. Enter the new first-line start under **Copy passage to (seconds)** and choose **Copy selected passage**. This adds a literal copy while keeping the originals, line durations and internal gaps. The entire destination span must be empty and fit within the clip; existing 200-line/20,000-character limits still apply. Nothing is cropped or overwritten.
-
-The copy is one unsaved Undo/Redo edit. Untouched raw timing fields, title and unapplied pasted words stay intact. A successful copy stops practice and retires pending timing/import reviews; a refused copy leaves them alone. Structural changes and Undo/Redo clear passage selection so another copy requires a fresh range. Use **Save lyrics** before exporting timed lyrics or video. The utility destination resets on another clip; it is not saved song metadata. This supports manual correction reuse and does not establish automatic transcription/alignment quality (#241).
-
-
-### Find a line for correction or practice
-
-Open **Find lyric line** and enter words from the current lyric cues. Matching is literal and case-insensitive, including Unicode text and punctuation; unapplied pasted words and pending imported/recognized reviews are not searched. **Next lyric match** / **Previous lyric match** wrap through matching lines. Enter goes forward and Shift+Enter goes backward from the search field. The matching textarea receives focus without rebuilding cue rows or changing raw timings, title, drafts, history or playback.
-
-**Play lyric match** deliberately plays the chosen line through the existing practice controls and readiness checks. Searching or moving to a different result does not seek or restart audio. Invalid timings/title can still be found and corrected, but playback retains the ordinary whole-project validation. Edits recompute matches; replacing cue objects clears the chosen result until you navigate again. Opening another clip clears the query. No query is saved into the song.
-
-### Add a missed lyric line (#309)
-
-Open **Add lyric line**, supply **New lyric words**, **New line start (seconds)** and **New line end (seconds)**, then choose **Insert lyric line**. This works with an empty clip or an empty span before, between or after existing cues. The whole result must fit the song and existing cue/text limits; overlaps and invalid current cues refuse without cropping or changing current corrections.
-
-Insertion makes one unsaved Undo/Redo edit. Existing title, pasted draft and unrelated raw timing spellings remain intact. The inserted boundaries display canonical numbers; literal lyric text is retained. Save lyrics separately to persist the result and include it in SRT/video output. Entry fields clear after successful insertion, opening a clip or deletion. They are session utilities, outside saved lyrics/history until inserted; keep needed words before leaving. Failed insertion keeps them and current playback/review/Redo.
-
-See [verification and limits](docs/2026-10-23-line-insertion.md). Automatic multilingual recognition and real-song quality remain separate work in #241.
-
-Automatic line exclusion verification: [2026-10-23 receipt](docs/2026-10-23-review-exclusion.md).
-
-### Correct repeated lyric words (#317)
-
-Open **Replace lyric words**, enter **Literal text to replace** and **Replacement lyric text**, and review every changed line's before/after text. Matching is literal and case-sensitive, with exact spacing; it does not use regex, normalize Unicode or generate words. Nonoverlapping occurrences within each current cue are replaced, including repeated choruses. Pasted drafts and source recognition are separate and are not searched or changed.
-
-**Apply lyric word replacements** makes one unsaved Undo/Redo edit, retaining every cue time, unrelated numeric spelling, clip title and pasted draft. Use **Save lyrics** separately to persist the result for SRT/video. The entire current cue graph and proposed text must fit the existing limits; correct invalid cue times first. Empty replacement can remove a fragment, but a line cannot become empty. No-match, identical replacements and invalid proposals preserve history and playback. Successful Apply retires obsolete listening, import review and timing capture through the ordinary editing flow.
-
-Preview refreshes when current cues change. Apply checks the current proposal again; there is no delayed stale result. Utility fields clear after successful Apply and when opening another clip, to prevent accidental repeated application. They are session-only and are outside lyric history until applied. This improves manual correction tools, not measured recognition/alignment quality or user correction effort; #241 remains open. [Verification checkpoint](docs/2026-10-24-word-replacement.md).
-
-
-### Rehearse slowly (#328)
-
-Choose **Playback speed** beside the player: **0.5×**, **0.75×** or **1× — normal**. The choice applies to Original, Vocals and Backing listening, selected-range practice and automatic-review audition. Native browser pitch preservation is requested; sound quality varies by browser and has not been acoustically evaluated. Lyrics, word highlighting and repeat boundaries continue to use original song seconds. SRT, saved song data and MP4 audio/video keep their original timings and speed.
-
-Changing speed stops owned practice/audition and discards staged manual timing capture without applying it. Choose Play/Repeat again deliberately. It preserves the paused playhead, raw lyric edits, title, pasted draft and Undo/Redo; ordinary playback is not started by the control. The selected speed survives same-clip track changes, and opening a different clip resets to1×. Nothing about speed is saved in the song. Unsupported externally changed rates cannot start practice; choose a supported value again.
-
-Manual **Time lines while listening** still requires normal1× speed. Slower listening is a rehearsal utility, not a new alignment algorithm or evaluated improvement in recognition accuracy, correction effort or physical latency. Native repeat seeks retain their existing audible scheduling gaps. [Verification checkpoint](docs/2026-10-25-rehearsal-speed.md).
-
-### Remove unwanted lyric passages
-
-Under **Shift lyric timing**, choose **Selected passage** and its first/last lines, then **Remove selected lyric lines**. The displayed range is removed as one unsaved Undo/Redo edit. Surviving words, times, title and pasted drafts remain exact; Save lyrics is separate. Invalid selected lines can be removed, and invalid surviving timing drafts stay visible and block saving. Missing/reversed/stale selection refuses before stopping listening or changing history. Removing all lines is allowed and reversible. Choose the passage again after structural edits or Undo/Redo.
+- **DejaVu Sans** is bundled for video lyrics. Its licence is in `assets/DejaVuSans.LICENSE`.
+- **Parakeet TDT 0.6B v2/v3**: CC-BY-4.0 (NVIDIA). **sherpa-onnx**: Apache-2.0. **Silero VAD**: MIT.
+- **UVR-MDX-NET-Voc_FT** comes from the Ultimate Vocal Remover project ([model repository](https://github.com/TRvlvr/model_repo/releases); the UVR application is MIT-licensed). sherpa-onnx (Apache-2.0) converted it to ONNX. A separate licence for the weights was not established from those publications. No weights are stored in this repository.
+- The optional `smoke_model.py --licensed-sample` input is the Spleeter `audio_example.mp3`. It is an excerpt of *Slow Motion Dream* by Steven M Bryant, ©2011, featuring CSoul, Alex Beroza and Robert Siekawitch, licensed CC BY 3.0. Keep its [attribution](http://dig.ccmixter.org/files/stevieb357/34740) when sharing the excerpt or stems derived from it.

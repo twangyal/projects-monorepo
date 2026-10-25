@@ -1,221 +1,90 @@
 # Lens Studio
 
-**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 16](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. The focused workspace milestone #262 now provides the section navigation below; the broader depth/reconstruction destination remains ACTIVE.
+A private, in-browser photo workspace for exploring focal framing and depth-aware perspective. Import a photo, declare source and target focal lengths, assign pixels to near, subject and far planes (by hand or from a locally run depth model), compare the original with the simulated result, and export a PNG or an editable project. Photos never leave the device. Results are a simulation, not a recreation of a real camera.
 
-A private photo workspace for exploring focal framing and depth-aware perspective. Depth planes can be painted by hand or proposed by a learned depth model running locally. Import a photo, declare the source and target focal lengths, compare the original with the simulated result, then save a PNG or an editable project backup. Everything runs in your browser; photos are not uploaded.
+**Status:** DEFERRED (2026-10-25) — paused while the portfolio focuses on Gaze Navigator, Clothing Studio and Karaoke Studio. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
+
+## What works today
+
+- Comparison-first workspace with focused sections: Open, Compare, Depth, Mask exchange, Project & export, Help (or **Expand workspace** to see everything at once).
+- **Fixed camera** mode: changing focal length crops in or shrinks the frame around the center, with X/Y framing shift.
+- **Manual perspective** mode: a three-plane model where focal length and camera distance change together to keep the subject the same size; near/far planes scale accordingly and uncovered areas stay transparent.
+- Depth authoring tools: brush, rectangle, polygon outline, connected color (with tolerance), fill plane, plus source zoom (Fit/2×/4×) and pan.
+- **Estimate depth**: Depth Anything V2 Small runs locally in a worker via onnxruntime-web and proposes a near/subject/far mask you review, adjust and apply as one undoable edit.
+- Depth-mask exchange: download the label mask as PNG, edit it in another image editor, and re-import it after review.
+- Undo/Redo, PNG export (lossless, computed off the main thread) and project JSON backup/import.
+- IndexedDB autosave that refuses to overwrite a study changed in another tab and offers explicit reload/replace recovery.
+- An authored three-plane demo illustration.
+
+## Known gaps
+
+- Perspective is a three-plane approximation; there is no continuous depth or true 3D reconstruction.
+- Newly uncovered regions are left transparent; nothing generates or fills disoccluded content.
+- No optical blur, lens distortion, camera rotation or lighting change. Results are not compared against calibrated real captures.
+- Estimated depth is relative with unknown scale; edges, glass, reflections, sky and thin structures are often wrong. Correction effort and held-out quality are not measured with real users.
+- Focal lengths are user declarations; camera metadata is not read.
 
 ## Run locally
 
-Use Node.js 22.18 or newer (CI uses Node 24) and a current desktop Chromium browser with workers, `createImageBitmap`, OffscreenCanvas, IndexedDB and `DecompressionStream`.
+Requires Node.js 22.18 or newer (CI uses Node 24) and a current desktop Chromium-based browser. No backend, account or API key.
 
 ```sh
 cd apps/lens-studio
 npm ci
-npm run dev
+npm run dev                 # http://localhost:4260
 ```
 
-Open the printed local URL, normally `http://localhost:4260`. For a production build:
+Production build and preview:
 
 ```sh
 npm run build
 npm run preview -- --host 127.0.0.1 --port 4260 --strictPort
 ```
 
-The application has no backend, account or API key. Estimated depth needs the model file once; see [Estimated depth](#estimated-depth). Browser storage belongs to the exact origin; changing host or port opens a different notebook. Use **Download project** before moving between origins or clearing browser data.
-
-## Focused workspace
-
-Start in **Open**, with photo/project import and the authored demo. After opening a study, **Compare** keeps the source, projected result, Undo/Redo and essential framing settings prominent. **Adjust framing** brings the settings into view and focuses Target focal length, especially useful on phone. **Camera mode & depth distances** expands the perspective acknowledgment and relative-distance fields.
-
-- **Depth** reveals brush/region/color assignment, source zoom/pan and reviewed local depth estimation. Painting is deliberate in this section (or the expanded workspace); the comparison photo otherwise supports phone scrolling without changing labels.
-- **Mask exchange** imports, reviews and downloads an external label PNG.
-- **Project & export** holds the study title, PNG/project downloads and saved-copy recovery. **Review save recovery** reaches it even before a photo loads; save status and active-operation cancellation stay visible across sections.
-- **Help** explains the declared projection and its limits. Essential interpretation remains beside the result and depth tools.
-
-Use **Back to comparison** or Escape to return, with keyboard focus restored to the section opener. Before a photo exists, Back/Escape returns to **Open**. Escape first cancels an unfinished depth gesture or discards a reviewed external mask. **Expand workspace** shows the same mounted tools together; **Focus workspace** restores sections.
-
-Switching sections never applies fields, changes masks/history, or cancels an authorized read/render/estimate. Raw title/numeric/tool drafts and reviewed proposals remain in memory. Apply/Save title commits deliberately; backups contain committed work only. Finish or explicitly cancel an active depth gesture before switching. Pending operations retain their own cancellation and stale-result checks; opening a section does not start an estimate or playback.
-
-## A first study
-
-1. In **Open**, choose **Import photo** for a PNG, JPEG or static WebP, or **Try authored demo** for an original three-plane illustration.
-2. Set **Source focal length** and **Target focal length**, then apply the settings. Both values must use the same sensor/crop basis. The default 50 mm is a declaration to edit, not detected camera metadata.
-3. In **Fixed camera**, a longer focal length crops into the center; a shorter length makes the known image occupy less of the frame. Use **Shift X** and **Shift Y** to move that framing on the output plane.
-4. To explore perspective, expand **Camera mode & depth distances**, acknowledge the manual-plane approximation and choose **Manual perspective**. Open **Depth** and assign source pixels to near, subject or far with the source-view brush, **Rectangle**, **Polygon outline**, **Connected color**, or **Fill plane**. Adjust relative near/far distances and focal length. All pixels initially belong to the subject, so a new photo will not show depth differences until you assign near or far pixels.
-   Use **Source zoom** (Fit/2×/4×) and Pan controls to trace detailed regions. View changes preserve saved pixels and cancel unfinished selections.
-5. Use **Undo**, **Redo** and **Reset projection** to compare choices. In **Project & export**, export the result with **Export PNG** and retain editable work with **Download project**. **Open → Import project** reopens that backup.
-
-The original and result stay at the same dimensions and aspect ratio. A checkerboard represents transparency. Original transparency is retained; missing field of view and newly uncovered regions also remain transparent. No content is generated to fill them.
-
-## Estimated depth
-
-**Estimate depth** proposes which plane each pixel belongs to. It uses [Depth Anything V2 Small](https://github.com/DepthAnything/Depth-Anything-V2) (Apache-2.0; the larger variants are non-commercial and are not used), running in this browser with onnxruntime-web (MIT) in a dedicated worker. The photo never leaves the device.
-
-1. **Get the model once.** `npm run fetch-depth-model` downloads the pinned dynamic-shape ONNX export from [Depth-Anything-ONNX v2.0.0](https://github.com/fabio-sim/Depth-Anything-ONNX/releases/download/v2.0.0/depth_anything_v2_vits_dynamic.onnx). The file is 99,092,268 bytes, SHA-256 `46c4e8eeda3a27f34701831b6a2ec7753d7b38779b215acb5633424703deed8f`. The script places it in the git-ignored `public/models/`, so dev and production builds serve it from the same origin; `--from FILE` installs a copy you already have. If the app does not host the model, it asks you to choose the file. Either way, the bytes must match the pinned size and checksum before use.
-2. **Estimate.** Choose **Estimate depth**; progress is shown, and **Cancel estimate** stops the worker. In a cross-origin-isolated page, inference uses up to four threads: `npm run dev` and `npm run preview` send the needed `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` headers, and other static hosting must add them. Otherwise one thread is used, which is several times slower. A run stops after 3 minutes.
-3. **Review.** The proposal shows near (orange), subject (green) and far (blue), with brighter meaning estimated nearer. Click the subject to centre the subject band on its depth, or set **Far plane: depth below** and **Near plane: depth from**. Nothing changes until **Apply proposal as depth mask**, which replaces the whole mask as one undoable edit.
-4. **Correct.** Fix edges with the brush, region and color tools, then save and export as usual. The saved study contains only the resulting mask, so the project format is unchanged.
-
-The model estimates *relative* inverse depth with an unknown scale per photo. The sliders are display positions from farthest (0) to nearest (1), not distances. Edges, glass, reflections, sky and thin structures are often wrong. Perspective output is still a three-plane approximation, with uncovered regions left transparent.
-
-## Edit a depth mask in another image editor
-
-**Download depth mask** exports only the committed labels, at normalized source dimensions. It contains no photo, checkerboard or overlay. Edit it with hard pixel edges and these opaque RGB colors:
-
-| Plane | Color | RGB |
-| --- | --- | --- |
-| Near | `#db714d` | 219, 113, 77 |
-| Subject | `#699f90` | 105, 159, 144 |
-| Far | `#7684c8` | 118, 132, 200 |
-
-Save a static **8-bit PNG**, at exactly the source width and height, up to 7 MiB. Disable antialiasing, feathering, transparency and color-profile conversion. A grayscale depth image is not this label format. Lens rejects unsupported precision, rotation, dimension changes, corrupt compressed streams and decoded pixels outside the opaque palette; it does not resize, threshold or guess depth labels.
-
-Choose **Import depth mask** to review its image, plane counts and changed-pixel count. Nothing is committed until **Apply depth mask**. Apply replaces the entire mask as one Undo/Redo edit, preserves the photo and applied settings, and retains unapplied title/numeric fields. An identical mask preserves Redo. **Discard depth mask** or Escape keeps the current study. New input, painting, editor actions or page departure retire a pending read or review. An unchanged raw field blurring while you click Apply does not discard the reviewed mask.
-
-Decoding uses a separate worker with owned cancellation and a 30-second deadline. A rejected or canceled mask preserves current work. Applied labels use the existing autosave, conflict protection and complete project backups. A mask PNG contains no source-photo identity: verify that its dimensions and content belong to this photo before applying. This exchange supplies editable manual geometry; it does not enable a learned model or establish scene-depth quality. See [verification and retained failures](docs/2026-10-11-mask-exchange/README.md).
-
-## What the simulation means
-
-Fixed-camera mode assumes a centered rectilinear projection and the same sensor for both focal values. With ratio `r = target / source`, points scale by `r` around the image center before the framing offset. Changing 50 to 100 mm therefore fills the output from the middle half of each source dimension. Changing 50 to 25 mm reduces the known image to half its original width and height.
-
-Manual perspective is an experimental three-plane model, not estimated scene depth. The subject distance is 1; near and far distances are relative to it. Focal length and axial camera distance change together to keep the subject plane the same size. A plane at distance `Z` scales by `r × Z / (Z + r − 1)`. Near pixels can cover farther pixels; newly exposed regions remain unknown. The editor rejects settings that would cross the near plane.
-
-This approximation cannot recover actual 3D geometry or unseen surfaces. Cropped, resized, distorted or unknown-camera source photos further limit physical interpretation. It does not simulate optical blur, lens distortion, camera rotation, lighting changes or a calibrated real camera. The framing shift is a two-dimensional output offset.
-
-The displayed missing percentage estimates **sampled geometric coverage** at output pixels, independently of the source photo's alpha. It is not continuous scene area: tiny or odd-sized images can differ from the ideal area fraction. Output colors use premultiplied bilinear resampling and near-over-far alpha composition. These are sampling rules, not optical depth of field.
-
-## Files, limits and recovery
-
-- Import PNG, JPEG or static WebP up to 8 MiB, at most 8,192 pixels per side and 16 million source pixels. Animated images, malformed headers and conflicting metadata are rejected.
-- Orientation is normalized once, including mirrored EXIF orientations. The longest edge is reduced to at most 1,280 pixels without upscaling; the normalized photo is a metadata-free PNG up to 7 MiB. Output uses these normalized dimensions.
-- Focal values are 10–300 mm with two decimal places; target/source ratio is 0.25–4. Shifts are −0.5 to 0.5 output dimensions. Near depth is 0.1–0.95 and far depth 1.05–10; subject depth stays 1.
-- Each source-pixel brush gesture is bounded at 2,048 points and 8,192 pixels of path. Brush radius is 1–100 source pixels. Rectangle drags assign pixel centers inside the two corners; polygon drags close the traced outline on release and use even-odd containment. Polygon boundaries share the 2,048-point/8,192-source-pixel guards. Each completed gesture is one undo step. **Cancel depth gesture**, Escape, or native pointer cancellation discards only the unfinished selection; unapplied fields and Redo remain intact. Brush size applies only to Brush.
-- History retains up to 30 edit states within 32 MiB. The fixed photo is stored once outside history. Importing another photo or project starts new history.
-- A project backup contains one embedded normalized photo, settings and one depth-label mask. JSON is limited to 12 MiB and validated before replacement. It contains no original EXIF metadata.
-- One project is saved locally in IndexedDB after completed edits. Before writing, the app compares the complete saved photo, mask and settings with the copy this page accepted. Save success is reported only after the transaction finishes. Conflicts and failed storage keep current work editable, with explicit recovery and backup actions.
-- Rendering and export run in cancellable workers with a 30-second deadline. A newer valid job supersedes the older one. PNG output is bounded at 7 MiB; the image contains no checkerboard, painted labels or interface overlays.
-
-PNG export preserves the pixel kernel's exact straight RGBA bytes using a lossless encoder. Browser Canvas presentation can quantize very low-alpha colors, so Canvas readback is not used as the export source. Original image decoding and downsampling use the browser's color conversion and sampling; an exported simulation is based on that normalized raster.
-
-Keep downloaded backups for work you need to retain. Browser storage can be cleared or unavailable, and it is not cross-device synchronization.
-
-If another tab changes the saved study, autosave stops. This page retains its
-photo, authored mask, session history, unapplied numeric/title fields and local
-PNG/project exports. Further edits remain in memory until you deliberately
-resolve the saved copy.
-
-**Reload saved study** asks before discarding this page's unsaved study, fields
-and history. It admits the complete saved photo and mask before replacing the
-editor. **Replace saved copy** reviews the current saved study, then asks to
-replace it with this page's committed study. Unapplied fields and unfinished
-strokes are excluded. If another tab saves during review or image validation,
-replacement refuses and requires a fresh review. Importing a photo/project or
-starting the demo does not bypass protection of a conflicting or unreadable
-saved study. Recovery controls remain visible even when startup has no photo.
-
-A confirmed rolled-back save can offer **Retry saving**. Unknown results,
-canceled restores and storage deadlines keep the saved copy protected. Local
-opening has a five-second limit, native transactions ten seconds, and storage
-image validation thirty seconds; browser scheduling can delay these checks.
-If native image decoding is already underway, the browser cannot cancel it.
-Recovery waits for its cleanup before opening another storage operation, while
-the current editor and backups remain usable. A browser decoder that never
-returns requires reopening the page after keeping a backup.
-
-Version 0.2.0 upgrades the existing local database to version 2 to fence older
-clients that lack these checks. Close older tabs if the upgrade is blocked.
-The upgrade preserves existing saved data without rewriting it, and portable
-project JSON remains schema 1.
-
-## Verification
+Estimated depth needs the model once:
 
 ```sh
-npm run check
-npx playwright install chromium
-npm run test:browser
+npm run fetch-depth-model                 # downloads and verifies into public/models/ (git-ignored)
+npm run fetch-depth-model -- --from FILE  # install a copy you already have
 ```
 
-With an existing system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The production browser suite reserves port 4261 (`LENS_TEST_PORT` selects another unused port) and builds its image, worker and storage harnesses only for tests. Normal production builds include only the application.
+The ~99 MB file is checked against a pinned size and SHA-256 before use. If the app cannot find it, it asks you to choose the file. Multithreaded inference needs cross-origin isolation: `npm run dev` and `npm run preview` send the `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers; other static hosts must add them, otherwise inference is single-threaded and slower.
 
-Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 91 tests, including 24 independent numerical cases; the current browser suite has 86 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
+Browser storage is tied to the exact origin; use **Download project** before changing host/port or clearing browser data.
 
-## Project status
+## Verify
 
-The local milestone is implemented and verified under [issue #31](https://github.com/twangyal/projects-monorepo/issues/31): fixed-camera framing, experimentally verified manual perspective, local recovery, history and real exports. Learned depth, generated disocclusion and comparisons against calibrated camera captures are separate future work and are not claimed by this milestone.
+```sh
+npm run check            # unit tests + ESLint + typecheck + production build
+npx playwright install chromium
+npm run test:browser     # Playwright against the production build
+```
 
-Issue [#53](https://github.com/twangyal/projects-monorepo/issues/53) corrects an asynchronous assertion race: a finished PNG download can precede the replacement preview paint. A controlled real-worker regression reproduced the old 255-byte presentation difference, then verified the correct eventual preview. The suite now waits for the current rendered state and published replacement dimensions; the independent PNG/scalar and exact Canvas pixel assertions are unchanged. All 67 unit and 31 browser cases, lint, type checking and build passed locally and in [CI at `a0f3e9e`](https://github.com/twangyal/projects-monorepo/actions/runs/37175117242). See [the timing verification record](docs/2026-10-04-preview-export-test-verification.json).
+Individual steps: `npm run test`, `npm run lint`, `npm run typecheck`, `npm run build`.
 
+Environment variables for browser tests: `CHROMIUM_PATH` (use an existing Chromium), `LENS_TEST_PORT` (default 4261). Test builds set `LENS_STUDIO_TEST_HARNESS=1`, which adds image/storage/job harness pages and serves a tiny fixture depth model (`tests/fixtures/fixture-depth.onnx`, regenerated with `scripts/make-fixture-depth-model.py`) so browser tests run real onnxruntime-web inference without the full model.
 
-Issue [#68](https://github.com/twangyal/projects-monorepo/issues/68) guards failed IndexedDB schema creation. Native regression tests first reproduced an uncaught private browser exception, then verified sanitized backup guidance, no uncaught page error and successful save/reopen after retry. The complete gate passed 67 unit and 32 production Chromium cases, lint, type checking and build at [`82a090b`](https://github.com/twangyal/projects-monorepo/actions/runs/37198623345). See [the setup verification record](docs/2026-10-04-storage-setup-verification.json).
+CI: `.github/workflows/lens-studio.yml`.
 
-A later repository-wide CI run exposed a timing assumption in the queued-storage
-fixture: its 50 ms delay could finish before real PNG validation started the
-IndexedDB transaction. The test now waits for its first actual kept-alive request
-to succeed, preserving its pending-save, immutable snapshot and ordered-clear
-assertions. A controlled native decode gate reproduces the hazard, and the fixed
-case passes locally with lint and type checking. No product code or timeout
-changed. The [verification receipt](docs/2026-10-04-storage-readiness-verification.json)
-preserves the actual CI failure and limits; its precise original interleaving was
-not captured.
+## Project layout
 
-The repair at `f19cd6551699d5385de2434b000dc4fbe96826df` passes all **67 units
-and 32 browser cases**, lint, type checking and build in both
-[push](https://github.com/twangyal/projects-monorepo/actions/runs/37224210032) and
-[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37224213108) CI on
-Chromium153. All thirteen project PR workflows pass. See the [exact CI receipt](docs/2026-10-04-storage-readiness-ci.json).
+- `src/main.ts`, `src/workspace-view.ts` — UI and focused-section navigation.
+- `src/model.ts`, `src/types.ts` — study schema, settings and validation.
+- `src/render.ts`, `src/render.worker.ts`, `src/jobs.ts` — projection renderer and cancellable worker jobs.
+- `src/depth-mask.ts`, `src/regions.ts`, `src/color-regions.ts` — depth labels and region/color selection.
+- `src/depth-estimate.ts`, `src/depth-estimate.worker.ts`, `src/depth-model.ts`, `src/depth-panel.ts`, `src/depth-job.ts` — local learned-depth proposal.
+- `src/mask-png.ts`, `src/depth-mask-job.ts`, `src/depth-mask.worker.ts` — mask PNG import/export.
+- `src/images.ts`, `src/photo-header.ts`, `src/png.ts` — photo validation/normalization and lossless PNG encoding.
+- `src/storage.ts`, `src/history.ts` — IndexedDB autosave and Undo/Redo.
+- `src/demo.ts` — authored demo.
+- `scripts/fetch-depth-model.mjs` — model download/verification; `scripts/smoke_saved_copy_conflicts.mjs` — optional capacity smoke test.
+- `tests/*.test.ts` (including an independent scalar oracle in `tests/oracle/`) — unit tests; `tests/browser/` — Playwright specs.
 
-Issue [#117](https://github.com/twangyal/projects-monorepo/issues/117) protects the
-complete saved study after reproducing a stale tab erasing another tab's painted
-mask and framing settings. Version 0.2.0 passes **67 unit and 65 production
-Chromium cases**, lint, type checking and build locally and in both
-[push](https://github.com/twangyal/projects-monorepo/actions/runs/37250786108) and
-[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37250789487) CI at
-`d2dc7560bbb5f7c111f5389c12cc760cd1149fed`. The [CI receipt](docs/2026-10-05-saved-copy-ci.json)
-verifies the identical implementation and actual PR checkout trees. The 33 new cases cover
-competing native writers, complete PNG/mask/settings identity, accepted-load and
-replacement authority, older-client fencing, actual ten-second transaction and
-thirty-second image deadlines, late cleanup and preserved editor drafts/history.
-Existing independent numerical, decoded PNG and orientation checks remain intact.
+## Data & privacy
 
-The [verification receipt](docs/2026-10-05-saved-copy-verification.json) preserves
-the original data-loss reproduction and the first run's three test-flow failures:
-canceled-replacement wording and two unhandled local-import confirmations. The
-narrow corrections retain all complete-record, raw-field and pixel assertions.
-Synthetic persisted-page events test ownership rules; they do not establish
-physical device behavior or actual browser back/forward-cache eligibility.
+All processing, including depth inference, runs in the browser. Imported photos are normalized to a metadata-free PNG (longest edge at most 1,280 px). Project backups contain the normalized photo, settings and depth mask only. Browser storage is not a backup or sync.
 
-The independent maximum run passed with a 1280 × 1280 original PNG and all
-1,638,400 authored depth labels. Actual normalization checks every RGBA byte;
-exact 12 MiB input is accepted and one extra byte is refused. Competing tabs retain
-the complete photo, mask, settings, raw fields and painting history; a third writer
-invalidates stale replacement approval. Fifteen retained edit states produce
-14 Undo and 14 Redo transitions within the 32 MiB history budget. The complete
-10,926,179-byte backup and native saved revision survive a new browser process
-exactly. Four PNG exports pass independent scalar samples within one RGBA level.
+## Third-party models and libraries
 
-The [maximum receipt](docs/2026-10-05-saved-copy-maximum.json) preserves the first
-failed run: the fixture used a five-decimal shift where the existing contract
-permits four. Only that declaration changed to -0.0312 before the successful
-367.7-second run; original files, image/mask bounds and tolerances are retained.
-Raw-input capacity includes disclosed trailing whitespace. These measurements
-do not establish peak memory or general latency.
-
-Issue [#169](https://github.com/twangyal/projects-monorepo/issues/169) adds rectangle and closed polygon depth authoring with translucent previews, explicit/Escape cancellation, one-step Undo/Redo, and complete saved-study retention. Independent pixel-center tests cover concavity, self-crossings, fractional direction invariance, maximum 1280² photos and 2,048-point polygons. Native checks cover actual masks, raw-field/Redo preservation, saved reload, 390px controls and independently decoded manual-perspective PNG pixels. Review caught and fixed direction-dependent floating-point edge arithmetic. See [the region verification receipt](docs/2026-10-10-regions-verification.json). This improves manual object assignment; learned depth and generated disocclusion remain outstanding, and the project stays ACTIVE.
-
-Issue [#170](https://github.com/twangyal/projects-monorepo/issues/170) adds **Connected color**: click a source pixel to preview its four-connected region and release to assign the selected depth plane. **Color tolerance** (whole 0–255) is the maximum allowed difference in each RGBA channel from the clicked pixel. Disconnected colors and diagonal-only contacts stay separate; comparison never drifts through gradually changing neighbors. Changing its tolerance/tool or canceling discards the preview; a same-plane no-op retains Redo. This is manual color-based selection, not object recognition or inferred depth. See [the color-region verification receipt](docs/2026-10-10-color-regions-verification.json).
-
-Issue [#171](https://github.com/twangyal/projects-monorepo/issues/171) adds **Source zoom** (Fit, 2× and 4×), native scrolling and accessible Pan controls for precise manual authoring. The original photo canvas retains its real source pixels; zoom changes only its displayed view. Brush, rectangle, polygon and connected-color coordinates use the current scaled and scrolled canvas. Changing zoom or panning during an unfinished gesture cancels that preview while keeping the committed study, raw fields and Redo. Opening/restoring a study starts at Fit; view position is not saved in portable projects. Native checks cover exact scrolled rectangle labels, actual wheel cancellation, complete study/PNG identity and a contained 390px workflow. See [the source-view verification receipt](docs/2026-10-10-source-view-verification.json).
-
-Issue [#172](https://github.com/twangyal/projects-monorepo/issues/172) begins a [real local learned-depth evaluation](../../docs/research/lens-depth-baseline/README.md). Checksum-pinned quantized Depth Anything V2 Small ran actual CPU inference on a CC0 real photo with a protocol frozen before outputs. This one-photo smoke is a reproducible research starting point; no model is enabled in the app, and broader quality, correction-effort, browser resource/cancellation and editable-depth integration remain unfinished.
-
-The [frozen portrait/street extension](../../docs/research/lens-depth-baseline/extension-2026-10-10/README.md) adds independent source-only labels and real CPU repeats. Clear ordering passes10/10; a thin wire ties sky at zero, and sparse diagnostics do not establish boundary quality. No product model is enabled; #172 remains open for correction effort, browser inference and editable-depth readiness.
-
-The [actual Chromium/WASM probe](../../docs/research/lens-depth-baseline/browser-2026-10-10/README.md) executes repeatable portrait inference with an interactive main thread, but retains a failed500ms native worker-retirement gate and measured CPU/WASM differences. Independent diagnosis observed delayed target destruction before browser close, not a persistent leak. Browser preprocessing, resources, boundary/correction utility and editable-depth integration remain open; no product model is enabled.
-
-The [frozen anchored-subject diagnostic](../../docs/research/lens-depth-baseline/boundary-2026-10-10/README.md) uses a fresh source-only coarse silhouette reference and the existing portrait depth preview. A fixed anchored depth band retains connected background: IoU0.47368,28,586 binary label flips versus27,447 for empty. This synthetic proxy does not measure human effort or held-out quality and does not justify automatic subject replacement. The output and failures remain inspectable; subject/continuous-depth design and actual useful edits remain unfinished.
-
-Issue [#217](https://github.com/twangyal/projects-monorepo/issues/217) enables learned depth in the editor as a reviewed, editable proposal. See [Estimated depth](#estimated-depth) and [the verification notes](docs/2026-10-13-estimated-depth.md).
-
-- **Real model in Chromium:** each estimate runs on 4 threads in about 4.7–5.2 s per photo, and the page stays responsive meanwhile. Cancellation is acknowledged within 77 ms.
-- **CI:** a 214-byte fixture model runs real onnxruntime-web inference in the browser suite.
-- **Not established:** correction effort with people, the quality of this fp32 export on held-out photos (#172 evaluated an int8 conversion), and physical-device performance.
+- [Depth Anything V2 Small](https://github.com/DepthAnything/Depth-Anything-V2) — Apache-2.0. The larger variants are non-commercial and are not used. The ONNX export is from [Depth-Anything-ONNX v2.0.0](https://github.com/fabio-sim/Depth-Anything-ONNX) and is downloaded on demand, not committed.
+- [onnxruntime-web](https://github.com/microsoft/onnxruntime) — MIT.

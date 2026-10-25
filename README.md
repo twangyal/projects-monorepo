@@ -27,4 +27,4 @@ Each app is self-contained under `apps/`. Its README explains how to run and ver
 
 ## History
 
-`main` is the only long-lived branch. On 2026-10-25 the repository was decluttered: dated acceptance receipts, test logs, evidence files, research archives (including the Clothing PPF solver study) and design plans were removed, and every README was rewritten. The full pre-cleanup tree is preserved at tag [`archive/pre-cleanup-2026-10-25`](https://github.com/twangyal/projects-monorepo/tree/archive/pre-cleanup-2026-10-25). Older branch snapshots are kept as other `archive/*` tags.
+`main` is the canonical branch. On 2026-10-25 the repository was decluttered: dated acceptance receipts, test logs, evidence files, research archives (including the Clothing PPF solver study) and design plans were removed, and every README was rewritten. The full pre-cleanup tree is preserved on the branch [`archive/pre-cleanup-2026-10-25`](https://github.com/twangyal/projects-monorepo/tree/archive/pre-cleanup-2026-10-25) and in git history. Older branch snapshots are kept as `archive/2026-10-08/*` tags.

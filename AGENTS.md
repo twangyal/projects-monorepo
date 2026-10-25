@@ -33,7 +33,7 @@ Before implementation, state the intended user outcome, the gap between the curr
 
 After urgent correctness or data-loss problems, prioritize meaningful missing capabilities and usable end-to-end experiences. Do not repeatedly select peripheral hardening or additional verification while the defining experience remains unimplemented. Real quality, accessibility and relevant domain validation remain part of delivering the vision; do not weaken safety or erase failed evidence to claim progress.
 
-`main` is the canonical development and integration branch. Base new work on current `main`, use short-lived task branches when useful, and integrate verified work back into `main`. Archive tags (for example `archive/pre-cleanup-2026-10-25`) preserve historical or superseded work and do not establish current product direction.
+`main` is the canonical development and integration branch. Base new work on current `main`, use short-lived task branches when useful, and integrate verified work back into `main`. Archive refs (the `archive/2026-10-08/*` tags and the `archive/pre-cleanup-2026-10-25` branch) preserve historical or superseded work and do not establish current product direction.
 
 ## Pull request authorization
 
@@ -102,7 +102,7 @@ Gaze Navigator, Clothing Studio and Karaoke Studio are ACTIVE. All other impleme
 
 ## Documentation and evidence policy
 
-The repository previously accumulated hundreds of dated acceptance receipts, test logs, evidence JSON files and research archives (about 200 MB), plus READMEs that grew into 800-line milestone logs. They were removed on 2026-10-25 and are preserved at tag `archive/pre-cleanup-2026-10-25`. Do not recreate them.
+The repository previously accumulated hundreds of dated acceptance receipts, test logs, evidence JSON files and research archives (about 200 MB), plus READMEs that grew into 800-line milestone logs. They were removed on 2026-10-25 and are preserved on the `archive/pre-cleanup-2026-10-25` branch. Do not recreate them.
 
 - **Git history and CI are the record.** Commit messages and CI runs show what changed and that it passed. Do not commit dated `*-acceptance.md`, `*-integration.md`, `*-verification.*`, red/green test logs, "local attempt" JSON or similar receipts.
 - **Do not commit generated evidence or large binaries.** Simulation output, recordings, archives and benchmark results belong in CI artifacts or an issue comment. Committed test fixtures must be small and live next to the tests that use them.

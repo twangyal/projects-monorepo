@@ -1,614 +1,76 @@
 # Melody Studio
 
-**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 3](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. This redesign is requested future work.
+A local browser music sketchbook. Hum or sing a single melody (or import a short audio clip), turn it into editable notes, layer synthesized and drum tracks, shape their sound and mix, and export MIDI or WAV. Everything runs in the browser; there is no account, backend or downloaded model.
 
-**Product direction (2026-10-08): ACTIVE.** The destination is a full music-production DAW with the depth and creative control associated with FL Studio. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+**Status:** DEFERRED (2026-10-25) — paused while the portfolio focuses on Gaze Navigator, Clothing Studio and Karaoke Studio. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
 
-A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, compare corrections with a retained reference take, layer tracks, and export a composition. Pitch detection and synthesis remain deterministic. A small local statistical learner can continue an explicitly selected ending with inspectable, reversible note proposals; broader generative arrangement remains future work.
+## What works today
 
-## Focused workspace
+- **Capture:** record from the microphone or import browser-decodable audio (up to 20 seconds, 10 MiB); deterministic single-voice pitch detection transcribes it into notes quantized to quarter beats. A demo melody and a two-track example are built in.
+- **Record with backing:** record a new part over the other tracks after a four-beat count-in (needs AudioWorklet; use headphones).
+- **Piano roll:** drag to move and resize notes, draw new notes, edit exact pitch/start/duration/velocity, keyboard editing, snap settings, split and join notes, build chords (major, minor, sus2, sus4), roll chord attacks and cycle chord voicings.
+- **Tracks:** up to 8 tracks with name, volume, mute, solo and reorder; instruments are three simple waveforms (sine, triangle, sawtooth) or a synthesized General MIDI drum kit with a 16-step pattern grid.
+- **Sound design per track:** ADSR envelope, custom harmonic tone (8 partials), resonant low-pass filter with optional song-time cutoff curve, and rhythmic echo.
+- **Mix:** stereo pan (static or automated), a shared algorithmic reverb bus, and volume automation (single ramp or multi-point curve).
+- **Arrangement:** select a section to play, loop, duplicate, remove, move, quantize starts or durations, transpose, invert, stretch/compress, reverse or shape velocity; whole-track timing review with swing and audition before applying. Songs can span 512 beats.
+- **Phrase continuation:** a small local statistical learner proposes 4 or 8 continuation notes from a selected ending; proposals are shown, auditioned and applied or discarded explicitly.
+- **Reference takes:** each capture keeps a mono 22,050 Hz copy for comparing the edited notes against what was sung.
+- **Projects and export:** IndexedDB autosave with multi-tab conflict recovery, Undo/Redo (50 edits), up to 8 named saved compositions, complete `.melody.json` backups, reviewed MIDI import, MIDI export (optionally with CC11 volume automation), and whole-song, section or per-track WAV export.
 
-Start in **Compose** with tracks, the piano roll and playback. The workspace toolbar opens **Capture**, **Sound**, **Notes**, **Arrange**, **Reference**, or **Project & export** tools. Selecting a note opens its numeric editor; adding a note opens Notes. **Back to compose** or Escape returns to composing. **Expand workspace** shows every tool for an advanced single-page workflow; **Focus workspace** returns to the selected section.
+## Known gaps
 
-Switching tools keeps the same mounted controls, raw drafts, selection and session history. It does not apply a field, start audio or cancel an already-authorized import/library read. Basic text fields can be deliberately applied with Enter after returning to a retained draft; sound and note forms retain their own Apply/Discard controls. Drafts remain memory-only: a reload restores committed work, and the existing departure warning protects unapplied changes where the browser permits it.
+Measured against the full-DAW destination in the product direction:
 
-**Stop audio** stays in the workspace toolbar. Active capture/render operations also retain their existing Finish/Cancel controls after navigation. Project files, saved compositions, MIDI import and MIDI/WAV exports are in **Project & export**; original-take comparison, project-import cancellation and saved-copy recovery are in **Reference**. These are modeless sections: ordinary Tab navigation works, with no dialog focus trap.
-
-Verification and integration evidence: [#261 receipt](../../docs/2026-10-15-melody-workspace-integration.md).
-
-## Split a sustained note
-
-Select a piano-roll note, then enter **Split at beat** and choose **Split selected note**. Song beats start at 1. The point is exact and ignores the roll grid; both halves must be at least 0.25 beats. Only machine-roundoff near that minimum is normalized. The original ID stays on the first half; the second receives a new ID, retaining pitch and velocity. Other notes, track sounds and reference takes stay unchanged. A full 256-note track refuses the split.
-
-Each half retriggers its instrument envelope, filter and echo, so the result has two attacks and can have overlapping release tails. It is not a continuous tied voice. Apply or discard other editor drafts first. One Undo restores the original; Redo, browser autosave, complete project backups, MIDI and WAV retain the split. The split-position field is a session-only editing parameter. This is a note-editing milestone toward the ACTIVE full-DAW direction ([#190](https://github.com/twangyal/projects-monorepo/issues/190)).
-
-## Join notes into a sustained voice
-
-Select a note and choose **Join next matching note**. It must have exactly one touching successor in the same track with identical pitch and velocity. The result retains the selected ID and the original outer interval; the successor ID is removed. Unrelated voices, sounds and reference audio stay intact. Gaps, overlaps and duration beyond 16 beats refuse; only floating-point roundoff at touching/maximum boundaries is normalized. A chord with multiple matching successors is ambiguous and refuses.
-
-The joined note has one attack, filter evolution and release, with one set of echo copies. This deliberately changes articulation. Apply or discard editor drafts first. One Undo restores both notes, and complete backups, autosave, MIDI and WAV retain the joined result ([#191](https://github.com/twangyal/projects-monorepo/issues/191)).
-
-## Organize track layers (#307)
-
-Select a track and open **Arrange**. **Move track earlier** and **Move track later** move it one position in the track list; the first/last boundary disables the corresponding control. Notes, sounds, automation and original reference recordings stay attached to their track IDs. The selected track and note remain selected. MIDI part order follows the new layer order, with each part's own notes and instrument program; WAV renders the same musical content. These controls change layer order, not note timing or audio routing.
-
-Finish unapplied fields, continuation suggestions and piano-roll gestures first. Each move is one Undo/Redo edit, retained in autosave, complete backups and saved compositions. Keyboard users retain an available order control after the move. Melody remains ACTIVE toward the complete DAW experience.
-
-## Roll chord attacks (#306)
-
-Select a note in a simultaneous melodic chord and open **Notes → Roll chord attacks**. Choose **Low to high** or **High to low** and attack spacing of **0.25**, **0.5** or **1 beat**, then **Roll chord notes**. All distinct pitches at the selected note's exact onset are ordered by pitch and delayed in sequence. Nearby attacks stay separate. The first voice retains the original onset; note IDs, pitches, durations and velocities are unchanged. Releases may overlap and the phrase may extend. This spreads the attacks once; it is not a repeating arpeggiator.
-
-The result is ordinary editable notes, retained in complete backups, autosave, MIDI and WAV, with one Undo/Redo step. Finish unapplied drafts and suggestions first. Single voices, duplicate pitches at the chord onset, drums, new overlaps with external same-pitch notes and results beyond the song boundary refuse atomically. Existing same-pitch intersections are preserved. Other tracks, sounds, automation and original reference recordings remain intact.
-
-## Build a chord from a melody note (#299)
-
-Select a melodic piano-roll note and open **Notes → Build a chord**. Choose **Major**, **Minor**, **Suspended 2** or **Suspended 4**, then **Add chord tones**. Two ordinary editable notes are added above the selected root, with the same exact start, duration and velocity. The root and all other voices, sound settings, automation and reference recordings remain unchanged. Edit the added notes individually to refine the voicing.
-
-Major uses a major third and perfect fifth; Minor a minor third and perfect fifth; the suspended choices use a second or fourth instead of the third. This is an explicit interval tool, without key detection, learned harmony, octave inversion or automatic voice leading. Drum tracks refuse. If a target tone already overlaps the root’s time interval, the chord exceeds C7, or the track has insufficient space below its 256-note limit, the whole action refuses. Existing tones are never silently doubled, removed or skipped.
-
-Finish unapplied editor drafts, gestures and suggestions first. The quality choice is a session-only parameter retained across navigation; choosing it does not edit notes. A successful chord is one Undo/Redo/autosave edit, retained in complete backups, saved compositions, MIDI and synthesized playback/WAV. Physical listening and musician-quality evaluation remain unverified. [Integration evidence](../../docs/2026-10-21-melody-chord-construction.md).
-
-## Explore a chord's octave voicing (#320)
-
-Select any melodic note in an exact-onset chord, then use **Raise lowest chord voice** or **Lower highest chord voice** in the chord tools. The first moves the lowest pitch above the highest; the second moves the highest below the lowest. Each moves one voice by the smallest positive whole-octave multiple that passes the opposite boundary. Thus C4–E4–G4 becomes E4–G4–C5 when raised; a widely spaced chord can move its boundary voice by several octaves. Pitch class, note ID, start, length and velocity stay intact; other notes/tracks, sounds, automation and reference recordings remain unchanged.
-
-Each cycle is one Undo/Redo/autosave edit, retained in complete project files, MIDI and WAV. Finish unapplied drafts/suggestions first. Single voices, unison duplicates at that onset, drums, pitches outside C2–C7 and newly overlapping voices of the same pitch refuse the whole action. Nearby attacks are separate. This is explicit octave placement, without key detection, learned harmony or automatic voice leading. The full DAW destination and recording investigation #300 remain open.
+- Instruments are basic synthesized waveforms and a synthesized kit; no sampled instruments, sample import or kit choice.
+- No audio clips: captured audio is a reference only and cannot be edited, arranged or mixed as a track.
+- Mixing is limited to pan, one reverb bus and volume/cutoff/pan automation; no insert chains, extra buses, routing or mixer view.
+- Capture is limited to 20-second, single-voice phrases. Transcription accuracy on real humming or singing has not been measured.
+- Backed recording has no latency correction, and some intermittent native recording failures are unexplained.
+- AI assistance is limited to the bounded phrase-continuation learner; no generative arrangement or harmony.
+- Only Chromium is tested; Safari, Firefox and mobile recording are unverified.
 
 ## Run locally
 
-Use Node.js **22.18 or newer** and npm:
+Requires Node.js 22.18 or newer (CI uses Node 24) and npm.
 
 ```sh
 cd apps/melody-studio
 npm ci
-npm run dev
+npm run dev        # Vite dev server on 127.0.0.1
 ```
 
-Open the localhost URL printed by Vite. No account, API key, backend, paid service, or downloaded model is required. `npm run build` creates the static production site in `dist/`; `npm run preview` serves that build locally.
+Open the URL Vite prints. Microphone capture needs a secure context (localhost or HTTPS) and browser permission. `npm run build` writes the static site to `dist/`; `npm run preview` serves it on 127.0.0.1. No environment variables or credentials are needed.
 
-## Make a composition
-
-1. Select a track, then **Record melody** or **Import audio**. Set the tempo before capture; transcription quantizes timing to quarter beats at that tempo. **Try demo melody** exercises audio detection without microphone access; **Load example** opens a prepared two-track composition.
-2. Sing or hum one clear melody in a quiet room. Recording stops automatically after 20 seconds; **Finish recording** stops sooner and transcribes it. Imports must be browser-decodable audio, at most 10 MiB and about 20 seconds long. WAV is a useful fallback if another format cannot be decoded.
-3. Drag a piano-roll note to move its pitch/time, or drag its right edge to resize. Use **Draw note** to add notes on empty grid space. For exact values, select a note, edit its MIDI pitch, start beat, duration or velocity, and press **Apply note**. Keyboard users can reach notes with Tab and use arrows or the labeled form fields.
-4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
-5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes and reference take. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
-
-Arrangements can span **512 beats**: 4 minutes 16 seconds at 120 BPM, or 12 minutes 48 seconds at 40 BPM, before the synthesized release tail (up to two seconds per track). Editing, section repetition, MIDI review and whole-song exports share this timeline. Captures and retained reference takes remain 20 seconds each; they are source ideas rather than full-song audio clips. Earlier project files remain compatible. Melody remains ACTIVE toward capable sound design, audio editing, mixing, routing and effects.
-
-## Design a track sound
-
-Each track has a **Sound envelope** with linear **Attack**, **Decay**, **Sustain** and **Release**. Attack rises from silence to full level; decay falls to the sustain level; release fades from the level reached when the note ends. Attack, decay and release accept 0–2 seconds; sustain accepts 0–1. A note ending during attack or decay releases from its actual level. Zero-length phases are supported.
-
-Edit the fields, then choose **Apply sound envelope** for one undoable, autosaved track edit. Until Apply, playback and exports use the committed sound. Blank, nonfinite or out-of-range values remain editable and cannot affect the project. Switching tracks retains each track's sound drafts. **Discard sound edits** restores only the selected track's committed sound. Apply/discard other editor drafts and suggestions and finish piano-roll gestures before applying sound settings; a pointer click cannot blur and commit an unrelated raw field.
-
-Applied settings survive complete project backups, saved compositions, track duplication, Undo/Redo and reload. All synthesized playback, backing, edited-note comparison and WAV exports use the same renderer. Whole-song WAV and aligned stems include the complete release tail; section exports retain their exclusive crop bounds. MIDI keeps its existing note/program representation and does **not** carry custom envelopes. Earlier projects retain their original 0.01-second attack, full sustain and 0.08-second release, with unchanged rendered PCM.
-
-This provides per-track amplitude shaping for the three existing waveform instruments. Sample instruments, additional effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
-
-### Shape the tone with a resonant filter
-
-Enable **low-pass filter**, set **Filter cutoff (Hz)** from 20–10,000 and **Filter resonance (Q)** from 0.5–8, then choose **Apply sound filter**. Lower cutoff softens bright harmonics; higher Q emphasizes frequencies near the cutoff. Disable Enable and Apply to bypass the filter and restore the unfiltered oscillator sound. Bypass removes the saved filter settings; re-enabling starts from 8,000 Hz and Q 0.707.
-
-Filter changes are explicit, undoable, autosaved track edits. Blank, nonfinite and out-of-range drafts remain editable and do not change playback or exports. Track selection retains each track's raw filter drafts. **Discard filter edits** restores only that track's committed filter. Finish other raw editor fields, envelope drafts, suggestions and piano-roll gestures before Apply; these are never silently committed by the sound button.
-
-Projects, saved compositions, duplicated tracks, Undo/Redo and reload retain applied filters. Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share the renderer. MIDI does not carry this custom filter. Older projects bypass filtering and retain their original PCM. The two-pole filter processes each oscillator voice before its amplitude envelope; state starts fresh with each note and release length is unchanged. At lower render sample rates the effective cutoff is capped at 45% of the rate. Existing mix peak limiting remains active; strong resonance can make it reduce the whole mix's gain.
-
-Coefficients follow the [W3C Audio EQ Cookbook low-pass filter](https://www.w3.org/TR/audio-eq-cookbook/). The optional song-time cutoff curve below extends this static filter. Per-note filter envelopes, track effects buses and musician-quality acceptance remain part of the ACTIVE full-DAW destination.
-
-### Sweep filter cutoff over song time (#323)
-
-In **Sound → Sound filter**, enable **low-pass filter** and **cutoff curve**, then enter **Cutoff curve points**, one song beat and frequency per line, such as `1 8000`, `5 300`, `9 3000`. Up to64 strictly increasing points use beats1–513 and cutoff20–10000Hz. Cutoff interpolates linearly in Hz and holds its first/last value outside the entered range. The committed graph uses a linear frequency scale. The curve overrides the retained static cutoff; resonance(Q) stays static. Effective cutoff still caps at45% of render sample rate.
-
-Use **Apply sound filter** for one undoable, autosaved edit, or **Discard filter edits** to restore all committed filter fields. Raw text survives track/tool navigation. Blank, malformed, duplicate, unordered or out-of-range points refuse the complete edit. Finish unrelated drafts, suggestions and gestures first. Disable the curve and Apply to restore static cutoff; disable the whole filter and Apply to remove both. Checking the curve without enabling the filter does not activate an effect.
-
-Each oscillator/drum voice follows absolute song time through its release/ring before amplitude shaping and echo placement. Finite echoes repeat the originally filtered voice; they do not resample cutoff at the delayed tap time. Playback, solo, backing, edited-note comparison and WAV/stem/section exports share this renderer. Cropped sections retain original song time; section note edits leave automation anchored; continuation auditions shift the curve with the selected ending. Curves add no tail/duration. Existing frame and peak guards remain.
-
-Changing cutoff uses trapezoidal state-variable integrators to avoid the unstable coefficient-dependent state of a changing direct-form filter. Static and constant-curve voices retain the original Cookbook filter and grouping for exact PCM parity. See Andrew Simper's [trapezoidal SVF derivation](https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf), especially pages4–6. This DSP choice does not establish musician-quality or physical listening acceptance.
-
-Complete project backups, saved compositions, duplication, autosave, Undo/Redo and reload retain optional `filter.curve`. Both MIDI exports omit the effect; older Melody readers may refuse the added nested field. Reference audio stays unchanged. Melody remains ACTIVE toward its full-DAW destination; capture diagnosis#300, audio-clip editing, broader effects/routing and real-use evaluation remain open. [Verification and retained failures](docs/2026-10-24-filter-automation.md).
-
-### Add rhythmic echo
-
-Enable **rhythmic echo**, choose **Echo spacing (beats)** from 0.25–4, **Echo decay** from 0.05–0.95, and integer **Echo repeats** from 1–8. Choose **Apply sound echo** for one Undo/Redo and autosave edit. Each repeat is the complete filtered/enveloped voice delayed by another spacing interval, with level multiplied by decay for each repeat. The dry voice keeps its existing gain; overlapping taps may trigger the existing whole-mix peak limiter.
-
-Drafts remain separate from playback and files until Apply. Blank, nonfinite and invalid values remain editable. Track selection retains each track’s drafts; **Discard echo edits** restores only its committed settings. Finish other raw fields, suggestions and roll gestures before Apply; pointer admission protects focused unsent fields before blur, and keyboard activation uses the same guard. Disable Enable and Apply to remove the effect; re-enabling starts from 1 beat, decay 0.5, 3 repeats.
-
-Complete projects, the saved composition library, duplication, Undo/Redo and reload preserve applied echoes. Shared synthesis includes echoes in playback, solo, backing, edited-note comparison and WAV/stem exports. Whole-song and aligned track WAV include the complete echo/release tail; sections and reference comparison keep their existing exclusive window bounds. MIDI does not include custom effects. Old projects omit echo and keep their original PCM. Echo tails can extend beyond the 512-beat note timeline. The 40-million-frame synthesis allocation guard remains in force: an excessive render refuses instead of truncating the tail; shorten the song or use a lower render sample rate in a programmatic renderer.
-
-This is finite echo per track. A shared stereo reverb bus is available under [Mix in stereo](#mix-in-stereo); stereo delay, live-input processing, fuller mixer routing and musician-quality acceptance are still to come. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
-
-### Fade a track over song time
-
-Enable **volume ramp**, set **Ramp start beat** and **Ramp end beat**, and choose start/end levels from 0–1. Beats start at 1 and accept fractions through 513 (the end of the 512-beat note timeline). The end must be after the start. Choose **Apply volume ramp** for one undoable, autosaved edit. The level changes linearly between the bounds and holds its start/end values outside them, multiplying the track's ordinary volume. This fades sustained notes, release and echo tails together; it does not change note velocities or captured audio. Use 0→1 for a fade-in and 1→0 for a fade-out.
-
-Drafts do not affect playback or files until Apply. Invalid or blank values remain editable; switching tracks retains drafts. **Discard volume ramp edits** restores the selected track's committed settings. Finish unrelated drafts, suggestions and piano-roll gestures first. Disable Enable and Apply to remove automation and return to constant volume.
-
-Applied ramps survive complete backups, saved compositions, duplication, Undo/Redo and reload. Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share the automated renderer; cropped sections retain the song-time gain. Continuation audition retains that gain when shifting its selected ending to the start. MIDI omits this custom automation. Earlier projects retain identical PCM, and peak/frame limits stay active. A ramp does not extend the song or its existing effect tails. Section note transformations move notes while leaving this song-time ramp anchored to its entered beats.
-
-This is one linear volume ramp per track, without multiple automation points, curve editing, effect automation or mixer routing. Synthetic Chromium audio/export checks establish the described behavior, not musician-quality or physical listening evaluation. See [volume-ramp verification](docs/2026-10-10-volume-ramp.md). Melody remains ACTIVE toward the full DAW vision.
-
-### Shape a track with multiple volume points
-
-Enable **volume curve** and enter **Volume curve points**, one song beat and gain per line, such as `1 1`, `5 .2`, `9 .8`, `17 0`. Beats are1-based through513; levels range0–1. Up to64 strictly increasing points can define several rises, dips and fades. Gain interpolates linearly between points and holds the first/last level outside their range. A single point sets a constant gain. The graph shows the committed curve, including held endpoints.
-
-Choose **Apply volume curve** or **Discard volume curve edits**. Raw text remains separate from playback/files and is retained while switching tracks. Blank, duplicate, unordered, out-of-bounds or malformed points refuse the complete edit. Decimal conversion preserves fractional/tiny values through displayed one-based beats and unchanged reapplication;32,768text characters can represent all64valid subnormal levels. Finish other raw fields, note drafts, gestures and suggestions first; pointer and keyboard guards protect unsent fields before blur.
-
-The curve multiplies track volume **and any separately enabled volume ramp**. Disable the older ramp if only the new curve should shape gain. It affects sustained notes, release and echoes at absolute song time in shared playback/solo/backing/reference-note rendering and WAV/stem/section exports. Section note transformations leave automation anchored; continuation audition shifts the curve to preserve its original song-time levels. Curves do not extend the song. MIDI omits custom automation.
-
-Changed Apply is one Undo/Redo edit, retained in complete projects, autosave, saved copies, portable recovery and track duplication. Reference PCM and other tracks remain unchanged; absent curves preserve legacy PCM. This is linear amplitude automation, without stereo routing, effect curves, live automation recording or musician-quality acceptance. Melody remains ACTIVE toward the full DAW vision ([#197](https://github.com/twangyal/projects-monorepo/issues/197)).
-
-### Export volume automation to another music app
-
-Choose **Export MIDI with volume automation** to carry the combined committed volume curve and volume ramp as7-bit MIDI expression(CC11). Ordinary **Export MIDI** stays byte-compatible and omits this automation. Channel volume(CC7), note velocities/timing, track programs and tempo keep their original representation. Unapplied drafts/suggestions and roll gestures must be resolved before the expressive export; activation guards them before pointer blur and on keyboard use. Export changes no project/history/reference data. Files end in `-automation.mid`.
-
-Expression is sampled at1/16beat and rounded to0–127; rounded curve/ramp breakpoint ticks and the song endpoint are included. For maximum graphs the grid automatically becomes1/8or1/4beat to keep the complete file under the existing32,768event ceiling. Repeated values are omitted. Timing uses480ticks/beat, so sub-tick features cannot be represented exactly. Muted tracks contain no new expression events. All events stop at the original MIDI note-timeline end; custom synth envelopes, filter, echo and their tails are not represented.
-
-External instruments may ignore CC11 or map it differently; this is not PCM-equivalent sound or continuous automation. Melody’s current MIDI importer deliberately reports unsupported controllers and excludes affected lanes; it does **not** restore these expression curves. Use a complete project backup for exact Melody recovery. The standard controller mapping is documented by [the MIDI Association](https://midi.org/midi-1-0-control-change-messages), verified2026-10-12. This export milestone ([#198](https://github.com/twangyal/projects-monorepo/issues/198)) advances the ACTIVE DAW workflow without claiming external-instrument acceptance.
-
-## Mix in stereo
-
-Each track's **Stereo mix** controls place it in the stereo field and send it to a shared reverb.
-
-- **Pan** runs from 100% left to 100% right. It uses a balance law: a centred track keeps its full level in both speakers, and panning only turns down the opposite side.
-- **Reverb send** sets how much of the track feeds the song's single **reverb bus**. The bus has **Reverb size** (longer, denser tail) and **Reverb return** (how loud the reverb comes back). Its settings are shared by all tracks and stored with the song.
-
-The reverb is a deterministic algorithmic stereo reverb (eight damped combs and four allpasses per channel, Freeverb-style), with left and right decorrelated. When any track sends to it, the song gets 0.75–4 seconds of tail after the last sound. The whole mix is peak-limited across both channels together.
-
-As soon as an audible track is panned or sends to the reverb, playback, section play and loop, **Solo track**, **Export WAV** and **Export track WAV** all become 22,050 Hz 16-bit **stereo**. A stem keeps its own pan and its share of the reverb. Songs with every track centred and no sends render exactly as before, sample for sample, and still export mono WAV.
-
-Each slider release is one Undo/Redo edit and is kept in autosave, saved copies and project files. Moving pan back to centre, or the send to 0%, removes the setting. **Export MIDI** adds CC10 (pan) and CC91 (reverb send) only for tracks where they are set; external instruments decide how to use them.
-
-This is the first mixing stage. Per-track insert chains, further buses and sends, stereo delay, effect automation and a mixer view remain part of the ACTIVE DAW destination. See [stereo mix verification](docs/2026-10-13-stereo-mix.md).
-
-### Move a part across the stereo field (#298)
-
-In **Sound → Pan automation**, enable **pan curve**, then enter one song beat and stereo position per line, for example `1 -1`, `5 1`, `9 0`. Beats run from 1–513; positions run from −1 (left) through 0 (centre) to +1 (right). Up to 64 strictly increasing points interpolate linearly and hold their first/last positions outside the range. The graph shows the committed curve, with centre at its horizontal guide. Choose **Apply pan curve** for one undoable edit or **Discard pan curve edits** to restore committed fields.
-
-While applied, the curve replaces the track’s static Pan; that slider is disabled and retained. Disable Enable and Apply to restore the static position. The existing balance law keeps a centred dry track at full level in each channel and attenuates the opposite side when panned. Automation acts at absolute song time, including sustained voices, release and echo tails. The shared reverb keeps its existing mono pre-pan send and independent stereo return; pan automation does not move the wet return or add tail length.
-
-Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share this mix. Section operations leave the curve anchored to song beats; continuation audition shifts it with the selected ending. A non-centred curve on an audible track selects stereo output. An all-centre curve overrides a retained static pan and can return output to legacy mono when nothing else needs stereo. Unapplied drafts do not affect playback/files. Both MIDI exports omit pan automation; use a complete project backup for exact recovery.
-
-Invalid, blank, nonfinite, unordered or duplicate points refuse the complete edit. Text uses ordinary decimal numbers (no exponents), with signed positions and a 65,536-character cap that retains even maximum curves with tiny fractional beats/positions. Per-track raw drafts survive navigation; unrelated drafts/gestures/suggestions must be resolved before Apply. Complete backups, saved copies, duplication, autosave, Undo/Redo and reload retain applied curves. Old absent settings retain exact PCM. This adds creative mix control; physical listening, musician-quality evaluation, audio-clip editing, broader effects/routing and full-DAW acceptance remain unfinished.
-
-Verification: [pan-automation integration](../../docs/2026-10-21-melody-pan-automation.md).
-
-## Program drums
-
-Choose **Drum kit** as a track's instrument to turn it into a drum track. A **Drum pattern** step grid appears above the piano roll. It has rows for Kick, Snare, Clap, Closed hat, Open hat, Low tom, High tom and Crash, and sixteen sixteenth-note steps per bar.
-
-- Select a step (or focus it and press Enter or Space) to add or remove a hit. Each hit is one Undo/Redo edit.
-- **Start with a basic beat** fills an empty track with a one-bar groove (kick, snare and eighth-note hats with lighter offbeats).
-- **‹ / ›** move between bars. **Copy bar to next** copies the shown bar over the following one, which makes a loop quick to build.
-- Steps played harder (velocity 0.85 or more) are shown darker.
-
-Hits are ordinary notes whose pitch is a General MIDI percussion key (kick 36, snare 38, clap 39, closed hat 42, open hat 46, toms 45/50, crash 49). So the piano roll, note velocity, sections, quantize, repeat, mute, solo, stereo mix, reverb sends, volume automation, stems, WAV and the composition library all work on drum tracks. Each key plays a deterministic synthesized one-shot. The hit rings for its kit piece's natural length (about 0.1 s for a closed hat, 1.8 s for a crash), whatever the note's duration, and the sound envelope does not apply. Filter, echo and automation still shape the drums. Keys outside the grid's eight rows also play: other General MIDI pieces such as ride, cowbell, tambourine and floor toms use their kit sound, and any remaining key plays a tuned percussion tone.
-
-**Export MIDI** writes drum tracks on General MIDI channel 10, so other music apps play them with their own kits. **MIDI import** now accepts channel 10 as a part when you choose **Drum kit** for it. Key 35 (acoustic kick) becomes the kit's kick (36), and hits shorter than a sixteenth are held for one, as the review discloses.
-
-A track holds at most 256 hits, which is about eleven bars of a busy groove. Longer patterns need more tracks or **Repeat phrase**. The kit is synthesized, not sampled: there is no sample import or kit choice yet. See [drum tracks verification](docs/2026-10-13-drum-tracks.md).
-
-## Audition an arrangement section
-
-Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.
-
-**Stop playback** stops either mode. Changing a bound or committing a composition edit stops playback and retires pending rendering/resume work. **Export section WAV** downloads one pass as `-section.wav`; ordinary Play composition, Export WAV and Export MIDI still use the whole composition. The range is session-only and is not saved in project files, autosave or undo history.
-
-Sections crop the fully rendered committed synthesized mix, using the nearest audio-frame boundaries. Crossing notes retain their existing phase/envelopes, and peak limiting uses the whole composition. Reference takes and unapplied edits are excluded. A section omits the release tail beyond its exclusive end. Loops use native audio-buffer repetition with hard boundaries; abrupt waveform joins can click. There is no crossfade, tempo automation, playlist section management, or measured musician-quality claim in this milestone. These remain intermediate controls toward the full DAW destination.
-
-### Repeat a layered section
-
-**Duplicate section** inserts a copy immediately after the selected exclusive end and shifts later notes on **every track**, including muted tracks, by the section's beat length. With start 1 and end 9, the first eight beats repeat at beat 9 and later material moves eight beats forward. Fractional timing, rests, pitches, velocities and track sounds are retained; copied notes get independent IDs. The current range stays selected so you can repeat it again.
-
-Choose bounds that include whole notes. A note crossing either boundary refuses the entire operation; nothing is split, shortened or silently quantized. Empty sections and results beyond current 256-notes-per-track/512-beat guards also refuse. Apply/discard unfinished editor fields and continuation proposals and finish any piano-roll gesture first. A pointer click on Duplicate section cannot commit a focused unsent field by blurring it.
-
-Success is one **Undo/Redo** edit and autosaves through the existing complete-project flow. Reference takes and bindings keep their original bytes and capture timing; they are not duplicated or shifted audio regions. Full MIDI/WAV/project exports include the resulting committed synthesized arrangement. This adds an arrangement building block; editable audio clips, playlist/section management and broader DAW production controls remain to be built.
-
-### Trim a layered song
-
-**Remove section and close gap** removes whole notes in the selected range on **every track**, including muted tracks, then moves notes starting at or after the exclusive end left by the exact range length. For start 9 and end 17, the eight selected beats disappear and a note at beat 17 moves to beat 9. Surviving IDs, order, pitch, duration, velocity and sound settings remain unchanged. An empty rest can be removed when later notes move; a range beyond the last note refuses under the existing section bounds.
-
-Choose whole-note boundaries: any crossing note on any track refuses the entire edit. Apply/discard raw editor fields and continuation suggestions and finish roll gestures first. Pointer admission protects focused unsent fields; keyboard actions refuse retained drafts. Blank or invalid range text stays available for correction. Success is one complete-project **Undo/Redo** edit and autosaves, stopping old playback and timing review. Removing the entire song keeps empty tracks and original reference captures; captured audio is never cut or time-shifted. Save a project backup for longer-term recovery. See [section-removal evidence](docs/2026-10-08-section-removal.md).
-
-### Tighten note timing in a section
-
-Choose the section bounds above, select the track, and set **Quantize grid** to one, half, quarter or eighth of a beat. Set **Quantize strength** from 0–1, then choose **Quantize section note starts**. Strength 1 fully aligns onsets to the nearest grid anchored at song beat zero; strength 0 retains the original timing. Intermediate values move partway. Exact midpoint ties choose the later grid position. Chords sharing a start stay together.
-
-Selection uses the original onset at or after the section start and before its exclusive end. Complete durations stay fixed, including notes crossing a boundary. Rounded starts may move outside the selection by up to half a grid; a result extending past the 512-beat timeline refuses the entire operation instead of shortening or clamping any note. IDs, pitches, dynamics, sounds, effects, other tracks and reference takes are preserved. This edits synthesized notes, not captured audio or transcription accuracy.
-
-A changed result is one saved Undo/Redo edit. Zero strength or already aligned notes preserve Redo without adding history. Empty/missing selections, malformed strength and invalid bounds refuse while retaining raw control text. Apply/discard other editor fields and suggestions and finish roll gestures first; pointer admission protects focused unsent fields before blur and keyboard actions use the same guard. Grid/strength are session-only; the resulting notes survive project/library backups and reload and are used by existing playback, MIDI and WAV exports. This direct edit complements the existing reviewed timing proposal and audition flow, which also supports swing. Audio warping remains future work. See [quantization evidence](docs/2026-10-09-quantization.md).
-
-### Tighten held-note lengths
-
-Use the same section, **Quantize grid** and **Quantize strength**, then choose **Quantize section note durations**. This separate action selects original onsets and moves each held length toward the nearest positive grid multiple of at least 0.25 beats; midpoint ties choose the longer length. For example, 0.75 beats becomes 1 on a half-beat grid, and a 0.25-beat note becomes 1 on a one-beat grid. Strength 0 keeps lengths, strength 1 fully snaps, and intermediate values blend toward the target.
-
-Starts stay fixed, including later notes; there is no ripple. Complete selected lengths can extend past the section end. Pitches, velocity, IDs, other tracks, sounds, volume ramps and complete reference recordings remain intact. A resulting note ending after beat 512 refuses the entire edit; nothing is clipped or partially saved. The same raw-draft/gesture guards, single Undo/Redo edit, no-op Redo retention and autosave apply. MIDI/WAV use the resulting note lengths. This does not time-stretch recorded audio. See [duration-quantization evidence](docs/2026-10-11-duration-quantization/README.md).
-
-### Change a phrase’s pitches
-
-Choose a track and the shared section bounds, then use **Transpose section up/down a semitone/octave** or **Invert section pitches**. Transpose moves every included pitch by ±1 or ±12 semitones. Invert mirrors intervals around the lowest pitch at the earliest included onset: with pivot 60, pitches 60, 67 and 64 become 60, 53 and 56. Simultaneous chord notes use their lowest pitch as the pivot, independent of storage order.
-
-Selection uses original onsets at or after the start and before the exclusive end. Whole note lengths, starts, dynamics, IDs, sounds/effects, other tracks and retained reference recordings stay intact. Any transformed pitch outside MIDI 36–96 (C2–C7) refuses the whole edit without clamping. Empty/invalid sections refuse; a unison inversion makes no history edit and retains Redo.
-
-Finish other editor drafts, suggestions and roll gestures first. Pointer and keyboard actions protect unapplied work. A changed result is one autosaved Undo/Redo edit, included in ordinary project/library backups, MIDI, synthesized playback and WAV. These controls transform notes; they do not pitch-shift captured audio or infer harmony. See [section pitch evidence](docs/2026-10-09-section-pitch.md).
-
-### Stretch or compress a phrase
-
-Select a track and whole-note section bounds, then choose **Stretch section timing ×2** or **Compress section timing ×0.5**. Timing scales around the section start: contained note starts, durations and rests double or halve. Later notes on that track shift by the section’s length change, keeping the gap after the phrase. A note ending exactly at the start stays unchanged; a note starting exactly at the exclusive end shifts. Other tracks stay at their original song positions.
-
-Project tempo, pitches, velocities, IDs, instruments, envelopes, filters, echo spacing and song-time volume ramps stay anchored. Original reference recordings and bindings are unchanged; this edits synthesized note rhythm and does not time-stretch captured audio. Stretching a track changes its alignment with other parts deliberately. The entered section bounds stay selected; enter the transformed phrase’s new end before reversing the scale.
-
-Crossing notes on the selected track, empty selections, invalid bounds, durations outside 0.25–16 beats or any resulting note outside the 512-beat timeline refuse the entire edit. No note is split, quantized or clamped. Apply/discard unrelated drafts and proposals and finish roll gestures first. Pointer admission protects focused unsent fields; keyboard activation uses the same guard. Success is one autosaved Undo/Redo edit, preserved by complete backups/reload and used by existing MIDI/playback/WAV exports. This is phrase development within the ACTIVE DAW destination; audio warping and musician evaluation remain future work. See [timing-scale verification](docs/2026-10-11-section-scale/README.md).
-
-### Reverse a phrase’s rhythm
-
-Select a track and choose whole-note section boundaries, then **Reverse section note timing**. Each contained note interval is mirrored inside the range, including leading/trailing rests: new start = section start + (section end − original note end), using internal zero-based beats. Pitches, durations, velocities, IDs, sounds/effects, other tracks and complete reference recordings stay unchanged. Synthesized notes attack and release normally at their new starts; this does not reverse recorded audio or oscillator samples.
-
-A note on the selected track crossing either boundary refuses the whole operation; notes exactly ending at a boundary are supported. Other tracks’ boundary crossings do not prevent the selected-track edit. Empty/invalid sections refuse. Symmetric timing adds no edit and keeps Redo. Finish raw editor fields, suggestions and roll gestures first; pointer-before-blur and keyboard admission keep unapplied work safe. A changed result is one autosaved Undo/Redo edit, retained by complete backups/reload and ordinary MIDI/WAV. The song still ends at its last note; if reversal shortens that implicit end, reduce the session range before another section action or use Undo. Fractional math is subject to JavaScript precision; use Undo for exact restoration rather than assuming reversing twice is bit-exact for arbitrary fractional starts. See [reversal evidence](docs/2026-10-09-section-reverse.md).
-
-## Record with backing
-
-Select the destination track, apply or discard unfinished editor fields and suggestions, then choose **Record with backing**. Confirm replacing that track when it already contains notes or a reference. Use headphones: speaker playback can leak into your microphone and confuse single-voice pitch detection.
-
-After preparation and microphone permission, listen to the four-beat count-in, then start your part at the beginning of the composition. The backing uses the other committed tracks at the captured tempo, preserving their instruments, volumes, mute settings and note timing. It excludes the destination track and all reference recordings. At least one other audible part must begin within the first 20 seconds. A short backing ends in silence while recording continues.
-
-**Finish recording** keeps the take so far after the count-in; recording finishes automatically at 20 seconds. **Cancel** or **Stop playback** discards it. Hiding or leaving the page also cancels this mode. A successful transcription replaces the destination notes and normalized reference together as one Undo edit. The other tracks and their reference samples stay unchanged. Empty/failed/cancelled takes preserve the previous complete project; a conflicting saved copy uses the existing explicit recovery flow.
-
-Backing playback and microphone capture share an audio-frame clock. The retained reference begins at composition beat zero and excludes the count-in. This aligns the browser graph; input/output devices and acoustic paths still add latency. There is no automatic latency correction or measured physical microphone accuracy. Captured note timing still uses the existing quarter-beat transcription. Backing rendering uses the ordinary whole-composition peak limiting before cropping/padding the first 20 seconds, so later loud notes can affect backing gain.
-
-This mode requires AudioWorklet in addition to secure-context microphone access and Web Audio. It requests disabled microphone processing as a best effort; browsers/devices may override those constraints. Ordinary **Record melody** and audio import remain available. The backed take's decoded metadata describes the browser audio graph, rather than a microphone hardware clock. Setup and processing each have a 30-second deadline; pending native permission/module/resume work must drain after cancellation before another capture starts. Save a project backup and reload if the browser never finishes that native work.
-
-## Edit directly in the piano roll
-
-Choose **Move notes** or **Draw note** with **Piano roll tool**. In Move mode,
-drag a note body to move it in time and pitch; its right-edge handle changes only
-duration. A normal click selects the note for numeric editing. Draw on empty
-space: click for a one-beat note at velocity 0.8, or drag right to choose its
-duration. Existing notes keep their velocity when moved or resized.
-
-**Snap movement** defaults to a quarter beat, with eighth-beat and Off choices.
-Move/resize snaps the change from the original value, preserving imported
-fractional offsets. Drawing snaps the absolute start and duration. Ties round
-away from zero. Off keeps the represented pointer-derived timing; use numeric
-fields for exact values. Untouched notes are never quantized.
-
-A dashed preview is unsaved. Release to apply one Undo edit; Escape cancels.
-Invalid pitch, duration, start, note-count or end bounds refuse the whole edit.
-Nothing is silently shortened or clamped. Scrolling, resizing, lost pointer
-capture, leaving/hiding the page or another editor action cancels the gesture.
-Exports contain committed notes only. Finish or explicitly discard unsent fields
-before dragging; their exact text remains available for correction.
-
-With a note focused, Left/Right moves by the chosen snap increment, Up/Down moves
-one semitone, and Shift+Left/Right resizes. Off uses an eighth beat for keyboard
-timing steps. Enter/Space opens the existing numeric editor; **Add note** remains
-available without dragging. Inputs retain normal text editing and Undo. Scroll
-the contained roll to reach distant notes; gestures do not automatically scroll.
-
-Committed edits use the same complete-project history and autosave as numeric
-edits, retain every reference sample unchanged, and stop old audition playback.
-Cancelled or zero-change gestures preserve the redo branch and suggestion.
-
-## Review whole-track timing
-
-Use **Timing grid (beats)**, **Timing strength (%)** and **Timing swing (%)**, then **Review timing**. Grids are 1, ½, ¼ or ⅛ beat intervals. Strength 100% moves each onset to its nearest grid point; 50% moves halfway; 0% keeps the original timing. Swing 0–50% delays odd subdivisions in each pair by that fraction of one grid interval: grid ½ beat with swing 25% places the first pair at internal beats 0 and 0.625, then starts the next pair at 1. This is a grid-delay percentage, not a displayed swing-ratio convention. Nearest-grid ties choose the later onset.
-
-The review lists exact old/new displayed starts for changed notes. **Apply timing** makes one Undo/Redo edit and autosaves; **Discard timing** and review alone keep committed exports and history unchanged. Unchanged results preserve the redo branch. Note IDs, order, pitch, duration and velocity, other tracks and original reference samples are retained. Durations are never quantized; onsets can create or alter overlaps. A shift extending any note beyond internal beat 512 refuses the whole proposal rather than clipping it.
-
-Apply/discard unsent editor fields and continuation suggestions and finish roll gestures first. Review/Apply pointer actions guard before focused fields can commit by blurring. Source edits, track changes and settings input retire the review; raw settings remain available for correction. Timing settings/review are session-only. **Audition timing** plays the reviewed notes in the current mix at the current tempo before Apply. It includes only synthesized notes; reference audio and unapplied drafts remain excluded. Save, MIDI and WAV exports still use committed notes. Changing the source/settings or choosing **Discard timing** stops only this review’s own audio or pending render; a newer Solo or ordinary playback keeps its ownership. Natural playback completion allows another audition. Apply remains one Undo edit. This has native synthetic-audio coverage, without a measured musician-quality claim. See [timing audition evidence](docs/2026-10-08-timing-audition.md).
-
-## Arrange and undo
-
-**Duplicate track** copies its notes and sound settings into a new independent track, sharing the same immutable reference take when present. Use the **−12 / −1 / +1 / +12** controls to move the selected track down or up an octave or semitone. **Repeat phrase** adds one copy after the last note, preserving internal rests and overlaps; leading silence occurs only before the first phrase. Out-of-range transformations leave the composition unchanged.
-
-**Undo** and **Redo** restore up to 50 committed edits during this session, including notes and reference takes from recording replacements, deleted tracks, and opened/new projects. Restored versions autosave just like edits. Editing after an undo replaces the redo branch. Reloading starts a fresh history from the saved composition. Use Ctrl/Cmd+Z to undo, Ctrl/Cmd+Shift+Z to redo, or Ctrl+Y on Windows/Linux. Inputs keep their normal text undo behavior; shortcuts outside inputs operate on the composition. Controls pause while audio is recording or processing. Keep project-file backups for changes older than the session history.
-
-**Cancel** discards an in-progress capture or analysis and preserves the existing committed notes and reference take, unapplied fields and continuation suggestion. Microphone tracks are released on stop, cancellation, or recording failure. Cancelling while permission is pending also releases a stream that arrives afterward; it cannot close the browser's permission prompt. Leaving the page stops capture and playback.
-
-## Compare with the recorded take
-
-A successful recording, audio import or demo keeps a listen-back copy on its selected track. **Reference take** shows its source kind, capture tempo, decoded properties and retained duration. A take must yield detected notes before either notes or audio are committed. The original uploaded container, filename and device details are not saved.
-
-Set **Comparison start (seconds)** and **Comparison end (seconds)**, then choose **Play reference** or **Play edited notes at capture tempo**. Bounds round to the nearest 22,050 Hz frame; the effective bounds are displayed. Invalid or empty fields stay available for correction. Reference playback runs at its original speed, independent of track volume and mute. Edited-note comparison uses only that track's applied notes, current instrument/velocity/volume/mute, and its capture tempo. It renders the complete solo first, then crops or pads the exact same window, retaining synthesis envelopes and full-track peak limiting. Changing a comparison window or selecting another track stops an active comparison. Ordinary composition playback and MIDI/WAV exports continue to use the current project tempo and synthesized notes only.
-
-Transposing, repeating, editing notes or changing tempo never rewrites the reference. **Remove reference** leaves notes intact and can be undone. New/example/MIDI replacement creates notes-only tracks; Undo recovers prior references. Clearing the explicitly confirmed undo history keeps the current project and its takes, but frees audio retained only by old edits. History allows 50 prior edits and at most 64 MiB of unique audio. A change that would exceed that budget is rejected without dropping older history; save a backup and clear history before trying again.
-
-The copy is mono, 22,050 Hz, signed 16-bit PCM, at most 20 seconds per take and eight distinct current takes. Channels are averaged before resampling, so opposite-phase stereo can cancel. Resampling and quantization are lossy; reference playback is not the untouched original file. Decoder metadata describes the browser's decoded sample rate/channels, not the source codec or microphone clock. Up to 100 ms of encoded tail padding may be dropped, with a visible notice. Native decoding or resampling cannot always be aborted: cancellation takes effect immediately in the UI, but another take waits for that native operation to drain. If it never completes, save your project and reload.
-
-## Bring in a MIDI phrase
-
-Choose **Import MIDI file** to inspect a local `.mid` or `.midi` file without changing the current composition. Include the channels you want, choose a local instrument and name for each, and set **Source start beat** and **Source end beat (exclusive)**. These are whole-beat positions, not bars: displayed beats 9 to 17 select source beats 9–16 and move source beat 9 to destination beat 1.
-
-**Review MIDI phrase** shows the selected notes, excluded source note attacks, source settings and omitted metadata. A note crossing either window boundary prevents the review; change the window or deselect its channel. Included pitches, durations and counts must fit the normal composition limits. Note timing retains source ticks divided by its PPQN, without quarter-beat quantization. Leading and internal rests remain; the composition ends at its last note, so trailing window silence and MIDI end-of-track padding are not retained.
-
-**Replace composition** confirms the reviewed selection and creates one Undo/Redo edit. If any unsent editor fields or continuation suggestion remain, an additional explicit checkbox acknowledges discarding them on successful replacement. Undo restores the previous committed composition, not discarded scratch fields or a suggestion. Canceling, rejecting a file or declining replacement keeps the existing editor, history and proposal. Editing the composition or its raw fields invalidates an older review, even if the field is changed back; review again before replacing.
-
-The supported subset is deliberately bounded:
-
-- Standard MIDI formats 0/1, PPQN timing, one constant tempo of 40–240 BPM; absent tempo means 120 BPM. Maximum file size is 1 MiB, with 32 raw tracks, 32,768 events and 8,192 positive note attacks.
-- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 512 beats. Different-pitch polyphony is supported. Channel 10 percussion is importable only as a **Drum kit** part. Shared channels across raw tracks, ambiguous same-pitch pairing, pitch bend, pressure and unsupported controllers are visible but unselectable.
-- Static initial program and CC7 volume are shown separately from note velocity. Missing values use disclosed program 0 and CC7 100 defaults. Local instrument mapping is always explicit; it does not reproduce General MIDI sounds. CC7 zero remains silent.
-- Tempo changes, SMPTE timing, SysEx, ports and unknown global metadata reject the file. Supported but omitted text/time/key metadata and note-off release velocities are counted in the review; they do not become performance controls.
-- Names use strict UTF-8 and the existing 80-UTF-16-unit destination limit. Unusable or ambiguous source names need a visible name choice; they are never silently shortened. Safe fallback titles and part names are shown explicitly.
-
-Imported notes support ordinary editing, layering, playback, continuations, autosave and JSON/MIDI/WAV downloads. JSON retains their represented timing. MIDI re-export rounds to the existing 480-tick resolution, uses approximate programs and merges same-pitch overlaps; WAV contains the local synthesized mix and its release tail. Use the original MIDI file for source performance data and a Melody project backup for this edited composition.
-
-## Continue your own phrase
-
-Select a track with a usable melody, then use **Continue this phrase** below the note editor:
-
-1. Choose **Learn from last notes** (8–64) and request four or eight new notes. The highlighted ending must contain audible, nonoverlapping notes on exact quarter-beat timing and span at most 16 beats. A sustaining earlier note cannot overlap it. The app explains unsuitable input and never silently quantizes it.
-2. **Suggest continuation** fits interval, duration and preceding-rest counts only to that ending. The unsaved note overlay and table show every proposed pitch and timing. **Observed pattern support** exposes the available counts and backoff. Small phrases often repeat, and **Another suggestion** can produce the same result.
-3. **Audition ending + suggestion** plays that ending and its proposal solo, with the selected instrument and volume. Unmute or raise a zero-volume track, then regenerate if needed. Stop, Cancel or Discard prevents late rendering/resume callbacks from starting sound.
-4. **Apply continuation** appends ordinary editable notes as one undoable change. **Discard suggestion** leaves the project untouched. Only applied notes enter autosave, project backups, MIDI and WAV. Editing the source, changing tracks/options, undo/redo or successfully replacing the project invalidates the proposal. Failed or canceled captures and project-file staging keep it.
-
-Unapplied note fields remain drafts through redraws. Apply or explicitly **Discard note edits** before acting on a proposal. Invalid source-count text also remains visible for correction. Playback and proposal rendering never save a scratch composition.
-
-The learner uses joint semitone-interval/duration/rest events with order-2, order-1 and unconditional occurrence-count backoff. Contextual orders need repeated observations; boundary filtering happens before weighted seeded sampling. It fits 7–63 transitions from your 8–64 selected notes, uses their median velocity, and adds at most 16 beats within the existing pitch, note-count and 512-beat bounds. If generation cannot complete the requested length, the whole request fails without source edits; it does not clamp pitches, invent notes or retry invisibly. It does not infer a key, harmony, preference or general personal style, and rejecting a suggestion does not train it. Musical novelty or quality has not been measured. There is no bundled music corpus, pretrained download or remote service.
-
-## Timing and limits
-
-The interface counts beats from **1**. Saved project JSON uses zero-based note starts: displayed beat 1 is `start: 0`, and displayed beat 2.5 is `start: 1.5`. Durations are in beats. Changing tempo changes playback speed while preserving the edited musical positions.
-
-- Tempo: 40–240 BPM; 1–8 tracks; at most 256 notes per track.
-- Pitches: MIDI 36–96 (C2–C7); note duration: 0.25–16 beats; note ends must be at or before internal beat 512.
-- Velocity and track volume: 0–1. Zero velocity and muted tracks are silent.
-- Capture/import: 20 seconds; audio file/blob limit: 10 MiB. The decoder allows a small duration tolerance for encoded recording tails; analysis processes at most 20 seconds.
-- Complete project JSON: at most 12 MiB, including audio. The notes/reference document is bounded to 2 MiB, and each reference to 882,000 PCM bytes. Legacy notes-only input remains at most 1 MiB. Strict schemas, finite values, UTF-8, duplicate-key/depth checks, canonical base64 and PCM checksums reject malformed or incomplete backups before replacement. Old saved note values, including escaped text, remain reversible; ambiguous duplicate-key or deeply nested ignored-extension files are not accepted.
-
-## Save and export
-
-The complete current project autosaves to IndexedDB in one transaction containing its notes, reference bindings and audio. **Saved in this browser** appears only after that transaction completes. Rapid edits keep the newest pending complete save. A failed save leaves the in-memory project and Undo history usable; **Retry save** and **Save project file** remain available. Closing/reloading while a save is pending or failed, or while a changed note/field draft or continuation suggestion is unapplied, requests the browser’s leave-page warning where supported. Dismissing it keeps that work in memory. Apply/discard drafts and let saves complete before leaving normally. This never applies or autosaves draft values; project downloads still contain committed notes only. Browsers generally require prior interaction and may suppress warnings; forced termination is not protected. See [departure-guard evidence](docs/2026-10-08-draft-departure.md).
-
-Browser storage belongs to that profile and site address; it can be cleared or become unavailable. Each tab saves only against the complete saved copy it last accepted or successfully wrote. If another tab saves first, the stale tab keeps its notes, reference audio, Undo history and unapplied fields, and pauses autosave. Download a complete backup before choosing **Retry load** to adopt the saved project or **Replace saved copy** to review and deliberately replace it. Replacement compares the reviewed copy again within its write transaction; another intervening save refuses the replacement. Cancelled or failed replacement keeps recovery protected. If you edit while replacement is pending, the newer local work stays unsaved until you explicitly choose **Retry save**.
-
-There is no account backup or cloud synchronization. A successful read of an absent new database can recover the old notes-only localStorage project. Legacy saved copies remain untouched by reads; the next successful edit or explicit save retry writes the current saved-row format. Portable backup formats remain unchanged. A corrupt or unreadable complete project enters protected recovery without silently falling back or overwriting it. **Retry load** rereads it; **Replace saved copy** reviews a safely comparable saved descriptor and explicitly confirms overwriting it with the committed in-memory project. If the damaged record cannot be safely compared, replacement refuses and project-file recovery remains available. Download a backup before replacing or abandoning work.
-
-**Save project file** downloads a complete `.melody.json` containing current committed notes and normalized reference PCM, with SHA-256 checksums. It excludes undo history, raw editor drafts, suggestions, comparison windows and original encoded recordings. Open it on another compatible browser with **Open project**; old Composition v1 notes-only files remain supported. Opening shows replacement counts and confirms discarding unapplied work. Canceled, invalid or stale file reads keep the current project and drafts. Checksums detect damaged bytes; they do not authenticate the supplied source metadata. Export complete backups regularly.
-
-**Export MIDI** writes a standard format-1 `.mid` file with track names, tempo, note timing, velocity, volume, and approximate General MIDI instrument choices. Overlapping notes of the same pitch within one track merge into one sustained MIDI note at the highest velocity; adjacent notes retain separate attacks. This avoids ambiguous note-off behavior in MIDI players. The local WAV mix layers those notes independently. Another music app's instruments may sound different. **Export WAV** renders the current local instruments and mix as mono, 22,050 Hz, 16-bit PCM audio. Synthesis runs in a cancellable worker to keep large compositions responsive. Rendering refuses allocations above 40,000,000 Float32 frames before allocation; the browser’s 22,050 Hz output supports the full 512-beat song at every supported tempo. Public rendering helpers can refuse longer songs at unusually high sample rates rather than truncate them. Muted tracks are omitted from audible output. Audio transcription, reviewed MIDI phrase import and complete Melody project backups have separate import flows and limits.
-
-## Solo and export individual tracks
-
-**Solo track** auditions the selected committed part at the current composition tempo from song beat 1. Use the shared **Stop playback** control; natural completion makes Solo available again. **Export track WAV** downloads that part as `-track-N-name.wav`, with a numbered, sanitized track name. Select each desired track and export it separately to bring aligned synthesized parts into another music editor.
-
-Both controls use a detached snapshot with every other track muted. Original note positions on all tracks remain in that snapshot so the output retains the full composition endpoint, including leading rests and trailing silence when this part ends early. Each mono 22,050 Hz WAV has the same song origin and frame count as the whole-song export. A muted, zero-volume or note-silent selected part refuses with guidance; unmute/raise its level before exporting.
-
-Current instrument, track volume and note velocity apply. Reference audio and unapplied edits/reviews are excluded. Saved mixer settings, complete notes/reference bytes and Undo/Redo stay unchanged. Each part uses independent peak limiting, so exported stems are not guaranteed to sum numerically to the separately peak-limited whole mix. There is no automatic all-track ZIP, stereo pan, routing or effects in this milestone.
-
-## Keep a library of complete compositions
-
-Use **Saved compositions** to keep up to eight named copies in this browser. Choose **Refresh copies** to list them, enter a saved-copy label, then choose **Save new copy**. A copy includes the committed composition and all retained reference takes. Unapplied fields, MIDI review and continuation suggestions stay outside the copy. Labels are separate from composition titles; duplicate labels are allowed.
-
-Current-workspace autosave remains separate. Saved copies change only when you explicitly choose **Update selected copy** and confirm replacing that copy. Refreshing or selecting a copy does not open it. **Open selected copy** reviews the complete backup and asks before replacing the workspace, including any scratch that would be discarded. It creates one Undo edit; existing audio-history limits and protected-autosave recovery still apply.
-
-**Download selected copy** preserves the exact stored complete-backup bytes. Keep portable backups outside the browser before clearing site data. If a safely bounded copy is damaged, downloading its original bytes remains available while Open is refused. Updating or deleting it still requires explicit confirmation. Invalid catalog metadata protects the library from writes instead of clearing records.
-
-Each copy uses the existing 12 MiB backup bound, eight tracks, 256 notes per track and up to eight 20-second reference takes. The library allows at most 96 MiB of backup payload plus bounded metadata. Browser storage capacity may be lower. A failed, cancelled or conflicting mutation requires **Refresh copies** before another attempt; it is never replayed automatically. Operations have a ten-second deadline, but native browser storage work must finish draining before another operation is admitted. Cancellation cannot undo a transaction that already committed.
-
-## Browser requirements and accuracy
-
-Microphone capture requires a secure context (localhost or HTTPS), explicit browser permission, `getUserMedia`, and `MediaRecorder`. Playback and audio decoding require Web Audio; transcription uses a Web Worker. Supported import formats depend on the browser's codecs. If microphone access is denied or unavailable, use imported audio, manually added notes, or the generated demo. Downloads, IndexedDB and Web Crypto must also be permitted by the browser. If storage is unavailable, complete project downloads preserve your in-memory work.
-
-Chromium is the browser verification target. Safari, Firefox, and mobile device recording/codec behavior need separate real-device evaluation; a narrow Chromium viewport does not establish mobile browser compatibility.
-
-Pitch detection is for a **single pitched voice or instrument**, not chords, full songs, or polyphonic separation. Background noise, breath, vibrato, harmonics, and unclear note boundaries can cause missed notes, octave mistakes, or inaccurate timing. Listen back and correct the result. Tests and the generated demo use synthetic audio; they demonstrate deterministic detection behavior and do **not** measure real humming/singing accuracy. Real microphone evaluation and broader generative arrangement assistance remain outstanding; the bounded continuation learner does not resolve those limits.
-
-## Verification
+## Verify
 
 ```sh
-npm run test
 npm run lint
 npm run typecheck
+npm test                     # Node unit tests (tests/*.test.ts)
 npm run build
-npm run test:browser
-```
-
-`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Set `MELODY_TEST_PORT` to use another free loopback port. Their build enables storage, composition-library and real AudioWorklet test pages through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits those pages. Install Playwright's Chromium if needed:
-
-```sh
+npm run check                # test + lint + build
 npx playwright install chromium
-npm run test:browser
+npm run test:browser         # Playwright, builds and serves on port 4174
 ```
 
-Alternatively, point Playwright at an existing Chromium executable:
+Browser tests build with `MELODY_TEST_HARNESS=1` to include test-only harness pages. Set `MELODY_TEST_PORT` to use another loopback port, or `CHROMIUM_PATH` to use an existing Chromium. CI: `.github/workflows/melody-studio.yml` (runs `npm run check` and `npm run test:browser`).
 
-```sh
-CHROMIUM_PATH=/path/to/chromium npm run test:browser
-```
+`scripts/` holds standalone smoke probes (`smoke_*.mjs`) that drive a separately running production preview; they are not part of CI.
 
-Unit coverage includes bounded project validation, local storage errors, recorder cleanup/cancellation, synthetic pitch and timing fixtures, synthesis, and MIDI/WAV structure. Browser coverage exercises composition editing, layering, playback, persistence, imports/exports, generated-audio transcription, permission failure, and a 390 px layout. These checks do not replace real vocal or device testing.
+## Project layout
 
-Direct piano-roll authoring ([#99](https://github.com/twangyal/projects-monorepo/issues/99))
-passes **252 unit tests**, lint/typecheck/build and **80 distinct native browser
-cases** locally, including 22 new gesture, keyboard, touch, recovery and export
-cases. Actual mobile feedback movement and minimum-note handle conflicts were
-reproduced and repaired without changing the frozen geometry checks. Independent
-fractional/polyphonic exports retain exact reference PCM, expected 480-PPQN MIDI
-events and synthesized WAV samples (zero measured error at 1,091 sampled positions
-against a fixed two-PCM16-unit tolerance).
+- `index.html`, `src/main.ts` — single-page app and editor wiring.
+- `src/workspace-view.ts` — focused workspace sections (Compose, Capture, Sound, Notes, Arrange, Reference, Project & export).
+- `src/audio.ts`, `src/transcribe.worker.ts`, `src/recorder.ts` — capture, decoding and pitch transcription.
+- `src/backed-*.ts`, `src/backing.ts` — record-with-backing (AudioWorklet).
+- `src/mix.ts`, `src/track-render.ts`, `src/render.worker.ts`, `src/wav.ts` — synthesis, mixing and WAV rendering.
+- `src/sound-*.ts`, `src/*-curve.ts`, `src/volume-ramp.ts`, `src/drums.ts` — sound design, automation and drum kit.
+- `src/section*.ts`, `src/quantize.ts`, `src/timing.ts`, `src/note-*.ts`, `src/chord-*.ts` — note and arrangement edits.
+- `src/midi.ts`, `src/midi-import.ts`, `src/midi-review.ts` — MIDI export and reviewed import.
+- `src/storage.ts`, `src/reference-*.ts`, `src/composition-library.ts`, `src/history.ts` — persistence, backups and undo.
+- `src/continuation.ts` — local phrase-continuation learner.
+- `tests/` — `*.test.ts` unit tests and `*.spec.ts` Playwright tests.
 
-A separate original fixture retains **2,048 notes and eight 20-second references**
-(7,056,000 PCM bytes). Native move and resize each make one Undo/Redo edit; all
-unrelated notes and audio remain unchanged. Its **9,580,720-byte** final project
-survives closing and relaunching the full browser process byte-for-byte. Actual
-MIDI has the independently expected pitch72 attack/release at ticks302/542. The
-707,364-frame WAV has the exact expected silence/onset bounds; measured pitch is
-523.251144 Hz versus 523.251131 Hz expected, and RMS differs by 0.061%. This is
-maximum count/reference topology, not the file-size ceiling or a memory benchmark.
+## Data & privacy
 
-With a normal production preview already running, reproduce the separate probe:
-
-```sh
-MELODY_ROLL_BASE_URL=http://127.0.0.1:4173 CHROMIUM_PATH=/usr/bin/chromium \
-  node scripts/smoke_direct_roll.mjs
-```
-
-`MELODY_ROLL_OUTPUT` can name a new output directory; `--fixtures-only` prepares
-the original inputs without a browser. The runner starts no server and imports no
-producer expected-output helpers. [Integration evidence](docs/2026-10-04-direct-roll-verification.json),
-[native evidence](docs/2026-10-04-direct-roll-native.json) and
-[maximum evidence](docs/2026-10-04-direct-roll-maximum.json) preserve exact hashes,
-failed attempts, targeted reruns and limits. Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37221137451)
-and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37221140459) CI
-at `d582c0dd7286992bfb8fea47918cede209a34c44` pass all **252 units and 80 native
-browser cases**, lint, type checking and build on Chromium153. The [CI receipt](docs/2026-10-04-direct-roll-ci.json)
-records exact checkouts and the separate Shot import-readiness test failure found
-by the broader run; twelve of thirteen project workflows passed at that head.
-
-### Saved-copy conflict verification
-
-Issue [#98](https://github.com/twangyal/projects-monorepo/issues/98) passes **255
-unit tests and 97 distinct native browser cases**, lint, type checking and build.
-The three original two-tab regressions failed on the published baseline and now
-pass unchanged. Five additional UI races and nine independent genuine IndexedDB
-cases cover competing complete writes, private receipt ownership, legacy read-only
-behavior, actual transaction abort after request success, deliberate replacement,
-newer raw/committed edits and exact PCM retention. The prior suite exposed a startup
-lifecycle regression; its targeted repair keeps editing blocked until the native
-read settles, then requires explicit Retry load for retired publication authority.
-
-A separate original maximum probe retains 2,048 notes and eight 20-second
-references (7,056,000 PCM bytes) in each of two distinct complete projects. A stale
-tab's direct roll edit cannot alter any of the other tab's eight newer PCM assets.
-Its complete local backup remains available; cancelling replacement preserves both
-copies. Reviewed replacement and a complete browser-process restart preserve the
-chosen **9,580,700-byte** backup exactly, including all notes and audio. This reaches
-maximum note/reference topology, not the 12 MiB input ceiling or peak memory. The
-actual first run passed in 10.323 seconds on Chromium151 without external requests
-or page errors. Reproduce against a separately running ordinary production app:
-
-```sh
-CHROMIUM_PATH=/usr/bin/chromium MELODY_CONFLICT_BASE_URL=http://127.0.0.1:4174 \
-  node scripts/smoke_save_conflicts.mjs
-```
-
-Use `MELODY_CONFLICT_OUTPUT` for a new output directory or `--fixtures-only` to
-freeze original inputs without launching a browser. The runner never builds,
-starts a server, writes IndexedDB directly, or imports product serializers.
-[Integration evidence](docs/2026-10-04-saved-copy-conflicts-verification.json),
-[UI evidence](docs/2026-10-04-saved-copy-conflicts-native.json),
-[transaction evidence](docs/2026-10-04-saved-copy-conflicts-storage.json) and
-[maximum evidence](docs/2026-10-04-saved-copy-conflicts-maximum.json) preserve exact
-hashes and failed attempts. The prior direct-editor CI's [premature save assertion](docs/2026-10-04-direct-roll-retry-ci-first.json)
-now requires exact successful status before reload; musical and PCM expectations
-are unchanged. Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37223103033)
-and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37223106786) CI
-at `e856e3bf1845716cb176cee136d31315e444effd` pass all **255 units and 97 browser
-cases**, lint, type checking and build on Chromium153. All thirteen project PR
-workflows pass. The [exact CI receipt](docs/2026-10-04-saved-copy-conflicts-ci.json)
-records separate branch-head and synthetic-merge checkouts.
-
-### Learned-continuation verification
-
-Issue [#42](https://github.com/twangyal/projects-monorepo/issues/42) adds 19 engine cases and 11 independently derived numerical cases. The complete suite passes **113 unit tests and 20 production Chromium cases**, plus lint, type checking and build. Hand-worked token/count/backoff and PRNG boundary cases verify learned data dependence, exact constraints and atomic application. Real worker/Web Audio checks cover transient proposals, delayed replies/resume, stale source callbacks, preserved drafts, undo/redo, native reopen, mute/volume behavior and independently decoded downloaded MIDI/WAV.
-
-A separate Chromium 151 run selected a 16-beat original ending and generated an eight-note, 16-beat continuation at 40 BPM. The actual solo audition contained 1,060,164 frames at 22,050 Hz: **48.08 seconds including the release tail**. After Apply, a 2,649,572-byte WAV retained the original leading timing and unrelated track; independent Python PCM/FFT checks matched nine sampled note frequencies across audition and export within 0.053%. The original notes and unrelated track were unchanged, JSON/native reopen matched, and the 390-pixel layout had no page overflow or external requests/errors. These are fixture/runtime measurements, not subjective listening or musical-quality evidence. The [Melody workflow](https://github.com/twangyal/projects-monorepo/actions/runs/37173453233) passed at `e4472fb6e7ee891460f7649100c5b850ef301d7f`. See [the verification record](docs/2026-10-04-learned-continuation-verification.json).
-
-### Reviewed MIDI import verification
-
-Issue [#60](https://github.com/twangyal/projects-monorepo/issues/60) expands the suite to **173 unit tests and 35 production Chromium cases**, with lint, type checking and build passing. The new cases cover strict bytes and channel state, independent timing/count oracles, stale or mutated reviews, raw editor drafts, delayed native File reads, explicit replacement, Undo/Redo, storage failure and real downloaded artifacts. The existing 20 browser cases remain unchanged.
-
-An independent Chromium 151 probe imported an original off-grid phrase through the normal file chooser and review, then decoded its native JSON/MIDI/WAV downloads. Source starts became beats 0.13 and 2.13; the exported MIDI contained the expected 480-PPQN rounded ticks, CC7 volume and distinct velocities. The 36,273-frame WAV had exact leading/internal silence and independently measured note frequencies within one 5.383 Hz FFT bin, with RMS errors below 0.04%. This checks local synthesized output, not the source instrument's sound.
-
-A separate exact **1 MiB** source imported all **8 × 256 notes**. Its native downloads were 397,322-byte JSON, 16,766-byte MIDI and 2,820,460-byte WAV (1,410,208 frames). Closing and relaunching the entire persistent Chromium process preserved the same project ID and byte-identical JSON without storage injection. Desktop and 390-pixel views had no horizontal overflow; no page errors or external requests were observed. See the [measured verification record](docs/2026-10-04-midi-import-verification.json) for hashes, thresholds, test history and limitations.
-
-The complete implementation passed all twelve repository workflows at `e281bb869fef1ebb284709ca66952c4cabd748f0`; [Melody CI](https://github.com/twangyal/projects-monorepo/actions/runs/37186726359) passed 173 unit and 35 browser cases. To reproduce the separate independent artifact check, start a production preview and run:
-
-```sh
-MELODY_MIDI_BASE_URL=http://127.0.0.1:4239 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_midi_import.mjs
-```
-
-Use the origin of your running preview. Omit `CHROMIUM_PATH` to use Playwright's installed Chromium. The script creates its own original sources, browser profile and retained artifacts in a new temporary directory; optional `MELODY_MIDI_OUTPUT` must name a new directory. It never rebuilds or starts the server. `--prepare-only` writes the original source fixtures without a browser.
-
-## Retained reference verification (2026-10-04)
-
-All twelve repository workflows passed the complete v0.4 implementation at `6169ade9a15fcb412223326e95fad3c565615392`; [Melody CI](https://github.com/twangyal/projects-monorepo/actions/runs/37197627280) passed 233 unit cases and 58 native Chromium 153 cases (40.4 seconds), plus lint, type checking and build.
-
-Issue [#66](https://github.com/twangyal/projects-monorepo/issues/66) passes **233 unit tests and all 58 production Chromium cases**, including the previous 35 flows, with lint, type checking and build. Independent literal PCM, complete-file, history-budget and analytic synthesis checks complement genuine native decoding, MediaRecorder, workers, audio buffers and IndexedDB transactions. Native failures covered request-success followed by transaction abort, rapid edits while real writes were held, corrupted audio, protected recovery, canceled work, stale callbacks, startup cancellation and first-click/focus preservation. Existing test adaptations read the real new durable backend and validate the complete backup envelope; original musical assertions remain.
-
-A separate original eight-take maximum fixture retained **7,056,000 PCM bytes** in a **9,412,621-byte complete backup**, identical after normal file import, download, reopen and full persistent-browser process restart. A 2,205-frame reference window matched every stored sample; the edited-note window at captured 40 BPM, with current tempo 120 BPM, matched an independently derived full-track limiter calculation within 4.30 × 10⁻⁸. Later loud notes outside the window still affected that limiter. A window beyond the solo's release contained exactly 2,205 zero samples. Ordinary exports retained current-tempo synthesized notes without mixing the reference.
-
-Original 44.1/48 kHz source WAVs containing 440/1,000 Hz tones, DC and impulses passed fixed numerical thresholds. This Chromium runtime decoded both input rates at 44.1 kHz; those measurements do not separately establish 48 kHz decoded-input conversion. Maximum measured pitch error was 0.000131 Hz, relative RMS error 0.0078%, DC error below one PCM16 step and impulse position error zero frames. These synthetic results do not measure vocal accuracy or real-device compatibility. The prior exact 1 MiB MIDI probe also passed with its original source bytes and unchanged signal/timing assertions, including all 2,048 notes after a full browser restart.
-
-See the [complete reference verification record](docs/2026-10-04-reference-takes-verification.json) for exact measurements, source hashes, regression history and limitations. To reproduce the independent reference artifact gate against your own running production preview:
-
-```sh
-MELODY_REFERENCE_BASE_URL=http://127.0.0.1:54083 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_reference_takes.mjs
-```
-
-The script creates original fixtures and retains native downloads, audio buffers, screenshots and its report in a fresh output directory. Set `MELODY_REFERENCE_OUTPUT_DIR` to a new directory if desired. It neither starts a server nor imports product serializers/renderers.
-
-## Record-with-backing acceptance (#113)
-
-The complete local check passes **301 unit tests**, ESLint, type checking and production build. Independent direct AudioWorklet cases verify actual 44.1/48 kHz frame intersections, delayed Finish trimming, silent output, cancellation, topology/missing-input refusal and bounded progress. Editor cases verify real microphone-stream capture, frozen target-excluded backing, raw drafts/suggestions, count-in cancellation, complete reference Undo/Redo, silence refusal, saved-copy conflict and actual MIDI/WAV exports. The [implementation receipt](docs/2026-10-04-backed-recording-verification.json) links producer, independent oracle, native and review evidence.
-
-The first combined native run passed 14/19 cases. Five editor cases exposed a real startup issue: Chromium can skip render quanta before arming the recorder, while channel topology remains unchanged. Preparation now accepts monotonic nonoverlapping forward gaps; armed count-in/capture still requires contiguous frames. All five original failing cases pass unchanged. A separate completion regression checks the deadline again after bounded sample validation/copy. The reviewed [design](../../docs/superpowers/specs/2026-10-04-melody-backed-recording-design.md) documents these ownership and timing boundaries.
-
-The independent maximum starts with **eight tracks, 2,048 notes and eight 20-second reference takes** in a frozen **9,562,719-byte** complete backup. An actual automatic 20-second take replaces only the selected track, producing three independently checked notes at the expected beats. Seven other tracks and reference assets remain exact. One Undo restores the complete original bytes; Redo and a complete Chromium process restart retain the exact captured backup. Independent checks cover four count-in clicks, the actual target-excluded backing, retained microphone PCM, all MIDI tracks/ticks and the synthesized WAV. Backing error is below 0.011 signed-16 units and WAV error is at most one unit against a separately authored sine/envelope/whole-mix oracle. Capture-to-saved took 22.904 seconds; the complete successful run took 29.838 seconds on this fixture and machine.
-
-The first maximum run correctly captured stereo browser-graph metadata from the authored mono input. Its runner incorrectly expected one graph channel; actual MediaStream settings establish two. Only that expectation was corrected, with the original failure and downloads retained. Original audio, timing, amplitude and numerical tolerances are unchanged. Synthetic MediaStream buffering/resampling and these measurements do not establish physical microphone latency, vocal accuracy, arbitrary browser compatibility or peak memory. See [maximum evidence](docs/2026-10-04-backed-recording-maximum.json).
-
-To reproduce the independent maximum using fresh directories and a normal production build:
-
-```sh
-npm run build
-npm run preview -- --port 4308 --strictPort
-# In another terminal, from this project directory:
-node scripts/create_backed_recording_fixtures.mjs /tmp/melody-backed-fixtures
-MELODY_BACKED_BASE_URL=http://127.0.0.1:4308 \
-  MELODY_BACKED_FIXTURE_DIR=/tmp/melody-backed-fixtures \
-  MELODY_BACKED_OUTPUT_DIR=/tmp/melody-backed-acceptance \
-  CHROMIUM_PATH=/path/to/chromium node scripts/smoke_backed_recording.mjs
-```
-
-The generator reproduces the original input hash without production imports. Existing output directories are refused. The runner uses its own browser profile and closes its own processes; it expects you to start and stop the preview server. Local acceptance covers all **116 distinct browser cases**: the first full invocation passed 115/116, including all 19 new cases. The remaining pre-existing stale-tab test set a File while startup still disabled importing. Its helper now waits for the actual enabled control; the original case then passes with every storage, reference, history assertion and timeout unchanged. This is staged passing coverage, not a claim of one final all-green local invocation. The [readiness receipt](docs/2026-10-04-backed-recording-readiness.json) retains exact first trace timestamps and the focused pass. Both the [push](https://github.com/twangyal/projects-monorepo/actions/runs/37241975731) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37241977979) at `b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d` pass all **301 units and 116 native cases**, with lint, type checking and production build. All thirteen project PR workflows pass. The [CI receipt](docs/2026-10-04-backed-recording-ci.json) verifies that the actual PR checkout tree matches the published implementation.
-
-## Composition-library acceptance (#126)
-
-The v0.7 library passes **315 unit tests and all 138 native Chromium cases**, plus lint, type checking and production build. Independent native cases cover exact bytes, eight-copy races, stale revisions, corrupt recovery, raw fields/caret/MIDI/proposals, native rollback, the real ten-second deadline, cancellation before and after native commit, pending microphone cleanup, protected current storage and full browser restart. The [verification receipt](docs/2026-10-05-composition-library-verification.json) preserves first failures and corrections. The new status region required scoping older editor-notice assertions; their expected text and deadlines remain unchanged. Both first [push](https://github.com/twangyal/projects-monorepo/actions/runs/37272014006) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37272019924) CI at `568e29df01f9a454d6436cca0f544466357f6963` pass all315units and138native cases with lint/type/build. The actual PR checkout has the identical implementation tree, and all thirteen project PR workflows succeed. The [CI receipt](docs/2026-10-05-composition-library-ci.json) retains run IDs, exact checkouts and log hashes.
-
-The independent maximum retained **eight compositions, 16,384 notes and 64 distinct twenty-second references**. Initial stored backups total **76,700,576 bytes**; one explicit replacement changes that to **76,700,584 bytes**. All eight exact copies reopen after the original browser process terminates. Seventeen downloaded backups match original bytes; Refresh reads only bounded metadata and Blob handles. Selected reopened MIDI matches original pitches/ticks, and synthesized WAV matches an independent scalar oracle within one signed-16 unit, with exact silence and measured 440/523.25 Hz tones. Parser admission at exactly 12 MiB and refusal one byte above are separate from musical capacity. See the [maximum receipt](docs/2026-10-05-composition-library-maximum.json).
-
-To reproduce the maximum, start an ordinary production preview and use fresh fixture/output directories:
-
-```sh
-node scripts/smoke_library.mjs --prepare-only /tmp/melody-library-originals
-MELODY_LIBRARY_BASE_URL=http://127.0.0.1:4173 \
-MELODY_LIBRARY_FIXTURE_DIR=/tmp/melody-library-originals \
-MELODY_LIBRARY_OUTPUT_DIR=/tmp/melody-library-result \
-CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_library.mjs
-```
-
-The runner owns its two browser processes, requires fresh directories and retains first results; it does not start or stop the preview server. Allow 768 MiB of free disk for fixtures, downloads and browser storage. Its 240-second deadline and payload bounds are limits, not a measured peak-memory guarantee.
-
-## Phrase dynamics
-
-Choose a section range (one-based beats, end exclusive), select a track, then enter start/end velocities from 0 to 1 under **Shape a crescendo** and Apply. The first and last distinct note onsets receive the exact endpoints; intermediate onsets interpolate by musical time, and simultaneous chord notes share a velocity. Notes crossing a boundary remain whole; membership uses the onset. Other tracks, timing, sound settings and retained references are unchanged. Zero velocity is silent and omitted from MIDI. Empty and single-onset selections refuse without changing the project.
-
-The range and ramp parameters are session-only; Apply produces one Undo/Redo step and autosaves the resulting notes. Apply guards unapplied fields, continuation suggestions and active piano-roll edits before pointer blur and click activation. Ordinary focus transfer still follows the editor's existing valid-field commit behavior. Native tests verify actual project downloads, MIDI velocities, independent PCM amplitude, Undo/Redo, IndexedDB reload, invalid-input refusal and 390px draft protection. See [verification evidence](docs/2026-10-08-velocity-ramp.md).
-
-## Build a custom harmonic tone
-
-Enable **harmonic tone**, set amplitudes for harmonics 1–8 from 0–1, then choose **Apply harmonic tone**. At least one amplitude must be positive. Harmonic 1 is the note frequency; harmonic 2 is twice that frequency, and so on. A fundamental-only profile gives a sine tone; adding upper partials changes its timbre. The default draft uses amplitudes `1, 0.5, 0, 0.25, 0, 0, 0, 0`. The applied profile replaces the selected instrument's waveform before the existing filter and amplitude envelope; rhythmic echo and song-time automation continue to apply.
-
-Apply is one saved, undoable track edit. Invalid drafts stay editable and remain separate from playback/files. Track switching retains raw harmonic drafts; **Discard harmonic edits** restores the committed settings for that track. Uncheck Enable and Apply to remove the profile and restore the selected base instrument exactly. Finish unrelated drafts, proposals and gestures before Apply; pointer admission guards before blur and keyboard uses the same rule.
-
-The renderer sums zero-phase sine partials and divides by the **total configured amplitude**, rather than boosting the retained partials at high notes. Partials at or above half the render sample rate are omitted. A profile containing only omitted partials can be silent; lower notes or add fundamental amplitude. Synthesis uses a 4,096-step interpolated wavetable, not a guarantee of alias-free or acoustically realistic sound. The existing shared peak limiter still applies to the full mix. The sine-partial definition follows [W3C's periodic-wave Fourier formulation](https://www.w3.org/TR/webaudio-1.0/#waveform-generation); our amplitude-sum normalization differs from Web Audio's peak normalization. Source checked on 2026-10-12.
-
-Complete project files, autosave, saved compositions, track duplication, Undo/Redo and reload retain applied harmonic profiles. The common synthesis path applies them in playback, solo, synthesized backing, edited-note comparison and WAV/stem/section output. Original reference recordings are untouched. MIDI retains the selected base instrument program and omits custom harmonic amplitudes, including expressive MIDI export; use WAV for the rendered sound. Legacy projects have no new field and retain their original PCM. See [#215](https://github.com/twangyal/projects-monorepo/issues/215) and [verification evidence](docs/2026-10-12-harmonic-tones.md). This sound-design milestone does not complete instruments, stereo mixing, routing, effects plugins or the ACTIVE full-DAW destination.
-
-## Backed-recording refusal guidance (#300)
-
-If native recording loses input, changes channel count, receives invalid samples or loses continuous audio frames, recording stops and retains the complete prior take. The notice identifies the category and asks for a new explicit attempt; it never automatically retries or shifts the captured beat origin. Setup/interval failures have separate guidance. Unknown native failures remain generic. These messages do not establish the underlying device/browser cause, and an interrupted capture never publishes partial notes or audio.
-
-The intermittent native startup refusal observed during #299 and separate synthetic-stream frequency failures remain under investigation. See [the ongoing evidence](../../docs/2026-10-22-melody-backed-failures.md). All frame, duration, cancellation, deadline and numerical acceptance limits remain in effect; physical microphone quality is unverified.
-
-
-## Move a whole section
-
-In **Arrange**, enter **Section start beat** and **Section end beat (exclusive)**, choose **Move section to beat**, then **Move section**. The source and destination use song beats starting at1; the end is exclusive. Every whole source note across all tracks, including muted parts, moves by the same offset. Note IDs, pitches, lengths, dynamics and track sounds stay intact. Other notes stay in place, leaving a gap at the source. The destination window can overlap the vacated source or extend beyond the current song, within the512-beat timeline.
-
-The entire destination window must be free of unselected notes on every track, even where moved notes would be silent. Notes crossing a source bound, an empty source or invalid/out-of-capacity destination refuse the complete edit. Exact edge contact is allowed. Same-position moves create no history entry and preserve Redo. Finish gestures and apply/discard unrelated editor drafts and suggestions first; Move uses the existing pre-blur and keyboard guards.
-
-Reference recordings/assets and song-time automation remain anchored, rather than following the notes. Check their alignment after relocation. Section bounds and destination are session-only controls retained across tool navigation; source bounds remain where entered after a move. Undo/Redo restores the complete project; committed moves survive autosave/reload, saved compositions and editable backups, and MIDI/synthesized WAV use the new timing. This is explicit musical-note arrangement, not audio-clip relocation or generative composition. Melody remains ACTIVE toward its full DAW vision. [Verification](docs/2026-10-23-section-move.md).
+Audio is processed in the browser and nothing is uploaded. The current project, reference takes and saved compositions live in this browser profile's IndexedDB and can be lost if site data is cleared; download `.melody.json` backups to keep work. Backups contain committed notes and normalized reference audio, not the original uploaded file, filename or device details.

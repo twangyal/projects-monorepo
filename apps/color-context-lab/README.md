@@ -1,85 +1,81 @@
 # Color Context Lab
 
-A local workspace for comparing the same artwork within different surrounding colors. Import a PNG, choose a solid or checker surround, inspect the neutral/result pair, and export lossless PNGs or a complete editable project. The retained artwork rectangle stays byte-identical; only pixels around it change.
+A local, in-browser workspace for viewing the same artwork inside different surrounding colors and patterns, plus a small controlled experiment on whether surround color affects what a classifier learns. Only pixels around the artwork change; the artwork rectangle stays byte-identical. Nothing here protects artwork from model training, and the app makes no such claim.
 
-This first milestone is tracked in [issue #70](https://github.com/twangyal/projects-monorepo/issues/70). Its separate controlled shape experiment investigates a small classifier's sensitivity to context. It provides no protection score for uploaded artwork and no claim of resistance to generative-model training or preserved human appearance.
+**Status:** DEFERRED (2026-10-25) — paused while the portfolio focuses on Gaze Navigator, Clothing Studio and Karaoke Studio. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
 
-## Run
+## What works today
 
-Use Node.js 22.18 or newer; development and CI use Node 24.
+- Import an 8-bit RGB/RGBA PNG (normalized to at most 720 px on the long side).
+- Surround patterns: solid, checker, horizontal stripes and vertical stripes, with width, two colors and pattern size.
+- Side-by-side view of a neutral-gray surround and the chosen surround, at fit or actual pixel scale.
+- Numerical diagnostics against the neutral version: artwork-unchanged check, RGB RMSE, max channel difference and mean relative-luminance difference.
+- Keep up to 12 named surround alternatives, compare any two side by side and download a named comparison report.
+- Exports: normalized original PNG, result PNG (lossless, written directly from retained RGBA), self-contained HTML comparison report and a JSON project backup.
+- Undo/Redo and IndexedDB autosave, with recovery options when a saved record cannot be loaded.
+- A research panel showing the published result of the controlled shape experiment (below).
+
+## Known gaps
+
+- The research question (keep human appearance while disrupting how image models learn) is unanswered. The one controlled experiment found no effect: all conditions reached perfect accuracy and surrounds did not change any predicted label.
+- Experiments use a procedural four-shape task and a small classifier, not real artwork, artist styles or generative models.
+- No perceptual or human-viewer measurement; diagnostics are numerical only.
+- Surrounds are simple geometric patterns; no other color transforms are tried.
+- Only a limited PNG subset is accepted (no JPEG, WebP, indexed, grayscale, 16-bit or interlaced files).
+
+## Run locally
+
+Requires Node.js 22.18 or newer (CI uses Node 24). No backend, account, API key or model download.
 
 ```sh
 cd apps/color-context-lab
 npm ci
-npm run dev
+npm run dev                 # http://127.0.0.1:4289
 ```
 
-Open `http://127.0.0.1:4289`. For the normal production build:
+Production build and preview:
 
 ```sh
 npm run build
 npm run preview -- --port 4289 --strictPort
 ```
 
-There is no backend, account, API key, remote image upload or pretrained model download. Images and edits stay in your browser. Changing host, port or browser profile changes the local saved project; download a project file before moving work or clearing browser data.
+Browser storage is tied to the exact origin; download a project file before changing host/port or clearing browser data.
 
-## Compare an image
+## Verify
 
-Choose **Import PNG**. Supported files are noninterlaced, 8-bit RGB or RGBA PNGs up to 8 MiB, 8,192 pixels on a side and 16 million pixels overall. Animated, indexed-color, grayscale, high-bit-depth, interlaced or orientation-tagged PNGs are unsupported, as are JPEG, WebP, SVG and GIF. Convert those files to the supported PNG format first.
+```sh
+npm run check            # unit tests + ESLint + typecheck + production build
+npx playwright install chromium
+npm run test:browser     # Playwright against the production build
+```
 
-The browser decodes and, when needed, reduces the longer side to 720 pixels. The resulting sRGB Canvas RGBA raster becomes the **normalized original**. Decoding, color conversion, alpha handling and downsampling can change pixels from the compressed upload. Keep that original file: this project retains the normalized raster, not the uploaded file's compressed bytes or metadata.
+Individual steps: `npm run test`, `npm run lint`, `npm run typecheck`, `npm run build`. Environment variables: `CHROMIUM_PATH` (use an existing Chromium), `COLOR_CONTEXT_TEST_PORT` (default 4290). Test builds set `COLOR_CONTEXT_TEST_HARNESS=1` to include storage and media harness pages.
 
-Choose **Surround pattern**, width, colors and pattern size, then **Apply changes**. Solid uses color A; Checker alternates A/B in square cells. Horizontal stripes alternate A/B in full-width bands, and Vertical stripes in full-height bands. Pattern size sets cell width/height or stripe band thickness. All patterns start with A at the full output canvas's top-left origin; the artwork rectangle replaces that pattern with its exact retained RGBA. The left view shows a neutral gray surround; the right shows the selected surround with the same dimensions and artwork placement. **View scale** switches between fitting the view and actual pixel scale. Transparent artwork remains transparent. The checkerboard behind a preview is a display aid and is not included in exports.
-
-Unsent fields remain separate from applied settings. Apply commits one reversible edit. **Undo** and **Redo** retain up to 30 edit states within 128 KiB, sharing one immutable image. They ask you to apply or discard unsent fields first. **Discard unsent changes** requires confirmation. Importing another image or opening a project starts a new history after the applicable replacement confirmation.
-
-Surround width is 0–128 pixels; checker cells and stripe bands are 4–128 pixels. A zero-width surround changes no pixels. Colors are explicit six-digit RGB values. The maximum output is 976 × 976 pixels. Both stripe directions work with reversible edits, autosave/reload, complete project backups, named alternatives, live paired views and exact PNG/HTML exports. Reports identify stripe band size; legacy solid/checker reports keep their original labels. Existing schema-1 projects remain supported. Older builds that know only Solid/Checker will refuse striped projects; open those backups with an updated build.
-
-## Keep surround alternatives
-
-Use **Keep applied surround** to retain up to 12 distinct named variants for the current artwork. A variant stores only surround settings; all variants share the same normalized RGBA image. Restore applies that surround as one reversible edit, keeping the study title and other alternatives. Remove is reversible with Undo. Apply or discard unsent settings before using these controls. Typing a variant name retires older pending imports or recovery loads.
-
-Variants are included in autosave and complete project JSON backups as an optional schema-1 `variants` field. Legacy projects retain their original field shape. Result PNG and comparison report downloads describe the currently applied surround; restore a named alternative first to export it. The name being typed is an uncommitted label and is not included in backups. Choose two distinct entries under **Share two alternatives**. Use **View named comparison** to inspect both retained contexts without applying either to the study. The separate named comparison has Fit/Actual pixels controls and paired scrolling that does not move the applied-vs-neutral view. Changing the selection or committing a different project state hides stale named views; canceled/failed worker jobs publish no late pair. Unsent editor fields stay intact. Then use **Download named comparison report** for a self-contained HTML comparison. It embeds both exact retained-surround PNGs, labels/settings/output dimensions, and a shared normalized artwork SHA-256. Each alternative's numerical diagnostics use its own same-size neutral reference; they are not direct pairwise deltas. Unsent editor fields are preserved and excluded. Changing either selection retires an older pending report. The same 16 MiB and 30-second bounds apply, including two maximum 976-pixel outputs. Different border widths may scale displayed artwork differently; use actual-pixel PNG viewing for an unscaled comparison. This collection does not measure human perception or establish protection efficacy.
-
-## Read the measurements
-
-**Artwork pixels unchanged** refers to an exact RGBA comparison within the retained image rectangle. It does not mean the entire framed output is unchanged or that people perceive it identically.
-
-Whole-canvas RGB RMSE and maximum channel difference use encoded sRGB byte values relative to the neutral-gray comparison. Mean absolute relative-luminance difference uses the documented sRGB transfer function and linear RGB weights. These are numerical diagnostics, not perceptual thresholds, calibrated image-quality judgments or art-protection measurements. The report retains their full numerical values and transformation parameters.
-
-## Export and recover
-
-**Download normalized original PNG** exports the retained source raster; **Download result PNG** includes its chosen surround. The encoder writes the retained RGBA bytes directly, including low- and zero-alpha RGB, without reading pixels back from the display Canvas.
-
-**Download project** creates a self-contained schema-1 JSON backup with normalized raw RGBA, source labels, title and settings, bounded at 4 MiB. It contains committed work, not unsent fields or session history. **Download comparison report** creates a self-contained HTML file with both exact PNGs, parameters, measurements and a digest computed from the actual retained pixels. No scripts or external resources are required. The digest identifies bytes, not source authenticity. Result/report exports require applied settings; source/project exports clearly use committed work.
-
-Committed projects save locally in a complete IndexedDB transaction. The saved status appears only after that transaction completes. Failed saves retain current memory, Undo and downloads; **Retry saving** is explicit. **Stop** retires active image or export work without replacing current work with a late result.
-
-Startup waits for the actual saved-record result. Failed or invalid restoration protects the durable record and offers **Retry loading**, **Download raw saved record**, and **Continue without saving**. Memory-only editing does not automatically overwrite that record. **Save current project** separately confirms saving the applied state and restores autosave only after success.
-
-**Clear saved project** deletes only the durable copy after confirmation. Current memory, history and unsent fields remain; protection stays enabled so later edits do not silently recreate the cleared copy. **Save current project** explicitly enables saving again. Raw recovery exports only bounded valid-Unicode saved text; unsupported stored values remain protected.
-
-## Controlled shape experiment
-
-The research panel is separate from uploaded artwork. It reports an original procedural four-shape classification task with three training conditions: neutral surrounds, deliberately class-correlated colors, and label-independent colors with identical palette frequencies and RGB squared distortion. Paired images retain exactly the same foreground pixels. Geometry families are assigned to training, development or test before variants are made.
-
-The fixed protocol uses three learner seeds, 18 real fits and 108 declared evaluation conditions. Neutral-development learnability must pass the predeclared gate before any test predictions are evaluated. Counterfactual surrounds, inference-only masking and separately retrained masking test context sensitivity and one obvious preprocessing bypass. Every declared result is retained, including null, negative or inconclusive outcomes. A shortcut in this deliberately constructed task is not evidence about artist styles, diffusion models or prevention of training.
-
-The protocol, generator fingerprint, complete ordered dataset manifest and independent prefit receipt were committed in `b2b782b50341b9279538437aafba7aa7ec387abf` before fitting was released. The first prescribed run completed all 18 fits and 108 evaluations. Its actual result is a **null effect**: every condition reached accuracy and balanced accuracy 1.0, with paired prediction flips and neutral-training baseline differences 0.0. These fixed surrounds did not change any tested predicted labels. This does not demonstrate context sensitivity or artwork protection. The clean-process repeat matched every coefficient hash, prediction, metric and other result field exactly; only measured fit durations differed. Both independently verified reports are retained: the first is the published artifact, and the repeat is in `experiments/results/repeat-report.json`. The runs took 126.99 and 128.63 seconds in the recorded environment. See [the complete evidence](docs/2026-10-04-experiment-verification.json).
-
-Use Python 3.12 in a separate environment for experiment checks:
+Experiment checks (Python 3.12 in a separate environment; these do not refit the protocol models):
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r experiments/requirements.txt
 .venv/bin/python -m unittest discover -s experiments/tests -v
 .venv/bin/python experiments/oracle/check_experiment.py \
-  --manifest experiments/frozen/manifest.json --producer-api --tiny-learner
+  --manifest experiments/frozen/manifest.json --producer-api --tiny-learner \
+  --results public/experiment-report.json \
+  --receipt experiments/frozen/receipt.json --allow-authorized-results
 ```
 
-These checks verify the original mathematical fixtures and use only unrelated tiny data to check learner plumbing. They do not fit the protocol models or evaluate their held-out predictions. The canonical manifest lists every family's actual unrounded parameters, palette assignments, sample IDs and center hashes. `experiments/frozen/receipt.json` binds the exact protocol, generator source and manifest.
+Optional extra checks:
 
-To reproduce the fixed experiment separately, use a new output directory:
+- Maximum-size workspace smoke against a running preview: `node --experimental-strip-types scripts/smoke_workspace.mjs` with `COLOR_CONTEXT_BASE_URL`, `COLOR_CONTEXT_OUTPUT_DIR` and `CHROMIUM_PATH`.
+- Independent PNG decode check (needs Pillow; writes `/tmp/color-context-*` files): `node --experimental-strip-types scripts/export-core-oracles.ts && python scripts/verify-core-oracles.py`.
+
+CI: `.github/workflows/color-context-lab.yml` (runs the Python experiment checks, then `npm run check` and the browser tests).
+
+## Controlled experiment
+
+`experiments/` holds a preregistered experiment: an original procedurally generated four-shape classification task trained under neutral, class-correlated and label-independent surround colors (three seeds, 18 fits, 108 evaluation conditions). The protocol and dataset manifest are frozen in `experiments/frozen/` before fitting. The published result is `public/experiment-report.json` (shown in the app), and a clean-process repeat is in `experiments/results/repeat-report.json`. Both runs gave the same null result.
+
+To rerun the full fit into a new output directory (takes a few minutes):
 
 ```sh
 .venv/bin/python experiments/run.py --fit \
@@ -87,40 +83,22 @@ To reproduce the fixed experiment separately, use a new output directory:
   --receipt experiments/frozen/receipt.json --output /tmp/color-context-run
 ```
 
-The runner refuses mismatched inputs and existing output directories, fixes numeric libraries to one thread, and supervises a ten-minute/32 MiB output budget. It preserves truthful partial or inconclusive results; it does not change parameters after viewing an outcome. Source changes require a new preregistered experiment rather than reusing the frozen receipt. The frozen artifact can be inspected without rerunning training. Check its complete metrics and identity with:
+The runner refuses mismatched inputs or an existing output directory. Changing the experiment means writing a new preregistered protocol, not reusing the frozen receipt.
 
-```sh
-.venv/bin/python experiments/oracle/check_experiment.py \
-  --results public/experiment-report.json \
-  --receipt experiments/frozen/receipt.json --allow-authorized-results
-```
+## Project layout
 
-This command validates already released results; it does not fit or tune models.
+- `src/main.ts`, `index.html` — UI and app wiring.
+- `src/model.ts`, `src/types.ts` — project schema, settings, variants and validation.
+- `src/render.ts`, `src/image.worker.ts`, `src/jobs.ts` — surround rendering and cancellable worker jobs.
+- `src/images.ts`, `src/png.ts` — PNG import/normalization and lossless encoding.
+- `src/report.ts` — HTML comparison reports and diagnostics.
+- `src/experiment.ts` — loading and displaying the experiment report.
+- `src/storage.ts`, `src/history.ts` — IndexedDB autosave and Undo/Redo.
+- `experiments/` — Python generator, runner, report builder, oracle checker, tests and frozen inputs.
+- `public/experiment-report.json` — published experiment result.
+- `scripts/` — optional smoke and independent oracle checks.
+- `tests/*.test.ts` — unit and oracle tests; `tests/browser/` — Playwright specs.
 
-## Verify
+## Data & privacy
 
-```sh
-npm run check
-npx playwright install chromium
-npm run test:browser
-```
-
-For system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The browser suite reserves port 4290 and exercises the production build, real files, native workers, IndexedDB and actual downloads. Storage/media harnesses are included only when tests request them. Python experiment verification is separate from the browser workspace and uses its own pinned requirements.
-
-The initial milestone passes 69 TypeScript tests, 12 Python tests and 32 native browser cases. An independent oracle checks the frozen manifest, actual results and numerical invariants without rerunning protocol training. The browser checks include real decoding and worker termination, genuine transaction aborts/timeouts, exact exports, persistent process restart, maximum-size output and usable editing when experiment results are unavailable.
-
-For a separate maximum-size production acceptance run, start the normal production preview on port 4289 and use a new output directory:
-
-```sh
-COLOR_CONTEXT_BASE_URL=http://127.0.0.1:4289 \
-COLOR_CONTEXT_OUTPUT_DIR=/tmp/color-context-acceptance \
-CHROMIUM_PATH=/usr/bin/chromium \
-node --experimental-strip-types scripts/smoke_workspace.mjs
-```
-
-This imports all 2,073,600 raw bytes of a 720 × 720 image, independently decodes the 976 × 976 exports, checks every metric, and compares the complete JSON/PNG/HTML artifacts byte-for-byte through a full Chromium process restart. It preserves downloaded artifacts, desktop/mobile screenshots and a verification receipt.
-
-The [frozen design](../../docs/superpowers/specs/2026-10-04-color-context-lab-design.md) and [implementation plan](../../docs/superpowers/plans/2026-10-04-color-context-lab.md) define the exact byte, numerical, lifetime and preregistration contracts. Measured experiment evidence is retained in [the experiment record](docs/2026-10-04-experiment-verification.json); the [workspace record](docs/2026-10-04-workspace-verification.json) retains native maximum-size evidence, screenshots, corrections and CI status. Broader artwork protection remains an unproven hypothesis.
-
-
-Independent byte/numerical validation (#91) adds 22 fixtures without changing production or the frozen experiment. The final merged checkout of `7c06dac` passed **91 TypeScript, 12 Python and 32 native browser cases**, lint/typecheck/build in [run 37217535261](https://github.com/twangyal/projects-monorepo/actions/runs/37217535261). An optional Pillow decoder compares every RGBA byte at 2×2 and 976×976; run `node --experimental-strip-types scripts/export-core-oracles.ts && python scripts/verify-core-oracles.py` in a scratch environment with Pillow installed (the helper writes fixed `/tmp/color-context-*` files). The depth assertion was tested by removing the actual guard, causing one failure, then restoring it. [The independent evidence](docs/2026-10-04-independent-core-oracles.json) distinguishes local checks, earlier CI and final CI. Existing protocol/results and newer maximum-size workspace evidence remain intact.
+Images and edits stay in the browser. Projects store the normalized raster, not the original upload or its metadata, so keep your original file.
