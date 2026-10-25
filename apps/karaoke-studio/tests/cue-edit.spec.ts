@@ -1,3 +1,4 @@
+import { downloaded, checkTimingVideo } from './sequential-timing-fixtures.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -433,4 +434,38 @@ test('find selection retires across Undo Redo and another clip while the same-cl
   await expect(query).toHaveValue(''); await expect(play).toBeDisabled();
   const session = await (await page.request.get('/api/session')).json();
   expect((await page.request.delete(`/api/projects/${firstId}`, { headers: { 'X-Karaoke-Token': session.token }, data: {} })).ok()).toBe(true);
+});
+
+const fitStart = (page: Page) => page.getByLabel('Fit passage start (seconds)', { exact: true });
+const fitEnd = (page: Page) => page.getByLabel('Fit passage end (seconds)', { exact: true });
+const fitApply = (page: Page) => page.getByRole('button', { name: 'Fit selected passage timing', exact: true });
+test('fit a passage proportionally preserves raw neighbors one-edit history saved SRT video and reload', async ({ page }, info) => {
+  test.setTimeout(60000); await passageFixture(page); await expect(fitStart(page)).toBeVisible();
+  const id = new URL(page.url()).searchParams.get('project')!, saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  await page.getByLabel('Clip title', { exact: true }).fill('Fitted passage'); await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied literal words 🌓'); const before = await timingEditor(page);
+  await fitStart(page).fill('.5'); await fitEnd(page).fill('3.5'); await fitApply(page).click();
+  for (const [label, value] of [['Start line 1','0.000'],['End line 1','0.500'],['Start line 2','0.5'],['End line 2','1.500'],['Start line 3','2.5'],['End line 3','3.5'],['Start line 4','4.000'],['End line 4','5.000']]) await expect(page.getByLabel(label,{exact:true})).toHaveValue(value);
+  await expect(page.locator('#passage-fit-status')).toContainText('one unsaved edit'); expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved); const after = await timingEditor(page);
+  await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click(); expect(await timingEditor(page)).toEqual(before); await page.getByRole('button',{name:'Redo lyric edit',exact:true}).click(); expect(await timingEditor(page)).toEqual(after);
+  await page.getByRole('button',{name:'Discard pasted draft',exact:true}).click();await page.getByRole('button',{name:'Save lyrics',exact:true}).click();await expect(page.locator('#message')).toContainText('saved locally');
+  const current=await(await page.request.get(`/api/projects/${id}`)).json();expect(current.cues.map((c:{start:number;end:number})=>[c.start,c.end])).toEqual([[0,.5],[.5,1.5],[2.5,3.5],[4,5]]);
+  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export timed lyrics',exact:true}).click();const srt=await readFile((await(await pending).path())!,'utf8');for(const interval of ['00:00:00,500 --> 00:00:01,500','00:00:02,500 --> 00:00:03,500'])expect(srt).toContain(interval);
+  const path=info.outputPath('fitted-passage.mp4');await downloaded(page,'Export karaoke MP4',path);await checkTimingVideo(path,current.cues);
+  await page.reload();await expect(page.getByLabel('Start line 2',{exact:true})).toHaveValue('0.5');await page.getByText('Shift lyric timing',{exact:true}).click();await page.getByRole('combobox',{name:'Timing shift scope',exact:true}).selectOption('passage');await expect(fitStart(page)).toHaveValue('');await expect(fitEnd(page)).toHaveValue('');
+});
+
+test('fit refusals preserve exact editor raw fields listening review and Redo until valid apply', async ({ page }) => {
+  await passageFixture(page);await passageApply(page).click();await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();await selectPassage(page,'1','2');
+  await page.getByLabel('Import timed lyrics (SRT)',{exact:true}).setInputFiles({name:'pending-fit.srt',mimeType:'application/x-subrip',buffer:Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nPending words\n')});await expect(page.locator('#srt-review')).toBeVisible();await page.getByRole('button',{name:'Repeat range',exact:true}).click();const before=await timingEditor(page);
+  for(const [start,end]of[['','3.5'],['NaN','3.5'],['0','3.5'],['1','4.1'],['1','2.5']]){await fitStart(page).fill(start);await fitEnd(page).fill(end);await fitApply(page).click();await expect(page.locator('#passage-fit-status')).toContainText('kept');await expect(fitStart(page)).toHaveValue(start);expect(await timingEditor(page)).toEqual(before);await expect(page.locator('#srt-review')).toBeVisible();await expect(page.getByRole('button',{name:'Redo lyric edit',exact:true})).toBeEnabled();await expect(page.getByRole('button',{name:'Pause practice',exact:true})).toBeEnabled();}
+  await fitStart(page).fill('.5');await fitEnd(page).fill('3.5');await selectPassage(page,'2','1');await fitApply(page).click();expect(await timingEditor(page)).toEqual(before);await expect(page.locator('#srt-review')).toBeVisible();await selectPassage(page,'1','2');await fitApply(page).click();await expect(page.locator('#srt-review')).toBeHidden();await expect(page.getByRole('button',{name:'Pause practice',exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'Redo lyric edit',exact:true})).toBeDisabled();
+});
+test('phone keyboard fits one line and stale selection or invalid source cannot mutate neighbors', async ({ page }) => {
+  await page.setViewportSize({width:390,height:740});await passageFixture(page);await selectPassage(page,'1','1');await fitStart(page).fill('.75');await fitEnd(page).fill('1.75');await fitApply(page).focus();await fitApply(page).press('Enter');await expect(page.getByLabel('Start line 2',{exact:true})).toHaveValue('0.75');await expect(page.getByLabel('End line 2',{exact:true})).toHaveValue('1.75');await expect(page.getByLabel('Start line 3',{exact:true})).toHaveValue('2.000');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.getByRole('button',{name:'Merge with next line 1',exact:true}).click();for(const name of['First line in passage','Last line in passage'])await expect(page.getByRole('combobox',{name,exact:true})).toHaveValue('');const before=await timingEditor(page);await fitApply(page).click();await expect(page.locator('#passage-fit-status')).toContainText('Choose');expect(await timingEditor(page)).toEqual(before);await selectPassage(page,'1','1');await page.getByLabel('Start line 1',{exact:true}).fill('');const invalid=await timingEditor(page);await fitApply(page).click();expect(await timingEditor(page)).toEqual(invalid);await expect(page.getByLabel('Start line 1',{exact:true})).toHaveValue('');
+});
+
+test('a precision-collapsed positive gap refuses before editor or pending review changes', async ({ page }) => {
+  await passageFixture(page);for(const [name,value]of[['End line 2','2.000'],['Start line 3','2.0000000000000004'],['End line 3','3.000']])await page.getByLabel(name,{exact:true}).fill(value);
+  await page.getByLabel('Import timed lyrics (SRT)',{exact:true}).setInputFiles({name:'precision-review.srt',mimeType:'application/x-subrip',buffer:Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nKeep this review\n')});await expect(page.locator('#srt-review')).toBeVisible();await fitStart(page).fill('2');await fitEnd(page).fill('3');const before=await timingEditor(page);await fitApply(page).click();await expect(page.locator('#passage-fit-status')).toContainText('positive lyric gap');expect(await timingEditor(page)).toEqual(before);await expect(page.locator('#srt-review')).toBeVisible();await expect(fitStart(page)).toHaveValue('2');await expect(fitEnd(page)).toHaveValue('3');
 });

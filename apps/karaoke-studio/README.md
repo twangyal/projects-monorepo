@@ -119,6 +119,12 @@ before saving. Press **Save lyrics** explicitly when ready; staged marks and
 session history do not survive a reload. This is manual line timing, with no
 automatic speech recognition or compensation for physical playback/input latency.
 
+### Fit drifting passage timing (#327)
+
+Open **Shift lyric timing**, choose **Selected passage**, then choose its first and last line. Enter **Fit passage start (seconds)** and **Fit passage end (seconds)** and choose **Fit selected passage timing**. The selected cues fill that window: line lengths and their internal gaps change by the same proportion, while literal words and other lines stay unchanged. A single selected line takes the supplied interval. This corrects cue-level drift; it does not stretch audio or change the song’s tempo, recognition source or word-level alignment method.
+
+The complete current editor must be valid, and the result must fit the clip without overlapping neighbors or collapsing a cue below floating-point precision. Endpoints can touch neighboring lines. Malformed or unchanged windows, invalid words/times and stale selections refuse without changing raw fields, listening, pending review or history. A valid fit stops obsolete listening/review/timing work and makes one unsaved Undo/Redo edit. Undo restores the exact prior title, pasted draft and numeric spelling. **Save lyrics** is separate; saved SRT/video use the new cue intervals. Window fields are session-only and reset when a different clip opens. See [implementation and verification](docs/2026-10-24-passage-fit.md).
+
 ### Import existing timed lyrics
 
 With a clip open, choose **Import timed lyrics (SRT)** and review every cue before
