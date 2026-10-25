@@ -1,0 +1,12 @@
+✔ previous/current worklet calls and arm metadata expose an armed repeated frame before capture (2.43985ms)
+✔ related currentTime representation is retained without replacing collector admission (0.317238ms)
+✔ quantum ring is bounded and command failure keeps original receipt then error ordering (0.605623ms)
+✔ healthy exact capture adds no terminal metadata and does not change sample boundaries (1.09346ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 118.867508

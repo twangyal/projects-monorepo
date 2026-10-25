@@ -1,0 +1,124 @@
+{
+  "mode": "baseline",
+  "row": 2,
+  "stage": "complete",
+  "error": null,
+  "beforeHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "afterHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "checkpoints": [
+    {
+      "label": "elapsed-stop",
+      "captureState": "Recording 1.0 / 20 seconds with backing…",
+      "notice": "Recording into the selected track. Use headphones to keep the backing out of your microphone.",
+      "recordEnabled": false
+    },
+    {
+      "label": "elapsed-pagehide",
+      "captureState": "Recording 0.5 / 20 seconds with backing…",
+      "notice": "Recording into the selected track. Use headphones to keep the backing out of your microphone.",
+      "recordEnabled": false
+    }
+  ],
+  "captured": {
+    "notice": "Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.",
+    "captureState": "Finding the notes…"
+  },
+  "observed": {
+    "requests": 2,
+    "stopped": 2,
+    "sources": [
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 1.2102947845804988,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.21029478458049886,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.4602947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.7102947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.9602947845804989,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 4.211473922902495,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.2114739229024942,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.4614739229024942,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.7114739229024942,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.9614739229024942,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      }
+    ],
+    "elapsed": 0.5805442176870743,
+    "released": true
+  }
+}

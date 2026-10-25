@@ -1,0 +1,361 @@
+{
+  "mode": "instrumented",
+  "row": 3,
+  "stage": "complete",
+  "error": null,
+  "beforeHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "afterHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "checkpoints": [
+    {
+      "label": "elapsed-stop",
+      "captureState": "Recording 1.0 / 20 seconds with backing…",
+      "notice": "Recording into the selected track. Use headphones to keep the backing out of your microphone.",
+      "recordEnabled": false
+    },
+    {
+      "label": "elapsed-pagehide",
+      "captureState": "Recording 0.5 / 20 seconds with backing…",
+      "notice": "Recording into the selected track. Use headphones to keep the backing out of your microphone.",
+      "recordEnabled": false
+    }
+  ],
+  "captured": {
+    "events": [
+      {
+        "sequence": 0,
+        "wallMs": 625.3999999999069,
+        "kind": "context",
+        "contextId": 0,
+        "state": "running",
+        "audioTime": 0.09287981859410431
+      },
+      {
+        "sequence": 1,
+        "wallMs": 627,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 0.10158730158730159,
+        "data": {
+          "type": "ready",
+          "sampleRate": 44100,
+          "channels": 2
+        }
+      },
+      {
+        "sequence": 2,
+        "wallMs": 629.1000000000931,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 0.10158730158730159,
+        "data": {
+          "type": "arm",
+          "startFrame": 52990,
+          "limitFrame": 934990
+        }
+      },
+      {
+        "sequence": 3,
+        "wallMs": 629.7000000001863,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 0.11029478458049886,
+        "data": {
+          "type": "armed",
+          "startFrame": 52990,
+          "limitFrame": 934990
+        }
+      },
+      {
+        "sequence": 4,
+        "wallMs": 645.7999999998137,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.1219047619047619,
+        "frames": 441000,
+        "when": 1.2015873015873015
+      },
+      {
+        "sequence": 5,
+        "wallMs": 645.7999999998137,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.1219047619047619,
+        "frames": 551,
+        "when": 0.2015873015873016
+      },
+      {
+        "sequence": 6,
+        "wallMs": 645.7999999998137,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.1219047619047619,
+        "frames": 551,
+        "when": 0.4515873015873016
+      },
+      {
+        "sequence": 7,
+        "wallMs": 645.8999999999069,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.1219047619047619,
+        "frames": 551,
+        "when": 0.7015873015873015
+      },
+      {
+        "sequence": 8,
+        "wallMs": 645.8999999999069,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 0.1219047619047619,
+        "frames": 551,
+        "when": 0.9515873015873015
+      },
+      {
+        "sequence": 9,
+        "wallMs": 649.7000000001863,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 0.1306122448979592,
+        "phase": "counting-in",
+        "framesCaptured": 0
+      },
+      {
+        "sequence": 10,
+        "wallMs": 1736.8999999999069,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 1.2219501133786848,
+        "phase": "recording",
+        "framesCaptured": 898
+      },
+      {
+        "sequence": 11,
+        "wallMs": 2869.899999999907,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 2.3510204081632655,
+        "data": {
+          "type": "cancel"
+        }
+      },
+      {
+        "sequence": 12,
+        "wallMs": 3550,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 3.030204081632653,
+        "data": {
+          "type": "ready",
+          "sampleRate": 44100,
+          "channels": 2
+        }
+      },
+      {
+        "sequence": 13,
+        "wallMs": 3551.100000000093,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 3.030204081632653,
+        "data": {
+          "type": "arm",
+          "startFrame": 182142,
+          "limitFrame": 1064142
+        }
+      },
+      {
+        "sequence": 14,
+        "wallMs": 3551.399999999907,
+        "kind": "incoming",
+        "contextId": 0,
+        "audioTime": 3.030204081632653,
+        "data": {
+          "type": "armed",
+          "startFrame": 182142,
+          "limitFrame": 1064142
+        }
+      },
+      {
+        "sequence": 15,
+        "wallMs": 3564.399999999907,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.0418140589569163,
+        "frames": 441000,
+        "when": 4.130204081632653
+      },
+      {
+        "sequence": 16,
+        "wallMs": 3564.5,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.0418140589569163,
+        "frames": 551,
+        "when": 3.130204081632653
+      },
+      {
+        "sequence": 17,
+        "wallMs": 3564.600000000093,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.0418140589569163,
+        "frames": 551,
+        "when": 3.380204081632653
+      },
+      {
+        "sequence": 18,
+        "wallMs": 3564.600000000093,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.0418140589569163,
+        "frames": 551,
+        "when": 3.630204081632653
+      },
+      {
+        "sequence": 19,
+        "wallMs": 3564.600000000093,
+        "kind": "source-start",
+        "contextId": 0,
+        "audioTime": 3.0418140589569163,
+        "frames": 551,
+        "when": 3.880204081632653
+      },
+      {
+        "sequence": 20,
+        "wallMs": 3568,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 3.0505215419501135,
+        "phase": "counting-in",
+        "framesCaptured": 0
+      },
+      {
+        "sequence": 21,
+        "wallMs": 4666.700000000186,
+        "kind": "phase",
+        "contextId": 0,
+        "audioTime": 4.1505668934240365,
+        "phase": "recording",
+        "framesCaptured": 898
+      },
+      {
+        "sequence": 22,
+        "wallMs": 5217.100000000093,
+        "kind": "outgoing",
+        "contextId": 0,
+        "audioTime": 4.702040816326531,
+        "data": {
+          "type": "cancel"
+        }
+      },
+      {
+        "sequence": 23,
+        "wallMs": 5233.5,
+        "kind": "context",
+        "contextId": 0,
+        "state": "closed",
+        "audioTime": 4.710748299319728
+      }
+    ],
+    "overflow": false,
+    "notice": "Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.",
+    "captureState": "Finding the notes…"
+  },
+  "observed": {
+    "requests": 2,
+    "stopped": 2,
+    "sources": [
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 1.2015873015873015,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.2015873015873016,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.4515873015873016,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.7015873015873015,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 0.9515873015873015,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 441000,
+        "when": 4.130204081632653,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 66150
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.130204081632653,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.380204081632653,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.630204081632653,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      },
+      {
+        "sampleRate": 22050,
+        "frames": 551,
+        "when": 3.880204081632653,
+        "contextRate": 44100,
+        "samples": {
+          "frames": 0
+        }
+      }
+    ],
+    "elapsed": 0.5805442176870752,
+    "released": true
+  }
+}

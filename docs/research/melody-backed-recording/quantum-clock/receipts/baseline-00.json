@@ -1,0 +1,20 @@
+{
+  "mode": "baseline",
+  "row": 0,
+  "stage": "elapsed-stop",
+  "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0.2\u001b[39m\nReceived:   \u001b[31m-Infinity\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+  "beforeHash": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2",
+  "afterHash": null,
+  "checkpoints": [],
+  "captured": {
+    "notice": "Could not record with backing: The microphone audio frames were interrupted. Your prior take is unchanged. Check your microphone and try again explicitly.",
+    "captureState": "Finding the notes…"
+  },
+  "observed": {
+    "requests": 1,
+    "stopped": 1,
+    "sources": [],
+    "elapsed": "-Infinity",
+    "released": true
+  }
+}
