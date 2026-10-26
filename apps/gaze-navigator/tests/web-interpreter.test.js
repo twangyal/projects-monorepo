@@ -131,7 +131,7 @@ test('tracking and calibration commands are recognized without colliding with ca
   assert.equal(interpret('stop listening', context()).type, 'pause');
 });
 
-test('"next page" follows a pagination link in the circle; without one it still moves through history', () => {
+test('"next page" follows a pagination link in or near the circle; without one only "previous page" uses history', () => {
   const results = context(element(1, 'Next page : 2 of 628', 'link'), element(2, 'Previous page : 1 of 628', 'link'), element(3, 'Passports', 'link'));
   assert.deepEqual(interpret('next page', results), { type: 'activate', targetId: 1 });
   assert.deepEqual(interpret('go to the next page', results), { type: 'activate', targetId: 1 });
@@ -139,10 +139,14 @@ test('"next page" follows a pagination link in the circle; without one it still 
   assert.deepEqual(interpret('next page', context(element(4, '»', 'link'))), { type: 'activate', targetId: 4 });
   assert.deepEqual(interpret('next page', context(element(5, 'Go to next page', 'button'))), { type: 'activate', targetId: 5 });
   // A "Next steps" heading link is not pagination, and no pager means history.
-  assert.equal(interpret('next page', context(element(6, 'Nextcloud', 'link'))).type, 'forward');
-  assert.equal(interpret('next page', context(element(7, 'Next steps', 'heading'))).type, 'forward');
+  assert.equal(interpret('next page', context(element(6, 'Nextcloud', 'link'))).type, 'unknown');
+  assert.equal(interpret('next page', context(element(7, 'Next steps', 'heading'))).type, 'unknown');
   assert.equal(interpret('previous page', context()).type, 'back');
-  assert.equal(interpret('next page', context()).type, 'forward');
+  assert.equal(interpret('next page', context()).type, 'unknown');
+  assert.equal(interpret('go forward', context()).type, 'forward');
+  assert.deepEqual(interpret('next page', { elements: [], nearby: [element(101, 'Next', 'link')] }), { type: 'activate', targetId: 101, outside: true });
+  const two = interpret('next page', { elements: [], nearby: [element(101, 'Next', 'link'), element(102, 'Next ›', 'button')] });
+  assert.deepEqual([two.type, two.candidates.map(candidate => candidate.number)], ['clarify', [1, 2]]);
 });
 
 test('"close" closes an open toggle or uses a Close control; otherwise the words name a control as usual', () => {

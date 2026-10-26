@@ -248,16 +248,22 @@ function interpretInCircle(utterance, context) {
   const chosen = choice && parseNumber(choice[1]);
   if (chosen) return { type: 'choose', index: chosen };
 
-  // "Next page" and "previous page" follow a pagination link or button inside the circle (as on search results);
-  // with none there, they move through the browser history.
+  // "Next page" and "previous page" follow a pagination link or button inside the circle (as on search results),
+  // or just outside it. With none near, "previous page" goes back; "next page" explains rather than moving
+  // forward through history, which is usually empty and would look like nothing happened.
   const paging = /^(?:go to |show )?(?:the )?(next|previous|prev) page(?: of results)?$/.exec(text);
   if (paging) {
     const pattern = paging[1] === 'next' ? /^(?:next\b|[›»→])|\bnext page\b/i : /^(?:prev(?:ious)?\b|[‹«←])|\bprevious page\b/i;
-    const pagers = context.elements.filter(element => (element.role === 'link' || element.role === 'button') && pattern.test((element.name ?? '').trim()));
-    if (pagers.length) return deictic(pagers, element => ({ type: 'activate', targetId: element.id }), 'page link');
+    const pager = element => (element.role === 'link' || element.role === 'button') && pattern.test((element.name ?? '').trim());
+    const activate = element => ({ type: 'activate', targetId: element.id });
+    const pagers = context.elements.filter(pager);
+    if (pagers.length) return deictic(pagers, activate, 'page link');
+    // A pager just outside the circle goes through the same near-miss retry as other named controls.
+    if ((context.nearby ?? []).some(pager)) return { type: 'unknown', missing: true, message: 'No page link is inside the gaze circle. Look at it and try again.' };
+    if (paging[1] === 'next') return { type: 'unknown', message: 'No next-page link is near the gaze circle. Look at it and try again, or say “go forward” to use the browser’s Forward button.' };
   }
   if (/^(?:go |take me )?back(?: a page| to the previous page)?$|^(?:go|return) (?:back )?to the previous page$|^previous page$/.test(text)) return { type: 'back' };
-  if (/^(go )?forward( a page)?$|^next page$/.test(text)) return { type: 'forward' };
+  if (/^(go )?forward( a page)?$/.test(text)) return { type: 'forward' };
   if (/^(page down|next screen)$/.test(text)) return { type: 'scroll', direction: 'down', amount: 'page' };
   if (/^page up$/.test(text)) return { type: 'scroll', direction: 'up', amount: 'page' };
   const scroll = /^scroll(?: (?:the )?(?:page|list|area|region))?(?: (up|down|left|right))?(?: (a bit|a little|slightly|more|a lot))?$/.exec(text) ??
