@@ -200,7 +200,10 @@ test('delayed backup cannot replace an active native placement drag or its origi
 });
 
 test('real backup bitmap completing after a newer photo import closes without replacing newer complete work', async ({ page }) => {
-  const base = await setup(page); await page.evaluate(() => window.importOracle.holdBitmap()); await upload(page,incoming(base),'held-bitmap.json');
+  const base = await setup(page), pending = incoming(base);
+  // A new encoded image must still be decoded; an unchanged cached image needs no bitmap owner.
+  pending.photo = { ...pending.photo!, dataUrl: await jpeg(page,'#2c6d84') };
+  await page.evaluate(() => window.importOracle.holdBitmap()); await upload(page,pending,'held-bitmap.json');
   await expect.poll(() => page.evaluate(() => window.importOracle.bitmap!.waiting)).toBe(true);
   const photo = await jpeg(page,'#733c91'); await page.getByLabel('Upload body photo').setInputFiles({name:'newer-photo.jpg',mimeType:'image/jpeg',buffer:Buffer.from(photo.split(',')[1],'base64')});
   await expect(page.locator('#photo-name')).toHaveText('newer-photo.jpg'); const newer = await backup(page);

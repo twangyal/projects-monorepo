@@ -3,6 +3,16 @@ import{readFile}from'node:fs/promises';
 import type{Project}from'../src/model.ts';
 declare global{interface Window{libraryDecode:{hold:boolean;waiting:boolean;release:()=>void}}}
 async function decodeGate(page:Page){await page.addInitScript(()=>{window.libraryDecode={hold:false,waiting:false,release:()=>{}};const decode=createImageBitmap.bind(window);window.createImageBitmap=(async(...args:Parameters<typeof createImageBitmap>)=>{const bitmap=await decode(...args);if(window.libraryDecode.hold){window.libraryDecode.hold=false;window.libraryDecode.waiting=true;await new Promise<void>(resolve=>{window.libraryDecode.release=resolve;});}return bitmap;})as typeof createImageBitmap;});}
+// Hold a real library transaction; saving already-checked images need not decode again.
+async function holdLibraryWrite(page:Page){
+ await page.evaluate(async()=>{
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio-designs',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  const tx=db.transaction(['metadata','payloads'],'readwrite');let active=true;
+  Reflect.set(window,'releaseLibraryWrite',()=>{active=false;});
+  tx.oncomplete=()=>db.close();tx.onabort=()=>db.close();
+  await new Promise<void>(resolve=>{const keepAlive=()=>{const r=tx.objectStore('metadata').count();r.onsuccess=()=>{resolve();if(active)keepAlive();};};keepAlive();});
+ });
+}
 async function fixture(page:Page):Promise<Project>{
  await page.goto('/tests/storage-harness.html');await expect.poll(()=>page.evaluate(()=>!!window.clothingStorage)).toBe(true);
  return page.evaluate(()=>{
@@ -48,7 +58,7 @@ test('late library image admission cannot replace newer editing or steal focus',
 });
 
 test('pending save retains captured complete work while current note and newer library name stay editable',async({page})=>{
- await decodeGate(page);const p=await fixture(page);await importProject(page,p);await library(page);await page.getByRole('textbox',{name:'Saved design name',exact:true}).fill('Captured A');await page.evaluate(()=>{window.libraryDecode.hold=true;});await page.getByRole('button',{name:'Save named copy',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.libraryDecode.waiting)).toBe(true);
- await page.keyboard.press('Escape');await page.getByRole('button',{name:'Concept sketch',exact:true}).click();await page.locator('#note').fill('Newer note');await page.keyboard.press('Escape');await library(page);await page.getByRole('textbox',{name:'Saved design name',exact:true}).fill('Newer name');await page.evaluate(()=>window.libraryDecode.release());await expect(page.locator('#design-library-status')).toContainText('Saved');await expect(page.getByRole('textbox',{name:'Saved design name',exact:true})).toHaveValue('Newer name');
+ await decodeGate(page);const p=await fixture(page);await importProject(page,p);await library(page);await page.getByRole('textbox',{name:'Saved design name',exact:true}).fill('Captured A');await holdLibraryWrite(page);await page.getByRole('button',{name:'Save named copy',exact:true}).click();await expect(page.locator('#design-library-status')).toContainText('Saving a captured named copy');
+ await page.keyboard.press('Escape');await page.getByRole('button',{name:'Concept sketch',exact:true}).click();await page.locator('#note').fill('Newer note');await page.keyboard.press('Escape');await library(page);await page.getByRole('textbox',{name:'Saved design name',exact:true}).fill('Newer name');await page.evaluate(()=>Reflect.get(window,'releaseLibraryWrite')());await expect(page.locator('#design-library-status')).toContainText('Saved');await expect(page.getByRole('textbox',{name:'Saved design name',exact:true})).toHaveValue('Newer name');
  await chooseName(page,'Captured A');const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download selected backup',exact:true}).click();expect(JSON.parse(await readFile((await(await pending).path())!,'utf8'))).toEqual(p);await page.keyboard.press('Escape');await page.getByRole('button',{name:'Concept sketch',exact:true}).click();await expect(page.locator('#note')).toHaveValue('Newer note');
 });
