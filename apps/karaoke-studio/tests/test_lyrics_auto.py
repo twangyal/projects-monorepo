@@ -381,6 +381,96 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertIn('project.json', names)
         self.assertNotIn('transcript.json', names)
 
+    def test_cancelled_upload_recognition_retains_stems_without_partial_transcript(self):
+        previous_id = self.helper.upload()['projectId']
+        previous = self.request('GET', f'/api/projects/{previous_id}')[2]
+        original = self.server.transcribe
+        entered = threading.Event()
+
+        def waiting(vocals, output, model_root, duration, cancel, stage):
+            Path(output).write_text('{"partial": true}')
+            stage('Recognizing sung lyrics locally')
+            entered.set()
+            if not cancel.wait(3):
+                raise RuntimeError('Test did not cancel recognition.')
+            raise RuntimeError('Recognition cancelled.')
+
+        self.server.transcribe = waiting
+        status, _, response = self.request('POST', '/api/projects', b'fake-audio', {'X-Audio-Name': 'retained.wav'})
+        self.assertEqual(status, 202, response)
+        started = response['job']
+        self.assertTrue(entered.wait(2))
+        self.assertEqual(self.request('POST', f'/api/jobs/{started["id"]}/cancel', {})[0], 200)
+        done = self.helper.wait_job(started['id'])
+        self.assertEqual(done['status'], 'complete', done)
+        self.assertTrue(done['retainedOnCancel'])
+        base = f'/api/projects/{started["projectId"]}'
+        project = self.request('GET', base)[2]
+        self.assertEqual(project['cues'], [])
+        for track in ('original', 'vocals', 'backing'):
+            status, _, media = self.request('GET', base + '/audio/' + track)
+            self.assertEqual(status, 200)
+            self.assertTrue(media.startswith(b'RIFF'))
+        self.assertEqual(self.request('GET', base + '/transcript')[2], {'available': False})
+        self.assertFalse(list(self.server.work_dir.iterdir()))
+        self.assertEqual(self.request('GET', f'/api/projects/{previous_id}')[2], previous)
+        self.server.transcribe = original
+        status, _, response = self.request('POST', base + '/transcribe', {})
+        self.assertEqual(status, 202, response)
+        self.assertEqual(self.helper.wait_job(response['job']['id'])['status'], 'complete')
+        self.assertTrue(self.request('GET', base + '/transcript')[2]['available'])
+        self.assertEqual(self.request('GET', base)[2], project, 'recognition retry does not replace saved cues')
+
+    def test_late_cancel_before_publication_still_removes_recognition_results(self):
+        from karaoke import server as server_module
+        staged, release = threading.Event(), threading.Event()
+        self.addCleanup(release.set)
+        atomic_json = server_module._atomic_json
+
+        def gate(path, value):
+            atomic_json(path, value)
+            if path.name == 'project.json' and path.parent.name == 'completed':
+                staged.set()
+                release.wait(2)
+
+        with mock.patch.object(server_module, '_atomic_json', side_effect=gate):
+            response = self.request('POST', '/api/projects', b'fake-audio', {'X-Audio-Name': 'late.wav'})[2]
+            job = response['job']
+            self.assertTrue(staged.wait(2))
+            self.request('POST', f'/api/jobs/{job["id"]}/cancel', {})
+            release.set()
+            done = self.helper.wait_job(job['id'])
+        self.assertEqual(done['status'], 'complete')
+        self.assertTrue(done['retainedOnCancel'])
+        base = f'/api/projects/{job["projectId"]}'
+        self.assertEqual(self.request('GET', base)[2]['cues'], [])
+        self.assertEqual(self.request('GET', base + '/transcript')[2], {'available': False})
+
+    def test_shutdown_during_recognition_saves_finished_stems_and_reopens_them(self):
+        entered = threading.Event()
+
+        def waiting(vocals, output, model_root, duration, cancel, stage):
+            entered.set()
+            if not cancel.wait(3):
+                raise RuntimeError('Shutdown did not cancel recognition.')
+            raise RuntimeError('Recognition cancelled by shutdown.')
+
+        self.server.transcribe = waiting
+        response = self.request('POST', '/api/projects', b'fake-audio', {'X-Audio-Name': 'shutdown.wav'})[2]
+        self.assertTrue(entered.wait(2))
+        self.server.shutdown()
+        self.server.server_close()
+        self.server = self.helper.start_server(separate=silent_separation, transcribe=waiting,
+                                                transcriber_ready=lambda _root: True)
+        self.helper.server = self.server
+        self.helper.token = self.helper.request('GET', '/api/session')[2]['token']
+        project_id = response['job']['projectId']
+        status, _, project = self.request('GET', f'/api/projects/{project_id}')
+        self.assertEqual(status, 200, project)
+        self.assertEqual(project['cues'], [])
+        self.assertEqual(self.request('GET', f'/api/projects/{project_id}/audio/backing')[0], 200)
+        self.assertFalse(list(self.server.work_dir.iterdir()))
+
     def test_long_changed_transcript_aligns_through_http_without_changing_saved_cues(self):
         self.server.separate = lambda *args: silent_separation(*args, duration=80)
         self.helper.upload()

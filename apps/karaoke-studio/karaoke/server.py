@@ -29,7 +29,7 @@ import uuid
 from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
-from .jobs import JobBusy, JobManager
+from .jobs import JobBusy, JobManager, JobPublication
 from .lyrics_auto import align_lines, word_timings, words_to_cues
 from .word_alignment import AlignmentLimitError
 from .media_io import inherit_media_handles
@@ -435,19 +435,26 @@ class KaraokeServer(ThreadingHTTPServer):
                                                          self.model_dir, duration, cancel, stage)
                         project = validate_project({**project, "cues": words_to_cues(transcript["words"], duration)})
                     except Exception:
-                        if cancel.is_set():
-                            raise
                         (complete / _TRANSCRIPT).unlink(missing_ok=True)
                 _atomic_json(complete / "project.json", project)
             finally:
                 os.close(work_fd)
 
             def publish():
+                nonlocal project
                 self.check_storage()
                 if len(self.projects) >= MAX_PROJECTS:
                     raise RuntimeError("Project storage is full; completed projects were preserved.")
                 parent_fd = self._open_work(work_dir)
                 try:
+                    # JobManager holds the cancellation/publication lock here.
+                    # A cancel accepted after work returned gets the same clean
+                    # stems-only result as one observed inside recognition.
+                    if cancel.is_set():
+                        complete = self._descriptor_path(parent_fd) / "completed"
+                        project = create_project(project_id, title, duration)
+                        (complete / _TRANSCRIPT).unlink(missing_ok=True)
+                        _atomic_json(complete / "project.json", project)
                     os.replace("completed", project_id, src_dir_fd=parent_fd,
                                dst_dir_fd=self._directory_fds[self.projects_dir])
                 finally:
@@ -456,7 +463,7 @@ class KaraokeServer(ThreadingHTTPServer):
                 self._project_identities[project_id] = self._identity(os.stat(project_id, dir_fd=self._directory_fds[self.projects_dir], follow_symlinks=False))
                 return None
 
-            return publish
+            return JobPublication(publish, retain_on_cancel=True)
 
         return self.jobs.start(project_id, "separate", work, lambda: self.cleanup_work(work_dir))
 

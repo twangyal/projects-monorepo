@@ -40,11 +40,17 @@ def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *
     recognition failure (no transcript), so existing flows keep starting without lyrics."""
     import json
     from karaoke.transcription import ENGLISH, MULTILINGUAL
+    if abs(duration - 18.0) < 1e-6 and Path(output).parent.name == 'completed':
+        Path(output).write_text('{"partial": true}')
+        stage('Waiting for recognition cancellation in browser fixture')
+        if not cancel.wait(20):
+            raise RuntimeError('Recognition cancellation fixture timed out.')
+        raise RuntimeError('Cancelled fixture recognition.')
     stage('Recognizing fixture lyrics for browser verification')
     for _ in range(10):
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
-    if abs(duration - LYRICS_FIXTURE_SECONDS) > 1e-6:
+    if min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - 18.0)) > 1e-6:
         raise RuntimeError('No fixture lyrics for this clip.')
     transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s >= 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
     Path(output).write_text(json.dumps(transcript))

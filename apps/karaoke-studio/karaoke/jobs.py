@@ -13,6 +13,14 @@ class JobBusy(RuntimeError):
     """The single media worker is already occupied or shutting down."""
 
 
+@dataclass(frozen=True)
+class JobPublication:
+    """A completed upload may retain its usable stems after recognition cancellation."""
+
+    publish: Callable[[], str | None]
+    retain_on_cancel: bool = False
+
+
 @dataclass
 class _Job:
     id: str
@@ -23,6 +31,7 @@ class _Job:
     error: str | None = None
     result_url: str | None = None
     finalizing: bool = False
+    retained_on_cancel: bool = False
     cancel: threading.Event = field(default_factory=threading.Event)
     thread: threading.Thread | None = None
 
@@ -33,6 +42,8 @@ class _Job:
             value["error"] = self.error
         if self.result_url:
             value["resultUrl"] = self.result_url
+        if self.retained_on_cancel:
+            value["retainedOnCancel"] = True
         return value
 
 
@@ -41,7 +52,8 @@ class JobManager:
 
     A worker returns a publication callback instead of publishing directly.
     The cancellation check, callback and completed status occur under the same
-    lock, preventing a cancelled job from racing publication of a project.
+    lock, preventing cancellation from racing publication. A completed upload may
+    explicitly retain usable stems after its optional recognition was cancelled.
     """
 
     def __init__(self, lock: threading.RLock | None = None, max_records: int = 50):
@@ -80,7 +92,7 @@ class JobManager:
 
     def start(
         self, project_id: str, kind: str,
-        work: Callable[[threading.Event, Callable[[str], None]], Callable[[], str | None]],
+        work: Callable[[threading.Event, Callable[[str], None]], Callable[[], str | None] | JobPublication],
         cleanup: Callable[[], None] | None = None,
     ) -> dict:
         if kind not in {"separate", "export", "archive-export", "archive-import", "transcribe"}:
@@ -101,18 +113,27 @@ class JobManager:
 
             def run():
                 outcome, final_stage = "failed", "Failed"
+                publishing = False
                 try:
-                    publish = work(job.cancel, stage)
+                    result = work(job.cancel, stage)
+                    publication = result if isinstance(result, JobPublication) else JobPublication(result)
+                    if publication.retain_on_cancel and kind != 'separate':
+                        raise ValueError('Only a completed upload may be retained on cancellation.')
                     with self.lock:
-                        if job.cancel.is_set():
+                        cancelled = job.cancel.is_set()
+                        if cancelled and not publication.retain_on_cancel:
                             outcome, final_stage = "cancelled", "Cancelled"
                         else:
-                            job.result_url = publish()
+                            publishing = True
+                            job.result_url = publication.publish()
+                            job.retained_on_cancel = cancelled
                             outcome, final_stage = "complete", "Complete"
+                            if cancelled:
+                                final_stage = 'Stems saved; recognition cancelled'
                         job.finalizing, job.stage = True, "Cleaning up"
                 except Exception as error:
                     with self.lock:
-                        if job.cancel.is_set():
+                        if job.cancel.is_set() and not publishing:
                             outcome, final_stage = "cancelled", "Cancelled"
                         else:
                             job.error = str(error)[:500] or "Media processing failed."

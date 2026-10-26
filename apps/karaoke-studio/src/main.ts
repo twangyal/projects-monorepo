@@ -15,7 +15,7 @@ import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -1276,10 +1276,14 @@ async function pollJob(id: string, epoch = pollEpoch) {
         if (ownedJob && (followJobProject || (!(dirty || draftDirty) && !working))) {
           await openProject(job.projectId);
           if (!ownsPoll(id, epoch)) return;
-          message(working?.cues.length
+          message(job.retainedOnCancel
+            ? 'Recognition cancelled. Your stems were saved. You can listen now and use Transcribe lyrics when ready.'
+            : working?.cues.length
             ? `Your stems and ${working.cues.length} automatically timed lyric lines are ready. Play the preview, correct any words or timing, then save and export.`
             : 'Your stems are ready. No lyrics were recognized automatically; paste your lyrics or transcribe again, then time them.');
-        } else message('Your stems are ready in Saved clips. Your current lyric edits are still here.');
+        } else message(job.retainedOnCancel
+          ? 'Recognition cancelled. Your stems were saved in Saved clips. Your current lyric edits are still here.'
+          : 'Your stems are ready in Saved clips. Your current lyric edits are still here.');
       } else if (job.kind === 'transcribe') {
         if (working?.id === job.projectId) await loadTranscript();
         message('Lyrics recognized. Review automatic lyrics to replace the current lines, or paste your own lyrics and create draft timings to align them. Saved lyrics are unchanged.');

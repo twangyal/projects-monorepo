@@ -56,3 +56,48 @@ class ArchiveJobTests(unittest.TestCase):
                 finally:
                     finish.set()
                     manager.shutdown()
+
+
+class RetainedUploadTests(unittest.TestCase):
+    def test_explicit_complete_upload_can_publish_after_cancellation(self):
+        from karaoke.jobs import JobPublication
+        manager = JobManager()
+        ready, finish = threading.Event(), threading.Event()
+        published = []
+        self.addCleanup(manager.shutdown)
+        self.addCleanup(finish.set)
+        def work(cancel, stage):
+            ready.set()
+            finish.wait(2)
+            return JobPublication(lambda: published.append('stems'), retain_on_cancel=True)
+        job = manager.start('a' * 32, 'separate', work)
+        self.assertTrue(ready.wait(1))
+        manager.cancel(job['id'])
+        finish.set()
+        manager._jobs[job['id']].thread.join(2)
+        self.assertEqual(published, ['stems'])
+        self.assertEqual(manager.get(job['id'])['status'], 'complete')
+        self.assertTrue(manager.get(job['id'])['retainedOnCancel'])
+        self.assertIsNone(manager.active())
+
+    def test_retained_publication_failure_is_reported_even_with_cancellation(self):
+        from karaoke.jobs import JobPublication
+        manager = JobManager()
+        ready, finish = threading.Event(), threading.Event()
+        self.addCleanup(manager.shutdown)
+        self.addCleanup(finish.set)
+        def publish():
+            raise RuntimeError('Storage refused completed stems.')
+        def work(cancel, stage):
+            ready.set()
+            finish.wait(2)
+            return JobPublication(publish, retain_on_cancel=True)
+        job = manager.start('a' * 32, 'separate', work)
+        self.assertTrue(ready.wait(1))
+        manager.cancel(job['id'])
+        finish.set()
+        manager._jobs[job['id']].thread.join(2)
+        done = manager.get(job['id'])
+        self.assertEqual(done['status'], 'failed')
+        self.assertIn('Storage refused', done['error'])
+        self.assertNotIn('retainedOnCancel', done)

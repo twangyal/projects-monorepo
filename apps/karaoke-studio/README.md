@@ -7,7 +7,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 ## What works today
 
 - **Upload** a WAV, MP3, FLAC or Ogg song of 1–600 seconds, up to 128 MiB. It is decoded to 44.1 kHz stereo.
-- **Vocal separation** with the UVR-MDX-NET-Voc_FT model (ONNX Runtime, CPU). Audition Original, Vocals or Backing, and download the backing WAV. Jobs can be cancelled.
+- **Vocal separation** with the UVR-MDX-NET-Voc_FT model (ONNX Runtime, CPU). Audition Original, Vocals or Backing, and download the backing WAV. Jobs can be cancelled. Cancelling automatic recognition keeps the finished stems as a saved clip, ready to listen to or transcribe again. Cancelling before all stems are staged discards that unfinished upload.
 - **Automatic lyrics**: Silero VAD plus NVIDIA Parakeet TDT 0.6B (via sherpa-onnx) recognize the separated vocals. English uses Parakeet v2. Other European languages use v3, chosen by checking whether the first words look English. The result is saved as timed lyric lines, so preview and export work straight away. Lines with low confidence (average below 0.7) are flagged.
 - **Review automatic lyrics** before applying them. Listen to or repeat each line, show only uncertain lines, correct words and start/end times, and exclude false lines. **Transcribe again** forces the English or multilingual model.
 - **Paste real lyrics** and use **Create draft timings** to align each line to where it was sung. Long lyrics with recognition differences keep their matched timing; lines that were not clearly heard are named. If alignment cannot finish within its work limit, it reports a retry message and preserves your lyrics. You can also import an existing SRT after reviewing it.
