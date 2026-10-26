@@ -197,7 +197,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`
       + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension). Enlarge the garment or reduce the proxy girths before interpreting this preview.` : '');
   }
-  function applyBody(): boolean {
+  function applyBody(persistDefaults = true): boolean {
     const raw = ($('garment-drape-chest') as HTMLInputElement).value;
     const waistRaw=($('garment-drape-waist') as HTMLInputElement).value,hipRaw=($('garment-drape-hip') as HTMLInputElement).value,depthRaw=($('garment-drape-depth') as HTMLInputElement).value;
     try {
@@ -205,13 +205,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (!raw.trim()) throw new Error('Body chest must be from 70 to 140 cm.');
       const chest=validateBodyChest(Number(raw)),waist=waistRaw.trim()?Number(waistRaw):null,hip=hipRaw.trim()?Number(hipRaw):null,depth=depthRaw.trim()?Number(depthRaw):null;
       validateTopBodyShape(chest,{waist:waist??undefined,hip:hip??undefined,chestDepth:depth??undefined});
+      // Starting a view on an untouched legacy body must not create a design edit.
+      if(!persistDefaults&&!hasDrafts('body')){
+        bodyChest=chest;bodyWaist=waist;bodyHip=hip;bodyDepth=depth;return true;
+      }
       const next=validateProject({...options.current(),topBody:{chest,waist,hip,chestDepth:depth}});
       for(const id of ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth'])drafts.delete(id);
       draftState();failedDrapeKey='';commit(next);return true;
     } catch (error) { options.notice((error as Error).message, true); return false; }
   }
   function setDraping(on: boolean) {
-    if (on && !applyBody()) return;
+    if (on && !applyBody(false)) return;
     if (!on) { stopDrape(); drape = null; }
     else { drape = null; failedDrapeKey = ''; stopDrape(); }
     draping = on; shown = ''; render(options.current());

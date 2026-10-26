@@ -18,7 +18,7 @@ for(const width of [1440,390])test(`entered chest depth reaches actual garment w
  const result=await page.evaluate(()=>(window as unknown as{depthResult:GarmentDrapeResult}).depthResult);
  expect(result.body.chest).toBe(94);expect(result.body.chestDepth).toBe(20);expect(result.body.torso[1]!.halfDepth*2).toBeCloseTo(20,10);
  const section=result.body.torso[1]!;expect(4*(section.halfWidth-section.halfDepth)+2*Math.PI*section.halfDepth).toBeCloseTo(94,9);
- expect(await backup(page)).toBe(before);await page.screenshot({path:info.outputPath(`chest-depth-${width}.png`),fullPage:true});
+ expect(JSON.parse(await backup(page))).toEqual({...JSON.parse(before),topBody:{chest:94,waist:null,hip:null,chestDepth:20}});await page.screenshot({path:info.outputPath(`chest-depth-${width}.png`),fullPage:true});
  await page.getByRole('button',{name:'Exports',exact:true}).click();const pending=page.waitForEvent('download');await page.locator('#product-glb').click();
  const glb=await readFile((await(await pending).path())!),length=glb.readUInt32LE(12),json=JSON.parse(glb.subarray(20,20+length).toString()),node=json.nodes.find((n:{name:string})=>n.name==='Front body'),accessor=json.accessors[json.meshes[node.mesh].primitives[0].attributes.POSITION],view=json.bufferViews[accessor.bufferView],at=28+length+(view.byteOffset??0)+(accessor.byteOffset??0);
  expect(Array.from({length:accessor.count*3},(_,i)=>glb.readFloatLE(at+i*4))).toEqual(Object.values(result.parts.find(p=>p.part==='front')!.positions));
