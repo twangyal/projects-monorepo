@@ -38,3 +38,40 @@ test('describe a style: words become an editable style on one part or every part
   expect(saved.parts.back.material).toBe('terry-300');
   expect(saved.parts.front.material).toBe('linen-170');
 });
+
+test('unapplied construction colors remain visible without recoloring the garment, and Undo restores the prior style', async ({ page }) => {
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Crew sweatshirt template/ }).click();
+  const prompt = editor(page).getByLabel('Describe a style', { exact: true });
+  const before = (await backup(page)).product;
+  await prompt.fill('washed black denim with red topstitching');
+  await editor(page).getByRole('button', { name: 'Apply to this part', exact: true }).click();
+  await expect(editor(page).locator('#describe-result')).toContainText('Not understood: red, topstitching');
+  await expect(editor(page).locator('#describe-result')).toContainText('colour: washed black');
+  const styled = (await backup(page)).product;
+  expect(styled.parts.front.material).toBe('denim-340');
+  expect(styled.parts.front.color).not.toBe('#b23a2e');
+  expect(styled.parts.back).toEqual(before.parts.back);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect((await backup(page)).product).toEqual(before);
+
+  await prompt.fill('red topstitching on black denim');
+  await prompt.press('Enter');
+  await expect(editor(page).locator('#describe-result')).toContainText('Not understood: red, topstitching');
+  expect((await backup(page)).product.parts.front.color).toBe('#1c1c1e');
+});
+
+
+test('repeat-only descriptions update every printed part while plain rib trims remain unchanged', async ({ page }) => {
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Breton stripe template/ }).click();
+  const before = (await backup(page)).product;
+  await editor(page).getByLabel('Describe a style', { exact: true }).fill('half-drop 8 cm');
+  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await expect(editor(page).locator('#describe-result')).toContainText('repeat size: 8 cm');
+  const after = (await backup(page)).product;
+  for (const [id, part] of Object.entries(before.parts) as [string, {print: Record<string, unknown> | null}][]) {
+    expect(after.parts[id]).toEqual(part.print ? { ...part, print: { ...part.print, layout: 'half-drop', scaleCm: 8 } } : part);
+  }
+});

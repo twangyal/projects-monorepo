@@ -74,3 +74,38 @@ test('conflicting stripe directions are refused instead of committing the first 
   for (const prompt of ['change horizontal stripes to vertical','not horizontal, vertical stripes','vertical and horizontal stripes'])
     assert.throws(() => readStylePrompt(prompt,blank), /Specify one stripe direction/);
 });
+
+test('unapplied colors remain visible, including construction accents and extra print colors', () => {
+  const owner = readStylePrompt('washed black denim with red topstitching', blank);
+  assert.equal(owner.style.material, 'denim-340');
+  assert.equal(owner.style.color, readStylePrompt('washed black', blank).style.color);
+  assert.deepEqual(owner.ignored, ['red', 'topstitching']);
+  assert.deepEqual(readStylePrompt('red topstitching on black denim', blank).style, readStylePrompt('black denim', blank).style);
+  assert.deepEqual(readStylePrompt('navy with pale pink buttons', blank).ignored, ['pale', 'pink', 'buttons']);
+  const excess = readStylePrompt('navy stripes on white with vivid red and #123abc', blank);
+  assert.deepEqual(excess.ignored, ['vivid', 'red', '#123abc']);
+  assert.equal(excess.style.print!.color, '#1f2a4f');
+  assert.equal(excess.style.color, '#f7f7f4');
+  assert.deepEqual(readStylePrompt('navy navy blue', blank).ignored, ['navy', 'blue'], 'identical hex values do not consume separate unused words');
+});
+
+test('print controls and intervening fabric prose are claimed only when applied', () => {
+  assert.deepEqual(readStylePrompt('large black denim half-drop 8 cm', blank).ignored, ['large', 'half-drop', '8']);
+  assert.deepEqual(readStylePrompt('heavy red topstitching jersey', blank).ignored, ['red', 'topstitching']);
+  const printed = readStylePrompt('navy stripes', blank).style;
+  const reading = readStylePrompt('half-drop 8 cm', printed);
+  assert.equal(reading.style.print!.layout, 'half-drop');
+  assert.equal(reading.style.print!.scaleCm, 8);
+  assert.deepEqual(reading.ignored, []);
+  assert.deepEqual(readStylePrompt('plain large navy', printed).ignored, ['large']);
+  assert.throws(() => readStylePrompt('red topstitching', blank), /No fabric, colour or print/);
+});
+
+
+test('whole-garment parsing can leave plain parts unchanged for an already admitted repeat instruction', () => {
+  const result = readStylePrompt('half-drop 8 cm', blank, { allowUnapplied: true });
+  assert.deepEqual(result.style, blank);
+  assert.deepEqual(result.understood, []);
+  assert.deepEqual(result.ignored, ['half-drop', '8']);
+  assert.throws(() => readStylePrompt('half-drop 8 cm', blank), /No fabric, colour or print/);
+});

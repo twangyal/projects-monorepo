@@ -82,7 +82,7 @@ export interface StyleReading { style: PartStyle; understood: string[]; ignored:
  * Reads a style description on top of `current`. Colours: with a motif, a colour written as "X on Y" or nearest the
  * motif ("navy stripe") is the print colour and the other the ground; without a motif the first colour is the ground.
  */
-export function readStylePrompt(prompt: string, current: PartStyle): StyleReading {
+export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapplied = false }: { allowUnapplied?: boolean } = {}): StyleReading {
   // Accents are folded ("piqué" reads as "pique"), because regular-expression word boundaries are ASCII.
   const text = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!text) throw new Error('Describe a fabric, colours or a print, for example "navy breton stripe on heavyweight ecru jersey".');
@@ -97,21 +97,22 @@ export function readStylePrompt(prompt: string, current: PartStyle): StyleReadin
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(rest))) {
       colors.push({ hex: modify(COLORS[name], match[1]), at: match.index, end: match.index + match[0].length, label: match[0] });
-      used.push([match.index, match.index + match[0].length]);
       rest = rest.slice(0, match.index) + ' '.repeat(match[0].length) + rest.slice(match.index + match[0].length);
     }
   }
   colors.sort((a, b) => a.at - b.at);
   const hexColor = /#([0-9a-f]{6})\b/g;
-  for (let match; (match = hexColor.exec(text));) { colors.push({ hex: `#${match[1]}`, at: match.index, end: match.index + match[0].length, label: match[0] }); used.push([match.index, match.index + match[0].length]); }
+  for (let match; (match = hexColor.exec(text));) { colors.push({ hex: `#${match[1]}`, at: match.index, end: match.index + match[0].length, label: match[0] }); }
   colors.sort((a, b) => a.at - b.at);
 
   let material = current.material;
   for (const [pattern, id] of MATERIAL_WORDS) {
-    const match = claim(pattern.exec(text));
+    const match = pattern.exec(text);
     if (match) {
       material = id; understood.push(`fabric: ${MATERIALS.find(m => m.id === id)!.name}`);
-      for (const more of text.matchAll(new RegExp(pattern.source, 'g'))) used.push([more.index!, more.index! + more[0].length]);
+      // The heavyweight rule spans prose between the weight and jersey. Only its fabric words apply.
+      const words = id === 'jersey-240' ? /\b(heavy ?weight|heavy|thick|boxy|jersey)\b/g : new RegExp(pattern.source, 'g');
+      for (const more of text.matchAll(words)) claim(more);
       break;
     }
   }
@@ -136,28 +137,33 @@ export function readStylePrompt(prompt: string, current: PartStyle): StyleReadin
   const direction = directions[0]?.[1] as Print['direction'];
   if (direction) understood.push(`stripe direction: ${direction}`);
 
+  const hasPrint = !!motif || (!plain && !!current.print);
   let layout: Layout | null = null;
-  for (const [pattern, id] of LAYOUT_WORDS) { const match = claim(pattern.exec(text)); if (match) { layout = id; understood.push(`repeat: ${id}`); break; } }
+  if (hasPrint) for (const [pattern, id] of LAYOUT_WORDS) { const match = claim(pattern.exec(text)); if (match) { layout = id; understood.push(`repeat: ${id}`); break; } }
   let scale: number | null = null;
-  const explicit = claim(/(\d+(?:\.\d+)?)\s*(cm|mm)\b/.exec(text));
+  const explicit = hasPrint ? claim(/(\d+(?:\.\d+)?)\s*(cm|mm)\b/.exec(text)) : null;
   if (explicit) scale = Number(explicit[1]) / (explicit[2] === 'mm' ? 10 : 1);
-  else for (const [pattern, size] of SCALE_WORDS) { const match = claim(pattern.exec(text)); if (match) { scale = size; break; } }
+  else if (hasPrint) for (const [pattern, size] of SCALE_WORDS) { const match = claim(pattern.exec(text)); if (match) { scale = size; break; } }
   if (scale !== null) { scale = Math.min(LIMITS.scaleCm[1], Math.max(LIMITS.scaleCm[0], scale)); understood.push(`repeat size: ${scale} cm`); }
 
-  // Colour roles.
-  let ground: string | null = null, ink: string | null = null;
+  // Only consume colours assigned to a supported role. A known colour next to an unsupported
+  // construction detail is still unapplied; it must not recolour the fabric or print by accident.
+  const candidates = colors.filter(c => !/^\s+(topstitch(?:ing)?|stitch(?:es|ing)?|seams?|buttons?|zips?|zippers?|piping|embroidery|lining)\b/.test(text.slice(c.end)));
+  let groundColor: typeof colors[number] | undefined, inkColor: typeof colors[number] | undefined;
   const on = /\bon (?:an? )?(?:[a-z]+ )?$/;
-  if (motif && colors.length) {
-    const onColor = colors.find(c => on.test(text.slice(Math.max(0, c.at - 30), c.at)));
-    if (onColor) { ground = onColor.hex; ink = colors.find(c => c !== onColor)?.hex ?? null; }
-    else if (colors.length === 1) ink = colors[0].hex;
+  if (motif && candidates.length) {
+    const onColor = candidates.find(c => on.test(text.slice(Math.max(0, c.at - 30), c.at)));
+    if (onColor) { groundColor = onColor; inkColor = candidates.find(c => c !== onColor); }
+    else if (candidates.length === 1) inkColor = candidates[0];
     else {
-      const nearest = [...colors].sort((a, b) => Math.abs(a.at - motifAt) - Math.abs(b.at - motifAt))[0];
-      ink = nearest.hex; ground = colors.find(c => c !== nearest)!.hex;
+      inkColor = [...candidates].sort((a, b) => Math.abs(a.at - motifAt) - Math.abs(b.at - motifAt))[0];
+      groundColor = candidates.find(c => c !== inkColor);
     }
-  } else if (colors.length) ground = colors[0].hex;
-  if (ground) understood.push(`colour: ${colors.find(c => c.hex === ground)!.label}`);
-  if (ink) understood.push(`print colour: ${colors.find(c => c.hex === ink)!.label}`);
+  } else groundColor = candidates[0];
+  for (const [color, role] of [[groundColor, 'colour'], [inkColor, 'print colour']] as const) {
+    if (color) { used.push([color.at, color.end]); understood.push(`${role}: ${color.label}`); }
+  }
+  const ground = groundColor?.hex, ink = inkColor?.hex;
 
   const style: PartStyle = { material, color: ground ?? current.color, print: current.print };
   if (plain && !motif) style.print = null;
@@ -171,7 +177,7 @@ export function readStylePrompt(prompt: string, current: PartStyle): StyleReadin
       if (nextDirection) style.print.direction = nextDirection;
     }
   }
-  if (!understood.length) throw new Error(`No fabric, colour or print was recognised in “${prompt.trim().slice(0, 60)}”. Try words like "linen", "navy", "breton stripe" or "small floral".`);
+  if (!understood.length && !allowUnapplied) throw new Error(`No fabric, colour or print was recognised in “${prompt.trim().slice(0, 60)}”. Try words like "linen", "navy", "breton stripe" or "small floral".`);
 
   // Report every word that was not part of something understood.
   const ignored: string[] = [];

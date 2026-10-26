@@ -451,7 +451,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const reading = readStylePrompt(prompt, draft.parts[selected]);
       if (everyPart) {
         for (const id of partsOf(draft)) {
-          const style = readStylePrompt(prompt, draft.parts[id]).style;
+          // Another part can be plain while the selected part receives repeat settings.
+          const style = readStylePrompt(prompt, draft.parts[id], { allowUnapplied: true }).style;
           // Rib trims keep their rib knit and stay plain, as with "Use this style on every part".
           draft.parts[id] = RIB_PARTS.has(id) ? { material: draft.parts[id].material, color: style.color, print: null } : style;
         }
