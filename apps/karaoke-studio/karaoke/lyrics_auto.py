@@ -12,6 +12,7 @@ import re
 import unicodedata
 
 from .limits import MAX_CUES, MAX_LYRIC_CHARS
+from .word_alignment import AlignmentBudget, align as _align
 
 MAX_CUE_CHARS = 240
 # Line breaking: a pause this long always starts a new line; shorter pauses break long lines.
@@ -25,8 +26,6 @@ HARD_CHARS = 40
 UNSURE = 0.7
 LEAD_IN = 0.15
 HOLD = 0.35
-# Shared work ceiling per request, including all word-highlight lines.
-MAX_ALIGNMENT_CELLS = 1_000_000
 
 
 def _clean(word: object) -> dict | None:
@@ -127,61 +126,6 @@ def _token(text: str) -> str:
     return re.sub(r"[^\w]|_", '', text.replace("'", '').replace('’', ''))
 
 
-def _similar(a: str, b: str) -> bool:
-    if a == b:
-        return True
-    if min(len(a), len(b)) < 3:
-        return False
-    # Sung words are often recognized with a letter or two wrong ("gonna"/"gona").
-    if a[:3] != b[:3] and a[-2:] != b[-2:]:
-        return False
-    common = sum(1 for x, y in zip(a, b) if x == y)
-    return common / max(len(a), len(b)) >= 0.6
-
-
-def _align(reference: list[str], heard: list[str], cell_budget: int = MAX_ALIGNMENT_CELLS) -> list[int | None]:
-    """For each reference token, the index of the heard token it matches (global alignment)."""
-    n, m = len(reference), len(heard)
-    if reference == heard:
-        return list(range(n))
-    if n * m > cell_budget:
-        # Oversized work receives explicit unmatched estimates, preserving all
-        # supplied words without running a quadratic HTTP-handler computation.
-        return [None] * n
-    previous = list(range(m + 1))
-    moves = []
-    for i in range(1, n + 1):
-        current = [i] + [0] * m
-        row = bytearray(m + 1)
-        row[0] = 1
-        ref = reference[i - 1]
-        for j in range(1, m + 1):
-            match = previous[j - 1] + (0 if _similar(ref, heard[j - 1]) else 1)
-            skip_ref = previous[j] + 1
-            skip_heard = current[j - 1] + 1
-            if match <= skip_ref and match <= skip_heard:
-                current[j], row[j] = match, 0
-            elif skip_ref <= skip_heard:
-                current[j], row[j] = skip_ref, 1
-            else:
-                current[j], row[j] = skip_heard, 2
-        moves.append(row)
-        previous = current
-    result: list[int | None] = [None] * n
-    i, j = n, m
-    while i > 0 and j > 0:
-        move = moves[i - 1][j]
-        if move == 0:
-            if _similar(reference[i - 1], heard[j - 1]):
-                result[i - 1] = j - 1
-            i, j = i - 1, j - 1
-        elif move == 1:
-            i -= 1
-        else:
-            j -= 1
-    return result
-
-
 def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
     """Time supplied lyric lines from recognized words.
 
@@ -271,7 +215,7 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
     """
     words = clean_words(words, duration)
     result = []
-    remaining_cells = MAX_ALIGNMENT_CELLS
+    budget = AlignmentBudget()
     for cue in cues:
         start, end = float(cue['start']), float(cue['end'])
         tokens = cue['text'].split()
@@ -285,10 +229,7 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
         sing_end = max(end - min(HOLD, span * 0.2), sing_start)
         nearby = [w for w in words if w['end'] > start - NEARBY and w['start'] < end + NEARBY]
         reference = [_token(token) for token in tokens]
-        cells = len(reference) * len(nearby)
-        matches = _align(reference, [_token(w['text']) for w in nearby], remaining_cells) if nearby else [None] * len(tokens)
-        if cells <= remaining_cells:
-            remaining_cells -= cells
+        matches = _align(reference, [_token(w['text']) for w in nearby], budget) if nearby else [None] * len(tokens)
         anchors: list[float | None] = [None] * len(tokens)
         last = -math.inf
         for index, match in enumerate(matches):

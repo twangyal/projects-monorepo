@@ -149,3 +149,56 @@ test('retry choice refreshes recognition while corrections survive until deliber
     expect((await (await page.request.get('/api/projects')).json()).projects.map((project: { id: string }) => project.id).sort()).toEqual([...before].sort());
   }
 });
+
+test('preview explains failed word timing, retries an edited draft and ignores a stale failure', async ({ page }) => {
+  await importClip(page, 16);
+  await seek(page, 1.6);
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
+  await page.route('**/word-timings', route => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'These lyrics differ too much from recognition to align safely.' }) }));
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Hello little earth');
+  await expect(page.locator('#word-timing-status')).toContainText('differ too much');
+  await expect(page.locator('#word-timing-status')).toContainText('whole lines');
+  expect((await lines(page))[0]).toBe('Hello little earth');
+  await expect(page.locator('#save-state')).toContainText('Unsaved lyric edits');
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'none');
+  await page.unroute('**/word-timings');
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Hello little world');
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
+  await expect(page.locator('#word-timing-status')).toBeHidden();
+
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let captured!: () => void;
+  const requested = new Promise<void>(resolve => { captured = resolve; });
+  await page.route('**/word-timings', async route => {
+    if (route.request().postDataJSON().cues[0].text !== 'Old failure') return route.continue();
+    captured(); await held;
+    await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Stale timing failure' }) });
+  });
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Old failure'); await requested;
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Current words');
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
+  const oldResponse = page.waitForResponse(response => response.url().endsWith('/word-timings') && response.status() === 400);
+  release(); await oldResponse;
+  await expect(page.locator('#word-timing-status')).toBeHidden();
+  expect((await lines(page))[0]).toBe('Current words');
+});
+
+test('a late word-timing failure cannot describe a newer invalid lyric draft', async ({ page }) => {
+  await importClip(page, 16); await seek(page, 1.6);
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
+  let release!: () => void, captured!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const requested = new Promise<void>(resolve => { captured = resolve; });
+  await page.route('**/word-timings', async route => {
+    captured(); await held;
+    await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Old timing failure' }) });
+  });
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Old request'); await requested;
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('');
+  await expect(page.locator('#cue-validation')).not.toBeEmpty();
+  const response = page.waitForResponse(r => r.url().endsWith('/word-timings') && r.status() === 400);
+  release(); await response;
+  await expect(page.locator('#word-timing-status')).toBeHidden();
+  expect((await lines(page))[0]).toBe('');
+});

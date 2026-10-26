@@ -288,13 +288,13 @@ class TranscriptionChoiceBoundaryTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
 
-def silent_separation(source, output_dir, model_root, cancel, stage):
+def silent_separation(source, output_dir, model_root, cancel, stage, *, duration=40):
     output_dir.mkdir(parents=True, exist_ok=True)
     for name in ('source.wav', 'vocals.wav', 'backing.wav'):
         with wave.open(str(output_dir / name), 'wb') as audio:
             audio.setparams((2, 2, 44100, 0, 'NONE', 'not compressed'))
-            audio.writeframes(b'\0' * (44100 * 4 * 40))
-    return 40.0
+            audio.writeframes(b'\0' * (44100 * 4 * duration))
+    return float(duration)
 
 
 class ServerLyricsTests(unittest.TestCase):
@@ -380,6 +380,44 @@ class ServerLyricsTests(unittest.TestCase):
         names = zipfile.ZipFile(io.BytesIO(archive)).namelist()
         self.assertIn('project.json', names)
         self.assertNotIn('transcript.json', names)
+
+    def test_long_changed_transcript_aligns_through_http_without_changing_saved_cues(self):
+        self.server.separate = lambda *args: silent_separation(*args, duration=80)
+        self.helper.upload()
+        project = self.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        tokens = ['one', 'two', 'three', 'four', 'five', 'six'] * 200
+        heard = [dict(text=t, start=i * .06, end=i * .06 + .05, confidence=.9)
+                 for i, t in enumerate(tokens)]
+        heard[603]['text'] = 'wrong'
+        path = self.helper.root / 'data' / 'projects' / project['id'] / 'transcript.json'
+        path.write_text(json.dumps(dict(model=ENGLISH.name, words=heard, seconds=.1)))
+        lines = [' '.join(tokens[i:i+12]) for i in range(0, len(tokens), 12)]
+        status, _, aligned = self.request('POST', base + '/align', {'lines': lines})
+        self.assertEqual(status, 200, aligned)
+        self.assertEqual([c['text'] for c in aligned['cues']], lines)
+        self.assertEqual(aligned['cues'][-1]['matched'], 1)
+        self.assertAlmostEqual(aligned['cues'][-1]['start'], 71.13)
+        status, _, timed = self.request('POST', base + '/word-timings', {
+            'cues': [{k: c[k] for k in ('start', 'end', 'text')} for c in aligned['cues']]})
+        self.assertEqual(status, 200, timed)
+        self.assertTrue(timed['recognized'])
+        self.assertTrue(any(w['heard'] for w in timed['lines'][-1]))
+        self.assertEqual(self.request('GET', base)[2], project)
+
+    def test_exhausted_alignment_is_explained_and_preserves_saved_cues(self):
+        from karaoke.word_alignment import AlignmentLimitError
+        self.helper.upload()
+        project = self.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        for route, body in (('/align', {'lines': ['changed words']}),
+                            ('/word-timings', {'cues': project['cues']})):
+            function = 'align_lines' if route == '/align' else 'word_timings'
+            with mock.patch('karaoke.server.' + function, side_effect=AlignmentLimitError('Lyrics differ too much; retry.')):
+                status, _, result = self.request('POST', base + route, body)
+            self.assertEqual(status, 400, result)
+            self.assertIn('differ too much', result['error'])
+            self.assertEqual(self.request('GET', base)[2], project)
 
     def test_chosen_retry_preserves_saved_cues_and_failed_retry_preserves_transcript(self):
         self.helper.upload()

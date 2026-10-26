@@ -31,6 +31,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager
 from .lyrics_auto import align_lines, word_timings, words_to_cues
+from .word_alignment import AlignmentLimitError
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
                      MAX_WAV_BYTES, MAX_VIDEO_BYTES, MIN_FREE_BYTES,
@@ -933,7 +934,7 @@ class Handler(BaseHTTPRequestHandler):
             self._route(path)
         except RequestError as error:
             self._error(error.status, error.message)
-        except ValidationError as error:
+        except (ValidationError, AlignmentLimitError) as error:
             self._error(400, str(error))
         except JobBusy as error:
             self._error(409, str(error))

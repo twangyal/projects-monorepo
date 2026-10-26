@@ -44,6 +44,7 @@ app.innerHTML = `
       </aside>
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
+        <p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
@@ -321,18 +322,26 @@ let wordTimingEpoch = 0;
 function currentWordTiming(project: Project): WordTiming | null {
   const cues = project.cues.map(({ start, end, text }) => ({ start, end, text }));
   const key = `${wordTimingEpoch}|${project.id}|${JSON.stringify(cues)}`;
-  if (wordTiming?.key === key) return wordTiming.value;
   if (wordTimingWanted !== key) {
     wordTimingWanted = key; window.clearTimeout(wordTimingTimer);
+    element('word-timing-status').textContent = ''; element('word-timing-status').hidden = true;
+    if (wordTiming?.key === key) return wordTiming.value;
     if (!cues.length) return null;
     wordTimingTimer = window.setTimeout(() => void (async () => {
+      const isCurrent = () => wordTimingWanted === key && working?.id === project.id
+        && JSON.stringify(working.cues.map(({ start, end, text }) => ({ start, end, text }))) === JSON.stringify(cues);
       try {
         const value = parseWordTiming(await request<unknown>(`/api/projects/${project.id}/word-timings`, json('POST', { cues })), cues);
-        if (wordTimingWanted === key) { wordTiming = { key, value }; draw(); }
-      } catch { /* The preview keeps highlighting whole lines. */ }
+        if (isCurrent()) { wordTiming = { key, value }; draw(); }
+      } catch (error) {
+        if (!isCurrent()) return;
+        const status = element('word-timing-status');
+        status.textContent = `Word timing unavailable: ${error instanceof Error ? error.message : 'The studio could not time these words.'} The preview highlights whole lines. Edit the lyrics or transcribe again to retry.`;
+        status.hidden = false;
+      }
     })(), 250);
   }
-  return null;
+  return wordTiming?.key === key ? wordTiming.value : null;
 }
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
@@ -621,6 +630,7 @@ async function loadTranscript() {
   // Recognition can change while saved cues stay identical. Retire both cached
   // timing and pending replies before admitting the new transcript generation.
   wordTimingEpoch++; wordTiming = null; wordTimingWanted = '';
+  element('word-timing-status').textContent = ''; element('word-timing-status').hidden = true;
   window.clearTimeout(wordTimingTimer);
   if (!working) { transcript = null; autoControls(); return; }
   const project = working, epoch = ++transcriptEpoch;
