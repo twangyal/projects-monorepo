@@ -17,7 +17,7 @@ A browser garment-design workspace. It is for designers who want to go from a te
 - **Colorways and range plan**: up to 8 named colorways with renders, plus costing inputs (fabric price per metre, make, trims, print, retail). The range plan shows unit cost, margin and totals, and exports to Excel.
 - **Exports**: front/back PNG renders, GLB 3D model (styled or draped), DXF pattern (AutoCAD R12, cut/sew/grain/text layers, 1 cm seam allowance), and a 1:1 printable SVG pattern.
 - **Measured two-panel skirt** (dialog): waist/hem/slant input, optional waistband, seam and hem allowances, and linear size grading. Exports include a full-size SVG, A4/US Letter tiled print HTML, and rigid or draped OBJ. Its drape simulation offers four fabric presets.
-- **Concept sketchbook** (dialog): tee sketching, a photo overlay, and PNG/SVG/JSON export. Edits have Undo/Redo, the current project autosaves locally, and a library holds up to 12 saved named copies.
+- **Concept sketchbook** (dialog): tee sketching, a photo overlay, and PNG/SVG/JSON export. Edits have Undo/Redo, the current project autosaves locally, and a library holds up to 12 saved named copies. Autosave reuses checked images while you edit, avoiding repeated decoding of unchanged photos and graphics.
 
 ## Known gaps
 

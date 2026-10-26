@@ -162,3 +162,23 @@ test('unavailable IndexedDB reports unsaved edits while project backup remains u
   expect(saved.garment.color).toBe('#3f5468');
   expect(errors).toEqual([]);
 });
+
+test('unchanged photo content is not decoded again by ordinary autosaves', async ({ page }) => {
+  await observePhotoDecoding(page);
+  await page.goto('/');
+  await page.getByLabel('Upload body photo', {exact:true}).setInputFiles({name:'autosave.png',mimeType:'image/png',buffer:await photoBytes(page)});
+  await expect(page.locator('#photo-name')).toHaveText('autosave.png');
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  const admitted = await page.evaluate(() => (window as unknown as MediaTestWindow).__photoDecodeCount);
+  expect(admitted).toBeGreaterThan(0);
+  for (const name of ['First saved change','Second saved change']) {
+    await page.getByLabel('Concept name',{exact:true}).fill(name);
+    await page.getByLabel('Concept name',{exact:true}).press('Tab');
+    await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  }
+  expect(await page.evaluate(() => (window as unknown as MediaTestWindow).__photoDecodeCount)).toBe(admitted);
+  await page.getByLabel('Upload body photo',{exact:true}).setInputFiles({name:'different.png',mimeType:'image/png',buffer:await photoBytes(page,120,160)});
+  await expect(page.locator('#photo-name')).toHaveText('different.png');
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  expect(await page.evaluate(() => (window as unknown as MediaTestWindow).__photoDecodeCount)).toBeGreaterThan(admitted);
+});
