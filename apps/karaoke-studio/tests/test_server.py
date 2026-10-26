@@ -52,6 +52,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.token = payload["token"]
 
+    def test_lyrics_lookup_csp_allows_only_the_fixed_provider_in_addition_to_self(self):
+        status, headers, _ = self.request("GET", "/")
+        self.assertEqual(status, 200)
+        csp = headers["Content-Security-Policy"]
+        self.assertIn("connect-src 'self' https://lrclib.net;", csp)
+        self.assertIn("script-src 'self';", csp)
+        self.assertNotIn("connect-src *", csp)
+
     def start_server(self, **kwargs):
         server = create_server(
             self.root / "data", self.root / "model", port=0, dist_dir=self.dist,

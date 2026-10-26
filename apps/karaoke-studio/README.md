@@ -10,6 +10,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 - **Vocal separation** with the UVR-MDX-NET-Voc_FT model (ONNX Runtime, CPU). Audition Original, Vocals or Backing, and download the backing WAV. Jobs can be cancelled. Cancelling automatic recognition keeps the finished stems as a saved clip, ready to listen to or transcribe again. Cancelling before all stems are staged discards that unfinished upload. If automatic recognition fails, the completion message explains it and offers a retry; the stems stay usable. This warning lasts in the session’s job history, not in the saved clip or backup.
 - **Automatic lyrics**: Silero VAD plus NVIDIA Parakeet TDT 0.6B (via sherpa-onnx) recognize the separated vocals. English uses Parakeet v2. Other European languages use v3, chosen by checking whether the first words look English. The result is saved as timed lyric lines, so preview and export work straight away. Lines with low confidence (average below 0.7) are flagged.
 - **Review automatic lyrics** before applying them. Listen to or repeat each line, show only uncertain lines, correct words and start/end times, and exclude false lines. **Transcribe again** forces the English or multilingual model.
+- **Look up existing lyrics**: optional LRCLIB lookup by song title, artist and full-song duration. Review the matched words, then use and align them to local recognition in one undoable change. Finish/discard pasted drafts first. Cancel, failures, changed metadata or editor changes preserve your current cues. The service may have no matching edition; excerpts often do not match. Without recognized words, timing is evenly estimated.
 - **Paste real lyrics** and use **Create draft timings** to align each line to where it was sung. Long lyrics with recognition differences keep their matched timing; lines that were not clearly heard are named. If alignment cannot finish within its work limit, it reports a retry message and preserves your lyrics. You can also import an existing SRT after reviewing it.
 - **Timing correction**: an original-audio waveform with draggable cue handles and keyboard nudges, mark start/end at the playhead, and play a single line. **Time lines while listening** taps out line timings during playback. You can also shift all lines or a passage, fit a passage to a time window, and copy a passage such as a chorus to a new time.
 - **Text correction**: split at caret and playhead, merge with the next line, add a missed line, remove a passage, find a line, and replace words throughout the lyrics. Up to 30 unsaved edits can be undone or redone.
@@ -89,6 +90,7 @@ With models installed, `python scripts/smoke_song.py --model-dir MODELS --work-d
 - `karaoke/pipeline.py`, `mdx.py`, `chunks.py`, `worker.py`: decoding, windowed MDX-Net separation and the sandboxed worker.
 - `karaoke/transcription.py`, `transcribe_worker.py`, `lyrics_auto.py`: model registry, recognition worker, and grouping recognized words into lines.
 - `karaoke/video.py`, `archive.py`, `model.py`, `limits.py`, `jobs.py`, `media_io.py`: video rendering, the `.karaoke.zip` format, validation, limits, job control and directory-anchored I/O.
+- `src/lyrics-lookup*.ts`: bounded metadata-only LRCLIB lookup and review.
 - `src/main.ts`: the browser UI. Other `src/*.ts` modules handle cue editing, alignment and word timing, SRT, practice, the waveform worker and review.
 - `scripts/`: model setup, smoke tests and evaluations.
 - `tests/`: Python tests (`test_*.py`), TypeScript unit tests (`*.test.ts`), Playwright specs (`*.spec.ts`) and test servers.
@@ -97,6 +99,7 @@ With models installed, `python scripts/smoke_song.py --model-dir MODELS --work-d
 ## Data & privacy
 
 - Songs, stems, lyrics, recognition output and videos are stored only in `--data-dir`. There is no account or cloud upload, and the app does not rely on browser storage. The service binds to `127.0.0.1` only.
+- Online lyrics lookup is optional and happens only on **Look up lyrics**. Your browser sends the entered title, artist and clip duration to `https://lrclib.net`, without credentials or referrer. Audio is never sent. Fetched words are reviewed and saved locally only when you choose; local recognition, pasted lyrics and exports work without this provider.
 - After setup, separation and recognition run offline in resource-limited worker processes that refuse network calls.
 - Archives are unencrypted and contain your private audio, lyrics and recognized words. Checksums detect corruption only, and imported clips are marked as unverified. To back up the whole library, stop the service and copy the data directory.
 

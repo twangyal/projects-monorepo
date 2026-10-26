@@ -1,3 +1,4 @@
+import {lyricsLookupMarkup,mountLyricsLookup} from './lyrics-lookup-view.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
@@ -56,6 +57,7 @@ app.innerHTML = `
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><p class="fine">Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Exclude false automatic lines with each line’s checkbox; their words and times remain available for review. Apply replaces cues with the included lines together (excluding every line clears the cues); Cancel discards corrections and exclusions. Split or merge lines in the main editor after applying.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
+        ${lyricsLookupMarkup}
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <details class="lyric-replace"><summary>Replace lyric words</summary><p class="fine">Preview literal, case-sensitive replacements in current lyric lines. This is not a regular expression. All cue times and resulting words must be valid. Apply is one unsaved Undo/Redo edit; Save lyrics is separate. Pasted words and automatic recognition are not changed.</p><label class="field">Literal text to replace<input id="words-replace-find" type="text" maxlength="480" disabled></label><label class="field">Replacement lyric text<textarea id="words-replace-with" rows="2" maxlength="480" disabled></textarea></label><p class="fine">Leave replacement empty to remove a fragment. A whole line cannot become empty. Matching keeps exact case and spacing.</p><p id="words-replace-summary" class="fine" role="status" aria-live="polite"></p><ol id="words-replace-preview"></ol><button id="words-replace-apply" class="quiet" disabled>Apply lyric word replacements</button><p id="words-replace-status" class="fine" role="status" aria-live="polite"></p></details><details class="lyric-find"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="timing-shift"><summary>Shift lyric timing</summary><p class="fine">Move all current cues or a selected passage by the same number of seconds: positive is later, negative is earlier. Words, line lengths and gaps stay together. The complete result must fit inside this clip without overlapping neighboring lines; nothing is cropped. This makes one unsaved Undo/Redo edit. Unapplied pasted words are not included.</p><label class="field">Timing shift scope<select id="timing-shift-scope" disabled><option value="all">All lines</option><option value="passage">Selected passage</option></select></label><div id="timing-shift-passage" class="practice-selection" hidden><label class="field">First line in passage<select id="timing-shift-first" disabled></select></label><label class="field">Last line in passage<select id="timing-shift-last" disabled></select></label></div><p id="timing-shift-range-summary" class="fine"></p><label class="field">Timing shift (seconds)<input id="timing-shift-seconds" type="text" inputmode="decimal" placeholder="For example +0.25 or -0.5" disabled></label><button id="timing-shift-apply" class="quiet" disabled>Shift all lyric times</button><div id="passage-copy" hidden><p class="fine">Repeat the selected passage in an empty part of this clip. Original lines stay; copied words, lengths and internal gaps stay together.</p><label class="field">Copy passage to (seconds)<input id="passage-copy-seconds" type="text" inputmode="decimal" placeholder="Destination first-line start" disabled></label><button id="passage-copy-apply" class="quiet" disabled>Copy selected passage</button><p id="passage-copy-status" class="fine" role="status" aria-live="polite"></p></div><div id="passage-remove" hidden><p class="fine">Remove the selected first–last lines as one unsaved Undo/Redo edit. Surviving words and times stay unchanged. Save lyrics is separate.</p><button id="passage-remove-apply" class="quiet" disabled>Remove selected lyric lines</button><p id="passage-remove-status" class="fine" role="status" aria-live="polite"></p></div><div id="passage-fit" hidden><p class="fine">Fit the selected lines into a corrected start/end window. Cue lengths and internal gaps scale proportionally; words and other lines stay unchanged. This retimes lyric cues, not the song or its audio tempo.</p><label class="field">Fit passage start (seconds)<input id="passage-fit-start" type="text" inputmode="decimal" disabled></label><label class="field">Fit passage end (seconds)<input id="passage-fit-end" type="text" inputmode="decimal" disabled></label><button id="passage-fit-apply" class="quiet" disabled>Fit selected passage timing</button><p id="passage-fit-status" class="fine" role="status" aria-live="polite"></p></div><p id="timing-shift-status" class="fine" role="status" aria-live="polite"></p></details>
         <details class="line-insert"><summary>Add lyric line</summary><p class="fine">Supply missed words and an empty time span. Existing lines stay unchanged. Insert makes one unsaved Undo/Redo edit; Save lyrics is separate. These entry fields are session-only and are not part of saved lyrics until inserted.</p><label class="field">New lyric words<textarea id="line-insert-text" rows="2" disabled></textarea></label><label class="field">New line start (seconds)<input id="line-insert-start" type="text" inputmode="decimal" disabled></label><label class="field">New line end (seconds)<input id="line-insert-end" type="text" inputmode="decimal" disabled></label><button id="line-insert-apply" class="quiet" disabled>Insert lyric line</button><p id="line-insert-status" class="fine" role="status" aria-live="polite"></p></details>
@@ -112,6 +114,7 @@ const archiveCaches = new Map<string, number>();
 let pollEpoch = 0;
 let transcript: { projectId: string; value: Transcript } | null = null;
 let transcriptEpoch = 0;
+let transcriptState:'loading'|'ready'|'error'='loading';
 let aligning = false;
 let pollInFlight: string | null = null;
 let ownedJob = false;
@@ -129,6 +132,17 @@ interface ArchiveFocus {
   direction: 'forward' | 'backward' | 'none' | null;
 }
 let archiveFocus: ArchiveFocus | null = null;
+const lyricsLookup=mountLyricsLookup({
+  context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,duration:working.duration,
+    busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
+    pastedDirty:draftDirty,alignmentState:transcriptState}:null,
+  useLyrics:text=>{
+    const field=element<HTMLTextAreaElement>('lyric-draft');field.value=text;draftDirty=true;
+    // Alignment records the replacement together; avoid an extra paste-only history step.
+    element<HTMLButtonElement>('draft-timings').click();
+  },
+});
+
 function rememberArchiveFocus() {
   const node = document.activeElement;
   if (!working || !(node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)
@@ -206,6 +220,7 @@ function validateWorking(): string {
   } catch (error) { return error instanceof Error ? error.message : 'Check the lyric timing.'; }
 }
 function controls() {
+  lyricsLookup.sync();
   if (practice.active && timingBusy()) retirePractice('Other studio work stopped practice.');
   if (timingOwner && timingBusy()) retireTiming('Other studio work cancelled the timing session. Staged times were not applied.');
   const busy = currentJob !== null || loading || requestingJob || archiveChecking, invalid = validateWorking();
@@ -632,15 +647,15 @@ async function loadTranscript() {
   wordTimingEpoch++; wordTiming = null; wordTimingWanted = '';
   element('word-timing-status').textContent = ''; element('word-timing-status').hidden = true;
   window.clearTimeout(wordTimingTimer);
-  if (!working) { transcript = null; autoControls(); return; }
+  if (!working) { transcript = null; transcriptState='loading'; lyricsLookup.sync(); autoControls(); return; }
   const project = working, epoch = ++transcriptEpoch;
-  transcript = null; autoControls();
+  transcript = null; transcriptState='loading'; lyricsLookup.sync(); autoControls();
   try {
     const value = parseTranscript(await request<unknown>(`/api/projects/${project.id}/transcript`), project.duration);
-    if (epoch === transcriptEpoch && working?.id === project.id) { transcript = { projectId: project.id, value }; autoControls(); }
+    if (epoch === transcriptEpoch && working?.id === project.id) { transcript = { projectId: project.id, value }; transcriptState='ready'; lyricsLookup.sync(); autoControls(); }
   } catch (error) {
     if (epoch !== transcriptEpoch || working?.id !== project.id) return;
-    transcript = { projectId: project.id, value: { available: false } }; autoControls();
+    transcript = { projectId: project.id, value: { available: false } }; transcriptState='error'; lyricsLookup.sync(); autoControls();
     element('auto-status').textContent = `Recognized lyrics could not be read: ${error instanceof Error ? error.message : 'Connection lost.'}`;
   }
 }

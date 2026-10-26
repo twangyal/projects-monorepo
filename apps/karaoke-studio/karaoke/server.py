@@ -782,7 +782,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; "
                          "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
-                         "media-src 'self' blob:; connect-src 'self'; object-src 'none'; "
+                         "media-src 'self' blob:; connect-src 'self' https://lrclib.net; object-src 'none'; "
                          "base-uri 'none'; frame-ancestors 'none'")
         if disposition:
             self.send_header("Content-Disposition", disposition)
