@@ -15,6 +15,7 @@ async function contentHarness(run){
  globalThis.window={start:()=>{starts++;return{stop(){stops++;}}}};
  globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}}}};
  await writeFile(join(directory,'entry.mjs'),await readFile('src/web/extension-boot.js','utf8'));
+ await writeFile(join(directory,'frame-speech.js'),'export const createFrameSpeech = () => ({});');
  await writeFile(join(directory,'frame-camera.js'),'export const createFrameCamera = () => ({});');await writeFile(join(directory,'overlay.js'),'export const startWebNavigator = ({window}) => window.start();');
  await writeFile(join(directory,'package.json'),'{"type":"module"}');
  const script=new vm.Script(await readFile('extension/content.js','utf8'),{importModuleDynamically:vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER});

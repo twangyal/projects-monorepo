@@ -1,9 +1,11 @@
 // Runs inside the extension's capture frame (extension/capture.html), which the navigator embeds invisibly
 // over the page. The camera, WebGazer and calibration samples live here, in the extension's own origin:
-// the website is never granted camera access and cannot read this frame. Only gaze points leave, over a
-// private extension port that page scripts cannot reach.
+// the website is never granted camera or microphone access and cannot read this frame. Gaze points and
+// speech events leave only over a
+// private extension port that page scripts cannot reach. Camera and speech use independent frames.
 import { createLocalCamera } from './camera-source.js';
 import { createCameraLoader } from '../camera-loader.js';
+import { createSpeechInput } from './speech-input.js';
 
 const CALIBRATION = 'gaze-calibration';
 const nonce = location.hash.slice(1);
@@ -21,7 +23,18 @@ const camera = createLocalCamera({
   onLost: () => port?.postMessage({ type: 'lost' }),
 });
 
+const sendSpeech = (event, value, extra = {}) => port?.postMessage({ type: 'speech', event, value, ...extra });
+const speech = createSpeechInput(window, {
+  onSpeechStart: () => sendSpeech('start'),
+  onInterim: text => sendSpeech('interim', text),
+  onFinal: text => sendSpeech('final', text),
+  onImmediate: text => sendSpeech('immediate', text),
+  onError: (message, code) => sendSpeech('error', message, { code, listening: speech.listening }),
+  onState: state => sendSpeech('state', state),
+});
+
 const operations = {
+  'speech-start': () => speech.start(),
   start: () => camera.start(),
   stop: () => camera.stop(),
   reset: () => { camera.resetCalibration(); return true; },
@@ -37,7 +50,7 @@ chrome.runtime.onConnect.addListener(candidate => {
   port.onMessage.addListener(async ({ id, op, args = [] }) => {
     const operation = Object.hasOwn(operations, op) ? operations[op] : null;
     try {
-      if (!operation) throw new Error(`Unknown camera request: ${op}`);
+      if (!operation) throw new Error(`Unknown capture request: ${op}`);
       const result = await operation(...args);
       if (id) port?.postMessage({ id, result });
     } catch (error) {
@@ -48,6 +61,7 @@ chrome.runtime.onConnect.addListener(candidate => {
   port.onDisconnect.addListener(() => {
     port = null;
     camera.stop();
+    speech.stop();
   });
-  port.postMessage({ type: 'ready' });
+  port.postMessage({ type: 'ready', speechSupported: speech.supported });
 });

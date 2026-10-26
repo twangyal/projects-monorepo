@@ -518,3 +518,72 @@ test('injected runtime preserves repeated explicit expand and collapse state', a
 test('installed deletion preserves selected native text Undo through overlay focus',async({context,worker})=>{
  await worker.evaluate(()=>chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));const page=await context.newPage();await page.goto('http://shop.example/contact');await expect(status(page)).toContainText('Ready on');const field=page.locator('textarea');await field.fill('Keep 🌓 remove\nend');await field.evaluate(e=>e.setSelectionRange(8,14));await look(page,field);await typeInstruction(page,'delete selected text');await expect(status(page)).toContainText('Selected text removed');await expect(field).toHaveValue('Keep 🌓 \nend');await look(page,field);await typeInstruction(page,'undo');await expect(field).toHaveValue('Keep 🌓 remove\nend');
 });
+
+async function activeSpeechFrame(page) {
+  for (const frame of page.frames()) {
+    if (/^chrome-extension:\/\/[^/]+\/capture\.html#/.test(frame.url()) && await frame.evaluate(() => Boolean(window.__extensionSpeech?.instances.length)).catch(() => false)) return frame;
+  }
+  return null;
+}
+async function listenInExtension(page) {
+  await panel(page).getByRole('button', { name: 'Start listening', exact: true }).click();
+  await expect.poll(async () => Boolean(await activeSpeechFrame(page))).toBe(true);
+  return activeSpeechFrame(page);
+}
+
+test('extension speech owns its origin, retains utterance context and handles immediate pause before restart', async ({context,control}) => {
+  await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:true}}));
+  const page=await context.newPage(); await page.goto('http://shop.example/contact'); await expect(status(page)).toContainText('Ready');
+  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+  const frame=await listenInExtension(page); const oldURL=frame.url();
+  expect(new URL(oldURL).protocol).toBe('chrome-extension:');
+  expect(new URL(oldURL).host).toBe(new URL(control.url()).host);
+  expect(await page.evaluate(() => typeof window.__extensionSpeech)).toBe('undefined');
+  const id=await tabId(control,'http://shop.example/*');
+  expect(await control.evaluate(async tab => (await chrome.scripting.executeScript({target:{tabId:tab},func:()=>typeof globalThis.__extensionSpeech}))[0].result,id)).toBe('undefined');
+  await look(page,page.getByLabel('Message')); await frame.evaluate(()=>window.__extensionSpeech.begin());
+  await expect(panel(page).locator('.transcript')).toContainText('captured');
+  await look(page,page.getByRole('link',{name:'Home',exact:true}));
+  await frame.evaluate(()=>window.__extensionSpeech.say('type extension words')); await expect(page.getByLabel('Message')).toHaveValue('extension words');
+  await frame.evaluate(()=>window.__extensionSpeech.say('pause',false,1)); await expect(panel(page).getByRole('button',{name:'Resume',exact:true})).toBeVisible();
+  await frame.evaluate(()=>window.__extensionSpeech.say('pause',true,1));
+  await panel(page).getByRole('button',{name:'Stop listening',exact:true}).click();
+  await expect.poll(async()=>Boolean(await activeSpeechFrame(page))).toBe(false);
+  const next=await listenInExtension(page); expect(next.url()).not.toBe(oldURL);
+  await next.evaluate(()=>window.__extensionSpeech.say('resume')); await expect(panel(page).getByRole('button',{name:'Pause',exact:true})).toBeVisible();
+  await page.goto('http://shop.example/'); await expect(status(page)).toContainText('Ready');
+  expect(page.frames().some(f=>f.url()===oldURL || f.url()===next.url())).toBe(false);
+  expect(await page.evaluate(()=>[localStorage.length,sessionStorage.length])).toEqual([0,0]); expect(errors).toEqual([]);
+});
+
+test('speech refusal opens extension microphone setup and typed instructions remain usable', async ({context,control}) => {
+  await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page=await context.newPage(); await page.goto('http://shop.example/'); await expect(status(page)).toContainText('Ready');
+  const frame=await listenInExtension(page);
+  const opened=context.waitForEvent('page',p=>p.url().includes('/permissions.html?device=microphone'));
+  await frame.evaluate(()=>window.__extensionSpeech.fail('not-allowed'));
+  await expect(status(page)).toContainText('setup tab'); await expect(panel(page).getByRole('button',{name:'Start listening',exact:true})).toHaveAttribute('aria-pressed','false');
+  const setup=await opened; await expect(setup.getByRole('heading',{name:'Allow the microphone for Gaze Navigator'})).toBeVisible();
+  // Control only the native media boundary. No physical microphone is available in this suite.
+  await setup.evaluate(()=>{window.__setupStops=0; navigator.mediaDevices.getUserMedia=async constraints=>{window.__setupConstraints=constraints;return{getTracks:()=>[{stop(){window.__setupStops++;}}]};};});
+  await setup.getByRole('button',{name:'Allow microphone'}).click(); await expect(setup.locator('#status')).toContainText('Return to your tab');
+  expect(await setup.evaluate(()=>({constraints:window.__setupConstraints,stops:window.__setupStops}))).toEqual({constraints:{audio:true},stops:1});
+  await page.bringToFront(); await look(page,page.getByRole('link',{name:'About us'})); await typeInstruction(page,'open about us'); await page.waitForURL('http://shop.example/about');
+  await expect(status(page)).toContainText('Ready');
+});
+
+test('camera and extension speech frames stop independently and microphone disconnect recovers', async ({context,control}) => {
+  test.setTimeout(60000);
+  await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page=await context.newPage(); await page.goto('http://shop.example/'); await expect(status(page)).toContainText('Ready');
+  const speech=await listenInExtension(page); const speechURL=speech.url();
+  await typeInstruction(page,'use camera'); await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.',{timeout:30000});
+  await typeInstruction(page,'stop camera'); await expect(status(page)).toContainText('Camera off');
+  expect((await activeSpeechFrame(page)).url()).toBe(speechURL);
+  await speech.evaluate(()=>window.__extensionSpeech.say('pause')); await expect(panel(page).getByRole('button',{name:'Resume',exact:true})).toBeVisible();
+  // Removing the owning native frame must retire its channel and leave a deliberate retry.
+  const id=await tabId(control,'http://shop.example/*');
+  await control.evaluate(async ({tab,url}) => chrome.scripting.executeScript({target:{tabId:tab},func:url=>{for(const f of document.getElementById('gaze-web-navigator').shadowRoot.querySelectorAll('iframe'))if(f.src===url)f.remove();},args:[url]}),{tab:id,url:speechURL});
+  await expect(panel(page).getByRole('button',{name:'Start listening',exact:true})).toHaveAttribute('aria-pressed','false');
+  await expect(status(page)).toContainText('microphone frame closed'); await listenInExtension(page);
+});

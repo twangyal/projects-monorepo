@@ -108,3 +108,10 @@ test('stopping ignores queued speech events and a previous session after restart
   emit(instances.at(-1), 0, result('open help', true));
   assert.deepEqual(heard, ['open help']);
 });
+
+test('a synchronous microphone denial carries its permission code for extension recovery', () => {
+  class Recognition { start() { throw Object.assign(new Error('denied'), {name:'NotAllowedError'}); } }
+  const errors=[];
+  const speech=createSpeechInput({SpeechRecognition:Recognition},{onError:(message,code)=>errors.push({message,code})});
+  assert.equal(speech.start(),false); assert.equal(speech.listening,false); assert.equal(errors[0].code,'not-allowed');
+});

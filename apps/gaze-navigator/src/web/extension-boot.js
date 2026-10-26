@@ -1,6 +1,7 @@
 // Starts the navigator inside the extension's isolated world on any website.
 import { startWebNavigator } from './overlay.js';
 import { createFrameCamera } from './frame-camera.js';
+import { createFrameSpeech } from './frame-speech.js';
 
 const KEY = 'gaze-web-navigator';
 
@@ -33,5 +34,6 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
   };
   // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
   const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });
-  return startWebNavigator({ window, store, createCamera, loadAssistant });
+  const createSpeech = (window, callbacks) => createFrameSpeech({ document, window, mount: document.getElementById('gaze-web-navigator').shadowRoot, runtime: chrome.runtime, ...callbacks });
+  return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant });
 }

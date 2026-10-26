@@ -64,6 +64,12 @@ if (testBuild) {
 export const loadAssistantModel = progress => loadWaterSheepInBrowser({ runtimeBase: chrome.runtime.getURL('vendor/watersheep/'), progress });
 `);
 }
-if (testBuild) cpSync(join(root, 'test-support', 'fake-assistant.js'), join(out, 'vendor', 'assistant.js'));
+if (testBuild) {
+  cpSync(join(root, 'test-support', 'fake-assistant.js'), join(out, 'vendor', 'assistant.js'));
+  cpSync(join(root, 'test-support', 'fake-speech.js'), join(out, 'vendor', 'speech.js'));
+  // Only the test capture page installs a controlled recognizer; production always uses Chrome's API.
+  const capture = join(out, 'capture.html');
+  writeFileSync(capture, readFileSync(capture, 'utf8').replace('<body>', '<body><script src="vendor/speech.js"></script>'));
+}
 writeFileSync(join(out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Built ${out}`);

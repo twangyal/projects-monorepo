@@ -129,9 +129,9 @@ async function pageStatus(tabId) {
   }
 }
 
-// One setup tab at a time, next to the tab that needed the camera.
-async function openPermissionsPage(tab) {
-  const url = chrome.runtime.getURL('permissions.html');
+// One setup tab per device, next to the tab that requested it.
+async function openPermissionsPage(tab, microphone = false) {
+  const url = chrome.runtime.getURL(`permissions.html${microphone ? '?device=microphone' : ''}`);
   const [open] = await chrome.tabs.query({ url });
   if (open) {
     await chrome.tabs.update(open.id, { active: true });
@@ -158,9 +158,9 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     chrome.tabs.sendMessage(message.tabId, message).catch(() => {});
     return false;
   }
-  if (message?.type === 'gaze:camera-permission' && sender.tab?.id !== undefined) {
+  if (['gaze:camera-permission', 'gaze:microphone-permission'].includes(message?.type) && sender.tab?.id !== undefined) {
     // The camera frame cannot ask on its own behalf from inside a website; a Gaze Navigator tab can.
-    openPermissionsPage(sender.tab).then(() => respond({ ok: true }), error => respond({ ok: false, message: error.message }));
+    openPermissionsPage(sender.tab, message.type === 'gaze:microphone-permission').then(() => respond({ ok: true }), error => respond({ ok: false, message: error.message }));
     return true;
   }
   if (message?.type === 'gaze:toggle' || message?.type === 'gaze:start' || message?.type === 'gaze:stop') {

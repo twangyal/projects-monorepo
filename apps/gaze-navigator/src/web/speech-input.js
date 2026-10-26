@@ -57,7 +57,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
       if (event.error === 'no-speech' || event.error === 'aborted') return;
       failures++;
       if (FATAL.has(event.error) || failures >= 3) wanted = false;
-      onError?.(ERRORS[event.error] ?? `Speech recognition stopped (${event.error}). Type instructions or try again.`);
+      onError?.(ERRORS[event.error] ?? `Speech recognition stopped (${event.error}). Type instructions or try again.`, event.error);
     };
     // Browsers end continuous sessions after silence; restart while the user still wants to listen.
     recognition.onend = () => {
@@ -89,7 +89,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
         recognition.start();
       } catch (error) {
         wanted = false;
-        onError?.(`Speech recognition could not start: ${error.message}`);
+        onError?.(`Speech recognition could not start: ${error.message}`, error.name === 'NotAllowedError' ? 'not-allowed' : undefined);
         return false;
       }
       return true;

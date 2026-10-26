@@ -112,7 +112,7 @@ export function describeElement(element) {
 
 // `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
 // `createCamera` supplies the camera (see camera-source.js); by default WebGazer runs in this document.
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera } = {}) {
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput } = {}) {
   const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
@@ -473,7 +473,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     renderOutlines();
   }
 
-  const speech = createSpeechInput(window, {
+  const speech = createSpeech(window, {
     // Keeps the earliest capture of an utterance: where the user looked when they began speaking.
     onSpeechStart() {
       if (controller.paused || spokenContext) return;
