@@ -1,11 +1,12 @@
+import { validateSkirtMeasures, skirtPieces, skirtMesh, skirtHeight, type SkirtMeasures } from './product-skirt.ts';
 import { validateRasterHeader } from './media.ts';
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
 /** Base products. Each declares the parts a design styles; the 3D shell, pattern and tech pack follow them. */
-export const BASES = ['tee', 'sweatshirt', 'hoodie', 'trousers'] as const;
+export const BASES = ['tee', 'sweatshirt', 'hoodie', 'trousers', 'skirt'] as const;
 export type Base = typeof BASES[number];
-export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie', trousers: 'Pull-on trousers' };
+export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie', trousers: 'Pull-on trousers', skirt: 'Flared skirt' };
 export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
@@ -16,14 +17,15 @@ export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   hoodie: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket'],
   // Shorts and trousers: front and back leg panels (cut in pairs) and an elasticated waistband.
   trousers: ['front', 'back', 'waistband'],
+  skirt: ['front', 'back'],
 };
 /** A part's display name on this design: the front and back of shorts and trousers are leg panels. */
 export function partName(product: Pick<Product, 'base'>, part: PartId): string {
-  if (isBottoms(product) && (part === 'front' || part === 'back')) return part === 'front' ? 'Front legs' : 'Back legs';
+  if (product.base === 'trousers' && (part === 'front' || part === 'back')) return part === 'front' ? 'Front legs' : 'Back legs';
   return PART_NAMES[part];
 }
-/** Bottoms take leg measurements (waist, hip, rise, inseam, leg opening) instead of chest, length and sleeve. */
-export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers'; }
+/** Bottoms use their own measured panels instead of top measurements or the top drape. */
+export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers' || product.base === 'skirt'; }
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
@@ -114,8 +116,8 @@ export type Currency = typeof CURRENCIES[number];
 export interface Costing { currency: Currency; retail: number; make: number; trims: number; printPerArtwork: number; fabricPrices: Record<string, number> }
 export interface Product {
   /** Exactly the design's parts (partsOf) are present in `parts`. */
-  /** Tops take Measurements; bottoms (isBottoms) take LegMeasurements. Bottoms keep a 'crew' neckline value. */
-  base: Base; name: string; measurements: Measurements | LegMeasurements; neckline: 'crew' | 'v';
+  /** Each base has its own measurements; bottoms keep a 'crew' placeholder neckline. */
+  base: Base; name: string; measurements: Measurements | LegMeasurements | SkirtMeasures; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
   /** Module choices; absent until one is changed (then DEFAULT_OPTIONS apply). */
   options?: Options;
@@ -151,11 +153,12 @@ const hex = (value: unknown, label: string): string => typeof value === 'string'
 
 /** A top's measurements; bottoms have none of these. */
 export function topMeasurements(product: Pick<Product, 'base' | 'measurements'>): Measurements {
+  if (product.base === 'skirt') fail('Skirts use waist, hem and slant measurements.');
   return isBottoms(product) ? fail('Shorts and trousers use leg measurements.') : product.measurements as Measurements;
 }
 /** Shorts' and trousers' leg measurements. */
 export function legMeasurements(product: Pick<Product, 'base' | 'measurements'>): LegMeasurements {
-  return isBottoms(product) ? product.measurements as LegMeasurements : fail('Only shorts and trousers have leg measurements.');
+  return product.base === 'trousers' ? product.measurements as LegMeasurements : fail('Only shorts and trousers have leg measurements.');
 }
 
 export function material(id: string): Material { return MATERIALS.find(item => item.id === id) ?? fail('Choose a fabric from the library.'); }
@@ -249,8 +252,10 @@ export function validateProduct(value: unknown): Product {
   if (!BASES.includes(p.base as Base)) fail('Choose a base product from the library.');
   const base = p.base as Base;
   if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
-  let measurements: Measurements | LegMeasurements;
-  if (base === 'trousers') {
+  let measurements: Measurements | LegMeasurements | SkirtMeasures;
+  if (base === 'skirt') {
+    measurements = validateSkirtMeasures(p.measurements);
+  } else if (base === 'trousers') {
     const band = !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, 'waistbandHeight');
     const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening', ...(band ? ['waistbandHeight'] : [])], 'Leg measurements');
     measurements = { waist: finite(m.waist, LIMITS.waist, 'Waist (cm)'), hip: finite(m.hip, LIMITS.hip, 'Hip (cm)'), rise: finite(m.rise, LIMITS.rise, 'Front rise (cm)'),
@@ -264,7 +269,7 @@ export function validateProduct(value: unknown): Product {
   }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
-  if (base === 'trousers' && p.neckline !== 'crew') fail('Shorts and trousers have no neckline.');
+  if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
     const o = plain(p.options, ['hem', 'chestPocket'], 'Modules');
@@ -277,7 +282,7 @@ export function validateProduct(value: unknown): Product {
   const ids = partsOf({ base, options });
   let fit: Fit | undefined;
   if (p.fit !== undefined) {
-    if (base === 'trousers') fail('Fit measurements are for tops; shorts and trousers use their leg measurements.');
+    if (isBottoms({base})) fail('Fit measurements are for tops; bottoms use their own measurements.');
     const raw = p.fit && typeof p.fit === 'object' && !Array.isArray(p.fit) ? Object.keys(p.fit as object) : [];
     const f = plain(p.fit, raw.filter(key => FIT_KEYS.includes(key as FitKey)).length === raw.length ? raw : FIT_KEYS, 'Fit');
     fit = Object.fromEntries(Object.keys(f).map(key => [key, finite(f[key], LIMITS.fit[key as FitKey], `${FIT_NAMES[key as FitKey]} (cm)`)])) as Fit;
@@ -288,7 +293,7 @@ export function validateProduct(value: unknown): Product {
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
-  if (base === 'trousers' && (p.artwork as unknown[]).length) fail('Artwork placement is available on tops.');
+  if (isBottoms({base}) && (p.artwork as unknown[]).length) fail('Artwork placement is available on tops.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements as Measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
   let spec: Spec | undefined;
@@ -328,6 +333,8 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
     product: { base: 'hoodie', name: 'Pullover hoodie', measurements: { ...fleece, length: 72 }, neckline: 'crew', parts: allParts(style('terry-300', '#1f2a4f'), {}, 'hoodie'), artwork: [] } },
   { id: 'shorts', name: 'Pull-on shorts', description: 'Washed linen shorts with an elasticated waistband.',
     product: { base: 'trousers', name: 'Pull-on shorts', measurements: { ...legFit, inseam: 18, legOpening: 58 }, neckline: 'crew', parts: allParts(style('linen-170', '#c9b48f'), {}, 'trousers'), artwork: [] } },
+  { id: 'flared-skirt', name: 'Flared skirt', description: 'Two measured linen panels, with editable waist, hem and slant.',
+    product: { base: 'skirt', name: 'Flared skirt', measurements: { waist: 80, hem: 140, slant: 60 }, neckline: 'crew', parts: allParts(style('linen-170', '#9fae91'), {}, 'skirt'), artwork: [] } },
   { id: 'trousers', name: 'Straight trousers', description: 'Indigo denim twill, straight leg, elasticated waist.',
     product: { base: 'trousers', name: 'Straight trousers', measurements: legFit, neckline: 'crew', parts: allParts(style('denim-340', '#2d3f5c'), {}, 'trousers'), artwork: [] } },
 ];
@@ -426,6 +433,7 @@ export interface PatternPiece { part: PartId; outline: { x: number; y: number }[
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {
+  if (product.base === 'skirt') return skirtHeight(product);
   if (isBottoms(product)) return trouserDimensions(product).outseam;
   return topMeasurements(product).length + (product.base === 'hoodie' ? 30 : 0);
 }
@@ -510,6 +518,7 @@ function trouserMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
+  if (product.base === 'skirt') return skirtPieces(product);
   if (isBottoms(product)) return trouserPieces(product);
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m);
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
@@ -641,6 +650,7 @@ function seamDistance(p: Pt, s: Silhouette): number {
  * hem, cuffs and neck stay open. y is up (hem at 0), z toward the viewer, units cm. UVs are flat cm.
  */
 export function teeMesh(product: Product, Delaunator: { from(points: number[][]): { triangles: Uint32Array | number[] } }): PartMesh[] {
+  if (product.base === 'skirt') return skirtMesh(product);
   if (isBottoms(product)) return trouserMesh(product, Delaunator);
   const m = topMeasurements(product), depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
   const groups = new Map<PartId, PartMesh>();
