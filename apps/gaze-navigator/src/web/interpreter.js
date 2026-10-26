@@ -80,7 +80,7 @@ function rank(query, elements, roles) {
 function resolve(query, elements, roles, act, noun = 'control') {
   const ranked = rank(query, elements, roles);
   if (!ranked.length) {
-    return { type: 'unknown', message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.` };
+    return { type: 'unknown', missing: true, message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.` };
   }
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN);
   if (close.length > 1) return clarify(close.map(entry => entry.element), act);
@@ -209,7 +209,21 @@ function typedSet(target, value, context, now) {
   return null;
 }
 
+// A control named but not inside the circle is looked for just outside it (context.nearby), where webcam
+// gaze error usually leaves it. Only named misses are retried: "open this" never reaches outside the circle.
 export function interpret(utterance, context = { elements: [] }) {
+  const action = interpretInCircle(utterance, context);
+  if (!action.missing || !context.nearby?.length) return action;
+  const outside = interpretInCircle(utterance, { ...context, elements: context.nearby, disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null });
+  if (outside.type === 'unknown') return action;
+  if (outside.type !== 'clarify') return { ...outside, outside: true };
+  // Nearby controls have ids from 101; ask with small numbers that are easy to say.
+  const candidates = outside.candidates.map((candidate, index) => ({ ...candidate, number: index + 1 }));
+  return { ...question(candidates, number => outside.choose(outside.candidates[number - 1].number)), outside: true,
+    message: `Not inside the gaze circle, but nearby: ${candidates.map(candidate => `${candidate.number}: ${candidate.label}`).join('; ')}. Say a number or cancel.` };
+}
+
+function interpretInCircle(utterance, context) {
   const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
   // Dictation keeps its own words; commands also drop trailing politeness.

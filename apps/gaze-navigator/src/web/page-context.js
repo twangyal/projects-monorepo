@@ -361,6 +361,10 @@ const SCOPE_CACHE_MS = 2000;
 // Cached rectangles only pre-select controls near the circle; those are measured again before use.
 const RECT_CACHE_MS = 500;
 const RECT_MARGIN = 48;
+// Webcam gaze is often 100-200 px off. Controls in this wider ring are kept apart from the circle's own,
+// so a named control just outside the circle can still be found; ids start here to stay distinct.
+export const NEARBY_FACTOR = 3;
+const NEARBY_FIRST_ID = 101;
 
 function searchScopes(document, exclude, cache) {
   const now = document.defaultView?.performance?.now() ?? 0;
@@ -380,11 +384,17 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const { scopes, outOfReach } = searchScopes(document, exclude, scopeCache);
   const candidates = [];
   const blocked = [];
+  const outside = [];
+  const reach = radius * NEARBY_FACTOR;
   const consider = (element, frames) => {
     const rect = viewportRect(element, frames);
     if (!(rect.width > 0 && rect.height > 0)) return;
     const distance = distanceToRect(x, y, rect);
-    if (distance > radius || exclude?.contains(element)) return;
+    if (distance > reach || exclude?.contains(element)) return;
+    if (distance > radius) {
+      if (usable(element, exclude) && unobscured(document, element, rect, x, y)) outside.push({ element, rect, distance, frames });
+      return;
+    }
     // Explicit state commands must retain visible locked targets for refusal.
     // Keep them out of ordinary context so generic activation remains unchanged.
     if (!usable(element, exclude)) {
@@ -405,7 +415,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     if (scopeCache) scopeCache.rects = { time: now, scopes, items: measured };
   }
   for (const { element, frames, rect } of measured) {
-    if (distanceToRect(x, y, rect) <= radius + RECT_MARGIN) consider(element, frames);
+    if (distanceToRect(x, y, rect) <= reach + RECT_MARGIN) consider(element, frames);
   }
   for (const element of inferredClickables(document, x, y, radius, exclude, new Set(candidates.map(candidate => candidate.element)))) {
     inferred.add(element);
@@ -428,13 +438,18 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const disclosureElements = [...elements, ...blocked.sort((a, b) => a.distance - b.distance).slice(0, limit).map((candidate, index) => ({
     id: limit + index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames, ...describe(candidate.element),
   }))].sort((a, b) => a.distance - b.distance).slice(0, limit);
+  const nearby = outside.filter(({ element }) => roleOf(element) !== 'generic')
+    .sort((a, b) => a.distance - b.distance).slice(0, limit).map((candidate, index) => ({
+      id: NEARBY_FIRST_ID + index, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,
+      ...describe(candidate.element),
+    }));
   const unreachable = outOfReach
     .filter(({ frame, frames }) => {
       const rect = viewportRect(frame, frames);
       return rect.width > 0 && rect.height > 0 && distanceToRect(x, y, rect) <= radius;
     })
     .map(({ frame }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content' }));
-  return { x, y, radius, elements, disclosureElements, unreachable, region: scrollRegionAt(document, x, y, exclude), pageSearch: findPageSearch(document, exclude) };
+  return { x, y, radius, elements, disclosureElements, nearby, unreachable, region: scrollRegionAt(document, x, y, exclude), pageSearch: findPageSearch(document, exclude) };
 }
 
 // The page's single visible search field, usable by "search for …" without looking at it first.

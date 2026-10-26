@@ -245,7 +245,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function renderOutlines() {
     const pending = controller.pending;
     const question = pending?.kind === 'clarify' ? new Set(pending.candidates.map(candidate => candidate.elementId)) : null;
-    const shown = controller.paused ? [] : (pending ? promptContext : spokenContext ?? context)?.elements ?? [];
+    const shownContext = controller.paused ? null : pending ? promptContext : spokenContext ?? context;
+    // A question about controls just outside the circle outlines those too.
+    const shown = shownContext ? [...(shownContext.elements ?? []), ...(question ? shownContext.nearby ?? [] : [])] : [];
     ui.outlines.replaceChildren();
     for (const element of shown) {
       if (question && !question.has(element.id)) continue;

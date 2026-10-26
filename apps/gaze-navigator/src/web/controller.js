@@ -7,7 +7,8 @@ const CONFIRM_MS = 15000;
 const HISTORY_LIMIT = 20;
 
 function targetOf(context, id) {
-  return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
+  return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ??
+    context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
 }
 
 // `commands` handles navigator-level actions (tracking source, calibration) outside the page.
@@ -260,7 +261,7 @@ export function createController({ window, actions = pageActions, interpret = in
           return reply('Working out which control you mean…', 'info', { assisting: true, followUp });
         }
         return respond(action, context);
-      default: return perform(action, context);
+      default: return respond(action, context);
     }
   }
 
@@ -270,7 +271,13 @@ export function createController({ window, actions = pageActions, interpret = in
         pending = { kind: 'clarify', candidates: action.candidates, choose: action.choose, context };
         return reply(action.message, 'question');
       case 'unknown': return reply(action.message, 'error');
-      default: return perform(action, context);
+      default: {
+        const response = perform(action, context);
+        // A control found just outside the circle: say so, so the user knows where the action happened.
+        if (action.outside && response.tone === 'success') response.message = `${response.message} It was just outside the gaze circle.`;
+        else if (action.outside && response.tone === 'question') response.message = `Just outside the gaze circle: ${response.message}`;
+        return response;
+      }
     }
   }
 
