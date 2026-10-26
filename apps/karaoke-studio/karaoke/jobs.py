@@ -19,6 +19,7 @@ class JobPublication:
 
     publish: Callable[[], str | None]
     retain_on_cancel: bool = False
+    recognition_failed: bool = False
 
 
 @dataclass
@@ -32,6 +33,7 @@ class _Job:
     result_url: str | None = None
     finalizing: bool = False
     retained_on_cancel: bool = False
+    recognition_failed: bool = False
     cancel: threading.Event = field(default_factory=threading.Event)
     thread: threading.Thread | None = None
 
@@ -42,6 +44,8 @@ class _Job:
             value["error"] = self.error
         if self.result_url:
             value["resultUrl"] = self.result_url
+        if self.recognition_failed:
+            value["recognitionFailed"] = True
         if self.retained_on_cancel:
             value["retainedOnCancel"] = True
         return value
@@ -127,9 +131,12 @@ class JobManager:
                             publishing = True
                             job.result_url = publication.publish()
                             job.retained_on_cancel = cancelled
+                            job.recognition_failed = kind == "separate" and publication.recognition_failed and not cancelled
                             outcome, final_stage = "complete", "Complete"
                             if cancelled:
                                 final_stage = 'Stems saved; recognition cancelled'
+                            elif job.recognition_failed:
+                                final_stage = 'Stems saved; recognition failed'
                         job.finalizing, job.stage = True, "Cleaning up"
                 except Exception as error:
                     with self.lock:

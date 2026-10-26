@@ -15,7 +15,7 @@ import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -1278,11 +1278,15 @@ async function pollJob(id: string, epoch = pollEpoch) {
           if (!ownsPoll(id, epoch)) return;
           message(job.retainedOnCancel
             ? 'Recognition cancelled. Your stems were saved. You can listen now and use Transcribe lyrics when ready.'
+            : job.recognitionFailed
+            ? 'Automatic lyric recognition failed. Your stems are ready. Retry with Transcribe lyrics; if it fails again, check the local lyric model setup. You can also paste lyrics and time them.'
             : working?.cues.length
             ? `Your stems and ${working.cues.length} automatically timed lyric lines are ready. Play the preview, correct any words or timing, then save and export.`
             : 'Your stems are ready. No lyrics were recognized automatically; paste your lyrics or transcribe again, then time them.');
         } else message(job.retainedOnCancel
           ? 'Recognition cancelled. Your stems were saved in Saved clips. Your current lyric edits are still here.'
+          : job.recognitionFailed
+          ? 'Automatic lyric recognition failed. Your stems are ready in Saved clips. Your current lyric edits are still here. Open the new clip when ready and retry with Transcribe lyrics; if it fails again, check the local lyric model setup.'
           : 'Your stems are ready in Saved clips. Your current lyric edits are still here.');
       } else if (job.kind === 'transcribe') {
         archiveCaches.delete(job.projectId);

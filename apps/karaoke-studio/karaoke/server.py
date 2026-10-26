@@ -426,6 +426,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
                         raise RuntimeError("Audio processing provenance is invalid or oversized.")
                     _copy_media(metadata, complete / "processing.json", 16384, cancel)
+                recognition_failed = False
                 if self.lyrics_ready():
                     # Automatic lyrics are the starting point; recognition failure leaves an
                     # unlyricked clip that can be transcribed again, never a failed upload.
@@ -435,6 +436,7 @@ class KaraokeServer(ThreadingHTTPServer):
                                                          self.model_dir, duration, cancel, stage)
                         project = validate_project({**project, "cues": words_to_cues(transcript["words"], duration)})
                     except Exception:
+                        recognition_failed = True
                         (complete / _TRANSCRIPT).unlink(missing_ok=True)
                 _atomic_json(complete / "project.json", project)
             finally:
@@ -463,7 +465,7 @@ class KaraokeServer(ThreadingHTTPServer):
                 self._project_identities[project_id] = self._identity(os.stat(project_id, dir_fd=self._directory_fds[self.projects_dir], follow_symlinks=False))
                 return None
 
-            return JobPublication(publish, retain_on_cancel=True)
+            return JobPublication(publish, retain_on_cancel=True, recognition_failed=recognition_failed)
 
         return self.jobs.start(project_id, "separate", work, lambda: self.cleanup_work(work_dir))
 

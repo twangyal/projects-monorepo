@@ -1,18 +1,18 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 import { test } from './sequential-timing-fixtures';
 
-function wav(): Buffer {
-  const frames = 18 * 44100, data = Buffer.alloc(44 + frames * 4);
+function wav(seconds = 18): Buffer {
+  const frames = seconds * 44100, data = Buffer.alloc(44 + frames * 4);
   data.write('RIFF'); data.writeUInt32LE(data.length - 8, 4); data.write('WAVEfmt ', 8);
   data.writeUInt32LE(16, 16); data.writeUInt16LE(1, 20); data.writeUInt16LE(2, 22);
   data.writeUInt32LE(44100, 24); data.writeUInt32LE(176400, 28); data.writeUInt16LE(4, 32); data.writeUInt16LE(16, 34);
   data.write('data', 36); data.writeUInt32LE(frames * 4, 40);
   return data;
 }
-interface Job { id: string; projectId: string; status: string; retainedOnCancel?: boolean }
-async function upload(page: Page): Promise<Job> {
+interface Job { id: string; projectId: string; status: string; retainedOnCancel?: boolean; recognitionFailed?: boolean }
+async function upload(page: Page, seconds = 18): Promise<Job> {
   const response = page.waitForResponse(response => response.url().endsWith('/api/projects') && response.request().method() === 'POST');
-  await page.getByLabel('Upload song clip').setInputFiles({ name:'cancel-recognition.wav', mimeType:'audio/wav', buffer:wav() });
+  await page.getByLabel('Upload song clip').setInputFiles({ name:'cancel-recognition.wav', mimeType:'audio/wav', buffer:wav(seconds) });
   const reply = await response; expect(reply.status()).toBe(202);
   return (await reply.json() as { job:Job }).job;
 }
@@ -66,5 +66,43 @@ test('another page retains its dirty editor when recognition cancellation saves 
     await expect(page.getByLabel('Clip title',{exact:true})).toHaveValue('Unsaved correction belongs here');
     await expect(page.locator('#save-state')).toContainText('Unsaved lyric edits');
     expect(await (await request.get(`/api/projects/${existing.id}`)).json()).toEqual(existing);
+  } finally { await cleanup(request,jobs); }
+});
+
+
+for (const width of [1280,390]) test(`failed automatic recognition explains recovery and keeps playable stems at ${width}px`, async ({page,request}) => {
+  const jobs:Job[] = [];
+  try {
+    await page.setViewportSize({width,height:900}); await page.goto('/');
+    jobs.push(await upload(page,19));
+    await expect(page.locator('#message')).toContainText('Automatic lyric recognition failed', {timeout:10000});
+    await expect(page.locator('#message')).toContainText('Retry with Transcribe lyrics');
+    await expect(page.locator('#message')).not.toContainText('/private/');
+    await expect(page.getByRole('button',{name:'Backing',exact:true})).toBeEnabled();
+    const done = (await (await request.get(`/api/jobs/${jobs[0].id}`)).json() as {job:Job}).job;
+    expect(done).toMatchObject({status:'complete',recognitionFailed:true});
+    expect(done).not.toHaveProperty('error');
+    expect(done).not.toHaveProperty('retainedOnCancel');
+    expect((await request.get(`/api/projects/${jobs[0].projectId}/audio/backing`)).status()).toBe(200);
+    await page.getByRole('button',{name:'Transcribe lyrics',exact:true}).click();
+    await expect(page.locator('#message')).toContainText('Lyrics recognized', {timeout:10000});
+    await expect(page.locator('#auto-status')).toContainText('12 words were recognized');
+  } finally { await cleanup(request,jobs); }
+});
+
+test('a failed recognition warning does not replace another clip’s dirty lyrics', async ({page,request,timingClips}) => {
+  const existing = await timingClips.create();
+  const jobs:Job[] = [];
+  try {
+    await page.goto(`/?project=${existing.id}`);
+    await expect(page.getByLabel('Clip title',{exact:true})).toHaveValue(existing.title);
+    await page.getByLabel('Clip title',{exact:true}).fill('Keep my unsaved correction');
+    const {token} = await (await request.get('/api/session')).json() as {token:string};
+    const response = await request.post('/api/projects',{headers:{'Content-Type':'application/octet-stream','X-Audio-Name':'recognition-failure.wav','X-Karaoke-Token':token},data:wav(19)});
+    expect(response.status()).toBe(202); jobs.push((await response.json() as {job:Job}).job);
+    await page.getByRole('button',{name:'Refresh projects',exact:true}).click();
+    await expect(page.locator('#message')).toContainText('Automatic lyric recognition failed', {timeout:10000});
+    await expect(page.locator('#message')).toContainText('Your current lyric edits are still here');
+    await expect(page.getByLabel('Clip title',{exact:true})).toHaveValue('Keep my unsaved correction');
   } finally { await cleanup(request,jobs); }
 });

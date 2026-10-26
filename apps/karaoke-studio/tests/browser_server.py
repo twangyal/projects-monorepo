@@ -46,11 +46,15 @@ def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *
         if not cancel.wait(20):
             raise RuntimeError('Recognition cancellation fixture timed out.')
         raise RuntimeError('Cancelled fixture recognition.')
+    if abs(duration - 19.0) < 1e-6 and Path(output).parent.name == 'completed':
+        stage('Waiting for failed recognition in browser fixture')
+        cancel.wait(1.5)
+        raise RuntimeError('Private recognizer detail /private/model/path must not reach the browser.')
     stage('Recognizing fixture lyrics for browser verification')
     for _ in range(10):
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
-    if min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - 18.0)) > 1e-6:
+    if min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - 18.0), abs(duration - 19.0)) > 1e-6:
         raise RuntimeError('No fixture lyrics for this clip.')
     transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s >= 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
     Path(output).write_text(json.dumps(transcript))

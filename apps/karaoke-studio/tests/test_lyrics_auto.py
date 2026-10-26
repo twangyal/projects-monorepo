@@ -337,6 +337,7 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertTrue(self.request('GET', '/api/session')[2]['lyricsModelReady'])
         job = self.helper.upload()
         self.assertEqual(job['status'], 'complete', job)
+        self.assertNotIn('recognitionFailed', job)
         project = self.request('GET', '/api/projects')[2]['projects'][0]
         self.assertEqual([c['text'] for c in project['cues']][:2], ['Lay awake at night', 'wondering how could I'])
         self.assertEqual(self.calls, ['vocals.wav'])
@@ -404,6 +405,7 @@ class ServerLyricsTests(unittest.TestCase):
         done = self.helper.wait_job(started['id'])
         self.assertEqual(done['status'], 'complete', done)
         self.assertTrue(done['retainedOnCancel'])
+        self.assertNotIn('recognitionFailed', done)
         base = f'/api/projects/{started["projectId"]}'
         project = self.request('GET', base)[2]
         self.assertEqual(project['cues'], [])
@@ -442,6 +444,7 @@ class ServerLyricsTests(unittest.TestCase):
             done = self.helper.wait_job(job['id'])
         self.assertEqual(done['status'], 'complete')
         self.assertTrue(done['retainedOnCancel'])
+        self.assertNotIn('recognitionFailed', done)
         base = f'/api/projects/{job["projectId"]}'
         self.assertEqual(self.request('GET', base)[2]['cues'], [])
         self.assertEqual(self.request('GET', base + '/transcript')[2], {'available': False})
@@ -551,6 +554,9 @@ class ServerLyricsTests(unittest.TestCase):
         self.fail_next = True
         job = self.helper.upload()
         self.assertEqual(job['status'], 'complete', 'the separated clip is kept')
+        self.assertTrue(job.get('recognitionFailed'), job)
+        self.assertNotIn('error', job)
+        self.assertEqual(job['stage'], 'Stems saved; recognition failed')
         project = self.request('GET', '/api/projects')[2]['projects'][0]
         self.assertEqual(project['cues'], [])
         base = f'/api/projects/{project["id"]}'
@@ -564,6 +570,18 @@ class ServerLyricsTests(unittest.TestCase):
         # Word highlighting still works from estimates, for previews and exports alike.
         status, _, timed = self.request('POST', base + '/word-timings', {'cues': [{'start': 1, 'end': 3, 'text': 'hello there'}]})
         self.assertEqual((status, timed['recognized'], [w['heard'] for w in timed['lines'][0]]), (200, False, [False, False]))
+
+    def test_successful_empty_recognition_is_not_reported_as_a_worker_failure(self):
+        def empty(_vocals, output, *_args):
+            transcript = dict(model=ENGLISH.name, words=[], seconds=0.1)
+            Path(output).write_text(json.dumps(transcript))
+            return transcript
+        self.server.transcribe = empty
+        job = self.helper.upload()
+        self.assertEqual(job['status'], 'complete', job)
+        self.assertNotIn('recognitionFailed', job)
+        self.assertNotIn('error', job)
+        self.assertEqual(self.request('GET', '/api/projects')[2]['projects'][0]['cues'], [])
 
     def test_transcription_needs_the_model_and_cancels_cleanly(self):
         job = self.helper.upload()
