@@ -569,7 +569,7 @@ test('speech refusal opens extension microphone setup and typed instructions rem
   await setup.getByRole('button',{name:'Allow microphone'}).click(); await expect(setup.locator('#status')).toContainText('Return to your tab');
   expect(await setup.evaluate(()=>({constraints:window.__setupConstraints,stops:window.__setupStops}))).toEqual({constraints:{audio:true},stops:1});
   await page.bringToFront(); await look(page,page.getByRole('link',{name:'About us'})); await typeInstruction(page,'open about us'); await page.waitForURL('http://shop.example/about');
-  await expect(status(page)).toContainText('Ready');
+  await expect(status(page)).toHaveText('Done: About us activated. Now on "About Example Shop".');
 });
 
 test('camera and extension speech frames stop independently and microphone disconnect recovers', async ({context,control}) => {
