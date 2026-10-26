@@ -35,12 +35,19 @@ function storedZip(entries: [string, Buffer][]): Buffer {
   end.writeUInt32LE(0x06054b50); end.writeUInt16LE(entries.length, 8); end.writeUInt16LE(entries.length, 10); end.writeUInt32LE(directory.length, 12); end.writeUInt32LE(offset, 16);
   return Buffer.concat([...locals, directory, end]);
 }
-function fixture(title = 'Saved chorus 🎵 <literal>') {
+function fixture(title = 'Saved chorus 🎵 <literal>', recognized = false) {
   const project: Project = { schemaVersion: 1, id: 'f'.repeat(32), title, duration: 3, revision: 7,
     cues: [{ start: .25, end: 1.25, text: 'Saved <verse> 🌓' }, { start: 1.75, end: 2.875, text: 'Final & chorus' }] };
   const entries: [string, Buffer][] = [['project.json', Buffer.from(JSON.stringify(project))], ['source.wav', pcm(220)], ['vocals.wav', pcm(330)], ['backing.wav', pcm(440)],
     ['processing.json', Buffer.from('{"model":"spleeter:2stems","frameCount":132300,"sampleRate":44100,"duration":3}')]];
-  const manifest = { schemaVersion: 1, kind: 'karaoke-studio-project', origin: 'local-library', audio: { sampleRate: 44100, channels: 2, sampleWidth: 2, frames: 132300 },
+  if (recognized) {
+    project.cues = [{start:.25,end:1.25,text:'Hello world'}, {start:1.75,end:2.875,text:'Final chorus'}];
+    entries[0] = ['project.json',Buffer.from(JSON.stringify(project))];
+    entries.push(['transcript.json',Buffer.from(JSON.stringify({model:'parakeet-tdt-0.6b-v2-int8+silero-vad',seconds:.4,words:[
+      {text:'Hello',start:.4,end:.7,confidence:.95},{text:'world',start:.8,end:1.1,confidence:.9},
+      {text:'Final',start:2,end:2.3,confidence:.4},{text:'chorus',start:2.4,end:2.8,confidence:.7}]}))]);
+  }
+  const manifest = { schemaVersion: recognized ? 2 : 1, kind: 'karaoke-studio-project', origin: 'local-library', audio: { sampleRate: 44100, channels: 2, sampleWidth: 2, frames: 132300 },
     files: entries.map(([name, data]) => ({ name, bytes: data.length, sha256: hash(data) })) };
   return { project, entries: new Map(entries), bytes: storedZip([...entries, ['manifest.json', Buffer.from(JSON.stringify(manifest))]]) };
 }
@@ -359,4 +366,33 @@ test('an unreadable accepted archive reply keeps the uncertain-restore guard unt
  await waitJob(request,accepted!.id);await page.locator('#archive-recheck').click();
  await expect(page.locator('#projects').locator('option')).toContainText(['Recovered unreadable archive']);await expect(page.locator('#archive-file')).toBeEnabled();await expectDraft(page);
  expect((await projects(request)).filter(p=>p.title==='Recovered unreadable archive')).toHaveLength(1);expect(submissions).toBe(1);
+});
+
+
+test('portable recognition restores review and exact word timing without a recognition job', async ({page,request}) => {
+  await page.goto('/');
+  const archive = fixture('Recognized portable chorus',true);
+  await page.getByLabel('Import project archive',{exact:true}).setInputFiles({name:'recognized.karaoke.zip',mimeType:'application/zip',buffer:archive.bytes});
+  await expect(page.locator('#open-imported')).toBeVisible({timeout:15000});
+  await expect(page.locator('#job-panel')).toBeHidden();
+  await page.getByRole('button',{name:'Open imported clip',exact:true}).click();
+  await expect(page.locator('#auto-status')).toContainText('4 words were recognized');
+  await expect(page.getByRole('button',{name:'Review automatic lyrics',exact:true})).toBeEnabled();
+  await expect.poll(() => page.locator('audio').evaluate(el => (el as HTMLAudioElement).readyState)).toBeGreaterThanOrEqual(2);
+  await page.locator('audio').evaluate(el => { (el as HTMLAudioElement).currentTime=.65; el.dispatchEvent(new Event('timeupdate')); });
+  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing','recognized');
+  await expect(page.locator('#stage')).toHaveAttribute('data-sung','5');
+  const id = new URL(page.url()).searchParams.get('project')!;
+  expect(await (await request.get(`/api/projects/${id}`)).json()).toEqual({...archive.project,id});
+  await page.getByRole('button',{name:'Review automatic lyrics',exact:true}).click();
+  await expect(page.locator('#srt-review')).toBeVisible();
+  await expect(page.locator('#srt-review-list textarea')).toHaveCount(2);
+  await page.locator('#srt-cancel').click();
+  await page.getByRole('button',{name:'Back up saved clip',exact:true}).click();
+  await expect(page.getByRole('link',{name:'Download saved archive',exact:true})).toBeVisible({timeout:12000});
+  const output = archiveContents((await downloadArchive(page)).bytes);
+  expect(output.get('transcript.json')).toEqual(archive.entries.get('transcript.json'));
+  expect(JSON.parse(output.get('project.json')!.toString())).toEqual({...archive.project,id});
+  expect(JSON.parse(output.get('manifest.json')!.toString()).schemaVersion).toBe(2);
+  expect((await (await request.get('/api/session')).json()).activeJob).toBeNull();
 });

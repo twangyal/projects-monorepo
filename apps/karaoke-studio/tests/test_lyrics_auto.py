@@ -371,7 +371,7 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
         self.assertEqual(exported[0]['words'][0]['text'], 'Lay')
 
-        # Portable archives keep their exact format: the transcript stays local and can be recreated.
+        # Portable archives retain recognition separately from corrected saved lyric cues.
         status, _, backup = self.request('POST', base + '/archive', {'revision': project['revision']})
         self.assertEqual(status, 202, backup)
         self.assertEqual(self.helper.wait_job(backup['job']['id'])['status'], 'complete')
@@ -379,7 +379,7 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertEqual(status, 200)
         names = zipfile.ZipFile(io.BytesIO(archive)).namelist()
         self.assertIn('project.json', names)
-        self.assertNotIn('transcript.json', names)
+        self.assertIn('transcript.json', names)
 
     def test_cancelled_upload_recognition_retains_stems_without_partial_transcript(self):
         previous_id = self.helper.upload()['projectId']

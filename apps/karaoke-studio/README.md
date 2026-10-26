@@ -16,7 +16,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 - **Practice**: play or repeat a range of lines on any track, at 0.5×, 0.75× or 1× speed.
 - **Word-by-word highlighting** in the preview and in the exported video. Word times come from recognition, with words that were not heard estimated by length. If timing fails, the preview explains why and highlights whole lines until you edit the lyrics or transcribe again.
 - **Export** a 1280×720, 24 fps H.264/AAC MP4 with the backing track and lyric cards, plus SRT subtitles.
-- **Local library** of up to 20 saved clips that survives restarts. **Back up saved clip** writes a portable `.karaoke.zip` (audio, stems, lyrics); **Import project archive** restores one into any library.
+- **Local library** of up to 20 saved clips that survives restarts. **Back up saved clip** writes a portable `.karaoke.zip` (audio, stems, saved lyrics and recognized word timings when present); **Import project archive** restores one into any library.
 
 ## Known gaps
 
@@ -24,7 +24,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 - Multilingual lyrics are unfinished. Only 25 European languages are covered, mixed-language songs are not handled, and the bundled font lacks many scripts (for example Tibetan), which show as missing-glyph boxes in videos.
 - Separated stems are estimates. Leftover singing or lost instruments can remain, and anything the model misses as vocals stays in the backing.
 - Separation is slow on CPU: a ten-minute song takes roughly as long as the song itself on 4 cores. No GPU path.
-- Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Linux only (it needs procfs and POSIX process controls). Recognized word data (`transcript.json`) is not included in archives; transcribe a restored clip again.
+- Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Linux only (it needs procfs and POSIX process controls). Archives with recognized word data use format version 2; this studio also reads older version 1 archives. Older studio versions cannot open version 2. Restoring word timing needs no recognition model.
 
 ## Run locally
 
@@ -96,7 +96,7 @@ With models installed, `python scripts/smoke_model.py --model-dir MODELS --work-
 
 - Songs, stems, lyrics, recognition output and videos are stored only in `--data-dir`. There is no account or cloud upload, and the app does not rely on browser storage. The service binds to `127.0.0.1` only.
 - After setup, separation and recognition run offline in resource-limited worker processes that refuse network calls.
-- Archives are unencrypted and contain your private audio and lyrics. Checksums detect corruption only, and imported clips are marked as unverified. To back up the whole library, stop the service and copy the data directory.
+- Archives are unencrypted and contain your private audio, lyrics and recognized words. Checksums detect corruption only, and imported clips are marked as unverified. To back up the whole library, stop the service and copy the data directory.
 
 ## Licences and attribution
 

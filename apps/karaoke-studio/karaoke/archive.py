@@ -19,13 +19,14 @@ import zlib
 
 from .limits import MAX_JSON_BYTES, MAX_WAV_BYTES, MAX_DURATION, MAX_CUES, MAX_WINDOWS, SAMPLE_RATE
 from .model import ValidationError, validate_project
+from .transcription import MAX_TRANSCRIPT_BYTES, validate_transcript
 
 # Three canonical WAV stems at the longest supported duration, plus small JSON members.
 MAX_ARCHIVE_BYTES = 3 * MAX_WAV_BYTES + 4 * 1024**2
 MAX_MANIFEST_BYTES = 8 * 1024
 MAX_PROCESSING_BYTES = 16 * 1024
 MAX_ARCHIVE_CENTRAL_BYTES = 4096
-MAX_ARCHIVE_ENTRIES = 6
+MAX_ARCHIVE_ENTRIES = 7
 MAX_PORTABLE_REVISION = 2147483647
 ARCHIVE_TIMEOUT = 360
 _BLOCK = 65536
@@ -37,7 +38,10 @@ _MODE = (stat.S_IFREG | 0o600) << 16
 _BASE_NAMES = ('project.json', 'source.wav', 'vocals.wav', 'backing.wav')
 _LIMITS = {'project.json': MAX_JSON_BYTES, 'source.wav': MAX_WAV_BYTES,
            'vocals.wav': MAX_WAV_BYTES, 'backing.wav': MAX_WAV_BYTES,
-           'processing.json': MAX_PROCESSING_BYTES, 'manifest.json': MAX_MANIFEST_BYTES}
+           'processing.json': MAX_PROCESSING_BYTES, 'transcript.json': MAX_TRANSCRIPT_BYTES,
+           'manifest.json': MAX_MANIFEST_BYTES}
+_ARCHIVE_NAMES = tuple(_BASE_NAMES + extra + ('manifest.json',) for extra in (
+    (), ('processing.json',), ('transcript.json',), ('processing.json', 'transcript.json')))
 
 
 class ArchiveError(ValueError):
@@ -319,7 +323,7 @@ def _layout(source, budget):
     end = _END.unpack(_read_exact(source, 22))
     signature, disk, central_disk, disk_count, count, central_size, central_offset, comment = end
     if (signature != b'PK\x05\x06' or disk or central_disk or comment or
-            count not in (5, 6) or disk_count != count or
+            not 5 <= count <= MAX_ARCHIVE_ENTRIES or disk_count != count or
             not 0 < central_size <= MAX_ARCHIVE_CENTRAL_BYTES or
             central_offset + central_size != size - 22):
         _fail('Archive central directory is invalid or exceeds its limit.')
@@ -327,10 +331,10 @@ def _layout(source, budget):
     central = _read_exact(source, central_size)
     position = 0
     entries = []
-    expected_names = _BASE_NAMES + (('processing.json',) if count == 6 else ()) + ('manifest.json',)
+    possible_names = [names for names in _ARCHIVE_NAMES if len(names) == count]
     local_end = 0
     total = 0
-    for expected in expected_names:
+    for index in range(count):
         budget.check()
         if position + _CENTRAL.size > len(central):
             _fail()
@@ -338,7 +342,11 @@ def _layout(source, budget):
         (sig, made, needed, flags, method, clock, date, crc, compressed, unpacked,
          name_length, extra, member_comment, start_disk, internal, external, offset) = fields
         position += _CENTRAL.size
-        name = expected.encode('ascii')
+        name = central[position:position + name_length]
+        possible_names = [names for names in possible_names if names[index].encode('ascii') == name]
+        if not possible_names:
+            _fail('Archive member names or order are invalid.')
+        expected = possible_names[0][index]
         if (sig != b'PK\x01\x02' or made >> 8 != 3 or needed not in (10, 20) or
                 flags or method or clock or date != 33 or extra or member_comment or
                 start_disk or internal or external != _MODE or name_length != len(name) or
@@ -406,7 +414,10 @@ def _wav_header(header, size):
 def _manifest(raw, entries):
     value = _strict_json(raw)
     _keys(value, ('schemaVersion', 'kind', 'origin', 'audio', 'files'))
-    _integer(value['schemaVersion'], 1, 1)
+    _integer(value['schemaVersion'], 1, 2)
+    has_transcript = any(entry.name == 'transcript.json' for entry in entries)
+    if (value['schemaVersion'] == 2) != has_transcript:
+        _fail('Archive version does not match its recognition data.')
     if value['kind'] != 'karaoke-studio-project' or value['origin'] not in (
             'local-library', 'imported-declared'):
         _fail()
@@ -436,13 +447,24 @@ def _admit_metadata(source, entries, budget):
     frames = manifest['audio']['frames']
     if project['duration'] != frames / SAMPLE_RATE:
         _fail('Saved duration does not match exact audio frame count.')
-    processing = None
-    if len(entries) == 6:
-        processing, digest = _metadata(source, entries[-2], budget)
-        if digest != manifest['files'][-1]['sha256']:
-            _fail('Processing checksum is invalid.')
-        _processing(processing, frames)
-    return project, manifest, processing
+    optional = {}
+    for entry, item in zip(entries[4:-1], manifest['files'][4:]):
+        raw, digest = _metadata(source, entry, budget)
+        if digest != item['sha256']:
+            _fail('Archive metadata checksum is invalid.')
+        if entry.name == 'processing.json':
+            _processing(raw, frames)
+        else:
+            _transcript(raw, project['duration'])
+        optional[entry.name] = raw
+    return project, manifest, optional.get('processing.json'), optional.get('transcript.json')
+
+
+def _transcript(raw, duration):
+    try:
+        validate_transcript(_strict_json(raw), duration)
+    except (ValueError, TypeError, OverflowError):
+        _fail('Lyric transcript is invalid. Transcribe the clip again before backing it up.')
 
 
 def _hash_file(source, budget):
@@ -550,7 +572,7 @@ def read_archive_project(source: BinaryIO) -> dict:
     try:
         budget = _Budget()
         entries = _layout(source, budget)
-        project, _, _ = _admit_metadata(source, entries, budget)
+        project, _, _, _ = _admit_metadata(source, entries, budget)
         return project
     except (OSError, ValueError, TypeError, struct.error) as exc:
         if isinstance(exc, ArchiveError):
@@ -591,6 +613,22 @@ def export_archive(project: dict, project_fd: int, work_fd: int,
                 if source.read(1):
                     _fail('Processing metadata changed while reading.')
             _processing(processing, frames)
+        transcript = None
+        opened = _open_file(project_fd, 'transcript.json', MAX_TRANSCRIPT_BYTES, optional=True)
+        if opened is not None:
+            source, size = opened
+            with source:
+                data = io.BytesIO()
+                remaining = size
+                while remaining:
+                    budget.check()
+                    block = _read_exact(source, min(remaining, _BLOCK))
+                    data.write(block)
+                    remaining -= len(block)
+                if source.read(1):
+                    _fail('Lyric transcript changed while reading.')
+                transcript = data.getvalue()
+            _transcript(transcript, saved['duration'])
         budget.stage(stage, 'Copying saved archive audio')
         with _create_file(work_fd, 'export.karaoke.zip') as output:
             writer = _Writer(output, budget)
@@ -599,7 +637,9 @@ def export_archive(project: dict, project_fd: int, work_fd: int,
                 writer.entry(name, source, size)
             if processing is not None:
                 writer.entry('processing.json', io.BytesIO(processing), len(processing))
-            manifest = dict(schemaVersion=1, kind='karaoke-studio-project', origin=origin,
+            if transcript is not None:
+                writer.entry('transcript.json', io.BytesIO(transcript), len(transcript))
+            manifest = dict(schemaVersion=2 if transcript is not None else 1, kind='karaoke-studio-project', origin=origin,
                             audio=dict(sampleRate=SAMPLE_RATE, channels=2, sampleWidth=2, frames=frames),
                             files=list(writer.files))
             metadata = _json_bytes(manifest)
@@ -638,7 +678,7 @@ def import_archive(work_fd: int, project_id: str, cancel: threading.Event,
         source, _ = _open_file(work_fd, 'input.karaoke.zip', MAX_ARCHIVE_BYTES)
         with source:
             entries = _layout(source, budget)
-            saved, manifest, processing = _admit_metadata(source, entries, budget)
+            saved, manifest, processing, transcript = _admit_metadata(source, entries, budget)
             frames = manifest['audio']['frames']
             for entry in entries[1:4]:
                 source.seek(entry.offset)
@@ -661,6 +701,8 @@ def import_archive(work_fd: int, project_id: str, cancel: threading.Event,
             if processing is not None:
                 budget.check()
                 _write_file(completed, 'processing.json', processing, budget)
+            if transcript is not None:
+                _write_file(completed, 'transcript.json', transcript, budget)
             sidecar = dict(schemaVersion=1, sourceProjectId=saved['id'],
                            sourceRevision=saved['revision'], archiveSha256=archive_hash,
                            declaredOrigin=manifest['origin'])

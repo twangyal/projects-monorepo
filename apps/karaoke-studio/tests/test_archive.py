@@ -31,13 +31,15 @@ def encode(value):
     return json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()
 
 
-def authored_archive(project_bytes=None, audio=None, processing=None):
+def authored_archive(project_bytes=None, audio=None, processing=None, transcript=None, version=None):
     audio = wav() if audio is None else audio
     parts = [('project.json', encode(project()) if project_bytes is None else project_bytes)]
     parts += [(name + '.wav', audio) for name in ('source', 'vocals', 'backing')]
     if processing is not None:
         parts.append(('processing.json', processing))
-    manifest = dict(schemaVersion=1, kind='karaoke-studio-project', origin='local-library',
+    if transcript is not None:
+        parts.append(('transcript.json', transcript))
+    manifest = dict(schemaVersion=version if version is not None else 2 if transcript is not None else 1, kind='karaoke-studio-project', origin='local-library',
                     audio=dict(sampleRate=44100, channels=2, sampleWidth=2, frames=44100),
                     files=[dict(name=name, bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
                            for name, data in parts])
@@ -124,6 +126,90 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(result.origin, 'imported-declared')
         with zipfile.ZipFile(self.work / 'export.karaoke.zip') as archive:
             self.assertEqual(archive.read('processing.json'), raw)
+
+    def test_transcript_words_survive_import_and_reexport_without_replacing_corrected_cues(self):
+        from karaoke.transcription import ENGLISH
+        raw = encode(dict(model=ENGLISH.name, seconds=0.25, words=[dict(text='recognized', start=.2, end=.7, confidence=.8)]))
+        processing = b'{"sourceGain":1,"windowRanges":[{"start":0,"frames":44100}],"windowCount":1}'
+        restored = self.restore(authored_archive(transcript=raw, processing=processing))
+        directory = self.work / 'completed'
+        self.assertEqual((directory / 'transcript.json').read_bytes(), raw)
+        self.assertEqual(restored.project['cues'], project()['cues'])
+        fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            export_archive(restored.project, fd, self.work_fd, self.cancel, lambda _: None)
+        finally:
+            os.close(fd)
+        with zipfile.ZipFile(self.work / 'export.karaoke.zip') as archive:
+            self.assertEqual(archive.read('transcript.json'), raw)
+            manifest = json.loads(archive.read('manifest.json'))
+            self.assertEqual(manifest['schemaVersion'], 2)
+            entry = next(item for item in manifest['files'] if item['name'] == 'transcript.json')
+            self.assertEqual(entry['sha256'], hashlib.sha256(raw).hexdigest())
+
+    def test_export_includes_optional_transcript_with_no_processing_member(self):
+        from karaoke.transcription import MULTILINGUAL
+        raw = encode(dict(model=MULTILINGUAL.name, seconds=1, words=[dict(text='été', start=.1, end=.8, confidence=.9)]))
+        (self.source / 'transcript.json').write_bytes(raw)
+        export_archive(project(), self.source_fd, self.work_fd, self.cancel, lambda _: None)
+        with zipfile.ZipFile(self.work / 'export.karaoke.zip') as archive:
+            self.assertEqual(archive.namelist(), ['project.json', 'source.wav', 'vocals.wav', 'backing.wav', 'transcript.json', 'manifest.json'])
+            self.assertEqual(archive.read('transcript.json'), raw)
+        with (self.work / 'export.karaoke.zip').open('rb') as source:
+            self.assertEqual(read_archive_project(source), project())
+
+    def test_invalid_stored_transcript_is_refused_rather_than_silently_omitted(self):
+        (self.source / 'transcript.json').write_text('{"model":"unknown","words":[],"seconds":0}')
+        with self.assertRaises(ArchiveError):
+            export_archive(project(), self.source_fd, self.work_fd, self.cancel, lambda _: None)
+
+    def test_transcript_rejects_bad_model_words_timing_json_and_version_membership(self):
+        from karaoke.transcription import ENGLISH, MAX_TRANSCRIPT_BYTES
+        valid = dict(model=ENGLISH.name, seconds=.1, words=[dict(text='word', start=.1, end=.8, confidence=.9)])
+        bad = [
+            encode({**valid, 'model':'unknown'}), encode({**valid, 'words':[dict(text='word', start=.1, end=2, confidence=.9)]}),
+            encode({**valid, 'words':[dict(text='word', start=.1, end=.8, confidence=True)]}),
+            encode(valid).replace(b'"seconds":0.1', b'"seconds":0.1,"seconds":0.2'),
+            b'{"model":NaN}', b'[' * 17 + b'0' + b']' * 17,
+            b' ' * (MAX_TRANSCRIPT_BYTES + 1),
+        ]
+        for raw in bad:
+            with self.subTest(raw=raw[:80]), self.assertRaises(ArchiveError):
+                self.restore(authored_archive(transcript=raw))
+        for data in (authored_archive(transcript=encode(valid), version=1), authored_archive(version=2)):
+            with self.assertRaises(ArchiveError):
+                self.restore(data)
+        self.assertFalse((self.work / 'completed').exists())
+
+    def test_transcript_checksum_is_checked_even_when_changed_words_remain_valid(self):
+        from karaoke.transcription import ENGLISH
+        raw = encode(dict(model=ENGLISH.name, seconds=.1, words=[dict(text='checksumword', start=.1, end=.8, confidence=.9)]))
+        data = authored_archive(transcript=raw)
+        corrupted = bytearray(data)
+        corrupted[data.index(b'checksumword')] = ord('x')
+        with self.assertRaises(ArchiveError):
+            self.restore(bytes(corrupted))
+        output = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(data)) as old, zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_STORED) as changed:
+            for item in old.infolist():
+                payload = old.read(item)
+                if item.filename == 'transcript.json':
+                    payload = payload.replace(b'checksumword', b'xecognizedxx')
+                changed.writestr(item, payload)
+        with self.assertRaises(ArchiveError):
+            self.restore(output.getvalue())
+        self.assertFalse((self.work / 'completed').exists())
+
+    def test_transcript_source_symlink_and_oversized_data_are_refused(self):
+        from karaoke.transcription import MAX_TRANSCRIPT_BYTES
+        target = self.source / 'transcript.json'
+        target.symlink_to(self.source / 'source.wav')
+        with self.assertRaises(ArchiveError):
+            export_archive(project(), self.source_fd, self.work_fd, self.cancel, lambda _: None)
+        target.unlink()
+        target.write_bytes(b' ' * (MAX_TRANSCRIPT_BYTES + 1))
+        with self.assertRaises(ArchiveError):
+            export_archive(project(), self.source_fd, self.work_fd, self.cancel, lambda _: None)
 
     def test_strict_project_json_rejections(self):
         valid = encode(project())

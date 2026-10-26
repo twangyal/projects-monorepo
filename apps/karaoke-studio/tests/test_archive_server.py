@@ -83,6 +83,84 @@ class ArchiveServerTests(unittest.TestCase):
         self.assertEqual(status, 202, result)
         return self.wait_job(result['job']['id'])
 
+    def test_recognition_archive_restores_words_without_models_and_preserves_saved_corrections(self):
+        from karaoke.transcription import ENGLISH
+        raw = json.dumps(dict(model=ENGLISH.name, seconds=.5, words=[dict(text='hello', start=.2, end=.6, confidence=.85)])).encode()
+        (self.directory / 'transcript.json').write_bytes(raw)
+        changed = self.request('PUT', f'/api/projects/{PROJECT_ID}', {'revision':7, 'title':self.project['title'],
+                               'cues':[dict(start=.1, end=.9, text='Saved correction')]})[2]
+        status, _, response = self.request('POST', f'/api/projects/{PROJECT_ID}/archive', {'revision':changed['revision']})
+        self.assertEqual(status, 202, response)
+        self.assertEqual(self.wait_job(response['job']['id'])['status'], 'complete')
+        archive = self.request('GET', f'/api/projects/{PROJECT_ID}/archive')[2]
+        with zipfile.ZipFile(io.BytesIO(archive)) as content:
+            self.assertEqual(content.read('transcript.json'), raw)
+        def forbidden(*_args):
+            raise AssertionError('Restoring recognition must not run a model.')
+        self.server.transcribe = forbidden
+        restored = self.import_job(archive)
+        self.assertEqual(restored['status'], 'complete', restored)
+        base = f'/api/projects/{restored["projectId"]}'
+        saved = self.request('GET', base)[2]
+        self.assertEqual(saved, {**changed, 'id':restored['projectId']})
+        transcript = self.request('GET', base + '/transcript')[2]
+        self.assertTrue(transcript['available'])
+        self.assertEqual(transcript['words'], 1)
+        timings = self.request('POST', base + '/word-timings', {'cues':[dict(start=.1, end=.9, text='hello')]})[2]
+        self.assertTrue(timings['recognized'])
+        self.assertEqual(timings['lines'][0][0]['start'], .2)
+        self.assertTrue(timings['lines'][0][0]['heard'])
+        self.assertFalse(self.request('GET', '/api/session')[2]['lyricsModelReady'])
+
+    def test_successful_retranscription_invalidates_previous_archive_without_changing_saved_revision(self):
+        from karaoke.transcription import ENGLISH
+        def transcript(text):
+            return dict(model=ENGLISH.name, seconds=.1, words=[dict(text=text, start=.1, end=.8, confidence=.9)])
+        (self.directory / 'transcript.json').write_text(json.dumps(transcript('old')))
+        self.assertEqual(self.export_job()['status'], 'complete')
+        self.assertEqual(self.request('GET', f'/api/projects/{PROJECT_ID}/archive')[0], 200)
+        def recognize(vocals, output, *args):
+            output.write_text(json.dumps(transcript('new')))
+            return transcript('new')
+        self.server.transcribe = recognize
+        self.server.transcriber_ready = lambda _: True
+        job = self.request('POST', f'/api/projects/{PROJECT_ID}/transcribe', {})[2]['job']
+        self.assertEqual(self.wait_job(job['id'])['status'], 'complete')
+        self.assertNotEqual(self.request('GET', f'/api/projects/{PROJECT_ID}/archive')[0], 200,
+                            'a download cannot silently return the older recognized words')
+        self.assertEqual(self.request('GET', f'/api/projects/{PROJECT_ID}')[2]['revision'], 7)
+        self.assertEqual(self.export_job()['status'], 'complete')
+        archive = self.request('GET', f'/api/projects/{PROJECT_ID}/archive')[2]
+        with zipfile.ZipFile(io.BytesIO(archive)) as content:
+            self.assertEqual(json.loads(content.read('transcript.json'))['words'][0]['text'], 'new')
+
+    def test_failed_or_cancelled_recognition_keeps_the_previous_portable_backup(self):
+        from karaoke.transcription import ENGLISH
+        raw = json.dumps(dict(model=ENGLISH.name, seconds=.1, words=[]))
+        (self.directory / 'transcript.json').write_text(raw)
+        self.assertEqual(self.export_job()['status'], 'complete')
+        before = self.request('GET', f'/api/projects/{PROJECT_ID}/archive')[2]
+        self.server.transcriber_ready = lambda _: True
+        entered = threading.Event()
+        for cancel_run in (False, True):
+            def recognize(vocals, output, model, duration, cancel, stage):
+                output.write_text('{"partial":true}')
+                entered.set()
+                if cancel_run:
+                    cancel.wait(2)
+                raise RuntimeError('Recognition did not complete.')
+            self.server.transcribe = recognize
+            entered.clear()
+            job = self.request('POST', f'/api/projects/{PROJECT_ID}/transcribe', {})[2]['job']
+            self.assertTrue(entered.wait(1))
+            if cancel_run:
+                self.request('POST', f'/api/jobs/{job["id"]}/cancel', {})
+            self.assertEqual(self.wait_job(job['id'])['status'], 'cancelled' if cancel_run else 'failed')
+            status, _, after = self.request('GET', f'/api/projects/{PROJECT_ID}/archive')
+            self.assertEqual(status, 200)
+            self.assertEqual(after, before)
+            self.assertEqual((self.directory / 'transcript.json').read_text(), raw)
+
     def test_no_model_export_import_exact_audio_saved_fields_and_provenance(self):
         self.assertEqual(MAX_ARCHIVE_BYTES, 321_726_592)
         self.assertEqual(self.request('GET', '/api/session')[2]['maxArchiveBytes'], MAX_ARCHIVE_BYTES)

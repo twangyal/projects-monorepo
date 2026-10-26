@@ -36,7 +36,7 @@ app.innerHTML = `
         <p id="archive-status" class="fine" role="status">Choose a saved clip to back it up. Unsaved lyric edits are not included.</p>
         <div class="archive-actions"><button id="archive-backup" class="quiet" disabled>Back up saved clip</button><a id="archive-download" class="archive-download" download hidden>Download saved archive</a></div>
         <label class="field archive-import">Import project archive<input id="archive-file" type="file" accept=".karaoke.zip,.zip,application/zip" disabled></label>
-        <p class="fine">A .karaoke.zip restores saved lyrics and all three audio tracks as a new clip. No model setup is needed. Archives contain private, unencrypted audio and lyrics.</p>
+        <p class="fine">A .karaoke.zip restores saved lyrics, all three audio tracks and recognized word timings when included, as a new clip. No model setup is needed. Archives contain private, unencrypted audio, lyrics and recognition data.</p>
         <button id="archive-upload-cancel" class="text-button" hidden>Cancel archive upload</button>
         <button id="archive-recheck" class="text-button">Check restore status</button>
         <p id="archive-result" class="fine" role="status" hidden></p><button id="open-imported" class="quiet" hidden>Open imported clip</button></section>
@@ -1285,6 +1285,7 @@ async function pollJob(id: string, epoch = pollEpoch) {
           ? 'Recognition cancelled. Your stems were saved in Saved clips. Your current lyric edits are still here.'
           : 'Your stems are ready in Saved clips. Your current lyric edits are still here.');
       } else if (job.kind === 'transcribe') {
+        archiveCaches.delete(job.projectId);
         if (working?.id === job.projectId) await loadTranscript();
         message('Lyrics recognized. Review automatic lyrics to replace the current lines, or paste your own lyrics and create draft timings to align them. Saved lyrics are unchanged.');
       } else if (ownedJob && job.resultUrl && working?.id === job.projectId) { videoUrl = job.resultUrl; download(videoUrl, '.mp4'); message('Karaoke MP4 ready. Your saved lyric timings are included.'); }

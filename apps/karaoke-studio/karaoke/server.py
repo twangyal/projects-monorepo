@@ -634,6 +634,11 @@ class KaraokeServer(ThreadingHTTPServer):
                 try:
                     work_fd = self._open_work(work_dir)
                     try:
+                        # Recognition is part of portable recovery even when lyric revision stays unchanged.
+                        try:
+                            os.unlink('archive.karaoke.zip', dir_fd=fd)
+                        except FileNotFoundError:
+                            pass
                         os.replace(_TRANSCRIPT, _TRANSCRIPT, src_dir_fd=work_fd, dst_dir_fd=fd)
                     finally:
                         os.close(work_fd)
