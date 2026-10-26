@@ -15,6 +15,16 @@ async function importClip(page: Page, duration: number) {
   await page.getByLabel('Upload song clip').setInputFiles({ name: 'sing-along.wav', mimeType: 'audio/wav', buffer: tone(duration) });
   await expect(page.locator('#message')).toContainText('Your stems', { timeout: 15000 });
 }
+async function isolatedClip(page: Page, work: () => Promise<void>) {
+  const before = new Set<string>((await (await page.request.get('/api/projects')).json()).projects.map((p: {id:string}) => p.id));
+  try { await work(); } finally {
+    const session = await (await page.request.get('/api/session')).json();
+    for (const p of (await (await page.request.get('/api/projects')).json()).projects) if (!before.has(p.id)) {
+      expect((await page.request.delete(`/api/projects/${p.id}`, {headers: {'X-Karaoke-Token': session.token}, data: {}})).ok()).toBe(true);
+    }
+    expect((await (await page.request.get('/api/projects')).json()).projects.map((p: {id:string}) => p.id).sort()).toEqual([...before].sort());
+  }
+}
 const lines = (page: Page) => page.locator('#cue-list textarea').evaluateAll(nodes => nodes.map(node => (node as HTMLTextAreaElement).value));
 
 async function seek(page: Page, time: number) {
@@ -151,6 +161,7 @@ test('retry choice refreshes recognition while corrections survive until deliber
 });
 
 test('preview explains failed word timing, retries an edited draft and ignores a stale failure', async ({ page }) => {
+  await isolatedClip(page, async () => {
   await importClip(page, 16);
   await seek(page, 1.6);
   await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
@@ -182,9 +193,11 @@ test('preview explains failed word timing, retries an edited draft and ignores a
   release(); await oldResponse;
   await expect(page.locator('#word-timing-status')).toBeHidden();
   expect((await lines(page))[0]).toBe('Current words');
+  });
 });
 
 test('a late word-timing failure cannot describe a newer invalid lyric draft', async ({ page }) => {
+  await isolatedClip(page, async () => {
   await importClip(page, 16); await seek(page, 1.6);
   await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
   let release!: () => void, captured!: () => void;
@@ -201,4 +214,5 @@ test('a late word-timing failure cannot describe a newer invalid lyric draft', a
   release(); await response;
   await expect(page.locator('#word-timing-status')).toBeHidden();
   expect((await lines(page))[0]).toBe('');
+  });
 });
