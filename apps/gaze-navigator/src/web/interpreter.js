@@ -270,7 +270,8 @@ function interpretInCircle(utterance, context) {
     /^(?:go|move) (up|down)(?: (a bit|a little|slightly|more|a lot))?$/.exec(text) ??
     /^(?:scroll|go|jump) to (?:the )?(top|bottom)(?: of the page)?$/.exec(text);
   if (scroll) {
-    return { type: 'scroll', direction: scroll[1] ?? 'down', amount: /bit|little|slightly/.test(scroll[2] ?? '') ? 'small' : 'page' };
+    return { type: 'scroll', direction: scroll[1] ?? 'down', amount: /bit|little|slightly/.test(scroll[2] ?? '') ? 'small' : 'page',
+      ...(/\bpage\b/.test(text) ? { scope: 'page' } : {}) };
   }
 
   // Explicit add/remove never replaces the other choices in a native multi-select.

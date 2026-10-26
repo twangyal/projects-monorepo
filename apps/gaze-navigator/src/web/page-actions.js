@@ -607,9 +607,23 @@ export function submit(element) {
   return { ok: true, message: 'Enter pressed.' };
 }
 
+function scrollRegionVisible(region, document) {
+  const view = region.ownerDocument.defaultView;
+  if (!region.isConnected || !view) return false;
+  const { visibility } = view.getComputedStyle(region);
+  if (['hidden', 'collapse'].includes(visibility) || ![...region.getClientRects()].some(rect => rect.width > 0 && rect.height > 0)) return false;
+  for (let owner = region.ownerDocument; owner !== document;) {
+    const frame = owner.defaultView?.frameElement;
+    if (!frame?.isConnected || frame.contentDocument !== owner || !controlVisible(frame)) return false;
+    owner = frame.ownerDocument;
+  }
+  return true;
+}
+
 export function scroll(region, direction, amount, window) {
   const document = window.document;
   const page = !region || region === document.scrollingElement || region === document.documentElement || region === document.body;
+  if (!page && !scrollRegionVisible(region, document)) return { ok: false, message: 'That scrolling region is no longer visible on the page. Look at it again.' };
   const target = page ? document.scrollingElement ?? document.documentElement : region;
   const height = page ? window.innerHeight : target.clientHeight;
   const width = page ? window.innerWidth : target.clientWidth;

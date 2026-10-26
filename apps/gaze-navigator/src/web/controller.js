@@ -2,6 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
+import { composedContains } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 const HISTORY_LIMIT = 20;
@@ -140,7 +141,22 @@ export function createController({ window, actions = pageActions, interpret = in
         }
         break;
       }
-      case 'scroll': result = actions.scroll(context.region, action.direction, action.amount, window); break;
+      case 'scroll': {
+        let region = action.scope === 'page' ? null : context.region;
+        let recovered = false;
+        if (action.scope !== 'page' && region === context.pageRegion && context.scrollRegions?.length) {
+          const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';
+          const candidates = context.scrollRegions.filter(candidate => candidate[axis]);
+          // Nested scroll containers describe one place; retain its innermost region.
+          const inner = candidates.filter(candidate => !candidates.some(other => other !== candidate &&
+            composedContains(candidate.element, other.element)));
+          if (inner.length > 1) return reply('More than one scrolling region touches the gaze circle. Look further inside the one you mean, or say “scroll the page down”.', 'error', { performed: null });
+          if (inner.length === 1) { region = inner[0].element; recovered = true; }
+        }
+        result = actions.scroll(region, action.direction, action.amount, window);
+        if (recovered && result.ok) result.message += ' Found at the edge of the gaze circle.';
+        break;
+      }
       case 'back':
       case 'forward': result = actions.navigate(window, action.type); break;
       default: return reply('That action is not supported yet.', 'error');

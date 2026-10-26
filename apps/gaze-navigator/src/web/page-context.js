@@ -150,9 +150,14 @@ export function deepElementFromPoint(document, x, y) {
   return hit;
 }
 
-// contains() that also crosses shadow-root boundaries.
-function composedContains(ancestor, node) {
-  for (let current = node; current; current = current.parentNode ?? current.host) {
+function composedParent(node) {
+  try { return node.parentNode ?? node.host ?? node.defaultView?.frameElement ?? null; }
+  catch { return null; }
+}
+
+// contains() that also crosses open shadow roots and same-origin frames.
+export function composedContains(ancestor, node) {
+  for (let current = node; current; current = composedParent(current)) {
     if (current === ancestor) return true;
   }
   return false;
@@ -215,15 +220,39 @@ function inferredClickables(document, x, y, radius, exclude, known) {
 }
 
 export function scrollRegionAt(document, x, y, exclude) {
-  const view = document.defaultView;
-  for (let node = document.elementFromPoint(x, y); node && node !== document.documentElement; node = node.parentElement) {
-    if (exclude?.contains(node) || node === document.body) break;
-    const { overflowY, overflowX } = view.getComputedStyle(node);
-    const vertical = /(auto|scroll)/.test(overflowY) && node.scrollHeight > node.clientHeight + 1;
-    const horizontal = /(auto|scroll)/.test(overflowX) && node.scrollWidth > node.clientWidth + 1;
-    if (vertical || horizontal) return node;
+  return scrollRegionsAt(document, x, y, exclude)[0] ?? document.scrollingElement ?? document.documentElement;
+}
+
+function scrollRegionsAt(document, x, y, exclude, axes = new Map()) {
+  const regions = [];
+  for (let node = deepElementFromPoint(document, x, y); node; node = composedParent(node)) {
+    if (composedContains(exclude, node)) break;
+    if (node.nodeType !== 1 || node === node.ownerDocument.body || node === node.ownerDocument.documentElement) continue;
+    if (!axes.has(node)) axes.set(node, scrollAxes(node));
+    const { vertical, horizontal } = axes.get(node);
+    if (vertical || horizontal) regions.push(node);
   }
-  return document.scrollingElement ?? document.documentElement;
+  return regions;
+}
+
+function scrollAxes(node) {
+  const { overflowY, overflowX } = node.ownerDocument.defaultView.getComputedStyle(node);
+  return {
+    vertical: /(auto|scroll)/.test(overflowY) && node.scrollHeight > node.clientHeight + 1,
+    horizontal: /(auto|scroll)/.test(overflowX) && node.scrollWidth > node.clientWidth + 1,
+  };
+}
+
+// Hit-test a fixed grid, rather than scanning every DOM node on every gaze update.
+// Only painted content within the circle can contribute a recovery candidate.
+function nearbyScrollRegions(document, x, y, radius, exclude) {
+  const found = new Set();
+  const axes = new Map();
+  for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) {
+    if (dx * dx + dy * dy > 9) continue;
+    for (const region of scrollRegionsAt(document, x + dx * radius / 3, y + dy * radius / 3, exclude, axes)) found.add(region);
+  }
+  return [...found].map(element => ({ element, ...axes.get(element) }));
 }
 
 // Native references stay inside this page context; model descriptions use explicit text fields.
@@ -449,7 +478,11 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
       return rect.width > 0 && rect.height > 0 && distanceToRect(x, y, rect) <= radius;
     })
     .map(({ frame }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content' }));
-  return { x, y, radius, elements, disclosureElements, nearby, unreachable, region: scrollRegionAt(document, x, y, exclude), pageSearch: findPageSearch(document, exclude) };
+  const pageRegion = document.scrollingElement ?? document.documentElement;
+  const region = scrollRegionAt(document, x, y, exclude);
+  return { x, y, radius, elements, disclosureElements, nearby, unreachable, region, pageRegion,
+    scrollRegions: region === pageRegion ? nearbyScrollRegions(document, x, y, radius, exclude) : [],
+    pageSearch: findPageSearch(document, exclude) };
 }
 
 // The page's single visible search field, usable by "search for …" without looking at it first.

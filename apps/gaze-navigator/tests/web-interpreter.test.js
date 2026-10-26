@@ -306,3 +306,14 @@ test('explicit selected-text deletion stays typed and preserves unavailable inte
  const blocked=element(13,'Locked message','textbox');assert.deepEqual(interpret('delete selected text',{...page,disclosureElements:[blocked,...page.elements],selectionFocusedId:13}),{type:'delete-selection',targetId:13});
  const unknown=interpret('delete selected text from Missing',page);assert.equal(unknown.type,'unknown');assert.equal(unknown.unparsed,undefined);assert.equal(unknown.targetQuery,undefined);
 });
+
+test('explicit page scrolling retains page scope while ordinary region scrolling stays contextual', () => {
+  for (const [said, direction] of [['scroll the page down', 'down'], ['scroll page right a bit', 'right'], ['go to the bottom of the page', 'bottom']]) {
+    const action = interpret(said, context());
+    assert.equal(action.type, 'scroll');
+    assert.equal(action.scope, 'page');
+    assert.equal(action.direction, direction);
+  }
+  assert.equal(interpret('scroll the list down', context()).scope, undefined);
+  assert.equal(interpret('scroll down', context()).scope, undefined);
+});
