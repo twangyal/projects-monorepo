@@ -103,7 +103,9 @@ test('a new song arrives with automatically timed lyrics that preview word by wo
 
 test('a clip without recognized lyrics explains itself, keeps even draft spacing and estimates word highlighting', async ({ page }) => {
   await importClip(page, 3);
-  await expect(page.locator('#message')).toContainText('No lyrics were recognized automatically');
+  // This fixture fails recognition; distinguish that worker failure from a successful empty transcript.
+  await expect(page.locator('#message')).toContainText('Automatic lyric recognition failed');
+  await expect(page.locator('#message')).toContainText('Retry with Transcribe lyrics');
   await expect(page.locator('#auto-status')).toContainText('This clip has no recognized lyrics yet');
   await expect(page.getByRole('button', { name: 'Review automatic lyrics' })).toBeHidden();
   await page.getByLabel('Paste lyrics, one line per cue').fill('One two three\nFour');
