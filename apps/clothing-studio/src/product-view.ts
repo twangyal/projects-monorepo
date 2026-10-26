@@ -448,11 +448,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const prompt = ($('style-prompt') as HTMLInputElement).value;
     let summary = '';
     update(draft => {
-      const reading = readStylePrompt(prompt, draft.parts[selected]);
+      let reading = readStylePrompt(prompt, draft.parts[selected], { allowUnapplied: everyPart });
       if (everyPart) {
-        for (const id of partsOf(draft)) {
-          // Another part can be plain while the selected part receives repeat settings.
-          const style = readStylePrompt(prompt, draft.parts[id], { allowUnapplied: true }).style;
+        const readings = partsOf(draft).map(id => [id, readStylePrompt(prompt, draft.parts[id], { allowUnapplied: true })] as const);
+        // Whole-garment instructions may apply to printed parts even when a plain rib is selected.
+        // Require at least one applicable reading before changing any part or committing history.
+        if (!reading.understood.length) {
+          reading = readings.find(([, partReading]) => partReading.understood.length)?.[1]
+            ?? readStylePrompt(prompt, draft.parts[selected]);
+        }
+        for (const [id, partReading] of readings) {
+          const style = partReading.style;
           // Rib trims keep their rib knit and stay plain, as with "Use this style on every part".
           draft.parts[id] = RIB_PARTS.has(id) ? { material: draft.parts[id].material, color: style.color, print: null } : style;
         }

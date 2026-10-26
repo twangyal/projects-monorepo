@@ -75,3 +75,23 @@ test('repeat-only descriptions update every printed part while plain rib trims r
     expect(after.parts[id]).toEqual(part.print ? { ...part, print: { ...part.print, layout: 'half-drop', scaleCm: 8 } } : part);
   }
 });
+
+test('whole-garment repeat changes also work from a selected plain neckband and reject entirely unapplied prompts', async ({ page }) => {
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Breton stripe template/ }).click();
+  await editor(page).getByRole('radio', { name: 'Neck rib', exact: true }).click();
+  const before = (await backup(page)).product;
+  const prompt = editor(page).getByLabel('Describe a style', { exact: true });
+  await prompt.fill('half-drop 8 cm');
+  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await expect(editor(page).locator('#describe-result')).toContainText('repeat size: 8 cm');
+  const after = (await backup(page)).product;
+  expect(after.parts.front.print).toEqual({ ...before.parts.front.print, layout: 'half-drop', scaleCm: 8 });
+  expect(after.parts.neckband).toEqual(before.parts.neckband);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect((await backup(page)).product).toEqual(before);
+  await prompt.fill('unrecognized imaginary fabric');
+  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('No fabric, colour or print');
+  expect((await backup(page)).product).toEqual(before);
+});
