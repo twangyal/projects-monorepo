@@ -182,23 +182,35 @@ export class ProjectHistory {
   #current: Project;
   #past: Project[] = [];
   #future: Project[] = [];
+  #textGroup: 'title' | 'note' | null = null;
 
   constructor(initial: Project) { this.#current = validateProject(initial); }
   get current(): Project { return validateProject(this.#current); }
   get canUndo(): boolean { return this.#past.length > 0; }
   get canRedo(): boolean { return this.#future.length > 0; }
 
-  commit(next: Project): boolean {
-    const snapshot = validateProject(next);
-    if (JSON.stringify(snapshot) === JSON.stringify(this.#current)) return false;
-    this.#past.push(this.#current);
-    if (this.#past.length > MAX_HISTORY_STEPS) this.#past.shift();
+  /** Coalesce only consecutive edits to one text field; each valid input remains current and saveable. */
+  commit(next: Project, textField?: 'title' | 'note'): boolean {
+    const snapshot = validateProject(next), before = JSON.stringify(this.#current);
+    const group = textField && JSON.stringify({...snapshot, [textField]: this.#current[textField]}) === before ? textField : null;
+    if (JSON.stringify(snapshot) === before) {
+      if (group !== this.#textGroup) this.endTextEdit();
+      return false;
+    }
+    if (!group || group !== this.#textGroup) {
+      this.#past.push(this.#current);
+      if (this.#past.length > MAX_HISTORY_STEPS) this.#past.shift();
+    }
+    this.#textGroup = group;
     this.#current = snapshot;
     this.#future = [];
     return true;
   }
 
+  endTextEdit(): void { this.#textGroup = null; }
+
   undo(): Project {
+    this.endTextEdit();
     if (this.canUndo) {
       this.#future.push(this.#current);
       this.#current = this.#past.pop()!;
@@ -207,6 +219,7 @@ export class ProjectHistory {
   }
 
   redo(): Project {
+    this.endTextEdit();
     if (this.canRedo) {
       this.#past.push(this.#current);
       this.#current = this.#future.pop()!;
@@ -216,6 +229,7 @@ export class ProjectHistory {
 
   reset(project: Project): void {
     const snapshot = validateProject(project);
+    this.endTextEdit();
     this.#current = snapshot;
     this.#past = [];
     this.#future = [];

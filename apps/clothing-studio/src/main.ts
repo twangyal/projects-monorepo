@@ -150,10 +150,10 @@ function cancelGesture() {
   renderViews(); updateControls();
 }
 
-function commit(next: Project) {
+function commit(next: Project, textField?: 'title' | 'note') {
   retireLoad();
   try {
-    if (!history.commit(next)) { project = history.current; updateControls(); return; }
+    if (!history.commit(next, textField)) { project = history.current; updateControls(); return; }
     project = history.current;
     editVersion++;
     renderViews(); updateControls(); scheduleSave();
@@ -187,17 +187,18 @@ function adoptLoad(generation: number, transform: (current: Project) => Project,
   retireLoad(); edit(transform); if (wholeProject) { productView.reset(); constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
 }
 
-function edit(transform: (current: Project) => Project) {
+function edit(transform: (current: Project) => Project, textField?: 'title' | 'note') {
   startupTouched = true; retireLoad();
-  cancelGesture(); commit(transform(project));
+  cancelGesture(); commit(transform(project), textField);
 }
 function editorInputIntent(event:Event) { if(event.target instanceof Element&&event.target.closest('[data-independent-experiment]'))return; startupTouched = true; retireLoad(); }
 app.addEventListener('input', editorInputIntent, true);
 app.addEventListener('change', editorInputIntent, true);
-for (const id of ['title', 'note']) input(id).addEventListener('input', () => {
+for (const id of ['title', 'note'] as const) input(id).addEventListener('input', () => {
   const value = input(id).value;
-  edit(current => ({ ...current, [id]: id === 'title' && !value.trim() ? 'Untitled concept' : value }));
+  edit(current => ({ ...current, [id]: id === 'title' && !value.trim() ? 'Untitled concept' : value }), id);
 });
+for (const id of ['title', 'note']) input(id).addEventListener('blur', () => history.endTextEdit());
 input('title').addEventListener('blur', () => { input('title').value = project.title; });
 for (const [id, key] of [['body-width', 'bodyWidth'], ['body-length', 'bodyLength'], ['sleeve-length', 'sleeveLength']] as const) {
   input(id).addEventListener('input', () => {

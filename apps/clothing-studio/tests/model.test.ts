@@ -351,3 +351,20 @@ test('project top bodies reject malformed and impossible measurements before his
     assert.equal(Object.hasOwn(history.current, 'topBody'), false);
   }
 });
+
+test('focused text groups keep a whole typing burst and prior garment edits in bounded history',()=>{
+ const initial=fixture(),history=new ProjectHistory(initial);history.commit({...history.current,garment:{...initial.garment,color:'#abcdef'}});
+ for(let i=0;i<MAX_HISTORY_STEPS+10;i++)history.commit({...history.current,note:`Typing ${i}`},'note');
+ const final=history.current;assert.equal(history.undo().note,initial.note);assert.equal(history.current.garment.color,'#abcdef');assert.deepEqual(history.undo(),initial);
+ assert.equal(history.redo().garment.color,'#abcdef');assert.deepEqual(history.redo(),final);
+});
+test('text history groups end on explicit boundaries and never combine other data or rejected changes',()=>{
+ const initial=fixture(),h=new ProjectHistory(initial);
+ h.commit({...h.current,note:'One'},'note');h.endTextEdit();h.commit({...h.current,note:'Two'},'note');assert.equal(h.undo().note,'One');
+ h.commit({...h.current,note:'Three'},'note');assert.equal(h.undo().note,'One');assert.equal(h.redo().note,'Three');
+ h.commit({...h.current,title:'Title'},'title');assert.equal(h.undo().title,initial.title);
+ h.commit({...h.current,note:'Four'},'note');assert.throws(()=>h.commit({...h.current,schemaVersion:2} as unknown as Project,'note'));
+ h.commit({...h.current,note:'Five'},'note');assert.equal(h.undo().note,'Three');
+ h.commit({...h.current,note:'Six'},'note');h.commit({...h.current,note:'Seven',garment:{...h.current.garment,color:'#abcdef'}},'note');
+ assert.equal(h.undo().note,'Six');assert.equal(h.current.garment.color,initial.garment.color);
+});
