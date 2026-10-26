@@ -22,7 +22,7 @@ Operate real websites by looking and speaking. It is for people who find a mouse
 ## Known gaps
 
 - The real end-to-end loop has not been evaluated with intended users: physical webcam gaze plus a real microphone on representative sites. Webcam accuracy, latency and calibration continuity in physical use are unmeasured.
-- On real sites, the pointer has stood in for gaze and typed text for speech so far. With simulated webcam error (120 px), scripted tasks drop to about half completed; a control just outside the circle is refused rather than offered.
+- On real sites, the pointer has stood in for gaze and typed text for speech so far. With simulated webcam error (120 px), about 70% of scripted tasks complete (15 of 17 with exact pointing), with no unintended actions. Named controls up to three circle-radii away are reached; anything farther is refused.
 - WaterSheep matching is opt-in and only chooses targets. It needs a model download of about 158 MB on first use. The rule interpreter still misses many paraphrases; those end in a question or an explanation, not an action.
 - Custom ARIA comboboxes, listboxes, sliders and spinbuttons and cross-origin iframes are not controlled. Rich-text editors get dictation and word replacement, but not selection commands.
 - Spoken commands are English only. In Chrome, speech recognition depends on the browser vendor's service.
