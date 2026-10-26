@@ -9,6 +9,13 @@ function record(value:unknown,keys:string[]):Record<string,unknown>{
  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join()!==[...keys].sort().join())throw new Error('Invalid body profile format.');
  return value as Record<string,unknown>;
 }
+export function validateProfileBody(value:unknown):ProfileBody{
+ const b=record(value,['chest','waist','hip','chestDepth']),chest=validateBodyChest(b.chest);
+ for(const key of ['waist','hip','chestDepth'])if(b[key]!==null&&(typeof b[key]!=='number'||!Number.isFinite(b[key])))throw new Error('Use finite body dimensions, or null for proportional dimensions.');
+  const body={chest,waist:b.waist as number|null,hip:b.hip as number|null,chestDepth:b.chestDepth as number|null};
+  validateTopBodyShape(chest,{waist:body.waist??undefined,hip:body.hip??undefined,chestDepth:body.chestDepth??undefined});
+ return body;
+}
 export function validateBodyProfiles(value:unknown):BodyProfiles{
  const root=record(value,['schema','kind','profiles']);
  if(root.schema!==1||root.kind!=='clothing-top-body-profiles'||!Array.isArray(root.profiles)||root.profiles.length>20)throw new Error('Use a version 1 body profile backup with at most 20 profiles.');
@@ -17,10 +24,7 @@ export function validateBodyProfiles(value:unknown):BodyProfiles{
   const item=record(raw,['name','body']);
   if(typeof item.name!=='string'||!item.name.trim()||item.name.trim().length>60||[...item.name].some(c=>c.charCodeAt(0)<32||c.charCodeAt(0)===127))throw new Error('Profile names must contain 1–60 printable characters.');
   const name=item.name.trim(),key=name.toLowerCase();if(names.has(key))throw new Error('Body profile names must be unique.');names.add(key);
-  const b=record(item.body,['chest','waist','hip','chestDepth']),chest=validateBodyChest(b.chest);
-  for(const key of ['waist','hip','chestDepth'])if(b[key]!==null&&(typeof b[key]!=='number'||!Number.isFinite(b[key])))throw new Error('Use finite body dimensions, or null for proportional dimensions.');
-  const body={chest,waist:b.waist as number|null,hip:b.hip as number|null,chestDepth:b.chestDepth as number|null};
-  validateTopBodyShape(chest,{waist:body.waist??undefined,hip:body.hip??undefined,chestDepth:body.chestDepth??undefined});
+  const body=validateProfileBody(item.body);
   return{name,body};
  });
  return{schema:1,kind:'clothing-top-body-profiles',profiles};

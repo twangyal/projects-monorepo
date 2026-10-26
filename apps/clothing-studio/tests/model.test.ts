@@ -329,3 +329,25 @@ test('history validates construction, commit and reset atomically before changin
   assert.equal(history.canUndo, false);
   assert.equal(history.canRedo, false);
 });
+
+test('applied top bodies survive project round trips and history without materializing legacy defaults', () => {
+  const before = createProject(), body = { chest: 100, waist: 85, hip: null, chestDepth: 22 };
+  assert.equal(Object.hasOwn(validateProject(before), 'topBody'), false);
+  const next = validateProject({ ...before, topBody: body });
+  assert.deepEqual((next as Project & {topBody: unknown}).topBody, body);
+  assert.deepEqual((parseProject(serializeProject(next)) as Project & {topBody: unknown}).topBody, body);
+  body.chest = 101;
+  assert.equal((next as Project & {topBody: {chest:number}}).topBody.chest, 100);
+  const history = new ProjectHistory(before); assert.equal(history.commit(next), true);
+  assert.equal(Object.hasOwn(history.undo(), 'topBody'), false);
+  assert.deepEqual((history.redo() as Project & {topBody: unknown}).topBody, { chest: 100, waist: 85, hip: null, chestDepth: 22 });
+});
+
+test('project top bodies reject malformed and impossible measurements before history changes', () => {
+  const history = new ProjectHistory(createProject()), body = { chest: 100, waist: null, hip: null, chestDepth: null };
+  for (const bad of [null, [], {}, {...body, chest: 69}, {...body, waist: 49}, {...body, hip: 221}, {...body, chestDepth: 40}, {...body, waist: NaN}, {...body, hip: undefined}, {...body, extra: 1}, Object.defineProperty({...body}, 'chest', { get: () => 100 })]) {
+    assert.throws(() => history.commit({...history.current, topBody: bad} as Project));
+    assert.equal(history.canUndo, false);
+    assert.equal(Object.hasOwn(history.current, 'topBody'), false);
+  }
+});
