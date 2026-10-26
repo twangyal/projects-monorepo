@@ -77,9 +77,11 @@ npx playwright install chromium
 npm run test:browser   # production build + test service (port 4188) with a fake separator, real FFmpeg export
 ```
 
-Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser. `KARAOKE_ARCHIVE_NO_MODEL=1 npm run test:browser -- tests/archive.spec.ts` runs the archive cases with no model available. CI: `.github/workflows/karaoke-studio.yml`, which does not install ML dependencies or models.
+Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser. `KARAOKE_ARCHIVE_NO_MODEL=1 npm run test:browser -- tests/archive.spec.ts` runs the archive cases with no model available. Fast CI: `.github/workflows/karaoke-studio.yml`, which does not install ML dependencies or models. `.github/workflows/karaoke-real-model.yml` separately installs the pinned CPU models and runs a fixed, attributed singing excerpt when model code changes or when manually dispatched; it keeps no model or media artifacts.
 
-With models installed, `python scripts/smoke_model.py --model-dir MODELS --work-dir /tmp/karaoke-smoke --seconds 10` runs real offline separation on synthetic audio. `python scripts/smoke_archive.py --work-dir DIR --report FILE` checks archive transfer between two services. `scripts/evaluate_lyrics.py` and `scripts/evaluate_separation.py` are the quality benchmarks. A passing fake-separator browser suite does not show real separation quality, so also try a real song end to end: upload, correct, save, reopen and export.
+With models installed, `python scripts/smoke_song.py --model-dir MODELS --work-dir /tmp/karaoke-real-song` verifies real separation and nonempty automatic lyrics on the opening ten seconds of the checksum-pinned official Spleeter sample (Slow Motion Dream, Steven M Bryant and collaborators, CC BY 3.0; attribution is printed). It checks model execution and valid output, not recognition accuracy or correction effort. `--source PATH` reuses the exact sample; `--check-source --source PATH` checks it without inference.
+
+`python scripts/smoke_model.py --model-dir MODELS --work-dir /tmp/karaoke-smoke --seconds 10` runs real offline separation on synthetic audio. `python scripts/smoke_archive.py --work-dir DIR --report FILE` checks archive transfer between two services. `scripts/evaluate_lyrics.py` and `scripts/evaluate_separation.py` are the quality benchmarks. A passing fake-separator browser suite does not show real separation quality, so also try a real song end to end: upload, correct, save, reopen and export.
 
 ## Project layout
 

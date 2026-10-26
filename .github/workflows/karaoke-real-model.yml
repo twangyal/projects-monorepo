@@ -1,0 +1,58 @@
+name: Karaoke real-model song
+
+on:
+  push:
+    paths:
+      - '.github/workflows/karaoke-real-model.yml'
+      - 'apps/karaoke-studio/karaoke/pipeline.py'
+      - 'apps/karaoke-studio/karaoke/worker.py'
+      - 'apps/karaoke-studio/karaoke/mdx.py'
+      - 'apps/karaoke-studio/karaoke/chunks.py'
+      - 'apps/karaoke-studio/karaoke/limits.py'
+      - 'apps/karaoke-studio/karaoke/model.py'
+      - 'apps/karaoke-studio/karaoke/transcription.py'
+      - 'apps/karaoke-studio/karaoke/transcribe_worker.py'
+      - 'apps/karaoke-studio/karaoke/lyrics_auto.py'
+      - 'apps/karaoke-studio/scripts/setup_model.py'
+      - 'apps/karaoke-studio/scripts/setup_lyrics_model.py'
+      - 'apps/karaoke-studio/scripts/smoke_song.py'
+      - 'apps/karaoke-studio/tests/test_smoke_song.py'
+      - 'apps/karaoke-studio/requirements-ml.lock.txt'
+      - 'apps/karaoke-studio/requirements-core.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: karaoke-real-model-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  song:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/karaoke-studio
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install local video tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg
+      - name: Install locked CPU inference dependencies
+        run: python -m pip install -r requirements-core.txt -r requirements-ml.lock.txt
+      - name: Install existing checksum-pinned models explicitly
+        run: |
+          python scripts/setup_model.py --model-dir "$RUNNER_TEMP/karaoke-models"
+          python scripts/setup_lyrics_model.py --model-dir "$RUNNER_TEMP/karaoke-models" --only english
+      - name: Verify real singing through separation and automatic lyrics
+        run: python scripts/smoke_song.py --model-dir "$RUNNER_TEMP/karaoke-models" --work-dir "$RUNNER_TEMP/karaoke-real-song"
+      # Models, source audio, stems and transcripts stay in runner scratch, never in artifacts or caches.
+      # Scalar output and attribution are recorded in logs. This is execution coverage, not quality acceptance.
