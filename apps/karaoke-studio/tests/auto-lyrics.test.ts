@@ -7,11 +7,17 @@ const cue = (start: number, end: number, text: string, matched?: number) => (mat
 
 test('transcript replies are validated like saved lyrics before they can be reviewed', () => {
   assert.deepEqual(parseTranscript({ available: false }, 30), { available: false });
-  const recognized = (start: number, end: number, text: string, confidence: number) => ({ start, end, text, confidence });
+  // Each line lists its words, one per second of the line here.
+  const recognized = (start: number, end: number, text: string, confidence: number) => ({ start, end, text, confidence,
+    words: text.split(' ').filter(Boolean).map((word, index) => ({ text: word, start: start + index * 0.5, end: start + index * 0.5 + 0.4, confidence })) });
   const reply = { available: true, model: 'parakeet-tdt-0.6b-v2-int8+silero-vad', words: 7, cues: [recognized(1, 3, 'Hello little world', 0.95), recognized(4, 6, 'This is our chorus', 0.42)] };
   const parsed = parseTranscript(reply, 30);
   assert.deepEqual(parsed, reply);
   assert.equal(parsed.available && unsureSummary(parsed.cues), 'line 2');
+  const line = reply.cues[0]!, word = line.words[0]!;
+  for (const words of [undefined, [{ ...word, confidence: 1.5 }], [{ ...word, end: 31 }], [{ ...word, start: 2, end: 1 }], [{ ...word, text: ' ' }], [{ ...word, extra: 1 }], Array(401).fill(word)]) {
+    assert.throws(() => parseTranscript({ ...reply, cues: [{ ...line, words }] }, 30), /unreadable/);
+  }
   assert.equal(recognizerName(reply.model), 'the English recognition model');
   assert.equal(recognizerName('parakeet-tdt-0.6b-v3-int8+silero-vad'), 'the multilingual recognition model');
   assert.equal(recognizerName('sensevoice-small-int8+silero-vad'), 'the East Asian recognition model');
