@@ -1,6 +1,6 @@
 # Clothing Studio
 
-A browser garment-design workspace. It is for designers who want to go from a template to a styled 3D garment, linked pattern pieces, a tech pack and a costed range. You pick a base product, style each part in real-time 3D, adjust measurements and construction, drape tops on an approximate body, and export renders, 3D models, patterns and spreadsheets. It runs entirely in the browser: no account, backend or paid service.
+A browser garment-design workspace. It is for designers who want to go from a template to a styled 3D garment, linked pattern pieces, a tech pack and a costed range. You pick a base product, style each part in real-time 3D, adjust measurements and construction, drape garments on an approximate body, and export renders, 3D models, patterns and spreadsheets. It runs entirely in the browser: no account, backend or paid service.
 
 **Status:** ACTIVE — portfolio priority. Direction: [docs/PRODUCT_DIRECTION.md](../../docs/PRODUCT_DIRECTION.md)
 
@@ -16,7 +16,7 @@ A browser garment-design workspace. It is for designers who want to go from a te
 - **Tech pack**: bill of materials with estimated consumption, graded points of measure (XS–XL) with a diagram, and construction steps. Exports as Excel (`.xlsx`) or a printable self-contained HTML file.
 - **Colorways and range plan**: up to 8 named colorways with renders, plus costing inputs (fabric price per metre, make, trims, print, retail). The range plan shows unit cost, margin and totals, and exports to Excel.
 - **Exports**: front/back PNG renders, GLB 3D model (styled or draped), DXF pattern (AutoCAD R12, cut/sew/grain/text layers, 1 cm seam allowance), and a 1:1 printable SVG pattern.
-- **Product flared skirt**: style its front/back with the same fabric, print and colour tools as tops. Apply waist, hem circumference and side-seam slant together; linked annular-sector patterns, a rigid 3D shell, tech pack, colorways/costing and PNG/GLB/SVG/DXF exports follow. The shell has no waistband, closure or drape, and size columns repeat the sample measurements without invented grading.
+- **Product flared skirt**: style its front/back with the same fabric, print and colour tools as tops. Apply waist, hem circumference and side-seam slant together; linked annular-sector patterns, a rigid 3D shell, tech pack, colorways/costing and PNG/GLB/SVG/DXF exports follow. Body & drape simulates it held at the waist using the shared product solver and fabric library. It has no waistband or closure, and size columns repeat the sample measurements without invented grading.
 - **Measured two-panel skirt** (legacy dialog, preserved independently): waist/hem/slant input, optional waistband, seam and hem allowances, and linear size grading. Exports include a full-size SVG, A4/US Letter tiled print HTML, and rigid or draped OBJ. Its drape simulation offers four fabric presets.
 - **Concept sketchbook** (dialog): tee sketching, a photo overlay, and PNG/SVG/JSON export. Edits have Undo/Redo; consecutive title/note typing in one focused field is one step, preserving earlier garment edits. Leaving the field or making another edit starts a new step. Valid text still autosaves locally as you type, and a library holds up to 12 saved named copies. Autosave reuses checked images while you edit, avoiding repeated decoding of unchanged photos and graphics.
 
