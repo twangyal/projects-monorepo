@@ -46,6 +46,8 @@ def load(model_root: Path, model: AsrModel, threads: int = 3, language: str = ''
         # Without inverse text normalization, sung numbers stay words ("ten thousand"), as lyrics write them.
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
             str(directory / 'model.int8.onnx'), str(directory / 'tokens.txt'), num_threads=threads, use_itn=False, language=language)
+    # Greedy decoding: modified beam search (4 paths) was slower and worse on JamendoLyrics clips (41% against 38%
+    # word error in English, 44% against 43% in French).
     return sherpa_onnx.OfflineRecognizer.from_transducer(
         str(directory / 'encoder.int8.onnx'), str(directory / 'decoder.int8.onnx'), str(directory / 'joiner.int8.onnx'),
         str(directory / 'tokens.txt'), num_threads=threads, model_type='nemo_transducer')
