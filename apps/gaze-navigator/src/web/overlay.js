@@ -11,6 +11,8 @@ import { runCalibration } from './calibration.js';
 import { recommendedSize, runAccuracyCheck } from './accuracy-check.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
+// Self-calibration takes at most one sample from used controls in this many milliseconds.
+const LEARN_MS = 2000;
 const STORAGE_KEY = 'gaze-web-navigator';
 const CONTEXT_INTERVAL_MS = 100;
 // A gaze resting within this distance (or this fraction of the radius) on an unchanged page keeps its
@@ -571,12 +573,30 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.pause.setAttribute('aria-pressed', String(controller.paused));
     ui.pause.textContent = controller.paused ? 'Resume' : 'Pause';
     feedback(result);
+    if (result.performed) learnFrom(result.aimed, used);
     if (result.performed) {
       // Shown after a navigation this action may cause; ignored if it arrives much later.
       store.save({ ...settings, announce: result.message, announcedAt: Date.now() });
       window.setTimeout(() => recapture(true), 50);
     }
     renderOutlines();
+  }
+
+  // A control the user named inside the circle and then used shows where they were looking. In camera mode it becomes
+  // one more calibration sample, which corrects drift as they work: only small controls near the gaze point, at most
+  // one every LEARN_MS, saved like the calibration for later pages.
+  let learnedAt = -Infinity;
+  function learnFrom(aimed, used) {
+    if (!aimed?.element?.isConnected || settings.source !== 'camera' || camera.state !== 'ready' || calibration || !Number.isFinite(used?.x)) return;
+    const now = Date.now();
+    if (now - learnedAt < LEARN_MS) return;
+    const rect = viewportRect(aimed.element, aimed.frames), x = (rect.left + rect.right) / 2, y = (rect.top + rect.bottom) / 2;
+    if (Math.max(rect.width, rect.height) > radius() * 2 || Math.hypot(x - used.x, y - used.y) > radius() * 1.5) return;
+    learnedAt = now;
+    const session = camera.session;
+    Promise.resolve(camera.recordSample(x, y)).then(kept => {
+      if (kept && camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
+    }, () => {});
   }
 
   const speech = createSpeech(window, {

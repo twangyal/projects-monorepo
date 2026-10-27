@@ -8,6 +8,9 @@ const CONFIRM_MS = 15000;
 const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
 
+// Actions on a control the user looks at to choose it (not typing into a field they may have looked away from).
+const POINTING = new Set(['activate', 'submit', 'check', 'select-radio', 'select-tab', 'disclosure', 'select-option', 'choose-option']);
+
 function targetOf(context, id) {
   return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ??
     context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null) ??
@@ -203,7 +206,9 @@ export function createController({ window, actions = pageActions, interpret = in
           ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
       return reply(result.message, 'info', { performed: null, followUp });
     }
-    return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null });
+    // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
+    const aimed = result.ok && POINTING.has(action.type) && context.elements.includes(target) ? target : null;
+    return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null, aimed });
   }
 
   function remember(element, before = actions.readValue(element)) {

@@ -407,3 +407,16 @@ test('controls with hard-to-undo or outward effects are consequential', async ()
     assert.ok(isConsequentialName(name), name);
   for (const name of ['Home', 'Read more', 'Cancel', 'Next', 'Show replies', 'Search']) assert.ok(!isConsequentialName(name), name);
 });
+
+test('a control named inside the circle and used is reported as where the user aimed', () => {
+  const page = fakePage();
+  const controller = createController({ window: {}, actions: page.actions });
+  const pricing = describe(1, page.node('Pricing'), { role: 'link' });
+  const context = { elements: [pricing], nearby: [describe(101, page.node('Careers'), { role: 'link' })], region: 'page', x: 10, y: 10 };
+  assert.equal(controller.handle('open pricing', context).aimed, pricing);
+  // Just outside the circle, or not a pointing action, says nothing about where the user looked.
+  const outside = controller.handle('open careers', context);
+  assert.equal(outside.performed, 'activate');
+  assert.equal(outside.aimed, null);
+  assert.equal(controller.handle('scroll down', context).aimed, null);
+});
