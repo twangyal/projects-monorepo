@@ -56,14 +56,14 @@ def _coverage(path: str, index: int) -> tuple[tuple[int, int], ...] | None:
 
 
 @functools.lru_cache(maxsize=1024)
-def _system_font(codepoint: int) -> tuple[str, int] | None:
-    """An installed scalable font with a glyph for ``codepoint``, preferring regular Noto sans faces."""
+def _system_fonts(codepoint: int) -> tuple[tuple[str, int], ...]:
+    """Installed scalable fonts with a glyph for ``codepoint``, best first: regular Noto sans faces lead."""
     try:
         result = subprocess.run(['fc-list', '--format', '%{file}\t%{index}\t%{family}\t%{style}\n',
                                  f':charset={codepoint:x}:scalable=true'],
                                 capture_output=True, text=True, timeout=_FONTCONFIG_TIMEOUT, check=True)
     except (OSError, subprocess.SubprocessError):
-        return None
+        return ()
     candidates = []
     for line in result.stdout.splitlines():
         parts = line.split('\t')
@@ -77,7 +77,22 @@ def _system_font(codepoint: int) -> tuple[str, int] | None:
         # Unifont is a bitmap last resort without OpenType shaping (Tibetan stacks, Devanagari conjuncts).
         candidates.append((('Unifont' in family, not family.startswith('Noto'), 'Sans' not in family, style not in _REGULAR,
                             'Mono' in family, family, path), (path, index)))
-    return min(candidates)[1] if candidates else None
+    return tuple(font for _, font in sorted(candidates))
+
+
+@functools.lru_cache(maxsize=256)
+def _loadable(path: str, index: int) -> bool:
+    """Whether Pillow can draw this font at any size; colour bitmap fonts (emoji) have fixed sizes only."""
+    try:
+        ImageFont.truetype(path, 24, index=index)
+    except OSError:
+        return False
+    return True
+
+
+def _system_font(codepoint: int) -> tuple[str, int] | None:
+    """The best installed font for ``codepoint`` that Pillow can draw at any size."""
+    return next((font for font in _system_fonts(codepoint) if _loadable(*font)), None)
 
 
 def _covers(ranges: tuple[tuple[int, int], ...], codepoint: int) -> bool:

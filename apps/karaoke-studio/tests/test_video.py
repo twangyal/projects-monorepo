@@ -387,7 +387,7 @@ class ScriptFallbackTests(unittest.TestCase):
 
     @staticmethod
     def clear():
-        for cached in (video._fonts, video._coverage, video._system_font):
+        for cached in (video._fonts, video._coverage, video._system_fonts, video._loadable):
             cached.cache_clear()
 
     def card(self, name, project, **options):
@@ -419,6 +419,15 @@ class ScriptFallbackTests(unittest.TestCase):
         highlighted, unsung = columns((0xe4, 0xb7, 0x7d)), columns((0xf7, 0xf5, 0xed))
         self.assertTrue(highlighted and unsung and max(highlighted) < min(unsung), 'only the first word is highlighted')
         self.assertEqual(ImageChops.difference(whole, legacy).getbbox(), None)
+
+    def test_fonts_that_cannot_be_drawn_at_any_size_are_passed_over(self):
+        # Colour emoji fonts hold fixed-size bitmaps; Pillow refuses them at lyric sizes.
+        bitmap = self.root / 'ColorEmoji.ttf'
+        bitmap.write_bytes(b'not a scalable font')
+        with patch.object(video, '_system_fonts', return_value=((str(bitmap), 0), (str(FONT), 0))):
+            self.assertEqual(video._system_font(0x1f3b5), (str(FONT), 0))
+        with patch.object(video, '_system_fonts', return_value=((str(bitmap), 0),)):
+            self.assertIsNone(video._system_font(0x1f3b5))
 
     def test_without_fontconfig_every_character_uses_the_bundled_font(self):
         with patch.object(video.subprocess, 'run', side_effect=FileNotFoundError('fc-query')):
