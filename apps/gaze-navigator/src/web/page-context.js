@@ -309,10 +309,37 @@ function disclosureLocked(element) {
   return false;
 }
 
+// Rich-text editors (contenteditable) have no selectionStart/End: their selection is measured in text offsets of
+// textContent. Typing in the navigator's own panel can move the page's selection, so the selection the navigator
+// last set in an editor is kept too, and used while the editor's text is unchanged.
+const richSelections = new WeakMap();
+export const isRichText = element => !('value' in element && element.tagName !== 'BUTTON') && element.isContentEditable;
+export function richSelection(element) {
+  const selection = element.ownerDocument.getSelection?.();
+  if (selection?.rangeCount) {
+    const range = selection.getRangeAt(0);
+    if (element.contains(range.startContainer) && element.contains(range.endContainer)) {
+      const before = element.ownerDocument.createRange();
+      before.selectNodeContents(element);
+      before.setEnd(range.startContainer, range.startOffset);
+      const start = before.toString().length;
+      before.setEnd(range.endContainer, range.endOffset);
+      return { start, end: before.toString().length };
+    }
+  }
+  const kept = richSelections.get(element);
+  return kept && kept.text === element.textContent ? { start: kept.start, end: kept.end } : null;
+}
+export function rememberRichSelection(element, start, end) {
+  richSelections.set(element, { start, end, text: element.textContent });
+}
+
 // Values/offsets stay local to the execution context, never model descriptions.
 export function captureTextSelectionSnapshot(element) {
+  const rich = isRichText(element) ? richSelection(element) ?? { start: null, end: null } : null;
   return { ...captureRadioSnapshot(element), id: element.id, valueAttribute: element.getAttribute('value'),
-    value: element.value, start: element.selectionStart, end: element.selectionEnd, blocked: disclosureLocked(element) };
+    value: rich ? element.textContent : element.value, start: rich ? rich.start : element.selectionStart, end: rich ? rich.end : element.selectionEnd,
+    blocked: disclosureLocked(element) };
 }
 
 // Capture admission too: invalid ARIA cannot become actionable while pending.
@@ -386,7 +413,7 @@ function describe(element) {
       description[`${kind}Snapshot`] = captureNumberSnapshot(element);
     }
   }
-  if (['INPUT', 'TEXTAREA'].includes(element.tagName)) description.textSelectionSnapshot = captureTextSelectionSnapshot(element);
+  if (['INPUT', 'TEXTAREA'].includes(element.tagName) || isRichText(element)) description.textSelectionSnapshot = captureTextSelectionSnapshot(element);
   if (role === 'radio') description.radioSnapshot = captureRadioSnapshot(element);
   if (role === 'tab') description.tabSnapshot = captureTabSnapshot(element);
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").
