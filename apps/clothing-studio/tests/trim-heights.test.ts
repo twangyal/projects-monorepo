@@ -26,6 +26,6 @@ test('trim bounds incompatible bases and degenerate short sleeves refuse atomica
  for(const key of ['cuffHeight','hemBandHeight']as const){for(const value of [2,12])assert.equal(validateProduct({...template('crew-sweat'),fit:{[key]:value}}).fit![key],value);for(const value of [1.99,12.01,NaN,Infinity,'4',null])assert.throws(()=>validateProduct({...template('crew-sweat'),fit:{[key]:value}}));for(const id of ['blank','trousers'])assert.throws(()=>validateProduct({...template(id),fit:{[key]:4}}));}
  const p=template('crew-sweat');assert.throws(()=>validateProduct({...p,measurements:{...topMeasurements(p),sleeve:10},fit:{cuffHeight:9}}),/cuff|sleeve/i);
 });
-test('a tall cuff cannot consume the shorter actual underarm sleeve edge',()=>{
- const p=template('crew-sweat'),measurements={...topMeasurements(p),sleeve:14};assert.throws(()=>validateProduct({...p,measurements,fit:{cuffHeight:12}}),/cuff|sleeve/i);assert.doesNotThrow(()=>validateProduct({...p,measurements,fit:{cuffHeight:9.2}}));assert.throws(()=>validateProduct({...p,measurements,fit:{cuffHeight:9.21}}),/actual sleeve edges/);
+test('a tall cuff cannot consume the sleeve\'s underarm seams',()=>{
+ const p=template('crew-sweat'),measurements={...topMeasurements(p),sleeve:14};assert.throws(()=>validateProduct({...p,measurements,fit:{cuffHeight:12}}),/cuff|sleeve/i);assert.doesNotThrow(()=>validateProduct({...p,measurements,fit:{cuffHeight:9}}));assert.throws(()=>validateProduct({...p,measurements,fit:{cuffHeight:9.01}}),/underarm seams/);
 });

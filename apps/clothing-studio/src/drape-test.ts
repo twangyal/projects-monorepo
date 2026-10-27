@@ -53,7 +53,7 @@ export interface DrapeTestResult {
 /** Drapes the specimen in `fabric`; deterministic. `progress` receives completed frames and can return false to stop. */
 export function drapeTest(fabric: Material, Delaunator: DelaunatorLike,
   options: { frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): DrapeTestResult {
-  const mesh = specimenMesh(Delaunator), cloth = clothFromMeshes([mesh], () => fabric, true);
+  const mesh = specimenMesh(Delaunator), cloth = clothFromMeshes([mesh], () => fabric);
   const frames = options.frames ?? DRAPE_TEST_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames < 1 || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
   const inverseMass = Float32Array.from(cloth.inverseMass), count = inverseMass.length, radius = (i: number, p: ArrayLike<number>) => Math.hypot(p[i * 3]!, p[i * 3 + 2]!);

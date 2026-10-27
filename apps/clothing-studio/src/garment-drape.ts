@@ -1,13 +1,13 @@
-import { isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
  * Drapes a top on a body: the product's own 3D parts become one cloth, sewn at the seams where they already meet,
  * and an extended position-based (XPBD) solver lets it settle on a body proxy under gravity.
  *
- * - Rest lengths are flat fabric distances: the body, sleeves, cuffs and bands are meshed from the flat silhouette, so
- *   each vertex's x and y are its position on the flat garment. Across a seam (front to back) bending rest lengths are
- *   measured unfolded, so seams do not hold a crease. The neck rib and hood keep their modelled 3D lengths.
+ * - Rest lengths are flat fabric distances: every piece is meshed from its pattern piece and carries its flat position
+ *   in its UVs. Across a seam (front to back, sleeve to armhole) bending rest lengths are measured unfolded, so seams
+ *   do not hold a crease. The neck rib and hood keep their modelled 3D lengths.
  * - The body is a proxy from chest and optional waist/hip girths, with optional chest depth and assumed heights/limbs: a torso of stadium-shaped sections,
  *   sloped shoulders, neck, head and arms along the sleeve angle. It grows from inside the garment to full size before
  *   gravity starts, so the cloth starts outside it.
@@ -61,7 +61,7 @@ export function directionalStiffness(properties: ReturnType<typeof fabricPropert
 export function bendingLength(fabric: Material): number {
   return Math.cbrt(fabricProperties(fabric).bending / (fabric.gsm / 10000 * GRAVITY));
 }
-/** Parts whose shape is modelled in 3D rather than cut from the flat silhouette. */
+/** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband', 'hood']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
 const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35]]);
@@ -112,7 +112,7 @@ const GATHER_FRAMES = 30;
 /** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
 export const GARMENT_FRAMES = 180;
 export const GARMENT_SUBSTEPS = 24;
-export const GARMENT_SOLVER = 'xpbd-top-isometric-bending-v2';
+export const GARMENT_SOLVER = 'xpbd-pattern-pieces-v3';
 
 /** A body a little smaller than the garment: 10 cm less than a top's chest. For a skirt, the chest whose automatic
  * waist (0.86 × chest) sits about 2 cm inside the skirt's waist; for trousers, the one whose automatic waist is theirs.
@@ -349,16 +349,14 @@ export function bendingStencil(p0: [number, number], p1: [number, number], p2: [
 
 /** Sews the product's parts into one cloth: coincident vertices become one particle. */
 export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
-  // A top's body, sleeves and bands are meshed in their flat silhouette (x, y); skirt and trouser panels carry their flat
-  // pattern position in their UVs.
-  return clothFromMeshes(meshes, part => material(product.parts[part].material), isBottoms(product));
+  return clothFromMeshes(meshes, part => material(product.parts[part].material));
 }
 
 /**
  * One cloth from part meshes, each part of the material `materialOf` names: coincident vertices become one particle.
- * Rest shapes are flat fabric coordinates, the vertex's UVs when `flatFromUvs`, otherwise its x and y.
+ * Rest shapes are flat fabric coordinates: each vertex's UVs, its position on its flat pattern piece.
  */
-export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material, flatFromUvs: boolean): Cloth {
+export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material): Cloth {
   const particles = new Map<string, number>(), position: number[] = [], vertices = new Map<PartId, Int32Array>();
   const key = (x: number, y: number, z: number) => `${Math.round(x * 1000)},${Math.round(y * 1000)},${Math.round(z * 1000)}`;
   const simulated = meshes.filter(mesh => !CARRIED.has(mesh.part));
@@ -408,8 +406,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   };
   const mass = new Float64Array(position.length / 3);
   // Flat fabric coordinates of a mesh vertex on its own pattern piece.
-  const flatCorner = (mesh: PartMesh, v: number): [number, number] => flatFromUvs
-    ? [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!] : [mesh.positions[v * 3]!, mesh.positions[v * 3 + 1]!];
+  const flatCorner = (mesh: PartMesh, v: number): [number, number] => [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!];
   type Opposite = { vertex: number; modelled: boolean; edgeI: [number, number]; edgeJ: [number, number]; corner: [number, number] };
   // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices with
   // the flat positions of that triangle's corners.

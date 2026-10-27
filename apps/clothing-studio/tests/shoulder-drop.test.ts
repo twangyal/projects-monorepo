@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
-import {template,validateProduct,teeDimensions,patternPieces,teeMesh,teeSilhouette} from '../src/product.ts';
+import {template,validateProduct,teeDimensions,patternPieces,teeMesh} from '../src/product.ts';
 import {buildTechPack,measurementDiagram} from '../src/techpack.ts';
 
 test('shoulder drop controls both actual shoulder seams while width and armhole depth stay independent',()=>{
@@ -11,7 +11,8 @@ test('shoulder drop controls both actual shoulder seams while width and armhole 
   for(const side of ['front','back'] as const){
    const piece=patternPieces(edited).find(p=>p.part===side)!;
    assert.ok(piece.outline.some(p=>Math.abs(p.x-(d.half+d.shoulderX))<1e-9&&p.y===7));
-   const silhouette=teeSilhouette(edited,side);assert.deepEqual(silhouette.armholes[0],[{x:d.shoulderX,y:7},{x:d.half,y:7+d.armDepth}]);
+   const mesh=teeMesh(edited,Delaunator).find(p=>p.part===side)!,top=(edited.measurements as {length:number}).length,at=(x:number,y:number)=>mesh.positions.some((_,i)=>i%3===0&&Math.abs(mesh.positions[i]-x)<1e-9&&Math.abs(mesh.positions[i+1]-y)<1e-9&&Math.abs(mesh.positions[i+2])<1e-9);
+   assert.ok(at(d.shoulderX,top-7)&&at(d.half,top-7-d.armDepth),'3D shoulder point and underarm');
    assert.notDeepEqual(teeMesh(edited,Delaunator).find(p=>p.part===side),teeMesh(original,Delaunator).find(p=>p.part===side));
   }
   const pack=buildTechPack(edited,'2026-10-21'),pom=pack.poms.find(p=>p.code==='U')!;

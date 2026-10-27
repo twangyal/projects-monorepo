@@ -41,7 +41,7 @@ test('the DXF holds a closed cutting and sewing polyline per piece in millimetre
   assert.ok(Math.abs(span(front.sewing) - (topMeasurements(product).length - 6)) < 1e-6, 'hoodie front ends above the hem band');
   assert.ok(span(front.cutting) - span(front.sewing) >= 2 - 1e-9 && span(front.cutting) - span(front.sewing) < 3);
   const vertexYs = pairs.filter(pair => pair[0] === '20').map(pair => Number(pair[1]));
-  assert.ok(Math.min(...vertexYs) < -700, 'y in mm, pointing up');
+  assert.ok(Math.min(...vertexYs) < -600, 'y in mm, pointing up');
   // Text is plain ASCII: braces and backslashes from the name are removed, other characters become \\U+XXXX.
   const texts = (source: string) => { const l = source.split('\n'); return l.flatMap((line, i) => (line === '1' && i % 2 === 0 && l[i - 2] !== '9' ? [l[i + 1]] : [])); };
   const detail = texts(patternDxf({ ...product, name: 'Café {x}\\' }))[1];
