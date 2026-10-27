@@ -145,11 +145,28 @@ def phrases_of(samples, vad_config) -> list[tuple[int, object]]:
 heard_languages: collections.Counter = collections.Counter()
 
 
-def recognize_phrase(recognizer, start: int, phrase) -> list[dict]:
+class SongLanguage:
+    """The East Asian model told the song's language (`fixed`), and left to choose (`auto`) for phrases it hears as
+    English: songs that are mostly Korean or Japanese often sing a line in English."""
+
+    def __init__(self, auto, fixed):
+        self.auto, self.fixed = auto, fixed
+
+
+def _decode(recognizer, phrase):
     stream = recognizer.create_stream()
     stream.accept_waveform(RATE, phrase)
     recognizer.decode_stream(stream)
-    result = stream.result
+    return stream.result
+
+
+def recognize_phrase(recognizer, start: int, phrase) -> list[dict]:
+    if isinstance(recognizer, SongLanguage):
+        result = _decode(recognizer.auto, phrase)
+        if getattr(result, 'lang', '').strip('<|>') != 'en':
+            result = _decode(recognizer.fixed, phrase)
+    else:
+        result = _decode(recognizer, phrase)
     if getattr(result, 'lang', ''):
         heard_languages[result.lang.strip('<|>')] += 1
     return words_from(list(result.tokens), list(result.timestamps), list(getattr(result, 'durations', []) or []), start / RATE,
@@ -162,10 +179,11 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
 
     With one model installed it hears everything. With several, one model listens first: it hears phrases
     until it has ``DETECTION_WORDS`` words (or the song ends), and the song may then move to another model,
-    which hears it again from the start. The multilingual model listens first when installed; English songs
-    go to the English model. When the multilingual model is unsure of what it heard, the East Asian model
-    listens too and keeps the song if it hears Chinese, Japanese or Korean. It then hears the song again in
-    the language it reported for most of those phrases, since its phrase-by-phrase guesses wander.
+    which hears it again from the start. The multilingual model listens first when installed. When it is unsure
+    of what it heard, the East Asian model listens too and keeps the song if it hears Chinese, Japanese or
+    Korean; otherwise English songs go to the English model. It then hears the song again in
+    the language it reported for most of those phrases, since its phrase-by-phrase guesses wander, except for
+    phrases it hears as English.
     """
     models = selected_models(models, model_choice)
     total = len(phrases)
@@ -197,19 +215,23 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
     if len(models) > 1:
         heard = listen()
         unsure = sum(word['confidence'] for word in words) / max(len(words), 1) < EAST_ASIAN_CONFIDENCE
-        if ENGLISH in models and model is not ENGLISH and sounds_english(heard):
-            switch(ENGLISH)
-        elif model is MULTILINGUAL and EAST_ASIAN in models and unsure:
+        english = ENGLISH in models and model is not ENGLISH and sounds_english(heard)
+        # Uncertainty is checked first: misheard Korean or Japanese is full of English-looking words ("the", "and").
+        if model is MULTILINGUAL and EAST_ASIAN in models and unsure:
             switch(EAST_ASIAN)
             if not sounds_east_asian(listen()):
-                switch(MULTILINGUAL)
+                switch(ENGLISH if english else MULTILINGUAL)
+        elif english:
+            switch(ENGLISH)
         elif model is EAST_ASIAN and not sounds_east_asian(heard):
             switch(ENGLISH)
     if model is EAST_ASIAN:
         listen()
         language = max(EAST_ASIAN_LANGUAGES, key=lambda code: heard_languages[code])
         if heard_languages[language]:
+            auto = recognizer
             switch(EAST_ASIAN, language)
+            recognizer = SongLanguage(auto, recognizer) if auto is not None else recognizer
     for start, phrase in phrases[done:]:
         words.extend(recognize_phrase(recognizer, start, phrase))
         done += 1
