@@ -13,6 +13,8 @@ export interface Placement { x: number; y: number; width: number; height: number
 export interface Photo { dataUrl: string; width: number; height: number; name: string }
 export interface Project {
   schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements; topBody?:ProfileBody; product?: ProductDesign;
+  /** A garment worn with the product in Body & drape (a top over bottoms), kept as a copy. */
+  wornWith?: ProductDesign;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -152,7 +154,8 @@ export function validateProject(value: unknown): Project {
   const grading = Object.hasOwn(project, 'grading') ? validateGrading(project.grading) : undefined;
   if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
   const product = Object.hasOwn(project, 'product') ? validateProduct(project.product) : undefined;
-  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(topBody?{topBody}:{}), ...(product ? {product} : {}) };
+  const wornWith = Object.hasOwn(project, 'wornWith') ? validateProduct(project.wornWith) : undefined;
+  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(topBody?{topBody}:{}), ...(product ? {product} : {}), ...(wornWith ? {wornWith} : {}) };
   // Admission, history and autosave must never accept a graph that its canonical backup cannot reopen.
   boundedJson(JSON.stringify(admitted, null, 2));
   return admitted;

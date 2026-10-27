@@ -36,12 +36,13 @@ export function createProjectImageValidator(maxCacheBytes = 16 * 1024 * 1024): (
       validatePhotoHeader(photo);
       await admitted(photo, 'photo', () => validatePhoto(photo));
     }
-    for (const motif of project.product?.motifs ?? []) {
+    const products = [project.product, project.wornWith];
+    for (const motif of products.flatMap(product => product?.motifs ?? [])) {
       const asset = { ...motif };
       validateRasterHeader(asset, LIMITS.motifBytes, 2048);
       await admitted(asset, 'motif', () => validateRaster(asset, LIMITS.motifBytes, 2048));
     }
-    for (const art of project.product?.artwork ?? []) {
+    for (const art of products.flatMap(product => product?.artwork ?? [])) {
       const asset = { ...art };
       validateRasterHeader(asset, LIMITS.artworkBytes, 4096);
       await admitted(asset, 'artwork', () => validateRaster(asset, LIMITS.artworkBytes, 4096));
