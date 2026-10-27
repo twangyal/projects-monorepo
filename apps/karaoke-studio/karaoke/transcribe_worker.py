@@ -12,6 +12,7 @@ import resource
 import socket
 import sys
 import time
+import unicodedata
 import wave
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -160,17 +161,44 @@ def _decode(recognizer, phrase):
     return stream.result
 
 
+def agreement(first: str, second: str) -> float:
+    """How alike two readings of a phrase are: 1 minus the character edit distance (letters and digits only) over
+    the longer reading's length."""
+    a, b = ([c for c in unicodedata.normalize('NFKC', text).casefold() if c.isalnum()] for text in (first, second))
+    if not a and not b:
+        return 1.0
+    previous = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        current = [i]
+        for j, y in enumerate(b, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (x != y)))
+        previous = current
+    return 1 - previous[-1] / max(len(a), len(b))
+
+
 def recognize_phrase(recognizer, start: int, phrase) -> list[dict]:
+    confidence = None
     if isinstance(recognizer, SongLanguage):
         result = _decode(recognizer.auto, phrase)
-        if getattr(result, 'lang', '').strip('<|>') != 'en':
+        # A phrase heard as English keeps that reading only if it is written in Latin letters.
+        letters = [c for c in result.text if c.isalpha()]
+        latin = sum(1 for c in letters if 'LATIN' in unicodedata.name(c, '')) >= 0.8 * len(letters)
+        if getattr(result, 'lang', '').strip('<|>') != 'en' or not latin:
+            auto_text = result.text
             result = _decode(recognizer.fixed, phrase)
+            # The East Asian model reports no probabilities, but where its readings with and without the song's
+            # language disagree it is usually wrong; cubed, about 90% agreement meets the review threshold.
+            confidence = round(agreement(auto_text, result.text) ** 3, 3)
     else:
         result = _decode(recognizer, phrase)
     if getattr(result, 'lang', ''):
         heard_languages[result.lang.strip('<|>')] += 1
-    return words_from(list(result.tokens), list(result.timestamps), list(getattr(result, 'durations', []) or []), start / RATE,
-                      list(getattr(result, 'ys_log_probs', []) or []))
+    words = words_from(list(result.tokens), list(result.timestamps), list(getattr(result, 'durations', []) or []), start / RATE,
+                       list(getattr(result, 'ys_log_probs', []) or []))
+    if confidence is not None:
+        for word in words:
+            word['confidence'] = confidence
+    return words
 
 
 def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel, ...],
