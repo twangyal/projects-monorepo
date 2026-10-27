@@ -97,3 +97,41 @@ test('a request to choose never just opens a dropdown, and word corrections need
   assert.equal(interpret('set the subject to book suggestion', CONTEXTS.form).type, 'unknown');
   assert.deepEqual(interpret('change Tuesday to Friday', CONTEXTS.focused), { type: 'edit', targetId: 3, edit: { kind: 'replace', find: 'Tuesday', text: 'Friday' } });
 });
+
+// A model that finds none of the circle's controls meant, and weighs those outside by `outside` (by name).
+function staged(outside) {
+  const calls = [];
+  return {
+    calls,
+    async decide(state, question, options) {
+      calls.push({ options });
+      const named = options.map(option => Object.entries(outside).find(([name]) => option.includes(`"${name}"`))?.[1] ?? 0);
+      if (!named.some(Boolean)) return { probs: options.map(option => (option === NONE_OPTION ? 0.96 : 0.04 / (options.length - 1))) };
+      const sum = named.reduce((a, b) => a + b, 0) + 1;
+      return { probs: options.map((option, i) => (option === NONE_OPTION ? 1 : named[i]) / sum) };
+    },
+    async yes() { return 0; },
+  };
+}
+
+test('when none of the circle\'s controls is meant, those just outside it are asked about, picked as outside, with small numbers', async () => {
+  const link = (id, name) => ({ id, name, role: 'link', distance: id > 100 ? 150 : 0, element: { isConnected: true } });
+  const context = { elements: [link(1, 'Benefits'), link(2, 'Money and tax')], nearby: [link(101, 'Driving and transport'), link(102, 'Passports')] };
+  const model = staged({ 'Driving and transport': 40 });
+  const picked = await createAssistedInterpreter({ model })('take me to the stuff about cars', context);
+  assert.deepEqual({ ...picked, assisted: undefined }, { type: 'activate', targetId: 101, outside: true, assisted: undefined });
+  assert.deepEqual(model.calls.map(call => call.options), [['link "Benefits"', 'link "Money and tax"', NONE_OPTION], ['link "Driving and transport"', 'link "Passports"', NONE_OPTION]]);
+  // A control in the circle that is meant is picked without looking outside.
+  const near = scripted({ 'Money and tax': 9 });
+  assert.equal((await createAssistedInterpreter({ model: near })('take me to the tax stuff', context)).targetId, 2);
+  assert.equal(near.calls.length, 1);
+  const split = await createAssistedInterpreter({ model: staged({ 'Driving and transport': 4.5, Passports: 4 }) })('take me to the stuff about cars', context);
+  assert.equal(split.type, 'clarify');
+  assert.equal(split.outside, true);
+  assert.deepEqual(split.candidates.map(candidate => [candidate.number, candidate.elementId]), [[1, 101], [2, 102]]);
+  assert.match(split.message, /^Did you mean 1: Driving and transport; 2: Passports\?/);
+  assert.deepEqual(split.choose(1), { type: 'activate', targetId: 101, outside: true });
+  // An empty circle with controls just outside still gets help.
+  const empty = await createAssistedInterpreter({ model: staged({ Passports: 40 }) })('take me to the travel documents', { elements: [], nearby: context.nearby });
+  assert.equal(empty.targetId, 102);
+});

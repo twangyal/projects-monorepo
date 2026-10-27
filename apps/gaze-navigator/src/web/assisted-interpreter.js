@@ -7,7 +7,10 @@
 //   - the instruction was not understood at all: first a yes/no question whether it asks to use a
 //     control (so "hang on" or "sure" can never press a link), then the pick.
 // Only the instruction and the controls' role, name, checked state and choices are sent; never
-// field values, page text or addresses. A confident pick still passes through the controller's
+// field values, page text or addresses. When none of the circle's controls is meant, those in the ring just outside
+// it are asked about, as webcam gaze often lands beside the control meant; a pick there is reported as outside. A
+// confident pick still
+// passes through the controller's
 // confirmation of consequential actions; a split answer becomes a numbered question; anything
 // else keeps the rule answer.
 import { interpret as interpretRules } from './interpreter.js';
@@ -56,11 +59,13 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
     if (ranked[0].p >= accept && !(choosing && ranked[0].element.options?.length)) return { ...ranked[0].act(), assisted };
     const candidates = ranked.filter(entry => entry.p >= CANDIDATE_FLOOR).slice(0, MAX_CANDIDATES);
     if (candidates.length < 2 || candidates.reduce((sum, entry) => sum + entry.p, 0) < shortlist) return null;
+    // Controls outside the circle have ids from 101: a question including them uses small numbers that are easy to say.
+    const numbered = candidates.map((entry, index) => ({ ...entry, number: candidates.some(other => other.outside) ? index + 1 : entry.element.id }));
     return {
-      type: 'clarify', assisted,
-      candidates: candidates.map(({ element }) => ({ number: element.id, label: element.name || element.role, elementId: element.id })),
-      choose: number => candidates.find(entry => entry.element.id === number)?.act() ?? { type: 'unknown', message: `${number} was not one of the choices.` },
-      message: `Did you mean ${candidates.map(({ element }) => `${element.id}: ${element.name || element.role}`).join('; ')}? Say a number or cancel.`,
+      type: 'clarify', assisted, ...(candidates.some(entry => entry.outside) ? { outside: true } : {}),
+      candidates: numbered.map(({ element, number }) => ({ number, label: element.name || element.role, elementId: element.id })),
+      choose: number => numbered.find(entry => entry.number === number)?.act() ?? { type: 'unknown', message: `${number} was not one of the choices.` },
+      message: `Did you mean ${numbered.map(({ element, number }) => `${number}: ${element.name || element.role}`).join('; ')}? Say a number or cancel.`,
     };
   }
 
@@ -77,8 +82,9 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
   /** Whether the model could help with this rule answer at all; everything else stays instant. */
   function needs(utterance, context, action) {
     const elements = context?.elements ?? [];
-    if (!(utterance ?? '').trim() || !elements.length) return false;
-    if (action.type === 'clarify') return Boolean(tieBreakChoices(action, elements));
+    if (!(utterance ?? '').trim()) return false;
+    if (action.type === 'clarify') return elements.length > 0 && Boolean(tieBreakChoices(action, elements));
+    if (!elements.length && !context?.nearby?.length) return false;
     return action.type === 'unknown' && (action.targetQuery !== undefined || Boolean(action.unparsed));
   }
 
@@ -93,7 +99,11 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
         return picked?.type === 'clarify' ? action : picked ?? action;
       }
       if (action.unparsed && !(await model.yes(said, INTENT_QUESTION) >= intent)) return action;
-      return (await pick(said, elements.map(element => ({ element, act: activate(element) })))) ?? action;
+      // The circle's own controls first; only when none is meant, those just outside it (asking about both at once
+      // spreads the model's confidence too thin to pick either).
+      const inside = elements.length ? await pick(said, elements.map(element => ({ element, act: activate(element) }))) : null;
+      if (inside || !context.nearby?.length) return inside ?? action;
+      return (await pick(said, context.nearby.map(element => ({ element, outside: true, act: () => ({ ...activate(element)(), outside: true }) })))) ?? action;
     } catch {
       return action; // The model is optional: any failure keeps the rule answer.
     }
