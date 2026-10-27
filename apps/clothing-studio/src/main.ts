@@ -1,3 +1,4 @@
+import {productFromConstruction} from './construction-product.ts';
 import {mountDesignLibrary} from './design-library-view.ts';
 import {readDesign,type DesignReceipt} from './design-library.ts';
 import {mountMembrane} from './membrane-view.ts';
@@ -389,6 +390,17 @@ const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),gu
 },notice:message,download});
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
+
+element('construction-product').addEventListener('pointerdown',event=>event.preventDefault());
+element('construction-product').addEventListener('click',()=>{
+  if(loadBusy||saveProtection==='loading') { message('Wait for the current import or saved design to finish before copying this skirt.',true);return; }
+  if(!constructionGuard())return;
+  if(constructionView.dirty()||gradingView.dirty()) { message('Apply or discard pattern and grading drafts before copying this skirt. Your drafts are kept.',true);return; }
+  try {
+    edit(current=>productFromConstruction(current));productView.reset();
+    message('Copied applied skirt measurements to the 3D product with default linen styling. Undo restores the previous product. Legacy work is unchanged; use Back to garment to style the copy.');
+  } catch(error) { message(error instanceof Error?error.message:'Could not copy this skirt. Existing work is unchanged.',true); }
+});
 
 function libraryGuard():boolean{
   if(saveProtection==='loading'){message('Wait for the current saved concept to finish loading before using the design library.',true);return false;}
