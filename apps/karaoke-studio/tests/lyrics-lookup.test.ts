@@ -43,3 +43,27 @@ test('published line timings become cues that end at the next line or gap and fi
   assert.equal(record.cues?.length, 4);
   assert.equal(parseLyricsRecord({ id: 7, trackName: 'Song', artistName: 'Band', duration: 16, instrumental: false, plainLyrics: 'Hello', syncedLyrics: null }, { title: 'Song', artist: 'Band', duration: 16 }).cues, undefined);
 });
+
+test('editions and featured credits match the same song, and a missed exact lookup searches the catalogue', async () => {
+  const { coreTitle, coreArtist, parseLyricsRecord, lookupLyrics } = await import('../src/lyrics-lookup.ts');
+  assert.equal(coreTitle('Bohemian Rhapsody - Remastered 2011'), 'bohemian rhapsody');
+  assert.equal(coreTitle('Song (Live at Wembley) [Bonus Track]'), 'song');
+  assert.equal(coreTitle('Song feat. Somebody'), 'song');
+  assert.equal(coreTitle('Love - Me - Do'), 'love me do');
+  assert.equal(coreArtist('Queen & David Bowie'), 'queen');
+  assert.equal(coreArtist('Daft Punk feat. Pharrell Williams'), 'daft punk');
+  const edition = { id: 9, trackName: 'Bohemian rhapsody', artistName: 'Queen', duration: 354, instrumental: false, plainLyrics: 'Is this the real life?', syncedLyrics: null };
+  assert.equal(parseLyricsRecord(edition, { title: 'Bohemian Rhapsody - Remastered 2011', artist: 'Queen', duration: 354 }).id, 9);
+  assert.throws(() => parseLyricsRecord(edition, { title: 'Under Pressure', artist: 'Queen', duration: 354 }), /does not match/);
+  const urls: URL[] = [];
+  const fetcher = async (input: URL | RequestInfo) => {
+    const url = new URL(String(input)); urls.push(url);
+    if (url.pathname === '/api/get') return new Response('{}', { status: 404 });
+    return Response.json([{ ...edition, id: 1, duration: 300 }, { ...edition, id: 2, trackName: 'Other song' }, { ...edition, id: 3, duration: 355, plainLyrics: 'Closest edition' }, { ...edition, id: 4, duration: 352.5 }]);
+  };
+  const found = await lookupLyrics({ title: 'Bohemian Rhapsody (2011 Remaster)', artist: 'Queen feat. Nobody', duration: 354.4 }, new AbortController().signal, fetcher);
+  assert.equal(found.id, 3);
+  assert.deepEqual([urls[1]!.pathname, urls[1]!.searchParams.get('track_name'), urls[1]!.searchParams.get('artist_name')], ['/api/search', 'bohemian rhapsody', 'queen']);
+  const none = async (input: URL | RequestInfo) => new URL(String(input)).pathname === '/api/get' ? new Response('{}', { status: 404 }) : Response.json([{ ...edition, duration: 200 }]);
+  await assert.rejects(lookupLyrics({ title: 'Bohemian Rhapsody', artist: 'Queen', duration: 354 }, new AbortController().signal, none), /No matching lyrics/);
+});
