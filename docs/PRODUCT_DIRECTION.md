@@ -63,7 +63,7 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Success** means a user can design an original garment, refine its construction and simulated fit, and export useful results. Judge visual appeal, editing quality, simulation credibility and usefulness alongside reliability. A simulation or exported pattern is not automatically validated for manufacture.
 
-**Biggest gaps:** material-dependent drape that is visibly convincing in the browser across garments (bottoms are undraped and the body is a proxy), AI style interpretation, layered garments and personalized bodies.
+**Biggest gaps:** material-dependent drape that is visibly convincing in the browser across garments (the body is a proxy), AI style interpretation beyond the local keyword vocabulary, layered garments and personalized bodies.
 
 **Next (updated 2026-10-27):** unify the three garment systems (concept tee, product bases, skirt construction), which still have two solvers, two fabric lists and two body models, on the product-base system. Fabrics now differ through approximate physical bending and stretch properties, but the roughly 2 cm mesh cannot form soft-knit folds, the model is isotropic, and nothing is compared with reference drapes; a finer simulation mesh, warp/weft/bias behaviour and a cantilever or drape-test comparison are the next physics steps. Every product base now drapes with the same solver, but the legacy skirt dialog keeps its own solver, tops are still meshed from silhouettes rather than their pattern pieces, and there is no cloth-to-cloth contact for layers.
 

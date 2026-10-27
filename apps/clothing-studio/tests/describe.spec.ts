@@ -24,7 +24,7 @@ test('describe a style: words become an editable style on one part or every part
   await prompt.fill('sparkly sage linen');
   await prompt.press('Enter');
   await expect(editor(page).locator('#describe-result')).toContainText('Not understood: sparkly');
-  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
   saved = (await backup(page)).product;
   expect(saved.parts.back).toEqual({ material: 'linen-170', color: '#9fae91', print: null });
   expect(saved.parts.cuffLeft).toEqual({ material: 'rib-220', color: '#9fae91', print: null });
@@ -68,7 +68,7 @@ test('repeat-only descriptions update every printed part while plain rib trims r
   await editor(page).getByRole('button', { name: /^Use the Breton stripe template/ }).click();
   const before = (await backup(page)).product;
   await editor(page).getByLabel('Describe a style', { exact: true }).fill('half-drop 8 cm');
-  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
   await expect(editor(page).locator('#describe-result')).toContainText('repeat size: 8 cm');
   const after = (await backup(page)).product;
   for (const [id, part] of Object.entries(before.parts) as [string, {print: Record<string, unknown> | null}][]) {
@@ -83,7 +83,7 @@ test('whole-garment repeat changes also work from a selected plain neckband and 
   const before = (await backup(page)).product;
   const prompt = editor(page).getByLabel('Describe a style', { exact: true });
   await prompt.fill('half-drop 8 cm');
-  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
   await expect(editor(page).locator('#describe-result')).toContainText('repeat size: 8 cm');
   const after = (await backup(page)).product;
   expect(after.parts.front.print).toEqual({ ...before.parts.front.print, layout: 'half-drop', scaleCm: 8 });
@@ -91,7 +91,37 @@ test('whole-garment repeat changes also work from a selected plain neckband and 
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   expect((await backup(page)).product).toEqual(before);
   await prompt.fill('unrecognized imaginary fabric');
-  await editor(page).getByRole('button', { name: 'Apply to every part', exact: true }).click();
-  await expect(page.locator('#message')).toContainText('No fabric, colour or print');
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('could be applied');
   expect((await backup(page)).product).toEqual(before);
+});
+
+test('a garment description chooses the garment, styles the parts it names and the rest of the garment, and Undo restores it', async ({ page }) => {
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Ringer tee template/ }).click();
+  const before = (await backup(page)).product;
+  const prompt = editor(page).getByLabel('Describe a style', { exact: true });
+  await prompt.fill('oversized navy hoodie with a cream hood and white cuffs, small chest logo');
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  const result = editor(page).locator('#describe-result');
+  await expect(result).toContainText('Garment: garment: Pullover hoodie, started from its template; fit: 124 cm chest');
+  await expect(result).toContainText('Whole garment: colour: navy');
+  await expect(result).toContainText('Hood: colour: cream');
+  await expect(result).toContainText('Left cuff, Right cuff: colour: white');
+  await expect(result).toContainText('Not applied: small, chest, logo');
+  const hoodie = (await backup(page)).product;
+  expect([hoodie.base, hoodie.measurements.chest, hoodie.parts.front.color, hoodie.parts.hood.color, hoodie.parts.cuffLeft.color, hoodie.parts.cuffLeft.material])
+    .toEqual(['hoodie', 124, '#1f2a4f', '#f1e8d0', '#f7f7f4', 'rib-220']);
+  await expect(editor(page).getByRole('radio', { name: 'Hood', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect((await backup(page)).product).toEqual(before);
+
+  // On the same garment, named parts change and nothing else does.
+  await prompt.fill('red linen sleeves with a white collar');
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  const tee = (await backup(page)).product;
+  expect(tee.parts.sleeveLeft).toEqual({ material: 'linen-170', color: '#b23a2e', print: null });
+  expect(tee.parts.neckband.color).toBe('#f7f7f4');
+  expect(tee.parts.front).toEqual(before.parts.front);
 });

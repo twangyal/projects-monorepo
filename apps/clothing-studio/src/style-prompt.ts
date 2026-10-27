@@ -43,7 +43,7 @@ const LAYOUT_WORDS: [RegExp, Layout][] = [
   [/\bhalf[- ]?drop\b/, 'half-drop'], [/\bhalf[- ]?brick\b|\bbrick\b/, 'half-brick'], [/\bmirror(ed)?\b|\bmirror repeat\b/, 'mirror'], [/\b(grid|standard|straight) repeat\b|\bstandard\b/, 'grid'],
 ];
 const SCALE_WORDS: [RegExp, number][] = [
-  [/\b(tiny|micro|mini)\b/, 2], [/\b(pin|fine|small|little|ditsy|narrow)\b/, 3], [/\b(medium|mid|regular)\b/, 6],
+  [/\b(tiny|micro|mini)\b/, 2], [/\b(pin|fine|thin|small|little|ditsy|narrow)\b/, 3], [/\b(medium|mid|regular)\b/, 6],
   [/\b(large|big|bold|wide)\b/, 10], [/\b(huge|oversized|giant|jumbo)\b/, 16],
 ];
 // Modifiers move lightness part of the way toward light (or dark) and scale saturation, so a light colour is not

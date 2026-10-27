@@ -16,6 +16,7 @@ import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
 import { readStylePrompt } from './style-prompt.ts';
+import { readDesignPrompt } from './design-prompt.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -55,8 +56,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     </div>
     <aside class="product-inspector" aria-label="Selected part">
       <h4 id="inspector-heading">Front body</h4>
-      <div class="describe-style"><label class="field">Describe a style<input id="style-prompt" maxlength="200" autocomplete="off" placeholder="e.g. navy breton stripe on heavyweight ecru jersey"></label>
-        <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to every part</button></div>
+      <div class="describe-style"><label class="field">Describe a style<input id="style-prompt" maxlength="200" autocomplete="off" placeholder="e.g. oversized navy hoodie with a cream hood"></label>
+        <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to the garment</button></div>
         <p id="describe-result" class="fine-print" role="status"></p></div>
       <label class="field">Fabric<select id="part-material">${MATERIALS.map(m => `<option value="${m.id}">${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>
       <div class="color-row"><label for="part-color">Fabric color</label><input id="part-color" type="color"></div>
@@ -455,27 +456,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
   }, `Every part now uses the ${label(selected).toLowerCase()} style (rib trims keep their rib knit).`));
   // Describe a style: read locally, applied as one undoable edit, with what was understood and ignored reported.
-  const describe = (everyPart: boolean) => {
+  // For one part the words style that part; for the garment, garment words and named parts are read too.
+  const describe = (garment: boolean) => {
     const prompt = ($('style-prompt') as HTMLInputElement).value;
     let summary = '';
     update(draft => {
-      let reading = readStylePrompt(prompt, draft.parts[selected], { allowUnapplied: everyPart });
-      if (everyPart) {
-        const readings = partsOf(draft).map(id => [id, readStylePrompt(prompt, draft.parts[id], { allowUnapplied: true })] as const);
-        // Whole-garment instructions may apply to printed parts even when a plain rib is selected.
-        // Require at least one applicable reading before changing any part or committing history.
-        if (!reading.understood.length) {
-          reading = readings.find(([, partReading]) => partReading.understood.length)?.[1]
-            ?? readStylePrompt(prompt, draft.parts[selected]);
-        }
-        for (const [id, partReading] of readings) {
-          const style = partReading.style;
-          // Rib trims keep their rib knit and stay plain, as with "Use this style on every part".
-          draft.parts[id] = RIB_PARTS.has(id) ? { material: draft.parts[id].material, color: style.color, print: null } : style;
-        }
-      } else draft.parts[selected] = reading.style;
+      if (garment) {
+        const reading = readDesignPrompt(prompt, draft);
+        for (const key of Object.keys(draft) as (keyof Product)[]) delete draft[key];
+        Object.assign(draft, reading.product);
+        summary = `${reading.scopes.map(scope => `${scope.label}: ${scope.understood.join('; ')}`).join('. ')}.${reading.ignored.length ? ` Not applied: ${reading.ignored.join(', ')}.` : ''}`;
+        return;
+      }
+      const reading = readStylePrompt(prompt, draft.parts[selected]);
+      draft.parts[selected] = reading.style;
       summary = `Understood: ${reading.understood.join('; ')}.${reading.ignored.length ? ` Not understood: ${reading.ignored.join(', ')}.` : ''}`;
-    }, everyPart ? 'The description now styles every part (rib trims keep their rib knit). You can undo this.' : `${label(selected)} restyled from the description. You can undo this.`);
+    }, garment ? 'The description now shapes the garment. You can undo this.' : `${label(selected)} restyled from the description. You can undo this.`);
     $('describe-result').textContent = summary;
   };
   $('describe-part').addEventListener('click', () => describe(false));
