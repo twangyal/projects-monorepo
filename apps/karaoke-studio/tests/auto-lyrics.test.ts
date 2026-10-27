@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, type AlignedCue } from '../src/auto-lyrics.ts';
+import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, type AlignedCue } from '../src/auto-lyrics.ts';
 import { draftLines } from '../src/lyrics.ts';
 
 const cue = (start: number, end: number, text: string, matched?: number) => (matched === undefined ? { start, end, text } : { start, end, text, matched });
@@ -40,4 +40,17 @@ test('uncertain lines are named so people know where to listen', () => {
   assert.equal(uncertainSummary(make([1, 0.2, 1])), 'line 2');
   assert.equal(uncertainSummary(make([0, 1, 0.4, 0.1])), 'lines 1, 3 and 4');
   assert.equal(uncertainSummary(make(Array(15).fill(0))), 'lines 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 and 3 more');
+});
+
+test('corrections of automatic lyrics count changed words and moved line starts', () => {
+  const automatic = [{ start: 1, end: 3, text: 'Hello little world' }, { start: 4, end: 6, text: 'This is our chorus' }, { start: 8, end: 10, text: 'Sing it back to me' }];
+  assert.deepEqual(correction(automatic, automatic), { words: 12, changed: 0, lines: 3, moved: 0 });
+  assert.equal(correctionSummary(correction(automatic, automatic)), 'Your saved lyrics are the automatic lyrics unchanged.');
+  // Case and punctuation are not corrections; a changed, an added and a removed word are, and so is a moved line.
+  const saved = [{ start: 1.2, end: 3, text: 'Hello, little world!' }, { start: 4, end: 6, text: 'This is my big chorus' }, { start: 9, end: 10, text: 'Sing it back' }];
+  assert.deepEqual(correction(automatic, saved), { words: 12, changed: 4, lines: 3, moved: 1 });
+  assert.equal(correctionSummary(correction(automatic, saved)), 'Compared with them, your saved lyrics changed 4 of 12 words (33%) and moved 1 of 3 line starts by over half a second.');
+  // Spaceless scripts count characters as words.
+  assert.equal(correction([{ start: 0, end: 2, text: '今夜的月光' }], [{ start: 0, end: 2, text: '今夜的阳光' }]).changed, 1);
+  assert.equal(correctionSummary(correction([], saved)), '');
 });

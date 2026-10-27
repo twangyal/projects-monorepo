@@ -48,6 +48,7 @@ test('a new song arrives with automatically timed lyrics that preview word by wo
   expect(await lines(page)).toEqual(['Hello little world', 'This is our chorus', 'Sing it back to me']);
   await expect(page.locator('#auto-status')).toContainText('12 words were recognized from the separated vocals by the English recognition model and grouped into 3 lines');
   await expect(page.locator('#auto-status')).toContainText('it was least sure about automatic line 3, so listen to those first');
+  await expect(page.locator('#auto-status')).toContainText('Your saved lyrics are the automatic lyrics unchanged.');
   await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
   await expect(page.getByRole('button', { name: 'Export karaoke MP4', exact: true })).toBeEnabled();
   await page.locator('audio').evaluate(audio => { (audio as HTMLAudioElement).currentTime = 4.5; audio.dispatchEvent(new Event('timeupdate')); });
@@ -99,6 +100,18 @@ test('a new song arrives with automatically timed lyrics that preview word by wo
   await page.getByRole('button', { name: 'Transcribe again', exact: true }).click();
   await expect(page.locator('#message')).toContainText('Lyrics recognized', { timeout: 15000 });
   expect(await lines(page)).toEqual(['Hello little world', 'This is our chorus', 'Sing it back to me']);
+});
+
+test('saved corrections of automatic lyrics are measured against them', async ({ page }) => {
+  await importClip(page, 16);
+  await expect(page.locator('#auto-status')).toContainText('Your saved lyrics are the automatic lyrics unchanged.');
+  await page.getByLabel('Lyric line 2', { exact: true }).fill('This is my chorus');
+  await page.getByLabel('Start line 3', { exact: true }).fill('9.6');
+  // Unsaved edits are not counted yet.
+  await expect(page.locator('#auto-status')).toContainText('Your saved lyrics are the automatic lyrics unchanged.');
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  await expect(page.locator('#auto-status')).toContainText('Compared with them, your saved lyrics changed 1 of 12 words (8%) and moved 1 of 3 line starts by over half a second.');
 });
 
 test('a clip without recognized lyrics explains itself, keeps even draft spacing and estimates word highlighting', async ({ page }) => {

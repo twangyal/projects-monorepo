@@ -1,7 +1,7 @@
 import {lyricsLookupMarkup,mountLyricsLookup} from './lyrics-lookup-view.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
-import { parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
+import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
 import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
@@ -74,6 +74,8 @@ const context = stage.getContext('2d')!;
 let session: Session | null = null;
 let projects: Project[] = [];
 let working: Project | null = null;
+// The clip's lyrics as last loaded or saved, against which the correction of automatic lyrics is measured.
+let savedLyrics: Project['cues'] = [];
 let lyricHistory: LyricHistory | null = null;
 let shiftIdentities: Project['cues'] = [];
 let shiftLabels = '';
@@ -658,7 +660,7 @@ function autoControls() {
   else if (!current) status.textContent = 'Checking for recognized lyrics…';
   else if (current.available) {
     const unsure = unsureSummary(current.cues);
-    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals by ${recognizerName(current.model)}${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.`;
+    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals by ${recognizerName(current.model)}${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.${savedLyrics.length ? ` ${correctionSummary(correction(current.cues, savedLyrics))}` : ''}`;
   }
   else status.textContent = session?.lyricsModelReady ? 'This clip has no recognized lyrics yet. Transcribe lyrics listens to its separated vocals locally.'
     : 'Automatic lyrics need the local lyric recognition model. Run scripts/setup_lyrics_model.py with this studio’s model directory, refresh this page, then transcribe this clip.';
@@ -1162,7 +1164,7 @@ async function openProject(id: string) {
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
   if (working?.id !== project.id) { audio.defaultPlaybackRate = 1; audio.playbackRate = 1; audio.preservesPitch = true; resetWordReplace(); findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-remove-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
   resetLineInsert();
-  working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
+  working = structuredClone(project); savedLyrics = structuredClone(project.cues); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;
   element<HTMLSelectElement>('projects').value = project.id;
@@ -1235,9 +1237,9 @@ element('save').addEventListener('click', async () => {
     const sent = structuredClone(working);
     const reply = await request<unknown>(`/api/projects/${sent.id}`, json('PUT', { title: sent.title, cues: sent.cues, revision: sent.revision }));
     const saved = validateSaveReply(reply, sent);
-    working = saved;
+    working = saved; savedLyrics = structuredClone(saved.cues);
     dirty = false; videoUrl = null;
-    renderCues(); lyricHistory = new LyricHistory(draftSnapshot());
+    renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); autoControls();
     await refreshProjects(); message('Lyrics and timing saved locally.');
   } catch (error) { message(error instanceof TypeError ? new UnconfirmedReplyError().message : error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
   finally { saving = false; controls(); }
