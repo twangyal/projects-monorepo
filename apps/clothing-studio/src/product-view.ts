@@ -2,7 +2,7 @@ import { skirtDraft } from './product-skirt.ts';
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
-import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
+import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, defaultBodyChest, garmentBody, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
@@ -168,6 +168,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined});
   // Trousers default to the waist and hip they were drafted for, rather than proportions of a chest.
   const drapeShapeFor = (design: Product) => design.base === 'trousers' ? {waist:bodyWaist??undefined,hip:bodyHip??undefined} : shapeFor(design);
+  // A fabric comparison drapes on the same body; a skirt's or trousers' waist and hip are the ones their drape uses.
+  const comparisonBody = (design: Product) => {
+    if (!isBottoms(design)) return {chest:chestFor(design),...shapeFor(design)};
+    const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
+    return {chest:chestFor(design),waist:body.waist,hip:body.hip};
+  };
   const drapeKeyOf = (design: Product) => JSON.stringify([design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline,
     partsOf(design).map(id => design.parts[id].material), chestFor(design), drapeShapeFor(design)]);
   const currentDrape = (design: Product) => (draping && drape?.key === drapeKeyOf(design) ? drape.result : null);
@@ -288,7 +294,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     catch (error) { drafts.clear(); for (const [id, value] of savedDrafts) drafts.set(id, value); restoreDrafts(); options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); return false; }
   }
   const fabricComparison=mountGarmentComparison($('garment-drape-controls'),{
-    capture:()=>{if(hasDrafts())throw new Error('Apply or discard pending product edits before comparing or choosing a fabric.');const design=product();if(!design||isBottoms(design))throw new Error('Choose a top to compare fabrics.');return{product:design,body:{chest:chestFor(design),...shapeFor(design)}};},
+    capture:()=>{if(hasDrafts())throw new Error('Apply or discard pending product edits before comparing or choosing a fabric.');const design=product();if(!design)throw new Error('Choose a garment to compare fabrics.');return{product:design,body:comparisonBody(design)};},
     apply:id=>{retireAssets();return update(draft=>{for(const part of partsOf(draft))if(!RIB_PARTS.has(part))draft.parts[part].material=id;},'Comparison fabric applied to non-rib parts.');},
   });
   const bodyProfiles=mountTopBodyProfiles($('garment-drape-controls'),{
@@ -864,7 +870,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const finishDrafts = () => { restoreDrafts(); if (active && selection && document.activeElement === active) active.setSelectionRange(...selection); };
     const design = project.product ?? template('blank');
     if(pickOwner&&(pickOwner.design!==design||pickOwner.side!==($('artwork-side') as HTMLSelectElement).value))finishPicking('The design or artwork side changed. Pick again.');
-    fabricComparison.sync(project.product??null,isBottoms(design)?null:{chest:chestFor(design),...shapeFor(design)});
+    let compared: ReturnType<typeof comparisonBody> | null = null;
+    try { compared = comparisonBody(design); } catch { compared = null; }
+    fabricComparison.sync(project.product??null,compared);
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');

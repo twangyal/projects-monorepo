@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import {fabricVariants,comparisonReceipt} from '../src/garment-comparison.ts';
 import {template,teeMesh,partsOf,RIB_PARTS} from '../src/product.ts';
-import {simulateGarment} from '../src/garment-drape.ts';
+import {garmentBody,simulateGarment} from '../src/garment-drape.ts';
 
 test('fabric candidates preserve source styling, rib trims and saved colorways without shared mutable data',()=>{
  const source=template('ringer');source.parts.front.print={motif:'stripe',color:'#123456',scaleCm:4,layout:'grid',direction:'vertical'};source.artwork=[{part:'front',dataUrl:'data:image/png;base64,captured',width:16,height:16,name:'Original motif',xCm:0,yCm:20,widthCm:8,rotation:30}];source.colorways=[{id:'saved',name:'Original',parts:structuredClone(source.parts),units:10}];
@@ -19,7 +19,6 @@ test('fabric candidates preserve source styling, rib trims and saved colorways w
 test('unsupported material comparisons refuse rather than silently changing the design',()=>{
  assert.throws(()=>fabricVariants(template('blank'),['jersey-180','jersey-180']),/different/);
  assert.throws(()=>fabricVariants(template('blank'),['missing','denim-340']),/fabric/);
- assert.throws(()=>fabricVariants(template('trousers'),['jersey-180','denim-340']),/tops/);
 });
 test('receipt retains both actual garment results and matching captured body as ordinary JSON',()=>{
  const source=template('ringer'),body={chest:94,waist:80,hip:110},ids:[string,string]=['jersey-180','denim-340'];
@@ -36,4 +35,14 @@ test('comparison receipt retains entered depth and rejects a result solved on an
  const receipt=comparisonReceipt(source,body,ids,results as [typeof results[0],typeof results[0]]);
  assert.equal(receipt.body.chestDepth,20);assert.equal(receipt.candidates[0]!.result.body.chestDepth,20);
  assert.throws(()=>comparisonReceipt(source,{...body,chestDepth:22},ids,results as [typeof results[0],typeof results[0]]),/captured body/);
+});
+
+test('skirts and trousers compare fabrics on their own lower body, and the receipt matches it',()=>{
+ for(const id of ['flared-skirt','shorts']){
+  const source=template(id),shape=garmentBody(source,90),body={chest:90,waist:shape.waist,hip:shape.hip},ids:[string,string]=['jersey-180','denim-340'];
+  const results=fabricVariants(source,ids).map(p=>simulateGarment(p,teeMesh(p,Delaunator),body.chest,{bodyShape:body,frames:90}));
+  const data=comparisonReceipt(source,body,ids,results as [typeof results[0],typeof results[0]]);
+  assert.deepEqual(data.candidates.map(c=>c.product.parts.front.material),ids,id);
+  assert.notDeepEqual(Array.from(results[0]!.parts[0]!.positions),Array.from(results[1]!.parts[0]!.positions));
+ }
 });
