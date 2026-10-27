@@ -112,6 +112,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     </aside>
   </div>
   <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div>
+    <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
     <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
     <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
   <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button></div>
@@ -179,6 +180,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   let departed = false, shownBody = '';
   // The size shown in 3D (null: the sample). A view setting for this session: the design itself stays the sample.
   let shownSize: Size | null = null;
+  let patternSize: Size | null = null;
   const sampleOf = (design: Product): Size => design.spec?.sampleSize ?? 'M';
   const viewed = (design: Product): Product => {
     if (!shownSize || shownSize === sampleOf(design) || !gradable(design)) return design;
@@ -305,6 +307,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     shownSize = size === sampleOf(design) ? null : size;
     shown = ''; render(options.current());
     options.notice(shownSize ? `Showing size ${size}, graded from ${sampleOf(design)}, on the same body. The design itself is unchanged.` : `Showing the sample size ${size}.`);
+  });
+  // Independent export setting: neither the saved sample nor the 3D size is edited.
+  const patternSizeSelect = $('pattern-export-size') as HTMLSelectElement;
+  function renderPatternSize(design: Product) {
+    const sample = sampleOf(design);
+    if (!gradable(design)) patternSize = null;
+    patternSizeSelect.innerHTML = SIZES.map(size => `<option value="${size}">${size}${size === sample ? ' (sample)' : ''}</option>`).join('');
+    patternSizeSelect.value = patternSize ?? sample;
+    patternSizeSelect.disabled = !gradable(design);
+    $('pattern-export-help').textContent = !gradable(design)
+      ? `Flared skirts are not graded. Downloads use the sample size ${sample}.`
+      : `Downloads use size ${patternSize ?? sample}. Pattern previews and saved measurements remain the sample size ${sample}; the size shown in 3D is separate. Apply measurement changes before exporting.`;
+  }
+  patternSizeSelect.addEventListener('change', () => {
+    const size = patternSizeSelect.value as Size;
+    if (!SIZES.includes(size)) return;
+    const design = product() ?? template('blank');
+    patternSize = size === sampleOf(design) ? null : size;
+    renderPatternSize(design);
   });
   // Wear with: templates of the other kind, the kept copy, and saved designs of the other kind (read when the list opens).
   const wearWith = $('garment-wear-with') as HTMLSelectElement;
@@ -827,11 +848,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     draft.costing = { currency: ($('cost-currency') as HTMLSelectElement).value as Costing['currency'], retail: number('cost-retail'), make: number('cost-make'),
       trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
   }, 'Costing applied to the range plan.', 'costing'));
-  $('pattern-dxf').addEventListener('click', () => void exporting(async () => {
-    options.download(new Blob([patternDxf(product() ?? template('blank'))], { type: 'application/dxf' }), '-pattern.dxf');
-  }));
-  $('pattern-svg').addEventListener('click', () => void exporting(async () => {
-    options.download(new Blob([patternSvg(product() ?? template('blank'))], { type: 'image/svg+xml' }), '-pattern.svg');
+  for (const format of ['dxf', 'svg'] as const) $('pattern-' + format).addEventListener('click', () => void exporting(async () => {
+    const design = product() ?? template('blank'), size = gradable(design) ? patternSize ?? sampleOf(design) : sampleOf(design);
+    // Validate again against the latest applied measurements. Never substitute sample geometry for an invalid grade.
+    const graded = gradedProduct(design, size), suffix = size === sampleOf(design) ? '' : `-size-${size}`;
+    const content = format === 'dxf' ? patternDxf(graded) : patternSvg(graded);
+    options.download(new Blob([content], { type: format === 'dxf' ? 'application/dxf' : 'image/svg+xml' }), `${suffix}-pattern.${format}`);
   }));
   $('range-xlsx').addEventListener('click', () => void exporting(async () => {
     options.download(new Blob([rangePlanXlsx(product() ?? template('blank'), today())], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-range-plan.xlsx');
@@ -1070,7 +1092,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement;
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
-    renderWearWith(design); renderSizeSelect(design);
+    renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
     chestInput.closest('label')!.hidden = !onTop; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = !onTop;
     if (draped && drapeKey && drapeKey !== drapeKeyOf(design)) stopDrape();
     if (!hasDrafts('body')) {
@@ -1100,5 +1122,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; shownSize = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; shownSize = null; patternSize = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }
