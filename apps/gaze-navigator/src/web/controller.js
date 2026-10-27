@@ -44,6 +44,8 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function writingProblem(action, element) {
+    // A control in an embedded frame is checked by the frame's own controller.
+    if (element?.remote) return null;
     if (['edit', 'search'].includes(action.type) && actions.canWrite?.(element) === false) {
       return reply('That field is not writable or does not support text editing. Look at a writable field and try again.', 'error');
     }
@@ -70,6 +72,13 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
+    // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
+    if (element?.remote) {
+      const followUp = Promise.resolve(element.remote.run({ ...action, targetId: element.remote.id }))
+        .catch(() => ({ ok: false, message: 'The embedded page could not be reached. Look at it again.' }))
+        .then(later => executionTurn === turn && !paused ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
+      return reply('Working in the embedded page…', 'info', { performed: null, followUp });
+    }
     if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
@@ -325,6 +334,8 @@ export function createController({ window, actions = pageActions, interpret = in
 
   return {
     handle,
+    // Performs an already interpreted and confirmed action (used by an embedded frame for the top navigator).
+    run: (action, context) => execute(action, context),
     get paused() { return paused; },
     get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null }; },
     cancel() { return handle('cancel', { elements: [] }); },

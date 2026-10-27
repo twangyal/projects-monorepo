@@ -490,7 +490,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
       const rect = viewportRect(frame, frames);
       return rect.width > 0 && rect.height > 0 && distanceToRect(x, y, rect) <= radius;
     })
-    .map(({ frame }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content' }));
+    .map(({ frame, frames }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content', frame, frames }));
   const pageRegion = document.scrollingElement ?? document.documentElement;
   const region = scrollRegionAt(document, x, y, exclude);
   return { x, y, radius, elements, disclosureElements, nearby, unreachable, region, pageRegion,

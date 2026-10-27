@@ -115,7 +115,7 @@ export function describeElement(element) {
 
 // `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
 // `createCamera` supplies the camera (see camera-source.js); by default WebGazer runs in this document.
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput } = {}) {
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null } = {}) {
   const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
@@ -267,7 +267,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     for (const element of shown) {
       if (question && !question.has(element.id)) continue;
       if (!element.element.isConnected) continue;
-      const rect = viewportRect(element.element, element.frames);
+      // Controls in an embedded frame from another site keep the rectangle they were captured with.
+      const rect = element.element.remote ? element.rect : viewportRect(element.element, element.frames);
       const box = document.createElement('div');
       box.className = question ? 'outline question' : 'outline';
       Object.assign(box.style, { left: `${rect.left - 3}px`, top: `${rect.top - 3}px`, width: `${rect.width + 6}px`, height: `${rect.height + 6}px` });
@@ -388,6 +389,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     pageChanged = false;
     capturedAt = { x: point.x, y: point.y, radius: radius() };
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache });
+    // Embedded frames from other sites answer later; their controls join this context when they do.
+    const captured = context;
+    embeddedFrames?.extend(captured, {
+      isCurrent: () => !stopped && [context, spokenContext, promptContext].includes(captured),
+      changed: () => { if (context === captured) renderContextList(); if (!controller.pending) renderOutlines(); },
+    });
     const focused = context.elements.find(element => element.element === pageFocus());
     context.focusedId = focused?.id ?? null;
     context.selectionFocusedId = context.disclosureElements?.find(element => element.element === pageFocus())?.id ?? context.focusedId;
@@ -504,6 +511,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
   watchFrames();
   window.addEventListener('load', watchFrames, true);
+  // Embedded frames from other sites pass their pointer moves on through the extension.
+  const detachEmbedded = embeddedFrames?.attach({ document, exclude: host, onPointer: (x, y, time) => {
+    if (settings.source !== 'pointer') return;
+    frozen = false;
+    track(x, y, time);
+  } });
   // Frame load events reach their document in capture phase, but skip its window.
   document.addEventListener('load', onFrameLoad, true);
   // Scrolling moves everything under the circle; recapture through the usual interval instead of on every event.
@@ -820,6 +833,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.clearTimeout(trailing);
       window.clearTimeout(placement);
+      detachEmbedded?.();
       resizeObserver.disconnect();
       spacer.remove();
       host.remove();
