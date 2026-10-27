@@ -317,6 +317,23 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(json.loads(path.read_text("utf-8")), metadata)
         self.assertEqual(self.request("GET", f'/api/projects/{job["projectId"]}/processing.json')[0], 404)
 
+    def test_container_listening_binds_all_interfaces_but_keeps_loopback_host_checks(self):
+        server = create_server(self.root / "container-data", self.root / "model", port=0, dist_dir=self.dist,
+                               separate=fake_separate, export=fake_export, ready=lambda _: True, listen_all=True)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def stop():
+            server.shutdown()
+            server.server_close()
+            thread.join(3)
+        self.addCleanup(stop)
+        self.assertEqual(server.server_address[0], "0.0.0.0")
+        self.assertEqual(self.request("GET", "/api/session", server=server)[0], 200)
+        status, _, _ = self.request("GET", "/api/session", headers={"Host": f"attacker.example:{server.server_port}"}, server=server)
+        self.assertEqual(status, 403)
+        self.assertEqual(self.server.server_address[0], "127.0.0.1")
+
     def test_lrc_download_and_guide_vocal_export_option(self):
         calls = []
 

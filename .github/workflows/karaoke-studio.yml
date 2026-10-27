@@ -64,3 +64,30 @@ jobs:
           name: karaoke-studio-browser-results
           path: apps/karaoke-studio/test-results
           retention-days: 7
+
+  container:
+    # The container image is how Karaoke Studio runs outside Linux; build it and check that it serves.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/karaoke-studio
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the container image
+        run: docker build -t karaoke-studio:ci .
+      - name: The image carries FFmpeg with x264 and the pinned ML runtime
+        run: |
+          docker run --rm --entrypoint ffmpeg karaoke-studio:ci -hide_banner -encoders | grep -q libx264
+          docker run --rm karaoke-studio:ci python -c "import onnxruntime, sherpa_onnx, numpy, scipy, PIL; print('runtime ok')"
+      - name: Serve on the host's loopback port from named volumes
+        run: |
+          docker run -d --name karaoke -p 127.0.0.1:8765:8765 -v karaoke-data:/data -v karaoke-models:/models karaoke-studio:ci
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8765/api/session -o session.json && break; sleep 1; done
+          python3 -c "import json; s = json.load(open('session.json')); assert s['modelReady'] is False and s['lyricsModelReady'] is False, s"
+          curl -fsS http://127.0.0.1:8765/ | grep -q '<title>Karaoke Studio'
+          # DNS rebinding protection still applies inside the container.
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: attacker.example:8765' http://127.0.0.1:8765/api/session)" = 403
+      - name: Container logs
+        if: always()
+        run: docker logs karaoke || true

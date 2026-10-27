@@ -25,7 +25,19 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 - Multilingual lyrics are unfinished. Only 25 European languages are covered, mixed-language songs are not handled, and the bundled font lacks many scripts (for example Tibetan), which show as missing-glyph boxes in videos.
 - Separated stems are estimates. Leftover singing or lost instruments can remain, and anything the model misses as vocals stays in the backing.
 - Separation is slow on CPU: a ten-minute song takes roughly as long as the song itself on 4 cores. No GPU path.
-- Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Linux only (it needs procfs and POSIX process controls). Archives with recognized word data use format version 2; this studio also reads older version 1 archives. Older studio versions cannot open version 2. Restoring word timing needs no recognition model.
+- Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Running natively needs Linux (procfs and POSIX process controls); elsewhere use the container image. The image is built and checked for x86-64 in CI; Apple Silicon (arm64) builds are untested. Archives with recognized word data use format version 2; this studio also reads older version 1 archives. Older studio versions cannot open version 2. Restoring word timing needs no recognition model.
+
+## Run in a container (macOS, Windows or Linux)
+
+With Docker installed, from `apps/karaoke-studio`:
+
+```sh
+docker build -t karaoke-studio .
+docker run --rm -v karaoke-models:/models karaoke-studio setup-models   # once: downloads about 1 GB of pinned models
+docker run --rm -p 127.0.0.1:8765:8765 -v karaoke-data:/data -v karaoke-models:/models karaoke-studio
+```
+
+Open http://127.0.0.1:8765. Keep the published port at 8765 and on `127.0.0.1`: the studio only accepts requests addressed to its own loopback host and port. Projects stay in the `karaoke-data` volume and models in `karaoke-models`.
 
 ## Run locally
 
