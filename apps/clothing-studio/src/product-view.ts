@@ -17,6 +17,7 @@ import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, tech
 import { patternDxf, patternSvg } from './pattern-export.ts';
 import { readStylePrompt } from './style-prompt.ts';
 import { readDesignPrompt } from './design-prompt.ts';
+import { drapeTestMarkup, mountDrapeTest } from './drape-test-view.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -60,6 +61,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to the garment</button></div>
         <p id="describe-result" class="fine-print" role="status"></p></div>
       <label class="field">Fabric<select id="part-material">${MATERIALS.map(m => `<option value="${m.id}">${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>
+      ${drapeTestMarkup}
       <div class="color-row"><label for="part-color">Fabric color</label><input id="part-color" type="color"></div>
       <label class="field">Print<select id="part-print"><option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}</select></label>
       <div class="print-options"><div class="color-row"><label for="print-color">Print color</label><input id="print-color" type="color"></div>
@@ -451,6 +453,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
+  // The drape test follows the selected part's fabric.
+  const drapeTestPanel = mountDrapeTest(() => product()?.parts[selected].material ?? MATERIALS[0]!.id);
   // Inspector fields commit on change.
   $('part-material').addEventListener('change', () => applySwatch(selected, { kind: 'material', id: ($('part-material') as HTMLSelectElement).value }));
   $('part-color').addEventListener('change', () => applySwatch(selected, { kind: 'color', value: ($('part-color') as HTMLInputElement).value }));
@@ -909,6 +913,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
+    drapeTestPanel.sync();
     renderMotifs(design);
     ($('part-print') as HTMLSelectElement).value = style.print?.motif ?? '';
     for (const id of ['print-color', 'print-layout', 'print-scale']) ($(id) as HTMLInputElement).disabled = !style.print;

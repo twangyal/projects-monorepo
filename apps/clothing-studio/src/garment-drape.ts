@@ -15,7 +15,7 @@ import { skirtDraft, skirtHeight } from './product-skirt.ts';
  *   properties of its construction (FABRIC): bending resists folding through an isometric bending energy, and each
  *   edge's stretch stiffness is its share of the fabric's membrane stiffness along that edge's direction to the grain
  *   (vertical on every pattern piece), so wovens are soft on the bias and knits stretch more across than along. The ratio of bending rigidity to weight
- *   (the fabric's bending length, about 1 cm for jersey and 2.5 cm for denim) is what makes fabrics hang differently.
+ *   (the fabric's bending length, about 1.8 cm for jersey and 2.7 cm for denim) is what makes fabrics hang differently.
  * Units are centimetres, grams and seconds; y is up with the hem at 0, as in the product's 3D view.
  */
 
@@ -26,12 +26,16 @@ import { skirtDraft, skirtHeight } from './product-skirt.ts';
  * rigidity (N/m per radian; Kawabata shear stiffness G of 1 gf/cm·degree ≈ 56). They are typical values for cotton
  * knits and wovens from published ranges, not measurements of these library fabrics. Wovens resist stretch along warp
  * and weft but shear easily, so they are several times softer on the bias.
+ *
+ * `drape` scales bending for draping: real fabrics hold folds open by friction between yarns (bending hysteresis),
+ * which this elastic model lacks. Each factor makes the construction's drape test (drape-test.ts) land in the middle of
+ * the drape coefficients reported for it; knits need about three times their elastic rigidity, wovens about one.
  */
-export const FABRIC: Record<Material['texture'], { bending: number; tensile: number; weft: number; shear: number; gsm: number }> = {
-  jersey: { bending: 3, tensile: 150, weft: 0.5, shear: 40, gsm: 180 }, slub: { bending: 2.5, tensile: 150, weft: 0.5, shear: 40, gsm: 160 },
-  rib: { bending: 3, tensile: 60, weft: 0.3, shear: 30, gsm: 220 }, pique: { bending: 6, tensile: 300, weft: 0.6, shear: 80, gsm: 200 },
-  terry: { bending: 12, tensile: 400, weft: 0.6, shear: 100, gsm: 300 }, linen: { bending: 12, tensile: 3000, weft: 0.8, shear: 60, gsm: 170 },
-  twill: { bending: 50, tensile: 6000, weft: 0.7, shear: 120, gsm: 340 }, canvas: { bending: 150, tensile: 10000, weft: 0.9, shear: 300, gsm: 400 },
+export const FABRIC: Record<Material['texture'], { bending: number; tensile: number; weft: number; shear: number; gsm: number; drape: number }> = {
+  jersey: { bending: 3, tensile: 150, weft: 0.5, shear: 40, gsm: 180, drape: 3.25 }, slub: { bending: 2.5, tensile: 150, weft: 0.5, shear: 40, gsm: 160, drape: 3.25 },
+  rib: { bending: 3, tensile: 60, weft: 0.3, shear: 30, gsm: 220, drape: 3.6 }, pique: { bending: 6, tensile: 300, weft: 0.6, shear: 80, gsm: 200, drape: 3.45 },
+  terry: { bending: 12, tensile: 400, weft: 0.6, shear: 100, gsm: 300, drape: 3.27 }, linen: { bending: 12, tensile: 3000, weft: 0.8, shear: 60, gsm: 170, drape: 1.15 },
+  twill: { bending: 50, tensile: 6000, weft: 0.7, shear: 120, gsm: 340, drape: 1.29 }, canvas: { bending: 150, tensile: 10000, weft: 0.9, shear: 300, gsm: 400, drape: 0.81 },
 };
 /** In-plane Poisson ratio along the grain, for the off-axis stiffness. */
 const POISSON = 0.25;
@@ -40,7 +44,7 @@ const POISSON = 0.25;
  * square of the weight ratio. */
 export function fabricProperties(fabric: Material): { bending: number; tensile: number; weft: number; shear: number } {
   const base = FABRIC[fabric.texture], ratio = fabric.gsm / base.gsm;
-  return { bending: base.bending * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
+  return { bending: base.bending * base.drape * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
 }
 /**
  * Membrane stiffness of a fabric stretched along a flat direction (dx, dy), the grain running along y: the
@@ -92,13 +96,13 @@ export function validateTopBodyShape(chest:number, shape:TopBodyShape = {}):TopB
   }
   return{waist,hip,...tall};
 }
-const GRAVITY = 981;
+export const GRAVITY = 981;
 const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 // The hood falls back onto the garment; there is no cloth-to-cloth contact, so it keeps a layer's distance from the
 // body instead, lying over the back rather than through it.
 const HOOD_OFFSET = 1.1;
 const FRICTION = 0.35;    // share of sliding removed while touching the body
-const FRAME = 1 / 60;
+export const FRAME = 1 / 60;
 // Fabric loses energy as it bends: a damping force proportional to the bending rate, in seconds. Without it stiff
 // cloth keeps vibrating at its bending frequency instead of settling.
 const BEND_DAMPING = 0.03;
@@ -344,6 +348,16 @@ export function bendingStencil(p0: [number, number], p1: [number, number], p2: [
 
 /** Sews the product's parts into one cloth: coincident vertices become one particle. */
 export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
+  // A top's body, sleeves and bands are meshed in their flat silhouette (x, y); skirt and trouser panels carry their flat
+  // pattern position in their UVs.
+  return clothFromMeshes(meshes, part => material(product.parts[part].material), isBottoms(product));
+}
+
+/**
+ * One cloth from part meshes, each part of the material `materialOf` names: coincident vertices become one particle.
+ * Rest shapes are flat fabric coordinates, the vertex's UVs when `flatFromUvs`, otherwise its x and y.
+ */
+export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material, flatFromUvs: boolean): Cloth {
   const particles = new Map<string, number>(), position: number[] = [], vertices = new Map<PartId, Int32Array>();
   const key = (x: number, y: number, z: number) => `${Math.round(x * 1000)},${Math.round(y * 1000)},${Math.round(z * 1000)}`;
   const simulated = meshes.filter(mesh => !CARRIED.has(mesh.part));
@@ -392,16 +406,15 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
     return Math.hypot(along, ribEdge.has(i) === ribEdge.has(j) ? 0 : ribWidth);
   };
   const mass = new Float64Array(position.length / 3);
-  // Flat fabric coordinates of a mesh vertex on its own pattern piece: a top's body, sleeves and bands are meshed in
-  // their flat silhouette (x, y); skirt and trouser panels carry their flat pattern position in their UVs.
-  const flatCorner = (mesh: PartMesh, v: number): [number, number] => isBottoms(product)
+  // Flat fabric coordinates of a mesh vertex on its own pattern piece.
+  const flatCorner = (mesh: PartMesh, v: number): [number, number] => flatFromUvs
     ? [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!] : [mesh.positions[v * 3]!, mesh.positions[v * 3 + 1]!];
   type Opposite = { vertex: number; modelled: boolean; edgeI: [number, number]; edgeJ: [number, number]; corner: [number, number] };
   // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices with
   // the flat positions of that triangle's corners.
   const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: Opposite[] }>();
   for (const mesh of simulated) {
-    const ids = vertices.get(mesh.part)!, fabric = material(product.parts[mesh.part].material), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
+    const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
     // The hood is lined and holds its shape; its modelled 3D form is kept with stiffer bending.
     const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {
@@ -501,6 +514,76 @@ export interface GarmentDrapeMetrics {
 export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; body: BodyProxy }
 
 /**
+ * The extended position-based solver for one cloth with time step `dt`: `inverseMass` (0 holds a particle still) may
+ * differ from the cloth's own, and `rest` lengths may be changed between steps. Each `step` integrates bending
+ * explicitly, then gravity and damping, then solves the stretch constraints once (XPBD), calls `contact` to correct
+ * positions, and returns the fastest particle speed.
+ */
+export function clothSolver(cloth: Cloth, inverseMass: Float32Array, dt: number) {
+  const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
+  const { a, b, bendParticles, bendWeights } = cloth, count = inverseMass.length, rest = Float32Array.from(cloth.rest), lambdas = new Float32Array(rest.length);
+  const alpha = Float32Array.from(cloth.compliance, c => c / (dt * dt));
+  const stencils = cloth.bendStiffness.length;
+  // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry
+  // with a margin: for its natural frequency ω (ω² = q·Σ Kᵢ²/mᵢ), dt²·ω² ≤ ¼ and dt·β·ω² ≤ ½. Only tiny or very stiff
+  // triangles are affected; ordinary cloth keeps its full stiffness and damping.
+  const bendStiffness = new Float32Array(stencils), bendDamping = new Float32Array(stencils);
+  for (let s = 0; s < stencils; s++) {
+    let spread = 0;
+    for (let c = 0; c < 4; c++) spread += bendWeights[s * 4 + c]! ** 2 * inverseMass[bendParticles[s * 4 + c]!]!;
+    const q = Math.min(cloth.bendStiffness[s]!, spread > 0 ? 0.25 / (dt * dt * spread) : 0), omega2 = q * spread;
+    bendStiffness[s] = q;
+    bendDamping[s] = omega2 > 0 ? Math.min(BEND_DAMPING, 0.5 / (dt * omega2)) : 0;
+  }
+  function step(damping: number, gravity: number, contact: () => void = () => {}): number {
+    // Bending: each stencil pushes its corners back towards flat, with a force linear in the positions, damped in
+    // proportion to how fast the stencil is bending.
+    for (let s = 0; s < stencils; s++) {
+      const q = bendStiffness[s]! * dt, beta = bendDamping[s]!;
+      let sx = 0, sy = 0, sz = 0;
+      for (let c = 0; c < 4; c++) {
+        const k = bendParticles[s * 4 + c]! * 3, w = bendWeights[s * 4 + c]!;
+        sx += w * (positions[k]! + beta * velocity[k]!); sy += w * (positions[k + 1]! + beta * velocity[k + 1]!); sz += w * (positions[k + 2]! + beta * velocity[k + 2]!);
+      }
+      for (let c = 0; c < 4; c++) {
+        const i = bendParticles[s * 4 + c]!, k = i * 3, f = -q * bendWeights[s * 4 + c]! * inverseMass[i]!;
+        velocity[k] += f * sx; velocity[k + 1] += f * sy; velocity[k + 2] += f * sz;
+      }
+    }
+    for (let i = 0; i < count; i++) {
+      const k = i * 3;
+      previous[k] = positions[k]!; previous[k + 1] = positions[k + 1]!; previous[k + 2] = positions[k + 2]!;
+      if (inverseMass[i] === 0) { velocity[k] = velocity[k + 1] = velocity[k + 2] = 0; continue; }
+      velocity[k] *= damping; velocity[k + 1] = velocity[k + 1]! * damping - gravity * dt; velocity[k + 2] *= damping;
+      positions[k] += velocity[k]! * dt; positions[k + 1] += velocity[k + 1]! * dt; positions[k + 2] += velocity[k + 2]! * dt;
+    }
+    lambdas.fill(0);
+    for (let n = 0; n < rest.length; n++) {
+      const i = a[n]!, j = b[n]!, wa = inverseMass[i]!, wb = inverseMass[j]!, w = wa + wb;
+      if (w === 0) continue;
+      const ka = i * 3, kb = j * 3;
+      const dx = positions[ka]! - positions[kb]!, dy = positions[ka + 1]! - positions[kb + 1]!, dz = positions[ka + 2]! - positions[kb + 2]!;
+      const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (length < 1e-9) continue;
+      const delta = (-(length - rest[n]!) - alpha[n]! * lambdas[n]!) / (w + alpha[n]!);
+      lambdas[n] += delta;
+      const sx = dx / length * delta, sy = dy / length * delta, sz = dz / length * delta;
+      positions[ka] += sx * wa; positions[ka + 1] += sy * wa; positions[ka + 2] += sz * wa;
+      positions[kb] -= sx * wb; positions[kb + 1] -= sy * wb; positions[kb + 2] -= sz * wb;
+    }
+    contact();
+    let speed = 0;
+    for (let i = 0; i < count; i++) {
+      const k = i * 3;
+      velocity[k] = (positions[k]! - previous[k]!) / dt; velocity[k + 1] = (positions[k + 1]! - previous[k + 1]!) / dt; velocity[k + 2] = (positions[k + 2]! - previous[k + 2]!) / dt;
+      speed = Math.max(speed, Math.hypot(velocity[k]!, velocity[k + 1]!, velocity[k + 2]!));
+    }
+    return speed;
+  }
+  return { positions, previous, velocity, rest, a, b, step };
+}
+
+/**
  * Drapes `meshes` (the product's 3D parts, as teeMesh builds them) on a body of `bodyChest`. Deterministic for the
  * same inputs; `progress` receives completed frames and can return false to stop early.
  */
@@ -511,8 +594,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
-  const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
-  const { a, b, bendParticles, bendWeights } = cloth, inverseMass = Float32Array.from(cloth.inverseMass), count = inverseMass.length, lambdas = new Float32Array(cloth.rest.length);
+  const inverseMass = Float32Array.from(cloth.inverseMass), count = inverseMass.length;
   // A skirt's waist row is held at its waistline, as a waistband would hold it.
   if (skirt) {
     let top = -Infinity;
@@ -537,26 +619,15 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       inverseMass[id] = 0;
     }
   }
-  const stencils = cloth.bendStiffness.length;
-  // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry
-  // with a margin: for its natural frequency ω (ω² = q·Σ Kᵢ²/mᵢ), dt²·ω² ≤ ¼ and dt·β·ω² ≤ ½. Only tiny or very stiff
-  // triangles are affected; ordinary cloth keeps its full stiffness and damping.
-  const bendStiffness = new Float32Array(stencils), bendDamping = new Float32Array(stencils);
-  for (let s = 0; s < stencils; s++) {
-    let spread = 0;
-    for (let c = 0; c < 4; c++) spread += bendWeights[s * 4 + c]! ** 2 * inverseMass[bendParticles[s * 4 + c]!]!;
-    const q = Math.min(cloth.bendStiffness[s]!, spread > 0 ? 0.25 / (dt * dt * spread) : 0), omega2 = q * spread;
-    bendStiffness[s] = q;
-    bendDamping[s] = omega2 > 0 ? Math.min(BEND_DAMPING, 0.5 / (dt * omega2)) : 0;
-  }
+  const solver = clothSolver(cloth, inverseMass, dt), { positions, previous } = solver;
   // The shell is the cloth stretched over a pillow: while the body grows inside it, every rest length eases from its
   // length on the shell to its flat length, so the fabric shrinks onto the body instead of snapping.
+  const { a, b, rest } = solver;
   const shell = Float32Array.from(cloth.rest, (_, n) => {
     const ka = a[n]! * 3, kb = b[n]! * 3;
     return Math.hypot(positions[ka]! - positions[kb]!, positions[ka + 1]! - positions[kb + 1]!, positions[ka + 2]! - positions[kb + 2]!);
   });
-  const rest = Float32Array.from(shell);
-  const alpha = Float32Array.from(cloth.compliance, c => c / (dt * dt));
+  rest.set(shell);
   const core = body.torso[1]!.y, normal: Vec = [0, 0, 0], field = bodyField(body, core, HOOD_OFFSET + 4);
   let speed = 0;
   for (let frame = 1; frame <= frames; frame++) {
@@ -571,59 +642,20 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       const t = (frame - GROW_FRAMES) / GATHER_FRAMES;
       for (const [id, to] of gathered) for (let axis = 0; axis < 3; axis++) positions[id * 3 + axis] = cloth.positions[id * 3 + axis]! + (to[axis]! - cloth.positions[id * 3 + axis]!) * t;
     }
+    field.scale(scale);
     for (let step = 0; step < substeps; step++) {
-      // Bending: each stencil pushes its corners back towards flat, with a force linear in the positions, damped in
-      // proportion to how fast the stencil is bending.
-      for (let s = 0; s < stencils; s++) {
-        const q = bendStiffness[s]! * dt, beta = bendDamping[s]!;
-        let sx = 0, sy = 0, sz = 0;
-        for (let c = 0; c < 4; c++) {
-          const k = bendParticles[s * 4 + c]! * 3, w = bendWeights[s * 4 + c]!;
-          sx += w * (positions[k]! + beta * velocity[k]!); sy += w * (positions[k + 1]! + beta * velocity[k + 1]!); sz += w * (positions[k + 2]! + beta * velocity[k + 2]!);
-        }
-        for (let c = 0; c < 4; c++) {
-          const i = bendParticles[s * 4 + c]!, k = i * 3, f = -q * bendWeights[s * 4 + c]! * inverseMass[i]!;
-          velocity[k] += f * sx; velocity[k + 1] += f * sy; velocity[k + 2] += f * sz;
-        }
-      }
-      for (let i = 0; i < count; i++) {
-        const k = i * 3;
-        previous[k] = positions[k]!; previous[k + 1] = positions[k + 1]!; previous[k + 2] = positions[k + 2]!;
-        if (inverseMass[i] === 0) { velocity[k] = velocity[k + 1] = velocity[k + 2] = 0; continue; }
-        velocity[k] *= damping; velocity[k + 1] = velocity[k + 1]! * damping - gravity * dt; velocity[k + 2] *= damping;
-        positions[k] += velocity[k]! * dt; positions[k + 1] += velocity[k + 1]! * dt; positions[k + 2] += velocity[k + 2]! * dt;
-      }
-      lambdas.fill(0);
-      for (let n = 0; n < rest.length; n++) {
-        const i = a[n]!, j = b[n]!, wa = inverseMass[i]!, wb = inverseMass[j]!, w = wa + wb;
-        if (w === 0) continue;
-        const ka = i * 3, kb = j * 3;
-        const dx = positions[ka]! - positions[kb]!, dy = positions[ka + 1]! - positions[kb + 1]!, dz = positions[ka + 2]! - positions[kb + 2]!;
-        const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (length < 1e-9) continue;
-        const delta = (-(length - rest[n]!) - alpha[n]! * lambdas[n]!) / (w + alpha[n]!);
-        lambdas[n] += delta;
-        const sx = dx / length * delta, sy = dy / length * delta, sz = dz / length * delta;
-        positions[ka] += sx * wa; positions[ka + 1] += sy * wa; positions[ka + 2] += sz * wa;
-        positions[kb] -= sx * wb; positions[kb + 1] -= sy * wb; positions[kb + 2] -= sz * wb;
-      }
       // Body contact with friction: sliding along the body is partly removed, then the point is pushed out.
-      field.scale(scale);
-      for (let i = 0; i < count; i++) {
-        if (inverseMass[i] === 0) continue;
-        const k = i * 3, distance = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
-        const keep = cloth.offset[i]!;
-        if (distance >= keep) continue;
-        if (!growing) for (let axis = 0; axis < 3; axis++) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
-        const again = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
-        if (again < keep) for (let axis = 0; axis < 3; axis++) positions[k + axis] += normal[axis]! * (keep - again);
-      }
-      speed = 0;
-      for (let i = 0; i < count; i++) {
-        const k = i * 3;
-        velocity[k] = (positions[k]! - previous[k]!) / dt; velocity[k + 1] = (positions[k + 1]! - previous[k + 1]!) / dt; velocity[k + 2] = (positions[k + 2]! - previous[k + 2]!) / dt;
-        speed = Math.max(speed, Math.hypot(velocity[k]!, velocity[k + 1]!, velocity[k + 2]!));
-      }
+      speed = solver.step(damping, gravity, () => {
+        for (let i = 0; i < count; i++) {
+          if (inverseMass[i] === 0) continue;
+          const k = i * 3, distance = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
+          const keep = cloth.offset[i]!;
+          if (distance >= keep) continue;
+          if (!growing) for (let axis = 0; axis < 3; axis++) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
+          const again = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
+          if (again < keep) for (let axis = 0; axis < 3; axis++) positions[k + axis] += normal[axis]! * (keep - again);
+        }
+      });
     }
     if (options.progress && options.progress(frame, frames) === false) break;
   }

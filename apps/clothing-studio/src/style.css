@@ -43,6 +43,8 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .drape-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .drape-controls .field { width: 11rem; }
 .drape-controls p { flex-basis: 100%; margin: 0; }
+.drape-test { display: grid; gap: 6px; justify-items: start; margin: 4px 0 8px; }
+.drape-test p { margin: 0; }
 .part-list label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #e3d9ca; border-radius: 20px; font-size: 13px; background: #fff; }
 .product-inspector { display: grid; gap: 8px; }
 .product-inspector h4 { margin: 0; font-size: 18px; }
