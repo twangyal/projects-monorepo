@@ -307,6 +307,30 @@ class RecognizerChoiceTests(unittest.TestCase):
             self.assertEqual(len(result), 400)
             self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
 
+    def test_forced_language_without_probabilities_stays_uncertain_for_review(self):
+        from types import SimpleNamespace
+        decoded = SimpleNamespace(tokens=[' 今', ' 夜'], timestamps=[0.0, 0.3], durations=[0.3, 0.3],
+                                  ys_log_probs=[], lang='<|ja|>')
+        with mock.patch.object(transcribe_worker, '_decode', return_value=decoded):
+            model, result = recognize([(0, self.Phrase(0))], lambda _model, **_kwargs: object(),
+                                      (EAST_ASIAN,), model_choice='japanese')
+        self.assertEqual(model, EAST_ASIAN)
+        self.assertTrue(result)
+        self.assertEqual({word['confidence'] for word in result}, {transcribe_worker.UNCONFIRMED})
+        self.assertTrue(all(cue['confidence'] < 0.7 for cue in words_to_cues(result, 2.0, confidence=True)))
+
+    def test_explicit_east_asian_languages_load_only_the_requested_language_once(self):
+        for choice, code in [('chinese', 'zh'), ('cantonese', 'yue'), ('japanese', 'ja'), ('korean', 'ko')]:
+            with self.subTest(choice=choice):
+                model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER), 'en', choice)
+                self.assertEqual(model, EAST_ASIAN)
+                self.assertEqual(loads, ['east-asian:' + code])
+                self.assertEqual([phrase for _, phrase in heard], list(range(40)))
+                self.assertEqual(len(result), 400)
+                self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
+                with self.assertRaisesRegex(RuntimeError, '--only east-asian'):
+                    transcription.selected_models((ENGLISH, MULTILINGUAL), choice)
+
     def test_missing_or_invalid_choice_never_loads_a_fallback(self):
         for choice, models in (("english", (MULTILINGUAL,)), ("multilingual", (ENGLISH,)), ("auto", ())):
             with self.assertRaisesRegex(RuntimeError, "setup_lyrics_model.py"):
@@ -744,6 +768,25 @@ class ServerLyricsTests(unittest.TestCase):
             self.assertEqual(status, 400, result)
             self.assertIn('differ too much', result['error'])
             self.assertEqual(self.request('GET', base)[2], project)
+
+    def test_explicit_language_retries_pass_through_http_without_replacing_saved_lyrics(self):
+        self.helper.upload()
+        project = self.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        original = self.server.transcribe
+        for choice in ['chinese', 'cantonese', 'japanese', 'korean']:
+            def chosen(*args, model_choice='auto'):
+                self.assertEqual(model_choice, choice)
+                result = original(*args)
+                result['model'] = EAST_ASIAN.name
+                Path(args[1]).write_text(json.dumps(result))
+                return result
+            self.server.transcribe = chosen
+            status, _, started = self.request('POST', base + '/transcribe', {'modelChoice': choice})
+            self.assertEqual(status, 202, started)
+            self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
+            self.assertEqual(self.request('GET', base)[2], project)
+            self.assertEqual(self.request('GET', base + '/transcript')[2]['model'], EAST_ASIAN.name)
 
     def test_chosen_retry_preserves_saved_cues_and_failed_retry_preserves_transcript(self):
         self.helper.upload()

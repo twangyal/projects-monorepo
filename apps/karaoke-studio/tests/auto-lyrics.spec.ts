@@ -231,3 +231,27 @@ test('a late word-timing failure cannot describe a newer invalid lyric draft', a
   expect((await lines(page))[0]).toBe('');
   });
 });
+
+test('an explicit Japanese retry keeps corrections until reviewed and exposes all four language choices', async ({page}) => {
+  const before=new Set<string>((await(await page.request.get('/api/projects')).json()).projects.map((p:{id:string})=>p.id));
+  try {
+    await page.setViewportSize({width:390,height:844});await importClip(page,16);
+    const choice=page.getByLabel('Recognition for this retry',{exact:true});
+    for(const value of ['chinese','cantonese','japanese','korean'])await expect(choice.locator(`option[value="${value}"]`)).toHaveCount(1);
+    await page.getByLabel('Lyric line 2',{exact:true}).fill('私の修正した歌詞');
+    await choice.selectOption('japanese');
+    const sent=page.waitForRequest(r=>r.url().endsWith('/transcribe')&&r.method()==='POST');
+    await page.getByRole('button',{name:'Transcribe again',exact:true}).click();
+    expect((await sent).postDataJSON()).toEqual({modelChoice:'japanese'});
+    await expect(page.locator('#message')).toContainText('Lyrics recognized',{timeout:15000});
+    expect(await lines(page)).toEqual(['Hello little world','私の修正した歌詞','Sing it back to me']);
+    await page.getByRole('button',{name:'Review automatic lyrics',exact:true}).click();
+    await page.getByRole('button',{name:'Replace lyric cues',exact:true}).click();
+    await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();
+    expect(await lines(page)).toEqual(['Hello little world','私の修正した歌詞','Sing it back to me']);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  } finally {
+    const session=await(await page.request.get('/api/session')).json();const projects=(await(await page.request.get('/api/projects')).json()).projects;
+    for(const p of projects)if(!before.has(p.id))expect((await page.request.delete(`/api/projects/${p.id}`,{headers:{'X-Karaoke-Token':session.token},data:{}})).ok()).toBe(true);
+  }
+});

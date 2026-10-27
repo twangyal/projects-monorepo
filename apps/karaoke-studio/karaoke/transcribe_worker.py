@@ -21,7 +21,7 @@ from karaoke.limits import (  # noqa: E402
 )
 from karaoke.lyrics_auto import _token, lyric_words  # noqa: E402
 from karaoke.transcription import (  # noqa: E402
-    CHOICES, DETECTION_WORDS, EAST_ASIAN, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, AsrModel,
+    CHOICES, DETECTION_WORDS, EAST_ASIAN, EAST_ASIAN_CHOICES, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, AsrModel,
     installed_models, selected_models, sounds_east_asian, sounds_english,
 )
 from karaoke.word_alignment import align  # noqa: E402
@@ -310,6 +310,21 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
     models = selected_models(models, model_choice)
     total = len(phrases)
     report = progress or (lambda _completed, _total: None)
+    if model_choice in EAST_ASIAN_CHOICES:
+        # A deliberate language retry must not probe, switch languages or fall back to English.
+        recognizer = load_model(EAST_ASIAN, language=EAST_ASIAN_CHOICES[model_choice])
+        heard_languages.clear()
+        words = []
+        report(0, total)
+        for done, (start, phrase) in enumerate(phrases, 1):
+            heard = recognize_phrase(recognizer, start, phrase)
+            # SenseVoice has no probabilities; a forced pass has no auto/fixed agreement estimate either.
+            for word in heard:
+                word['confidence'] = UNCONFIRMED
+            words.extend(heard)
+            report(done, total)
+        words.sort(key=lambda word: (word['start'], word['end']))
+        return EAST_ASIAN, words[:MAX_WORDS]
     if WHISPER in models:
         # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen).
         listener = load_model(WHISPER)
