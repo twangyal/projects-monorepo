@@ -17,6 +17,7 @@ import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
 import { readStylePrompt } from './style-prompt.ts';
+import { paletteColorway, photoColours } from './photo-colours.ts';
 import { readDesignPrompt } from './design-prompt.ts';
 import { drapeTestMarkup, mountDrapeTest } from './drape-test-view.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
@@ -40,6 +41,11 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <aside class="product-library" aria-label="Library">
       <p class="eyebrow">FABRICS</p><div class="library-list" id="material-list">${MATERIALS.map(m => `<button class="library-swatch" draggable="true" data-swatch='${JSON.stringify({ kind: 'material', id: m.id })}' aria-label="Apply ${m.name}"><canvas width="44" height="44" data-material-preview="${m.id}" aria-hidden="true"></canvas><span>${m.name}<small>${m.gsm} gsm</small></span></button>`).join('')}</div>
       <p class="eyebrow">COLORS</p><div class="color-chips">${PALETTE.map(c => `<button class="color-chip" draggable="true" style="background:${c}" data-swatch='${JSON.stringify({ kind: 'color', value: c })}' aria-label="Apply color ${c}"></button>`).join('')}</div>
+      <p class="eyebrow">FROM A PHOTO</p>
+      <label class="button quiet file-button">Pick colours from a photo<input id="photo-colours-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <div class="color-chips" id="photo-colours" role="group" aria-label="Colours from your photo"></div>
+      <div class="inline-actions" id="photo-colour-actions" hidden><button id="apply-photo-colours">Use them on the garment</button><button id="clear-photo-colours" class="quiet">Remove photo colours</button></div>
+      <p class="fine-print">A product shot, mood picture or fabric swatch. The photo is read on this device and not kept: only its main colours are saved with the design.</p>
       <p class="eyebrow">PRINTS</p><div class="library-list">${MOTIFS.map(m => `<button class="library-swatch" draggable="true" data-swatch='${JSON.stringify({ kind: 'print', motif: m })}' aria-label="Apply ${MOTIF_NAMES[m]} print"><canvas width="44" height="44" data-print-preview="${m}" aria-hidden="true"></canvas><span>${MOTIF_NAMES[m]}</span></button>`).join('')}</div>
       <div class="library-list" id="uploaded-motifs" aria-label="Your motifs"></div>
       <label class="button quiet file-button">Upload your own motif<input id="motif-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
@@ -405,6 +411,41 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const button = (event.target as Element).closest<HTMLElement>('[data-swatch]');
     if (button) { event.dataTransfer?.setData(DRAG_TYPE, button.dataset.swatch!); event.dataTransfer!.effectAllowed = 'copy'; }
   });
+  // Photo colours: rebuilt with the design, so their chips use delegated events like uploaded motifs.
+  $('photo-colours').addEventListener('click', event => {
+    const swatch = parseSwatch((event.target as Element).closest<HTMLElement>('[data-swatch]')?.dataset.swatch);
+    if (swatch) applySwatch(selected, swatch);
+  });
+  $('photo-colours').addEventListener('dragstart', event => {
+    const button = (event.target as Element).closest<HTMLElement>('[data-swatch]');
+    if (button) { event.dataTransfer?.setData(DRAG_TYPE, button.dataset.swatch!); event.dataTransfer!.effectAllowed = 'copy'; }
+  });
+  $('photo-colours-file').addEventListener('change', async () => {
+    const input = $('photo-colours-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
+    if (!file) return;
+    const owned = beginAsset();
+    let bitmap: ImageBitmap | undefined;
+    try {
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Choose a PNG, JPEG or WebP photo.');
+      bitmap = await decodeProductFile(file);
+      if (!owned()) return;
+      const scale = Math.min(1, 160 / Math.max(bitmap.width, bitmap.height)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(bitmap.width * scale)); c.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = c.getContext('2d', { willReadFrequently: true })!;
+      context.drawImage(bitmap, 0, 0, c.width, c.height);
+      const found = photoColours(context.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
+      if (!found.length) throw new Error('No colours could be read from that photo; it may be fully transparent.');
+      update(draft => { draft.palette = found.map(colour => colour.hex); },
+        `${found.length} colour${found.length === 1 ? '' : 's'} from the photo, most used first. Drag them onto parts, or use them on the garment.`);
+    } catch (error) { if (owned()) options.notice(error instanceof Error ? error.message : 'That photo could not be read.', true); }
+    finally { bitmap?.close(); }
+  });
+  $('apply-photo-colours').addEventListener('click', () => {
+    const palette = product()?.palette;
+    if (!palette) return;
+    update(draft => { draft.parts = paletteColorway(draft, palette); }, 'Photo colours applied: the main colour on the body, a contrasting one on trims and prints. Fabrics stay. You can undo this.');
+  });
+  $('clear-photo-colours').addEventListener('click', () => update(draft => { delete draft.palette; }, 'Photo colours removed. The garment keeps its colours; you can undo this.'));
   $('motif-file').addEventListener('change', async () => {
     const input = $('motif-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
     if (!file) return;
@@ -503,7 +544,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const current = product();
     const name = TEMPLATES.find(item => item.id === button.dataset.template)?.name ?? 'chosen';
     if (current && !window.confirm(`Replace “${current.name}” with the ${name} template? You can undo this.`)) return;
-    const next = template(button.dataset.template!);
+    // Colours picked from a photo stay for the next garment.
+    const next = { ...template(button.dataset.template!), ...(current?.palette ? { palette: current.palette } : {}) };
     commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
@@ -969,6 +1011,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
     drapeTestPanel.sync();
     renderMotifs(design);
+    const palette = design.palette ?? [], chips = palette.map(c => `<button class="color-chip" draggable="true" style="background:${c}" data-swatch='${JSON.stringify({ kind: 'color', value: c })}' aria-label="Apply photo color ${c}"></button>`).join('');
+    if ($('photo-colours').dataset.palette !== palette.join()) { $('photo-colours').dataset.palette = palette.join(); $('photo-colours').innerHTML = chips; }
+    $('photo-colour-actions').hidden = !palette.length;
     ($('part-print') as HTMLSelectElement).value = style.print?.motif ?? '';
     for (const id of ['print-color', 'print-layout', 'print-scale']) ($(id) as HTMLInputElement).disabled = !style.print;
     // Uploaded motifs are drawn in their own colors.

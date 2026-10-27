@@ -122,6 +122,8 @@ export interface Product {
   costing?: Costing;
   /** Uploaded repeat motifs; absent until one is uploaded. */
   motifs?: UploadedMotif[];
+  /** Colours picked from a reference photo (the photo itself is not kept); absent until picked. */
+  palette?: string[];
 }
 
 export const LIMITS = {
@@ -235,7 +237,7 @@ export function printName(print: Print, product: Pick<Product, 'motifs'>): strin
   return MOTIF_NAMES[print.motif as Motif];
 }
 
-const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs', 'options', 'fit'] as const;
+const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs', 'options', 'fit', 'palette'] as const;
 export function validateProduct(value: unknown): Product {
   const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
   const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
@@ -292,9 +294,15 @@ export function validateProduct(value: unknown): Product {
     if (!SIZES.includes(raw.sampleSize as Size)) fail('Sample size must be XS, S, M, L or XL.');
     spec = { styleNumber: plainText(raw.styleNumber, 40, 'Style number'), season: plainText(raw.season, 40, 'Season'), sampleSize: raw.sampleSize as Size };
   }
+  let palette: string[] | undefined;
+  if (p.palette !== undefined) {
+    if (!Array.isArray(p.palette) || !p.palette.length || p.palette.length > 8) fail('Keep 1–8 photo colours.');
+    palette = (p.palette as unknown[]).map(colour => hex(colour, 'Photo colour'));
+    if (new Set(palette).size !== palette.length) fail('Photo colours must differ.');
+  }
   return { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
     ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, ids) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
-    ...(motifs ? { motifs } : {}), ...(options ? { options } : {}), ...(fit && Object.keys(fit).length ? { fit } : {}) };
+    ...(motifs ? { motifs } : {}), ...(palette ? { palette } : {}), ...(options ? { options } : {}), ...(fit && Object.keys(fit).length ? { fit } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });
