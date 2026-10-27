@@ -1,4 +1,4 @@
-import { material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
@@ -102,6 +102,7 @@ const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 // The hood falls back onto the garment; there is no cloth-to-cloth contact, so it keeps a layer's distance from the
 // body instead, lying over the back rather than through it.
 const HOOD_OFFSET = 1.1;
+const LAYER_GAP = 0.3;   // kept between a garment and the one under it, cm
 const FRICTION = 0.35;    // share of sliding removed while touching the body
 export const FRAME = 1 / 60;
 // Fabric loses energy as it bends: a damping force proportional to the bending rate, in seconds. Without it stiff
@@ -497,7 +498,9 @@ export interface GarmentDrapeMetrics {
    * the floor, and (for a body of given height) how far the sleeves reach past the wrists (negative: short of them). */
   fit?: { hemBelowHip?: number; hemAboveFloor?: number; sleeveBeyondWrist?: number };
 }
-export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; body: BodyProxy }
+export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; body: BodyProxy;
+  /** In an outfit, the garment worn with this one, draped on the same body in this garment's place. */
+  companion?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics } }
 
 /**
  * The extended position-based solver for one cloth with time step `dt`: `inverseMass` (0 holds a particle still) may
@@ -614,9 +617,9 @@ function foldHood(cloth: Cloth, meshes: PartMesh[]) {
  * same inputs; `progress` receives completed frames and can return false to stop early.
  */
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
-  options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  options: { bodyShape?:TopBodyShape; body?: BodyProxy; under?: LayerField; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   const skirt = product.base === 'skirt', trousers = product.base === 'trousers';
-  const body = garmentBody(product, bodyChest, options.bodyShape);
+  const body = options.body ?? garmentBody(product, bodyChest, options.bodyShape), under = options.under;
   const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
@@ -669,7 +672,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       const t = (frame - GROW_FRAMES) / GATHER_FRAMES;
       for (const [id, to] of gathered) for (let axis = 0; axis < 3; axis++) positions[id * 3 + axis] = cloth.positions[id * 3 + axis]! + (to[axis]! - cloth.positions[id * 3 + axis]!) * t;
     }
-    field.scale(scale);
+    field.scale(scale); under?.scale(scale);
     for (let step = 0; step < substeps; step++) {
       // Body contact with friction: sliding along the body is partly removed, then the point is pushed out.
       speed = solver.step(damping, gravity, () => {
@@ -681,6 +684,17 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
           if (!growing) for (let axis = 0; axis < 3; axis++) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
           const again = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
           if (again < keep) for (let axis = 0; axis < 3; axis++) positions[k + axis] += normal[axis]! * (keep - again);
+        }
+        // A garment underneath: the same friction, then the point is pushed out from the body's axis to outside it.
+        if (under) for (let i = 0; i < count; i++) {
+          if (inverseMass[i] === 0) continue;
+          const k = i * 3, need = under.radius(positions[k]!, positions[k + 1]!, positions[k + 2]!);
+          if (need <= 0) continue;
+          const reach = need + cloth.offset[i]! - OFFSET + LAYER_GAP;
+          if (Math.hypot(positions[k]!, positions[k + 2]!) >= reach) continue;
+          if (!growing) for (const axis of [0, 2]) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
+          const radius = Math.hypot(positions[k]!, positions[k + 2]!);
+          if (radius > 1e-6 && radius < reach) { positions[k] *= reach / radius; positions[k + 2] *= reach / radius; }
         }
       });
     }
@@ -741,4 +755,107 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   }
   const ease = skirt ? skirtDraft(product).waist - body.waist : trousers ? trouserDimensions(product).waistbandLength - body.hip : topMeasurements(product).chest - body.chest;
   return { parts, body, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed, ...(Object.keys(fit).length ? { fit } : {}) } };
+}
+
+/**
+ * A draped garment as seen from the body's vertical axis: for each 1 cm height band and each of 72 directions round
+ * the axis, the farthest its surface reaches. `radius` (0 where it has no cloth) is read between bands and directions,
+ * on the garment scaled by `scale` about the chest height `core`, as the body grows.
+ */
+export interface LayerField { scale(s: number): void; radius(x: number, y: number, z: number): number }
+const SECTORS = 72;
+export function layerField(surfaces: { positions: Float32Array; indices: ArrayLike<number> }[], core: number): LayerField {
+  let low = Infinity, high = -Infinity;
+  for (const { positions } of surfaces) for (let i = 1; i < positions.length; i += 3) { low = Math.min(low, positions[i]!); high = Math.max(high, positions[i]!); }
+  const rows = Math.max(1, Math.round(high - low) + 1), reach = new Float32Array(rows * SECTORS);
+  const sectorOf = (x: number, z: number) => Math.atan2(z, x) / (2 * Math.PI) * SECTORS;
+  const mark = (x: number, y: number, z: number) => {
+    const at = Math.round(y - low) * SECTORS + (Math.round(sectorOf(x, z)) % SECTORS + SECTORS) % SECTORS;
+    reach[at] = Math.max(reach[at]!, Math.hypot(x, z));
+  };
+  // Each triangle is sampled at under 0.5 cm spacing.
+  for (const { positions: p, indices } of surfaces) for (let t = 0; t + 2 < indices.length; t += 3) {
+    const i = indices[t]! * 3, j = indices[t + 1]! * 3, k = indices[t + 2]! * 3;
+    const edge = Math.max(Math.hypot(p[j]! - p[i]!, p[j + 1]! - p[i + 1]!, p[j + 2]! - p[i + 2]!), Math.hypot(p[k]! - p[i]!, p[k + 1]! - p[i + 1]!, p[k + 2]! - p[i + 2]!), Math.hypot(p[k]! - p[j]!, p[k + 1]! - p[j + 1]!, p[k + 2]! - p[j + 2]!));
+    const n = Math.max(1, Math.ceil(edge / 0.5));
+    for (let u = 0; u <= n; u++) for (let v = 0; u + v <= n; v++) {
+      const a = u / n, b = v / n, c = 1 - a - b;
+      mark(p[i]! * c + p[j]! * a + p[k]! * b, p[i + 1]! * c + p[j + 1]! * a + p[k + 1]! * b, p[i + 2]! * c + p[j + 2]! * a + p[k + 2]! * b);
+    }
+  }
+  // A direction the sampling missed takes the farther of its neighbours round the axis.
+  for (let pass = 0; pass < 2; pass++) {
+    const before = Float32Array.from(reach);
+    for (let row = 0; row < rows; row++) for (let sector = 0; sector < SECTORS; sector++) {
+      const at = row * SECTORS + sector;
+      if (!before[at]) reach[at] = Math.max(before[row * SECTORS + (sector + 1) % SECTORS]!, before[row * SECTORS + (sector + SECTORS - 1) % SECTORS]!);
+    }
+  }
+  let s = 1;
+  return {
+    scale(value) { s = value; },
+    radius(x, y, z) {
+      const row = core + (y - core) / s - low;
+      if (row < 0 || row > rows - 1) return 0;
+      const r0 = Math.min(rows - 2, Math.floor(row)), fr = rows === 1 ? 0 : row - r0, sector = sectorOf(x, z), s0 = Math.floor(sector), fs = sector - s0;
+      const at = (r: number, c: number) => reach[Math.min(rows - 1, Math.max(0, r)) * SECTORS + (c % SECTORS + SECTORS) % SECTORS]!;
+      const near = at(r0, s0) * (1 - fs) + at(r0, s0 + 1) * fs, far = at(r0 + 1, s0) * (1 - fs) + at(r0 + 1, s0 + 1) * fs;
+      return s * (near * (1 - fr) + far * fr);
+    },
+  };
+}
+
+/** An outfit body's girths: automatic ones the bottoms cannot be worn on take the bottoms' own (a skirt's waist must be
+ * smaller than it). */
+export function outfitShape(bottoms: Product, chest: number, shape: TopBodyShape = {}) {
+  validateBodyChest(chest);
+  const own = garmentBody(bottoms, chest, {});
+  return validateTopBodyShape(chest, { ...shape, waist: shape.waist ?? Math.min(chest * 0.86, own.waist), hip: shape.hip ?? Math.min(chest * 1.02, own.hip) });
+}
+
+/** The body in an outfit with these girths and height: the top's body down to its waist, the bottoms' below it. */
+export function outfitBodies(top: Product, bottoms: Product, chest: number, shape: TopBodyShape = {}) {
+  const proportions = outfitShape(bottoms, chest, shape);
+  const upper = bodyProxy(top, chest, proportions);
+  const lower = bottoms.base === 'skirt' ? skirtBodyProxy(bottoms, { waist: proportions.waist, hip: proportions.hip })
+    : trouserBodyProxy(bottoms, { waist: proportions.waist, hip: proportions.hip, ...(proportions.height ? { height: proportions.height } : {}) });
+  // The bottoms' waistline sits at the body's waist.
+  const waist = upper.landmarks!.waist!, shift = waist - (lower.landmarks?.waist ?? lower.torso[0]!.y);
+  const move = (point: Vec): Vec => [point[0], point[1] + shift, point[2]];
+  const lowerHip = lower.landmarks?.hip ?? lower.torso[1]!.y, floor = lower.landmarks?.floor;
+  const body: BodyProxy = {
+    ...upper,
+    torso: [...upper.torso.filter(section => section.y > waist + 1e-6), ...lower.torso.map(section => ({ ...section, y: section.y + shift })).filter(section => section.y <= waist + 1e-6)],
+    capsules: [...upper.capsules, ...lower.capsules.map(capsule => ({ ...capsule, a: move(capsule.a), b: move(capsule.b) }))],
+    ...(lower.bottom === undefined ? {} : { bottom: lower.bottom + shift }),
+    landmarks: { ...upper.landmarks, hip: lowerHip + shift, ...(floor === undefined ? {} : { floor: floor + shift }) },
+  };
+  return { body, lower, shift };
+}
+
+/**
+ * Drapes `design` worn with `companion`, a top over bottoms (shirts are not tucked in): the bottoms drape first on the
+ * outfit's lower body, then the top drapes on the outfit's body over them. The bottoms do not feel the top's weight.
+ * Positions are in the design's own place, and the companion's are returned beside its own.
+ */
+export function simulateOutfit(design: Product, designMeshes: PartMesh[], companion: Product, companionMeshes: PartMesh[], bodyChest: number,
+  options: { bodyShape?: TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt.');
+  const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
+  const topMeshes = designIsTop ? designMeshes : companionMeshes, bottomMeshes = designIsTop ? companionMeshes : designMeshes;
+  const { body, lower, shift } = outfitBodies(top, bottoms, bodyChest, options.bodyShape);
+  const frames = options.frames ?? GARMENT_FRAMES, steps = { ...(options.frames ? { frames } : {}), ...(options.substeps ? { substeps: options.substeps } : {}) };
+  const report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 2 * frames);
+  const under = simulateGarment(bottoms, bottomMeshes, bodyChest, { ...steps, body: lower, progress: report(0) });
+  const placed = under.parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + shift : value) }));
+  const surfaces = placed.map(({ part, positions }) => ({ positions, indices: bottomMeshes.find(mesh => mesh.part === part)!.indices }));
+  const over = simulateGarment(top, topMeshes, bodyChest, { ...steps, body, under: layerField(surfaces, body.torso[1]!.y), progress: report(frames) });
+  if (designIsTop) return { ...over, companion: { parts: placed, metrics: under.metrics } };
+  const back = (parts: GarmentDrapeResult['parts']) => parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value - shift : value) }));
+  const moved = (point: Vec): Vec => [point[0], point[1] - shift, point[2]];
+  const marks = body.landmarks ?? {};
+  const own: BodyProxy = { ...body, torso: body.torso.map(section => ({ ...section, y: section.y - shift })), capsules: body.capsules.map(capsule => ({ ...capsule, a: moved(capsule.a), b: moved(capsule.b) })),
+    ...(body.bottom === undefined ? {} : { bottom: body.bottom - shift }),
+    landmarks: Object.fromEntries(Object.entries(marks).map(([key, value]) => [key, ['waist', 'hip', 'floor'].includes(key) ? value - shift : value])) };
+  return { parts: under.parts, metrics: under.metrics, body: own, companion: { parts: back(over.parts), metrics: over.metrics } };
 }

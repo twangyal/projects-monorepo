@@ -19,6 +19,8 @@ export class ProductScene {
   private group = new THREE.Group();
   /** The body a drape was simulated on; kept out of `group` so exports carry only the garment. */
   private body = new THREE.Group();
+  /** The garment worn with this one in an outfit drape; also kept out of exports, and not selectable. */
+  private worn = new THREE.Group();
   private parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
   private provisional: THREE.Texture[] = [];
@@ -27,13 +29,14 @@ export class ProductScene {
   private disposed = false;
   private resizeObserver: ResizeObserver;
   private height = 72;
+  private low = 0;
   private view: View = 'front';
 
   constructor(private canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.add(this.group); this.scene.add(this.body);
+    this.scene.add(this.group); this.scene.add(this.body); this.scene.add(this.worn);
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a0, 1.6));
     const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(60, 120, 160); this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(-120, 60, -140); this.scene.add(rim);
@@ -61,9 +64,10 @@ export class ProductScene {
   setView(view: View) {
     this.view = view;
     // Taller products (a hood, trousers) are framed from further away.
-    const distance = 210 * Math.max(1, this.height / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
-    this.controls.target.set(0, this.height / 2 + 4, 0);
-    this.camera.position.set(direction[0] * distance, this.height / 2 + 4 + direction[1] * distance, direction[2] * distance);
+    const span = this.height - this.low, middle = this.low + span / 2 + 4;
+    const distance = 210 * Math.max(1, span / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
+    this.controls.target.set(0, middle, 0);
+    this.camera.position.set(direction[0] * distance, middle + direction[1] * distance, direction[2] * distance);
     this.controls.update(); this.requestRender();
   }
 
@@ -83,36 +87,58 @@ export class ProductScene {
     return { texture, tileCm };
   }
 
-  /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown. */
-  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true) {
+  /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown, with the
+   * `companion` garment of an outfit drape. */
+  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true, companion: Product | null = null) {
     for (const texture of this.provisional.splice(0)) texture.dispose();
     this.setBody(showBody ? drape?.body ?? null : null);
-    for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
+    for (const holder of [this.group, this.worn]) for (const child of [...holder.children]) { holder.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
     // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
-    const previous = this.height;
+    const previous = [this.height, this.low];
     // A draped top is framed with the body's head in view.
     this.height = Math.max(garmentHeight(product), drape && showBody && !isBottoms(product) ? topMeasurements(product).length + 32 : 0) + 6;
+    this.low = 0;
+    const worn = companion && drape?.companion ? drape.companion.parts : null;
+    if (worn) {
+      // An outfit spans both garments, with the head above the top's collar.
+      let low = Infinity, high = -Infinity;
+      for (const { positions } of [...drape!.parts, ...worn]) for (let i = 1; i < positions.length; i += 3) { low = Math.min(low, positions[i]!); high = Math.max(high, positions[i]!); }
+      this.low = Math.min(0, low - 4); this.height = Math.max(this.height, high + (showBody ? 32 : 6));
+    }
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
-    if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
+    if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.setView(this.view);
+    if (worn) for (const part of teeMesh(companion!, Delaunator)) {
+      const positions = worn.find(item => item.part === part.part)?.positions;
+      if (!positions || positions.length !== part.positions.length) continue;
+      const mesh = this.partMesh(companion!, part, positions, false);
+      mesh.name = `${companion!.name}: ${mesh.name}`; mesh.userData = {};
+      this.worn.add(mesh);
+    }
     const restParts = teeMesh(product, Delaunator);
     for (const part of restParts) {
-      const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
-      const geometry = new THREE.BufferGeometry();
       const draped = drape?.parts.find(item => item.part === part.part);
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, 3));
-      // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
-      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
-      geometry.setIndex(part.indices); geometry.computeVertexNormals();
-      const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.DoubleSide,
-        emissive: new THREE.Color(part.part === selected ? 0x553311 : 0x000000), emissiveIntensity: part.part === selected ? 0.35 : 0 });
-      const mesh = new THREE.Mesh(geometry, surface);
-      mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
+      const mesh = this.partMesh(product, part, draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, part.part === selected);
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true);
     for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
     this.requestRender();
+  }
+
+  /** One part's surface in its fabric, at `positions`. */
+  private partMesh(product: Product, part: PartMesh, positions: ArrayLike<number>, highlighted: boolean): THREE.Mesh {
+    const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
+    geometry.setIndex(part.indices); geometry.computeVertexNormals();
+    const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.DoubleSide,
+      emissive: new THREE.Color(highlighted ? 0x553311 : 0x000000), emissiveIntensity: highlighted ? 0.35 : 0 });
+    const mesh = new THREE.Mesh(geometry, surface);
+    mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
+    return mesh;
   }
 
   private setBody(body: BodyProxy | null) {
@@ -121,7 +147,7 @@ export class ProductScene {
     const skin = () => new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.85, metalness: 0 });
     // Torso: stadium sections joined into a tube, down to a little below the hip (a top's body), a little below the
     // hem (a skirt's lower body, which has no arms or head) or the crotch (trousers' body, which ends between the legs).
-    const kept = body.torso.filter(section => section.y > -50).slice(0, 4), last = kept.at(-1)!;
+    const kept = body.torso.filter(section => section.y > -50), last = kept.at(-1)!;
     const sections = body.bottom !== undefined ? kept : [...kept, { ...last, y: body.capsules.length ? last.y - 12 : -12 }], around = 40, positions: number[] = [], indices: number[] = [];
     for (const section of sections) {
       const straight = section.halfWidth - section.halfDepth;
@@ -223,12 +249,12 @@ export class ProductScene {
     this.disposed = true;
     if (this.frame) cancelAnimationFrame(this.frame);
     this.frame = 0; this.setBody(null); this.resizeObserver.disconnect(); this.controls.dispose();
-    for (const child of this.group.children) if (child instanceof THREE.Mesh) {
+    for (const child of [...this.group.children, ...this.worn.children]) if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
       for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
     }
     for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
-    this.group.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+    this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
     this.renderer.dispose(); this.renderer.forceContextLoss();
   }
 }
