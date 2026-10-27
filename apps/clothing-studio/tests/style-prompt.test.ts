@@ -109,3 +109,20 @@ test('whole-garment parsing can leave plain parts unchanged for an already admit
   assert.deepEqual(result.ignored, ['half-drop', '8']);
   assert.throws(() => readStylePrompt('half-drop 8 cm', blank), /No fabric, colour or print/);
 });
+
+test('hundreds of everyday colour names from a colour survey, without changing the fashion names', () => {
+  // Survey names, with modifiers like the fashion names.
+  assert.equal(readStylePrompt('midnight blue', blank).style.color, '#020035');
+  assert.equal(readStylePrompt('periwinkle', blank).style.color, '#8e82fe');
+  assert.notEqual(readStylePrompt('pale aubergine', blank).style.color, readStylePrompt('aubergine', blank).style.color);
+  // A fashion name keeps its own shade where the survey has one too.
+  assert.equal(readStylePrompt('navy', blank).style.color, '#1f2a4f');
+  // "Brick red" and "ocean blue" are colours, not a half-brick repeat or a wave print; those still read when named.
+  const brick = readStylePrompt('brick red stripes', blank).style;
+  assert.deepEqual([brick.print!.color, brick.print!.layout], ['#8f1402', 'grid']);
+  assert.equal(readStylePrompt('dots in a brick repeat', blank).style.print!.layout, 'half-brick');
+  assert.deepEqual(readStylePrompt('ocean blue', blank).style, { ...blank, color: '#03719c' });
+  assert.equal(readStylePrompt('navy ocean print', blank).style.print!.motif, 'waves');
+  // Words that usually mean something else in a description are not read as colours.
+  assert.deepEqual(readStylePrompt('leather patches', blank, { allowUnapplied: true }).understood, []);
+});

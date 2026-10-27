@@ -2,6 +2,7 @@
 // heavyweight ecru jersey") to a part style. It knows a fashion colour vocabulary, the fabric library, the motif
 // library, repeat sizes and layouts, and reports what it understood and which words it ignored. Nothing it was not
 // told about changes. No network and no model: the same words always give the same style.
+import { SURVEY_COLORS } from './colour-names.ts';
 import { LAYOUTS, MATERIALS, MOTIFS, LIMITS, type Layout, type Motif, type PartStyle, type Print } from './product.ts';
 
 const COLORS: Record<string, string> = {
@@ -18,8 +19,9 @@ const COLORS: Record<string, string> = {
   blue: '#3d6fb6', navy: '#1f2a4f', 'navy blue': '#1f2a4f', 'royal blue': '#2c4fa3', cobalt: '#2448a0', 'sky blue': '#8cbbe3', 'baby blue': '#b7d4ee',
   'powder blue': '#b9cfe2', denim: '#46628a', indigo: '#2d3f5c', 'slate blue': '#5a6f8d', 'steel blue': '#4f6f8f', petrol: '#2f5866',
 };
-// A few common names are matched before shorter ones ("navy blue" before "navy", "heather grey" before "grey").
-const COLOR_NAMES = Object.keys(COLORS).sort((a, b) => b.length - a.length);
+// The fashion names above, then names from a colour survey; longer names are matched before shorter ones ("navy blue"
+// before "navy", "heather grey" before "grey").
+const NAMED: Record<string, string> = { ...SURVEY_COLORS, ...COLORS };
 
 const MATERIAL_WORDS: [RegExp, string][] = [
   [/\b(heavy ?weight|heavy|thick|boxy)\b[^,;]*\bjersey\b|\bheavyweight\b/, 'jersey-240'],
@@ -37,10 +39,11 @@ const MOTIF_WORDS: [RegExp, Motif][] = [
   [/\b(gingham|checks?|checked|checkered|chequered|plaid|tartan)\b/, 'gingham'],
   [/\b(floral|flowers?|flowery|ditsy|botanical|blossoms?)\b/, 'floral'],
   [/\b(geometric|triangles?|triangular|abstract|geo)\b/, 'triangles'],
-  [/\b(waves?|wavy|ocean|ripples?|scallops?)\b/, 'waves'],
+  // "Ocean" alone is a colour ("ocean blue"); it is a print only as "ocean print" or "ocean waves".
+  [/\b(waves?|wavy|ripples?|scallops?)\b|\bocean (?:print|pattern|waves?)\b/, 'waves'],
 ];
 const LAYOUT_WORDS: [RegExp, Layout][] = [
-  [/\bhalf[- ]?drop\b/, 'half-drop'], [/\bhalf[- ]?brick\b|\bbrick\b/, 'half-brick'], [/\bmirror(ed)?\b|\bmirror repeat\b/, 'mirror'], [/\b(grid|standard|straight) repeat\b|\bstandard\b/, 'grid'],
+  [/\bhalf[- ]?drop\b/, 'half-drop'], [/\bhalf[- ]?brick\b|\bbrick (?:repeat|layout)\b/, 'half-brick'], [/\bmirror(ed)?\b|\bmirror repeat\b/, 'mirror'], [/\b(grid|standard|straight) repeat\b|\bstandard\b/, 'grid'],
 ];
 const SCALE_WORDS: [RegExp, number][] = [
   [/\b(tiny|micro|mini)\b/, 2], [/\b(pin|fine|thin|small|little|ditsy|narrow)\b/, 3], [/\b(medium|mid|regular)\b/, 6],
@@ -56,6 +59,10 @@ const MODIFIERS: Record<string, { light: number; sat: number }> = {
 // Words that carry no style information and are not reported as ignored.
 const FILLER = new Set(['a', 'an', 'the', 'and', 'with', 'in', 'of', 'on', 'for', 'print', 'printed', 'pattern', 'patterned', 'fabric', 'colour', 'color', 'colored', 'coloured',
   'ground', 'background', 'base', 'repeat', 'all', 'over', 'allover', 'tee', 'shirt', 't-shirt', 'top', 'style', 'make', 'it', 'please', 'cm', 'in', 'look', 'like', 'some', 'very']);
+
+// One pattern per name, an optional modifier just before it.
+const COLOR_PATTERNS = Object.keys(NAMED).sort((a, b) => b.length - a.length)
+  .map(name => [name, new RegExp(`(?:\\b(${Object.keys(MODIFIERS).join('|')})\\s+)?\\b${name}\\b`, 'g')] as const);
 
 function hexToHsl(hex: string): [number, number, number] {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -92,11 +99,11 @@ export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapp
   // Colours, with their position and an optional modifier word just before.
   const colors: { hex: string; at: number; end: number; label: string }[] = [];
   let rest = text;
-  for (const name of COLOR_NAMES) {
-    const pattern = new RegExp(`(?:\\b(${Object.keys(MODIFIERS).join('|')})\\s+)?\\b${name}\\b`, 'g');
+  for (const [name, pattern] of COLOR_PATTERNS) {
+    pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(rest))) {
-      colors.push({ hex: modify(COLORS[name], match[1]), at: match.index, end: match.index + match[0].length, label: match[0] });
+      colors.push({ hex: modify(NAMED[name], match[1]), at: match.index, end: match.index + match[0].length, label: match[0] });
       rest = rest.slice(0, match.index) + ' '.repeat(match[0].length) + rest.slice(match.index + match[0].length);
     }
   }
