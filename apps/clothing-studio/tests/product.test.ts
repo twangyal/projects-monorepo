@@ -144,10 +144,15 @@ test('sweatshirts and hoodies have their own parts, rib bands, hood and pocket i
     assert.deepEqual(pieces.map(piece => piece.part).sort(), [...parts(design)].sort());
     assert.equal(pieces.find(piece => piece.part === 'front')!.height, topMeasurements(design).length - BAND_CM, 'the body ends above the hem band');
   }
-  // The hood rises above the shoulders and stays open at the face; the pocket sits proud of the front body.
+  // The hood is two side panels sewn to the neckline, rising above the shoulders (it drapes worn down, see
+  // garment-drape); the pocket sits proud of the front body.
   const meshes = teeMesh(hoodie, Delaunator), hood = meshes.find(mesh => mesh.part === 'hood')!, pocket = meshes.find(mesh => mesh.part === 'pocket')!;
-  const hoodY = hood.positions.filter((_, i) => i % 3 === 1);
-  assert.ok(Math.max(...hoodY) > topMeasurements(hoodie).length + 30, 'hood height');
+  assert.ok(Math.max(...hood.positions.filter((_, i) => i % 3 === 1)) > topMeasurements(hoodie).length + 30, 'hood height');
+  const keyOf = (mesh: typeof hood, i: number) => `${mesh.positions[i * 3].toFixed(6)},${mesh.positions[i * 3 + 1].toFixed(6)},${mesh.positions[i * 3 + 2].toFixed(6)}`;
+  const bodyKeys = new Set(['front', 'back'].flatMap(part => { const mesh = meshes.find(m => m.part === part)!; return Array.from({ length: mesh.positions.length / 3 }, (_, i) => keyOf(mesh, i)); }));
+  assert.ok(Array.from({ length: hood.positions.length / 3 }, (_, i) => keyOf(hood, i)).filter(key => bodyKeys.has(key)).length >= 20, 'hood sewn to the neckline');
+  const hoodPiece = patternPieces(hoodie).find(piece => piece.part === 'hood')!;
+  assert.ok(Math.abs(Math.max(...hood.uvs.filter((_, i) => i % 2 === 0)) - hoodPiece.width) < 1e-6 && Math.abs(Math.max(...hood.uvs.filter((_, i) => i % 2 === 1)) - hoodPiece.height) < 1e-6, 'hood UVs are its pattern piece');
   const front = meshes.find(mesh => mesh.part === 'front')!;
   const zAt = (mesh: typeof front, x: number, y: number) => { let best = Infinity, z = 0; for (let i = 0; i < mesh.positions.length; i += 3) { const d = Math.hypot(mesh.positions[i] - x, mesh.positions[i + 1] - y); if (d < best) { best = d; z = mesh.positions[i + 2]; } } return z; };
   assert.ok(zAt(pocket, 0, 15) > zAt(front, 0, 15), 'pocket is on top of the front');
