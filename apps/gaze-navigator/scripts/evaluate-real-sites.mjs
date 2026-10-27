@@ -109,6 +109,17 @@ export const TASKS = [
   { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
   ] },
+  // Custom widgets from component libraries and the WAI-ARIA Authoring Practices examples.
+  { site: 'WAI-ARIA APG', goal: 'Choose a fruit in a custom select-only combobox', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/', steps: [
+    { look: select('Favorite Fruit'), say: 'set favorite fruit to banana', done: async page => (await select('Favorite Fruit')(page).textContent()).trim() === 'Banana' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Set a custom colour slider to an exact value', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/slider/examples/slider-color-viewer/', steps: [
+    { look: page => page.getByRole('slider', { name: 'Red' }).first(), say: 'set red slider to 200', done: async page => (await page.getByRole('slider', { name: 'Red' }).first().getAttribute('aria-valuenow')) === '200' },
+  ] },
+  { site: 'MUI', goal: 'Refuse analytics cookies, then pick a film in an autocomplete by saying its name', start: 'https://mui.com/material-ui/react-autocomplete/', steps: [
+    { look: button('Essential only'), say: 'click essential only', target: 'Essential only', done: async page => !(await button('Essential only')(page).isVisible()) },
+    { look: select('Movie'), say: 'set movie to the godfather', done: async page => (await select('Movie')(page).inputValue()) === 'The Godfather' },
+  ] },
 ];
 
 async function run() {

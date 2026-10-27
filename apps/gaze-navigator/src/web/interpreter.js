@@ -176,6 +176,7 @@ function selectOption(optionQuery, selects, selected) {
 }
 
 const edit = (kind, extra = {}) => element => ({ type: 'edit', targetId: element.id, edit: { kind, ...extra } });
+const chooseFrom = optionName => element => ({ type: 'choose-option', targetId: element.id, optionName });
 
 function unquote(text) {
   const match = /^["“](.*)["”]$/.exec(text.trim());
@@ -190,6 +191,7 @@ const TYPED_FIELDS = [
   { matches: element => element.nativeWeek === true, type: 'week', noun: 'week', parse: spokenWeek, example: '“week 43”, “next week” or 2026-W43' },
   { matches: element => element.nativeNumber === true, type: 'number', noun: 'number', parse: spokenNumber, example: '“three”, “forty two” or 2.5' },
   { matches: element => element.role === 'slider', type: 'range', noun: 'slider', parse: spokenSliderValue, example: '“forty”, “forty percent” or 40', number: true },
+  { matches: element => element.role === 'spinbutton' && element.customRange === true, type: 'range', noun: 'number', parse: spokenNumber, example: '“three”, “forty two” or 2.5', number: true },
 ];
 
 function typedSet(target, value, context, now) {
@@ -442,6 +444,9 @@ function interpretInCircle(utterance, context) {
     if (selects.length) {
       return selectOption(value, selects) ?? { type: 'unknown', message: `"${value}" is not one of the choices in ${selects[0].name}.` };
     }
+    // A custom combobox's options may exist only once it is open, so the choice is found when acting.
+    const lists = context.elements.filter(element => element.customList && matchScore(target, element.name) >= 0.5);
+    if (lists.length) return resolve(target, lists, null, chooseFrom(unquote(value)), 'list');
     const typed = typedSet(target, value, context, now);
     if (typed) return typed;
     const fields = context.elements.filter(element => textField(element) && matchScore(target, element.name) >= 0.5);
@@ -471,6 +476,8 @@ function interpretInCircle(utterance, context) {
       (!choose[2] || matchScore(choose[2], element.name) >= 0.5));
     const picked = selectOption(choose[1], selects);
     if (picked) return picked;
+    const lists = choose[2] ? context.elements.filter(element => element.customList && matchScore(choose[2], element.name) >= 0.5) : [];
+    if (lists.length) return resolve(choose[2], lists, null, chooseFrom(choose[1]), 'list');
   }
 
   // Resolve before eligibility; unsupported intent must refuse, never redirect.
