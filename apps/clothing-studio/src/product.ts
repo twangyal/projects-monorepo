@@ -385,11 +385,9 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (product.base === 'tee' && (product.fit?.cuffHeight !== undefined || product.fit?.hemBandHeight !== undefined)) fail('Cuff and hem band heights apply only to sweatshirts and hoodies.');
   const d = teeDimensions(product as Product);
   if (d.cuffHeight && d.sleeveLength - d.cuffHeight < 2) fail('The cuff must leave at least 2 cm of measured sleeve fabric.');
-  if (product.fit?.cuffHeight !== undefined) {
-    const c = teeSilhouette(product as Product, 'front').points;
-    const edge = (a: number, b: number) => Math.hypot(c[a].x - c[b].x, c[a].y - c[b].y);
-    if (Math.min(edge(2, 1), edge(3, 4)) - d.cuffHeight < 2) fail('The cuff must leave at least 2 cm along both actual sleeve edges.');
-  }
+  // The sleeve's underarm seams run from the cap to the opening above the cuff.
+  const sleeve = sleeveOutline(product as Product);
+  if (d.cuffHeight && sleeve.opening[0].y - sleeve.cap[0].y < 2) fail('The cuff must leave at least 2 cm along the sleeve\'s underarm seams.');
   if (d.neckHalf + 4 > d.shoulderX) fail('The neck must be at least 8 cm narrower than the shoulders.');
   if (d.shoulderX > d.half + 8) fail('The shoulders can drop at most 8 cm past the chest on each side.');
   if (d.neckDepthFront + 4 > d.shoulderDrop + d.armDepth) fail('The front neck must end above the underarm.');
@@ -578,31 +576,55 @@ function trouserMesh(product: Product): PartMesh[] {
   return partsOf(product).map(id => meshes.get(id)!).filter(group => group.indices.length);
 }
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }
+/**
+ * A top's front or back body piece in pattern cm (y down from the neck points), in runs: the left neck point, the left
+ * armhole from the shoulder point to the underarm, the hem between the side seams, the right armhole from the underarm
+ * to the shoulder point, the right neck point and the neckline between the neck points (right to left). The side seams
+ * run from the underarm to the hem width; a body cut above a hem band ends `length` down, where they cross the band.
+ */
+function bodyOutline(product: Product, front: boolean, length: number) {
+  const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product), w = panel.width, half = w / 2;
+  const shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
+  const armY = shoulderDrop + armDepth, inset = (half - dims.hemHalf) * (length - armY) / (panel.length - armY);
+  const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, shoulder = half - dims.shoulderX, scoop = Math.max(1.5, shoulder + 1.5);
+  // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
+  const shift = (p: Pt) => ({ x: p.x + flare(product), y: p.y });
+  return {
+    neckLeft: shift({ x: half - neckWidth, y: 0 }),
+    armholeLeft: [{ x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY }].map(shift),
+    hem: hemLine(w - 2 * inset, length, dims.hemCurve).map(p => shift({ x: p.x + inset, y: p.y })),
+    armholeRight: [{ x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }].map(shift),
+    neckRight: shift({ x: half + neckWidth, y: 0 }),
+    // Neckline: a curve for crew/back, a straight V for v-neck fronts.
+    neckline: neckPath(neckWidth, neckDepth, front && product.neckline === 'v').slice(1, -1).map(p => shift({ x: half + p.x, y: p.y })),
+  };
+}
+
+/**
+ * A top's sleeve piece in pattern cm: the cap from one underarm point over the top to the other, then the opening from
+ * the end of the first underarm seam to the end of the second. A banded sleeve ends above its cuff and is cut 4 cm wider
+ * there, for the rib to gather.
+ */
+function sleeveOutline(product: Product) {
+  const m = topMeasurements(product), dims = teeDimensions(product), cap = dims.capWidth, end = sleeveSize(m).length - dims.cuffHeight;
+  // The sleeve length runs from the shoulder point, where the top of the cap is sewn, so it includes the cap.
+  const capHeight = Math.min(14, m.chest * 0.11, end * 0.6), opening = dims.cuffHalf * 2 + (dims.cuffHeight ? 4 : 0);
+  return {
+    cap: Array.from({ length: 13 }, (_, i) => { const t = i / 12; return { x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }; }),
+    opening: [{ x: (cap - opening) / 2, y: end }, { x: (cap + opening) / 2, y: end }] as [Pt, Pt],
+  };
+}
+
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
   if (product.base === 'skirt') return skirtPieces(product);
   if (isBottoms(product)) return trouserPieces(product);
-  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m);
-  const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
-  // The side seams run from the underarm to the hem width; a body cut above a hem band ends where they cross the band.
-  const armY = shoulderDrop + armDepth, hemInset = (y: number) => (half - dims.hemHalf) * (y - armY) / (panel.length - armY);
+  const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product);
   const body = (front: boolean, length = panel.length) => {
-    const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, inset = hemInset(length), shoulder = half - dims.shoulderX;
-    const hem = hemLine(w - 2 * inset, length, dims.hemCurve).map(p => ({ x: p.x + inset, y: p.y }));
-    const scoop = Math.max(1.5, shoulder + 1.5);
-    const pts = [{ x: half - neckWidth, y: 0 }, { x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY },
-      ...hem, { x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
-    // Neckline: a curve for crew/back, a straight V for v-neck fronts.
-    pts.push(...neckPath(neckWidth, neckDepth, front && product.neckline === 'v').slice(1, -1).map(p => ({ x: half + p.x, y: p.y })));
-    // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
-    return pts.map(p => ({ x: p.x + flare(product), y: p.y }));
+    const o = bodyOutline(product, front, length);
+    return [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, o.neckRight, ...o.neckline];
   };
-  const sleevePiece = () => {
-    const cap = dims.capWidth, cuff = dims.cuffHalf * 2, capHeight = Math.min(14, m.chest * 0.11), pts = [];
-    for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push({ x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }); }
-    pts.push({ x: (cap + cuff) / 2, y: capHeight + sleeve.length }, { x: (cap - cuff) / 2, y: capHeight + sleeve.length });
-    return pts;
-  };
+  const sleevePiece = () => { const s = sleeveOutline(product); return [...s.cap, s.opening[1], s.opening[0]]; };
   const rect = (wd: number, ht: number) => [{ x: 0, y: 0 }, { x: wd, y: 0 }, { x: wd, y: ht }, { x: 0, y: ht }];
   // Chest pocket: finished size plus the folded-down facing at the top.
   const chestPocket = () => chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight + POCKET_FOLD_CM, 0, 0);
@@ -616,13 +638,7 @@ export function patternPieces(product: Product): PatternPiece[] {
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band;
   const pieces = [make('front', body(true, panel.length - band), 1), make('back', body(false, panel.length - band), 1)];
-  const capHeight = Math.min(14, m.chest * 0.11), sleeveOutline = () => {
-    const cap = dims.capWidth, cuff = dims.cuffHalf * 2 + 4, pts = [];
-    for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push({ x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }); }
-    pts.push({ x: (cap + cuff) / 2, y: capHeight + sleeve.length - dims.cuffHeight }, { x: (cap - cuff) / 2, y: capHeight + sleeve.length - dims.cuffHeight });
-    return pts;
-  };
-  pieces.push(make('sleeveLeft', sleeveOutline(), 1), make('sleeveRight', sleeveOutline(), 1));
+  pieces.push(make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1));
   if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1));
   // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1),
@@ -654,37 +670,6 @@ function chestPocketOutline(width: number, height: number, x: number, y: number)
 
 export interface PartMesh { part: PartId; positions: number[]; uvs: number[]; indices: number[] }
 type Pt = { x: number; y: number };
-interface Silhouette { points: Pt[]; pinned: boolean[]; neck: boolean[]; armholes: [Pt, Pt][] }
-
-/**
- * The tee's flat front (or back) silhouette in cm, x across from the centre and y down from the shoulder line:
- * shoulders, sleeves angled down, side seams, hem and neckline. `pinned` marks seam edges where the front and
- * back meet (shoulders, sleeve edges, sides); the hem, cuffs and neck stay open. `armholes` are the sleeve seams.
- */
-export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhouette {
-  const m = topMeasurements(product), half = panelSize(m).width / 2;
-  const { neckHalf, shoulderX, shoulderDrop, armDepth } = teeDimensions(product);
-  const angle = teeDimensions(product).sleeveAngle * Math.PI / 180, dir = { x: Math.cos(angle), y: Math.sin(angle) }, perp = { x: -Math.sin(angle), y: Math.cos(angle) };
-  const shoulder = { x: shoulderX, y: shoulderDrop }, underarm = { x: half, y: shoulderDrop + armDepth };
-  const cuffHalf = teeDimensions(product).cuffHalf, top = { x: shoulder.x + dir.x * m.sleeve, y: shoulder.y + dir.y * m.sleeve };
-  const bottom = { x: top.x + perp.x * cuffHalf, y: top.y + perp.y * cuffHalf };
-  const neckDepth = side === 'front' ? teeDimensions(product).neckDepthFront : teeDimensions(product).neckDepthBack;
-  const mirror = (p: Pt) => ({ x: -p.x, y: p.y });
-  const neckPoint = { x: neckHalf, y: 0 }, hem = { x: teeDimensions(product).hemHalf, y: m.length - teeDimensions(product).hemCurve };
-  // Corners clockwise from the right neck point; edge i runs from corner i to corner i+1.
-  const corners = [neckPoint, shoulder, top, bottom, underarm, hem, mirror(hem), mirror(underarm), mirror(bottom), mirror(top), mirror(shoulder), mirror(neckPoint)];
-  //            shoulder  sleeve-top cuff   sleeve-bottom side  hem    side  sleeve-bottom cuff  sleeve-top shoulder neck
-  const seams = [true,     true,      false, true,         true,  false, true, true,         false, true,      true,    false];
-  const points: Pt[] = [...corners], pinned = [...seams], neck: boolean[] = seams.map((_, i) => i === 11);
-  // The neckline runs from the left neck point back to the right one.
-  for (let k = 1; k < 10; k++) {
-    const x = -neckHalf + 2 * neckHalf * k / 10;
-    const y = product.neckline === 'v' && side === 'front' ? neckDepth * (1 - Math.abs(x) / neckHalf) : neckDepth * Math.sqrt(Math.max(0, 1 - (x / neckHalf) ** 2));
-    points.push({ x, y }); pinned.push(false); neck.push(true);
-  }
-  return { points, pinned, neck, armholes: [[shoulder, underarm], [{ x: -shoulder.x, y: shoulder.y }, { x: -underarm.x, y: underarm.y }]] };
-}
-
 function inside(p: Pt, polygon: Pt[]): boolean {
   let hit = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -699,82 +684,138 @@ function segmentDistance(p: Pt, a: Pt, b: Pt): number {
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
 }
 
-/** Distance from the seams the front and back are joined along. */
-function seamDistance(p: Pt, s: Silhouette): number {
-  let best = Infinity;
-  for (let i = 0; i < s.points.length; i++) if (s.pinned[i]) best = Math.min(best, segmentDistance(p, s.points[i], s.points[(i + 1) % s.points.length]));
-  return best;
+type DelaunatorLike = { from(points: number[][]): { triangles: Uint32Array | number[] } };
+type P3 = { x: number; y: number; z: number };
+/** Largest edge, cm, along the open and sewn edges of a top's 3D pieces. */
+const MESH_STEP = 1.5;
+
+/** A polyline with each segment split into equal parts at most `step` long; its own points are kept. */
+function densify(points: Pt[], step = MESH_STEP): Pt[] {
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step - 1e-9));
+    for (let k = 1; k < n; k++) out.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+    out.push(b);
+  }
+  return out;
+}
+
+/** The product's 3D parts: tops sewn from their pattern pieces (topMesh), skirts and trousers from their panels. */
+export function teeMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
+  if (product.base === 'skirt') return skirtMesh(product);
+  if (isBottoms(product)) return trouserMesh(product);
+  return topMesh(product, Delaunator);
 }
 
 /**
- * A styling surface built from the flat silhouettes: each side is triangulated and "inflated" by its distance
- * from the joined seams, so the front and back meet exactly along the shoulders, sleeves and sides while the
- * hem, cuffs and neck stay open. y is up (hem at 0), z toward the viewer, units cm. UVs are flat cm.
+ * A top in 3D, sewn from its pattern pieces. The front and back body pieces are triangulated flat and "inflated" by
+ * their distance from the shoulder and side seams, where they meet exactly; the hem, neck and armholes stay open. Each
+ * sleeve piece is a tube from its armhole (the front armhole up to the shoulder point, then the back armhole down
+ * again) along the sleeve angle to its opening: its cap meets the armhole point for point and its two underarm seams
+ * meet each other. Rib cuffs and the hem band continue the sleeve openings and the hem, cut 15% shorter so that they
+ * gather them, and the neck rib or hood rises from the neckline. y is up (hem at 0), z toward the viewer and x toward
+ * the wearer's left, in cm. UVs are each piece's flat pattern position in cm (mirrored on the back so prints read left
+ * to right from behind).
  */
-export function teeMesh(product: Product, Delaunator: { from(points: number[][]): { triangles: Uint32Array | number[] } }): PartMesh[] {
-  if (product.base === 'skirt') return skirtMesh(product);
-  if (isBottoms(product)) return trouserMesh(product);
+function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   const m = topMeasurements(product), depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
   const groups = new Map<PartId, PartMesh>();
   for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
-  for (const side of ['front', 'back'] as const) {
-    const s = teeSilhouette(product, side), sign = side === 'front' ? 1 : -1, c = s.points;
-    // Rounding-level distances are on the seam: snap them so front and back coincide exactly there.
-    const height = (p: Pt) => { const d = Math.min(seamDistance(p, s), depth); return d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
-    // Regions share their armhole edges exactly, so the sleeve seams join without gaps.
-    // Corner indices: 0 neck, 1 shoulder, 2 sleeve top, 3 cuff bottom, 4 underarm, 5 hem (and mirrored 6–11).
-    // A curved hem dips from the side seams to the centre: points between the hem corners (right to left).
-    const hem = dims.hemCurve ? hemLine(dims.hemHalf * 2, m.length, dims.hemCurve).slice(1, -1).reverse().map(p => ({ x: p.x - dims.hemHalf, y: p.y })) : [];
-    let regions: { part: PartId; polygon: Pt[] }[] = [
-      { part: side, polygon: [c[0], c[1], c[4], c[5], ...hem, c[6], c[7], c[10], ...c.slice(11)] },
-      { part: 'sleeveLeft', polygon: [c[1], c[2], c[3], c[4]] },
-      { part: 'sleeveRight', polygon: [c[7], c[8], c[9], c[10]] },
-    ];
-    if (dims.band) {
-      // Rib bands: the body ends above the hem band and each sleeve above its cuff. Split points lie on the
-      // silhouette's own edges, so the shell's seams are unchanged and neighbouring regions share edges.
-      const toward = (from: Pt, to: Pt, distance: number) => { const length = Math.hypot(to.x - from.x, to.y - from.y); return { x: from.x + (to.x - from.x) * distance / length, y: from.y + (to.y - from.y) * distance / length }; };
-      // The band's top corners lie on the (possibly slanted) side seams.
-      const onSide = (a: Pt, b: Pt, y: number) => ({ x: a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y), y });
-      const bandTop = m.length - dims.band, right = onSide(c[4], c[5], bandTop), left = onSide(c[7], c[6], bandTop);
-      const leftTop = toward(c[2], c[1], dims.cuffHeight), leftBottom = toward(c[3], c[4], dims.cuffHeight);
-      const rightTop = toward(c[9], c[10], dims.cuffHeight), rightBottom = toward(c[8], c[7], dims.cuffHeight);
-      regions = [
-        { part: side, polygon: [c[0], c[1], c[4], right, left, c[7], c[10], ...c.slice(11)] },
-        { part: 'hemBand', polygon: [right, c[5], c[6], left] },
-        { part: 'sleeveLeft', polygon: [c[1], leftTop, leftBottom, c[4]] },
-        { part: 'cuffLeft', polygon: [leftTop, c[2], c[3], leftBottom] },
-        { part: 'sleeveRight', polygon: [c[7], rightBottom, rightTop, c[10]] },
-        { part: 'cuffRight', polygon: [rightBottom, c[8], c[9], rightTop] },
-      ];
+  // Body pieces centred: x across from the centre line, y down from the neck points.
+  const centre = flare(product) + panelSize(m).width / 2, centred = (p: Pt) => ({ x: p.x - centre, y: p.y });
+  const outline = (front: boolean) => {
+    const o = bodyOutline(product, front, m.length - dims.band);
+    return { neckLeft: centred(o.neckLeft), armholeLeft: densify(o.armholeLeft.map(centred)), hem: densify(o.hem.map(centred)),
+      armholeRight: densify(o.armholeRight.map(centred)), neck: densify([o.neckRight, ...o.neckline, o.neckLeft].map(centred)) };
+  };
+  const front = outline(true), back = outline(false);
+  // The shoulder and side seams, which the front and back share.
+  const seams: [Pt, Pt][] = [[front.neckLeft, front.armholeLeft[0]], [front.armholeRight.at(-1)!, front.neck[0]],
+    [front.armholeLeft.at(-1)!, front.hem[0]], [front.hem.at(-1)!, front.armholeRight[0]]];
+  // Rounding-level distances are on a seam: snap them so the front and back coincide exactly there.
+  const rise = (p: Pt) => { const d = Math.min(depth, ...seams.map(([a, b]) => segmentDistance(p, a, b))); return d < 1e-6 ? 0 : depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
+  const shell = (p: Pt, sign: number): P3 => ({ x: p.x, y: top - p.y, z: sign * rise(p) });
+  for (const [side, o] of [['front', front], ['back', back]] as const) {
+    const sign = side === 'front' ? 1 : -1;
+    fillRegion(groups.get(side)!, [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, ...o.neck.slice(0, -1)], Delaunator, p => sign * rise(p), top, side);
+  }
+  if (product.base === 'hoodie') {
+    // The kangaroo pocket sits just above the hem band, slightly proud of the front body.
+    const y0 = dims.pocketTop, y1 = m.length - dims.band - 0.01;
+    fillRegion(groups.get('pocket')!, [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }],
+      Delaunator, p => rise(p) + 0.5, top, 'front');
+  }
+  if (optionsOf(product).chestPocket) {
+    fillRegion(groups.get('chestPocket')!, chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY),
+      Delaunator, p => rise(p) + 0.35, top, 'front');
+  }
+  // Sleeves, posed along the sleeve angle like the body's arms; flat directions have y down.
+  const sleeve = sleeveOutline(product), angle = dims.sleeveAngle * Math.PI / 180, along = { x: Math.cos(angle), y: Math.sin(angle) }, across = { x: -Math.sin(angle), y: Math.cos(angle) };
+  const length = sleeve.opening[0].y, opening = sleeve.opening[1].x - sleeve.opening[0].x, radius = opening / (2 * Math.PI);
+  for (const [part, cuff, x, frontArmhole, backArmhole] of [
+    ['sleeveLeft', 'cuffLeft', 1, front.armholeRight, back.armholeRight],
+    ['sleeveRight', 'cuffRight', -1, [...front.armholeLeft].reverse(), [...back.armholeLeft].reverse()],
+  ] as const) {
+    // Underarm to shoulder point on the front, then back down to the underarm.
+    const loop = [...frontArmhole.map(p => shell(p, 1)), ...[...backArmhole].reverse().slice(1).map(p => shell(p, -1))], columns = loop.length - 1;
+    // The opening: a ring round the sleeve's centre line, which starts at the shoulder point, its underarm point
+    // nearest the body and its top on that line.
+    const ring = (distance: number, r: number) => {
+      const c = { x: dims.shoulderX + along.x * distance + across.x * r, y: dims.shoulderDrop + along.y * distance + across.y * r };
+      return loop.map((_, k): P3 => {
+        // The last column is the first again, exactly, so the underarm seam closes.
+        const theta = 2 * Math.PI * (k % columns) / columns;
+        return { x: x * (c.x + across.x * r * Math.cos(theta)), y: top - c.y - across.y * r * Math.cos(theta), z: r * Math.sin(theta) };
+      });
+    };
+    const end = ring(length, radius), rows = Math.max(2, Math.ceil(length / 2));
+    const capAt = (k: number) => alongPolyline(sleeve.cap, k / columns);
+    tube(groups.get(part)!, rows, columns, k => [loop[k], end[k]], (k, v) => {
+      const a = capAt(k), b = { x: sleeve.opening[0].x + opening * k / columns, y: sleeve.opening[0].y };
+      return { x: a.x + (b.x - a.x) * v, y: a.y + (b.y - a.y) * v };
+    });
+    if (dims.cuffHeight) {
+      // Rib cuffs are cut about 15% shorter than the sleeve opening they finish.
+      const width = dims.cuffHalf * 2 * 0.85, rib = ring(length + dims.cuffHeight, width / (2 * Math.PI));
+      tube(groups.get(cuff)!, Math.max(2, Math.ceil(dims.cuffHeight / MESH_STEP)), columns, k => [end[k], rib[k]], (k, v) => ({ x: width * k / columns, y: dims.cuffHeight * v }));
     }
-    if (side === 'front' && product.base === 'hoodie') {
-      // The kangaroo pocket sits just above the hem band, slightly proud of the front body.
-      const y0 = dims.pocketTop, y1 = m.length - dims.band - 0.01;
-      regions.push({ part: 'pocket', polygon: [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }] });
-    }
-    if (side === 'front' && optionsOf(product).chestPocket) {
-      regions.push({ part: 'chestPocket', polygon: chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY) });
-    }
-    for (const { part, polygon } of regions) {
-      const lift = part === 'pocket' ? 0.5 : part === 'chestPocket' ? 0.35 : 0;
-      fillRegion(groups.get(part)!, polygon, Delaunator, p => height(p) + lift, top, side);
-    }
+  }
+  if (dims.band) {
+    // The hem band: round the open hem, front left to right, then back right to left, hanging straight down.
+    const flat = [...front.hem, ...[...back.hem].reverse().slice(1)], hem = flat.map((p, k) => shell(p, k < front.hem.length ? 1 : -1)), cut = [0];
+    // The band is cut 15% shorter than the hem it finishes.
+    for (let k = 1; k < flat.length; k++) cut.push(cut[k - 1] + Math.hypot(flat[k].x - flat[k - 1].x, flat[k].y - flat[k - 1].y) * 0.85);
+    tube(groups.get('hemBand')!, Math.max(2, Math.ceil(dims.band / MESH_STEP)), flat.length - 1, k => [hem[k], { ...hem[k], y: hem[k].y - dims.band }], (k, v) => ({ x: cut[k], y: dims.band * v }));
   }
   // The open neck edge, front curve (left to right) then back curve (right to left).
-  const ring: { x: number; y: number; z: number }[] = [], fronts: number[] = [];
-  for (const side of ['front', 'back'] as const) {
-    const s = teeSilhouette(product, side), sign = side === 'front' ? 1 : -1;
-    const neckPoints = s.points.filter((_, i) => s.neck[i] || s.neck[(i - 1 + s.points.length) % s.points.length]).sort((a, b) => a.x - b.x);
-    const ordered = side === 'front' ? neckPoints : [...neckPoints].reverse();
-    for (const p of ordered) { const d = Math.min(seamDistance(p, s), depth); if (side === 'front') fronts.push(ring.length); ring.push({ x: p.x, y: top - p.y, z: d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2) }); }
-  }
-  if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, ring, new Set(fronts), dims);
-  else neckRib(groups.get('neckband')!, ring, dims.ribHeight);
+  const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
+  if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, neck, new Set(front.neck.map((_, i) => i)), dims);
+  else neckRib(groups.get('neckband')!, neck, dims.ribHeight);
   return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
 }
 
-type DelaunatorLike = { from(points: number[][]): { triangles: Uint32Array | number[] } };
+/**
+ * A tube of `rows` rows into `mesh` between the two ends `ends(k)` of each column k (its first and last columns meet),
+ * with flat pattern positions `flat(k, v)` at v from 0 to 1 along it. Faces are wound outward, away from its centre line.
+ */
+function tube(mesh: PartMesh, rows: number, columns: number, ends: (k: number) => [P3, P3], flat: (k: number, v: number) => Pt) {
+  const base = mesh.positions.length / 3, at = (r: number, k: number) => base + r * (columns + 1) + k;
+  for (let r = 0; r <= rows; r++) for (let k = 0; k <= columns; k++) {
+    const v = r / rows, [a, b] = ends(k), f = flat(k, v);
+    mesh.positions.push(a.x + (b.x - a.x) * v, a.y + (b.y - a.y) * v, a.z + (b.z - a.z) * v);
+    mesh.uvs.push(f.x, f.y);
+  }
+  const point = (i: number) => ({ x: mesh.positions[i * 3], y: mesh.positions[i * 3 + 1], z: mesh.positions[i * 3 + 2] });
+  // Which way round is outward, from one quad halfway along: its normal against its offset from the row's centre.
+  const r = Math.floor(rows / 2), k = Math.floor(columns / 4), a = point(at(r, k)), b = point(at(r, k + 1)), c = point(at(r + 1, k)), middle = { x: 0, y: 0, z: 0 };
+  for (let j = 0; j < columns; j++) { const q = point(at(r, j)); middle.x += q.x / columns; middle.y += q.y / columns; middle.z += q.z / columns; }
+  const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z, vx = c.x - a.x, vy = c.y - a.y, vz = c.z - a.z;
+  const outward = (uy * vz - uz * vy) * (a.x - middle.x) + (uz * vx - ux * vz) * (a.y - middle.y) + (ux * vy - uy * vx) * (a.z - middle.z) > 0;
+  for (let r = 0; r < rows; r++) for (let k = 0; k < columns; k++) {
+    const p = at(r, k), q = at(r, k + 1), s = at(r + 1, k), t = at(r + 1, k + 1);
+    mesh.indices.push(...(outward ? [p, q, s, q, t, s] : [p, s, q, q, s, t]));
+  }
+}
 /**
  * Triangulates a flat region (boundary samples every 1.5 cm plus a 2 cm interior grid) into `group`: x stays, y is
  * flipped so the hem sits at 0 below `top`, z comes from `z`, and UVs are flat cm (mirrored on the back so prints
@@ -783,7 +824,7 @@ type DelaunatorLike = { from(points: number[][]): { triangles: Uint32Array | num
 function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, z: (p: Pt) => number, top: number, side: 'front' | 'back') {
   const samples: Pt[] = [];
   for (let i = 0; i < polygon.length; i++) {
-    const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / MESH_STEP - 1e-9));
     for (let k = 0; k < n; k++) samples.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
   }
   const xs = polygon.map(p => p.x), ys = polygon.map(p => p.y), boundary = samples.length;

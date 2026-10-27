@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { motifPlacements } from '../src/fabric-texture.ts';
 import { validateProject, createProject } from '../src/model.ts';
-import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeMesh, teeSilhouette, template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
+import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeDimensions, teeMesh, template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 
@@ -46,10 +46,9 @@ test('pattern pieces follow the measurements', () => {
   assert.ok(Math.max(...v[0].outline.slice(10).map(pt => pt.y)) === 15, 'the V-neck front dips 15 cm');
 });
 
-test('the 3D garment joins front and back exactly along the seams, leaves hem, cuffs and neck open, and uses cm UVs', () => {
+test('the 3D garment is sewn from its pattern pieces: front and back meet at the seams, sleeves are set in, hem, cuffs and neck stay open', () => {
   const p = ringer(), meshes = teeMesh(p, Delaunator);
   assert.deepEqual(meshes.map(m => m.part), [...partsOf(p)]);
-  const front = teeSilhouette(p, 'front');
   for (const mesh of meshes) {
     assert.equal(mesh.positions.length / 3, mesh.uvs.length / 2);
     assert.ok(mesh.indices.length > 30 && mesh.indices.every(i => i < mesh.positions.length / 3), mesh.part);
@@ -64,15 +63,24 @@ test('the 3D garment joins front and back exactly along the seams, leaves hem, c
   // The hem stays open: away from the sides, hem vertices stand off the seam plane.
   const hem = f.filter(q => Math.abs(q.y) < 1e-9 && Math.abs(q.x) < half - 8);
   assert.ok(hem.length > 5 && hem.every(q => q.z > 5), 'open hem');
-  // Each sleeve shares its armhole vertices with the body, so there is no gap at the seam.
-  const sleeve = points(meshes.find(m => m.part === 'sleeveLeft')!);
+  // Each sleeve's cap shares its armhole vertices with the front and back, so there is no gap at the seam, and its
+  // two underarm seams meet: the sleeve is a closed tube.
+  const sleeveMesh = meshes.find(m => m.part === 'sleeveLeft')!, sleeve = points(sleeveMesh);
   const key = (q: { x: number; y: number; z: number }) => `${q.x.toFixed(6)},${q.y.toFixed(6)},${q.z.toFixed(6)}`;
-  const bodyKeys = new Set(f.map(key)), shared = sleeve.filter(q => bodyKeys.has(key(q)));
-  assert.ok(shared.length >= 15, `shared armhole vertices: ${shared.length}`);
-  // UVs are flat cm: across the front they span the silhouette width.
+  const shared = (pts: typeof f) => { const keys = new Set(pts.map(key)); return sleeve.filter(q => keys.has(key(q))).length; };
+  assert.ok(shared(f) >= 15 && shared(b) >= 15, `shared armhole vertices: ${shared(f)}, ${shared(b)}`);
+  const counts = new Map<string, number>();
+  for (const q of sleeve) counts.set(key(q), (counts.get(key(q)) ?? 0) + 1);
+  assert.ok([...counts.values()].filter(n => n === 2).length >= 8, 'underarm seam');
+  // UVs are flat pattern cm: across the front they span its width, and the sleeve's span its pattern piece.
   const us = body.uvs.filter((_, i) => i % 2 === 0);
   assert.ok(Math.abs(Math.max(...us) - Math.min(...us) - 2 * half) < 1e-9, 'front body UVs span its flat width in cm');
-  assert.equal(front.points.length, 21, '12 corners and 9 neckline points');
+  const piece = patternPieces(p).find(piece => piece.part === 'sleeveLeft')!, su = sleeveMesh.uvs.filter((_, i) => i % 2 === 0), sv = sleeveMesh.uvs.filter((_, i) => i % 2 === 1);
+  assert.ok(Math.abs(Math.min(...su)) < 1e-9 && Math.abs(Math.max(...su) - piece.width) < 1e-6 && Math.abs(Math.min(...sv)) < 1e-6 && Math.abs(Math.max(...sv) - piece.height) < 1e-9, 'sleeve UVs are its pattern piece');
+  // The sleeve hangs from the shoulder point along the sleeve angle, past the body's side.
+  const d = teeDimensions(p);
+  assert.ok(sleeve.some(q => Math.abs(q.x - d.shoulderX) < 1e-9 && Math.abs(q.y - (top - d.shoulderDrop)) < 1e-9 && Math.abs(q.z) < 1e-9), 'cap top at the shoulder point');
+  assert.ok(Math.max(...sleeve.map(q => q.x)) > d.half + 5, 'the sleeve reaches past the side seam');
   // Measurements reshape the garment.
   const long = teeMesh({ ...p, measurements: { ...topMeasurements(p), sleeve: 60 } }, Delaunator).find(m => m.part === 'sleeveLeft')!;
   assert.ok(Math.max(...long.positions.filter((_, i) => i % 3 === 0)) > Math.max(...sleeve.map(q => q.x)) + 25);
@@ -292,7 +300,8 @@ test('fit: edited points of measure drive the pattern, the 3D shell and the tech
   // Without fit, the pattern's shoulder point now sits where the 3D shell and tech pack put it.
   const shoulderOf = (design: typeof tee) => patternPieces(design).find(piece => piece.part === 'front')!.outline[1];
   assert.ok(Math.abs(shoulderOf(tee).x - (d0.half - d0.shoulderX)) < 1e-9);
-  assert.ok(Math.abs(teeSilhouette(tee, 'front').points[1].x - d0.shoulderX) < 1e-9);
+  const vertexAt = (design: typeof tee, part: 'front' | 'back', x: number, y: number) => { const mesh = teeMesh(design, Delaunator).find(m => m.part === part)!; return mesh.positions.some((_, i) => i % 3 === 0 && Math.abs(mesh.positions[i] - x) < 1e-9 && Math.abs(mesh.positions[i + 1] - y) < 1e-9 && Math.abs(mesh.positions[i + 2]) < 1e-9); };
+  assert.ok(vertexAt(tee, 'front', d0.shoulderX, topMeasurements(tee).length - d0.shoulderDrop) && vertexAt(tee, 'back', -d0.shoulderX, topMeasurements(tee).length - d0.shoulderDrop));
 
   const fitted = validateProduct({ ...tee, fit: { shoulderWidth: 40, neckWidth: 18, frontNeckDrop: 11, armholeDepth: 24, hemWidth: 46, sleeveOpening: 14 } });
   const d = teeDimensions(fitted), front = patternPieces(fitted).find(piece => piece.part === 'front')!, sleeve = patternPieces(fitted).find(piece => piece.part === 'sleeveLeft')!;
@@ -303,8 +312,7 @@ test('fit: edited points of measure drive the pattern, the 3D shell and the tech
   assert.ok(Math.abs(Math.max(...hemXs) - Math.min(...hemXs) - 46) < 1e-9, 'tapered hem is 46 cm side to side');
   assert.equal(sleeve.width, (24 + 2) * 2, 'the sleeve cap follows the armhole');
   assert.ok(Math.abs(sleeve.outline.at(-2)!.x - sleeve.outline.at(-1)!.x - 28) < 1e-9, 'sleeve opening');
-  const silhouette = teeSilhouette(fitted, 'front');
-  assert.deepEqual([silhouette.points[1].x, silhouette.points[5].x], [20, 23], '3D shoulder and hem corners');
+  assert.ok(vertexAt(fitted, 'front', 20, topMeasurements(fitted).length - d.shoulderDrop) && vertexAt(fitted, 'front', 23, 0), '3D shoulder and hem corners');
   const pack = buildTechPack(fitted, '2026-10-13'), value = (code: string) => pack.poms.find(p => p.code === code)!.values.M;
   assert.deepEqual(['E', 'F', 'G', 'D', 'I', 'J'].map(value), [40, 18, 11, 24, 46, 14]);
   // The shell stays closed at the sleeves with an edited armhole.

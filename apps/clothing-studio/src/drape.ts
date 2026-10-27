@@ -173,7 +173,7 @@ export function simulateDrape(draft: SkirtDraft, kind: FabricKind, measured?: Bo
   const body = measured ? validateBodyMeasurements(measured) : assumedBody(d);
   const frames = options.frames ?? 300, substeps = options.substeps ?? 12, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames < 1 || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
-  const start = initialPositions(d), meshes = panelMeshes(d, start), cloth = clothFromMeshes(meshes, () => fabric, true);
+  const start = initialPositions(d), meshes = panelMeshes(d, start), cloth = clothFromMeshes(meshes, () => fabric);
   // Each ring particle's cloth particle (the panels share their side-seam columns).
   const total = 2 * COLUMNS, particle = new Int32Array((ROWS + 1) * total);
   meshes.forEach((mesh, panel) => {
