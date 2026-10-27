@@ -1,6 +1,8 @@
 import {draftLines,validateCues} from './lyrics.ts';
 export interface LyricsQuery { title:string; artist:string; duration:number }
-export interface LyricsRecord {id:number; title:string;artist:string;album:string;duration:number;text:string;source:string}
+export interface LyricsCue {start:number;end:number;text:string}
+/** `cues` are the provider's own line timings, when it has synced lyrics that fit this clip. */
+export interface LyricsRecord {id:number; title:string;artist:string;album:string;duration:number;text:string;source:string;cues?:LyricsCue[]}
 const MAX_BYTES=128*1024;
 function metadata(value:unknown,label:string,empty=false):string {
   // eslint-disable-next-line no-control-regex -- Query metadata must not contain control characters.
@@ -10,6 +12,35 @@ function metadata(value:unknown,label:string,empty=false):string {
 export function lookupQuery(query:LyricsQuery):LyricsQuery {
   if(!Number.isFinite(query.duration)||query.duration<1||query.duration>600)throw new Error('Choose a saved clip before looking up lyrics.');
   return {title:metadata(query.title,'song title'),artist:metadata(query.artist,'artist'),duration:query.duration};
+}
+/** The longest a last line or a line before a long gap is held, in seconds. */
+const MAX_HOLD=8;
+/**
+ * Published line timings from synced LRC ("[01:02.34] words", several stamps for a repeated line). A line ends when the
+ * next timed line, or a timed blank (an instrumental gap), starts, and is held at most MAX_HOLD seconds. Returns null
+ * when the timings do not fit the clip, so the plain words are aligned locally instead.
+ */
+export function parseSyncedLyrics(lrc:string,duration:number):LyricsCue[]|null {
+  const stamps:{time:number;text:string}[]=[];
+  for(const line of lrc.split(/\r\n|\n|\r/)){
+    const tags=/^((?:\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\])+)(.*)$/.exec(line.trim());
+    if(!tags)continue;
+    const text=tags[2]!.replace(/<\d{1,3}:\d{2}(?:[.:]\d{1,3})?>/g,'').replace(/\s+/g,' ').trim();
+    for(const tag of tags[1]!.matchAll(/\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g)){
+      const fraction=tag[3]?Number(tag[3])/10**tag[3].length:0,time=Number(tag[1])*60+Number(tag[2])+fraction;
+      if(Number(tag[2])<60&&time<duration)stamps.push({time,text});
+    }
+  }
+  stamps.sort((a,b)=>a.time-b.time);
+  const cues:LyricsCue[]=[];
+  stamps.forEach((stamp,index)=>{
+    if(!stamp.text)return;
+    const next=stamps.slice(index+1).find(other=>other.time>stamp.time)?.time??duration;
+    const end=Math.min(next,stamp.time+MAX_HOLD,duration);
+    if(end-stamp.time>=0.05)cues.push({start:Math.round(stamp.time*1000)/1000,end:Math.round(end*1000)/1000,text:stamp.text.slice(0,240)});
+  });
+  if(!cues.length)return null;
+  try{return validateCues(cues,duration);}catch{return null;}
 }
 const comparable=(text:string)=>text.normalize('NFC').toLowerCase().replace(/\s+/gu,' ').trim();
 export function parseLyricsRecord(value:unknown,input:LyricsQuery):LyricsRecord {
@@ -22,7 +53,8 @@ export function parseLyricsRecord(value:unknown,input:LyricsQuery):LyricsRecord 
   if(r.instrumental!==false||typeof r.plainLyrics!=='string')throw new Error('No plain lyrics are available for this song. Local recognition and pasting still work.');
   const lines=draftLines(r.plainLyrics);
   validateCues(lines.map((text,i)=>({start:i,end:i+1,text})),Math.max(lines.length,1));
-  return {id:Number(r.id),title,artist,album,duration:r.duration,text:lines.join('\n'),source:`https://lrclib.net/api/get/${r.id}`};
+  const cues=typeof r.syncedLyrics==='string'?parseSyncedLyrics(r.syncedLyrics,query.duration):null;
+  return {id:Number(r.id),title,artist,album,duration:r.duration,text:lines.join('\n'),source:`https://lrclib.net/api/get/${r.id}`,...(cues?{cues}:{})};
 }
 /** A deliberate metadata-only browser request. No audio, credentials, redirects or referrer. */
 export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:typeof fetch=fetch,timeoutMs=8000):Promise<LyricsRecord> {
