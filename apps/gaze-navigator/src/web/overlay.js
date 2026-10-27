@@ -8,6 +8,7 @@ import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createLocalCamera } from './camera-source.js';
 import { runCalibration } from './calibration.js';
+import { recommendedSize, runAccuracyCheck } from './accuracy-check.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
 const STORAGE_KEY = 'gaze-web-navigator';
@@ -29,6 +30,7 @@ const STYLE = `
 .circle.lost { border-style: dotted; }
 .calibration-dot { position: fixed; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #f5c76b; box-shadow: 0 0 0 6px #0009, 0 0 0 14px rgba(245,199,107,.35); }
 .calibration-dot.sampling { background: #75e5b4; box-shadow: 0 0 0 6px #0009, 0 0 0 10px rgba(117,229,180,.45); }
+.calibration-dot.checking { background: #8fc7ff; box-shadow: 0 0 0 6px #0009, 0 0 0 10px rgba(143,199,255,.45); }
 .calibration-dot.hidden { display: none; }
 .outline { position: fixed; border: 2px solid #75e5b4; border-radius: 6px; box-shadow: 0 0 0 2px #0008; }
 .outline.question { border-color: #f5c76b; border-width: 3px; }
@@ -214,6 +216,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     onGaze: (x, y, time) => track(x, y, time),
     onLost: () => ui.circle.classList.add('lost'),
   });
+  // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
   let point = null;
   let frozen = false;
@@ -429,7 +432,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
-    if (calibration) return;
+    if (calibration) {
+      const next = calibration.sample && filter.filter(x, y, time);
+      if (next) calibration.sample(next.x, next.y);
+      return;
+    }
     ui.circle.classList.remove('lost');
     const next = settings.source === 'camera' ? filter.filter(x, y, time) : { x, y };
     if (!next) return;
@@ -680,7 +687,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
       else if (result.ok) {
         if (camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
-        feedback({ message: `Calibrated with ${result.calibrated} of ${result.total} dots. The circle now follows your gaze.`, tone: 'success' });
+        checkAccuracy(`Calibrated with ${result.calibrated} of ${result.total} dots.`);
       }
       else feedback({ message: `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
     }, () => {
@@ -688,6 +695,40 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       feedback({ message: 'Calibration failed. Say recalibrate to try again, or use pointer.', tone: 'error' });
     });
     return { ok: true, message: `Calibrating without clicks. ${instruction}` };
+  }
+
+  // Four more dots measure where the calibrated gaze lands; the circle is then sized to hold 9 in 10 gaze samples.
+  function checkAccuracy(calibrated) {
+    filter.reset();
+    const check = runAccuracyCheck({
+      window, dot: ui.dot,
+      onProgress({ point: number, total }) {
+        ui.status.textContent = `${calibrated} Checking accuracy: look at dot ${number} of ${total}.`;
+        ui.status.className = 'status question';
+      },
+    });
+    calibration = check;
+    check.done.then(report => {
+      if (calibration !== check) return;
+      calibration = null;
+      const current = () => `${settings.size} (${radius()} px)`;
+      if (report.cancelled) {
+        feedback({ message: `${calibrated} Accuracy check stopped, so the circle stays ${current()}. The circle now follows your gaze.`, tone: 'info' });
+        return;
+      }
+      const recommended = recommendedSize(report, RADII);
+      if (!recommended) {
+        feedback({ message: `${calibrated} The accuracy check saw too little gaze to measure, so the circle stays ${current()}. The circle now follows your gaze.`, tone: 'info' });
+        return;
+      }
+      settings.size = recommended.size;
+      ui.size.value = recommended.size;
+      store.save(settings);
+      schedule();
+      feedback(recommended.low
+        ? { message: `${calibrated} Your gaze lands up to about ${report.p90Px} px from where you look, more than the large circle (${radius()} px) covers. Check lighting and keep your head still, then say recalibrate, or use pointer.`, tone: 'error' }
+        : { message: `${calibrated} Your gaze lands within about ${report.p90Px} px of where you look, so the circle is ${current()}. The circle now follows your gaze.`, tone: 'success' });
+    });
   }
 
   function setListening(on) {

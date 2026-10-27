@@ -73,10 +73,24 @@ async function startCamera(page) {
   await expect(status(page)).toContainText('Look at dot 1 of 9');
 }
 
-async function finishCalibration(page) {
+// Calibration, then the accuracy check's four dots with no gaze to measure: the circle keeps its size.
+async function finishCalibration(page, circle = 'medium (90 px)') {
   await page.clock.runFor(9 * 1900 + 100);
-  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.');
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. Checking accuracy: look at dot 1 of 4.');
+  await expect(dot(page)).toHaveClass(/checking/);
+  await page.clock.runFor(4 * 2000);
+  await expect(status(page)).toHaveText(`Calibrated with 9 of 9 dots. The accuracy check saw too little gaze to measure, so the circle stays ${circle}. The circle now follows your gaze.`);
   await expect(dot(page)).toHaveClass(/hidden/);
+}
+
+// Steady gaze `offset` px to the right of each accuracy-check dot, at about 30 samples a second.
+async function lookNearCheckDots(page, offset) {
+  for (;;) {
+    const [shown, x, y] = await dot(page).evaluate(element => [element.classList.contains('checking'), parseFloat(element.style.left), parseFloat(element.style.top)]);
+    if (!shown) break;
+    await page.evaluate(([x, y]) => window.webgazer.emit({ x, y }), [x + offset, y]);
+    await page.clock.runFor(33);
+  }
 }
 
 // Emits steady gaze at an element's center long enough for smoothing to settle there.
@@ -113,6 +127,28 @@ test('hands-free calibration needs no clicks, then camera gaze selects the conte
   await expect(panel(page).locator('.context li').first()).toHaveText(/Dropdown: Sort by/);
   await typeInstruction(page, 'choose title');
   await expect(page.getByLabel('Sort by')).toHaveValue('Title');
+});
+
+test('after calibration, an accuracy check sizes the circle to where the gaze lands', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await startCamera(page);
+  await page.clock.runFor(9 * 1900 + 100);
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. Checking accuracy: look at dot 1 of 4.');
+  await lookNearCheckDots(page, 50);
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. Your gaze lands within about 50 px of where you look, so the circle is small (60 px). The circle now follows your gaze.');
+  await expect(panel(page).getByLabel('Circle size')).toHaveValue('small');
+  // A poor calibration takes the largest circle and says how to improve it.
+  await typeInstruction(page, 'recalibrate');
+  await page.clock.runFor(9 * 1900 + 100);
+  await lookNearCheckDots(page, 200);
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. Your gaze lands up to about 200 px from where you look, more than the large circle (130 px) covers. Check lighting and keep your head still, then say recalibrate, or use pointer.');
+  await expect(panel(page).getByLabel('Circle size')).toHaveValue('large');
+  // Cancel during the check keeps the calibration and the circle.
+  await typeInstruction(page, 'recalibrate');
+  await page.clock.runFor(9 * 1900 + 100);
+  await typeInstruction(page, 'cancel');
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. Accuracy check stopped, so the circle stays large (130 px). The circle now follows your gaze.');
+  await expect(dot(page)).toHaveClass(/hidden/);
 });
 
 test('camera mode continues after navigation with a fresh calibration, and stop camera releases it', async ({ page }) => {
@@ -183,7 +219,7 @@ test('resizing during calibration keeps the stale circle hidden and preserves th
   await expect(page.locator('#gaze-web-navigator .outline')).toHaveCount(0);
   await expect(dot(page)).toHaveClass(/settling/);
   expect(await page.evaluate(() => window.__camera.released)).toBe(0);
-  await finishCalibration(page);
+  await finishCalibration(page, 'large (130 px)');
   await gazeAt(page, page.getByRole('link', { name: 'Catalog', exact: true }));
   await expect(circle).toHaveClass(/visible/); await expect(circle).toHaveCSS('width', '260px');
 });
