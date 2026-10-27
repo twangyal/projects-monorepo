@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
-import { bendingLength, bendingStencil, bodyProxy, buildCloth, defaultBodyChest, simulateGarment, validateBodyChest } from '../src/garment-drape.ts';
+import { bendingLength, bendingStencil, bodyProxy, buildCloth, defaultBodyChest, directionalStiffness, fabricProperties, simulateGarment, validateBodyChest } from '../src/garment-drape.ts';
 import { material, teeDimensions, teeMesh, template, topMeasurements, trouserDimensions, type Product } from '../src/product.ts';
 
 const ringer = () => template('ringer');
@@ -174,7 +174,8 @@ test('trousers drape from a waistband gathered onto the body waist, with the cro
     assert.ok(body.bottom! > d.inseam && body.capsules.every(leg => Math.abs(leg.a[0]) > leg.radius), 'the legs stand apart under the torso');
     assert.ok(metrics.residualSpeed < 10, `${id} still moving at ${metrics.residualSpeed} cm/s`);
     assert.ok(metrics.minClearance > 0.3, `${id} clearance ${metrics.minClearance}`);
-    assert.ok(metrics.maxStrain < 0.35, `${id} strain ${metrics.maxStrain}`);
+    // The largest stretch is at the crotch point, where the seam runs on the bias.
+    assert.ok(metrics.maxStrain < 0.5, `${id} strain ${metrics.maxStrain}`);
     assert.ok(result.parts.every(part => part.positions.every(Number.isFinite)));
     const positions = (part: string) => { const p = result.parts.find(item => item.part === part)!.positions; return Array.from({ length: p.length / 3 }, (_, i) => [p[i * 3]!, p[i * 3 + 1]!, p[i * 3 + 2]!] as const); };
     // The band is gathered from the hip-wide shell to just outside the body waist.
@@ -191,4 +192,17 @@ test('trousers drape from a waistband gathered onto the body waist, with the cro
   const trousers = template('trousers'), meshes = teeMesh(trousers, Delaunator);
   assert.throws(() => simulateGarment(trousers, meshes, 94, { bodyShape: { hip: 110 }, frames: 60 }), /at least 2 cm smaller than the trousers' 108 cm hip/);
   assert.throws(() => simulateGarment(trousers, meshes, 94, { bodyShape: { waist: 100, hip: 95 }, frames: 60 }), /waist must not be larger than its hip/);
+});
+
+test('fabric stiffness depends on direction to the grain: wovens are soft on the bias, knits across', () => {
+  const along = (id: string, angle: number) => directionalStiffness(fabricProperties(material(id)), Math.sin(angle), Math.cos(angle));
+  for (const id of ['linen-170', 'denim-340']) {
+    assert.ok(along(id, 0) / along(id, Math.PI / 4) > 10, `${id} bias`);
+    assert.ok(along(id, Math.PI / 2) / along(id, 0) > 0.6, `${id} weft`);
+  }
+  const jersey = along('jersey-180', 0) / along('jersey-180', Math.PI / 4);
+  assert.ok(jersey > 1 && jersey < 2.5, `jersey bias ratio ${jersey}`);
+  assert.ok(Math.abs(along('jersey-180', Math.PI / 2) / along('jersey-180', 0) - 0.5) < 1e-9, 'jersey stretches twice as easily across');
+  // The same angle either side of the grain is the same stiffness.
+  assert.ok(Math.abs(along('linen-170', 0.3) - along('linen-170', -0.3)) < 1e-6);
 });

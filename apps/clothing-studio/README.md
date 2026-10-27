@@ -22,7 +22,7 @@ A browser garment-design workspace. It is for designers who want to go from a te
 
 ## Known gaps
 
-- Fabric properties (bending rigidity, membrane stiffness) are typical published values per fabric construction, not measurements of these fabrics, and the model is isotropic (no warp/weft/bias). Drape is not compared against reference drapes. The 3D mesh is about 2 cm, so folds finer than that (soft jersey) cannot form.
+- Fabric properties (bending rigidity, membrane stiffness) are typical published values per fabric construction, not measurements of these fabrics. Stretch depends on direction to the grain (wovens are soft on the bias, knits stretch more across), but the model is elastic: at garment-weight loads this barely changes the hang, and slow bias drop (creep) is not modelled. Drape is not compared against reference drapes. The 3D mesh is about 2 cm, so folds finer than that (soft jersey) cannot form.
 - Trouser legs are straight and posed apart, and a tight front rise shows as stretch at the crotch point rather than as drag lines. The legacy skirt dialog still has its separate simulation, fabric presets and body proxy; solver/body and project-conversion unification remain unfinished. There is no cloth-to-cloth contact, so a hood lies over the back as a single layer. The body is a proxy with assumed heights and limbs, not a personalized avatar.
 - Tops' 3D shells are inflated from their silhouettes; only skirts and trousers are meshed from their pattern panels. Patterns are simplified finished shapes, not graded production patterns. Hood and pocket shapes use fixed proportions.
 - Descriptions are read by a keyword parser with a fixed vocabulary. AI interpretation has not been built, and logos, graphics and construction details are not read.
