@@ -4,8 +4,9 @@ async function say(page,text){await panel(page).getByLabel('Typed instruction').
 async function setup(page){await page.goto('/practice-site/contact.html');await page.evaluate(()=>{const host=document.getElementById('gaze-web-navigator');for(const e of [...document.body.children])if(e!==host)e.remove();const a=document.createElement('a');a.textContent='Nearby page';a.href='#recovered';a.style.cssText='position:fixed;left:240px;top:20px';document.body.append(a);window.clicks=0;a.onclick=()=>window.clicks++;});await page.mouse.move(20,30);}
 test('a bigger circle recovers a named missed target only after a fresh instruction',async({page})=>{
  await setup(page);await say(page,'use a small circle');await expect(panel(page).locator('.status')).toContainText('Small');await expect(page.locator('#gaze-web-navigator .circle')).toHaveCSS('width','120px');
- await say(page,'open nearby page');await expect(panel(page).locator('.status')).toHaveClass(/error/);expect(await page.evaluate(()=>window.clicks)).toBe(0);
- await say(page,'make the circle bigger');await expect(panel(page).locator('.status')).toContainText('Medium');await expect(page.locator('#gaze-web-navigator .circle')).toHaveCSS('width','180px');expect(await page.evaluate(()=>window.clicks)).toBe(0);
+ // Beyond the small circle's reach the link is only offered for confirmation; resizing retires that offer.
+ await say(page,'open nearby page');await expect(panel(page).locator('.status')).toContainText('not near your gaze');expect(await page.evaluate(()=>window.clicks)).toBe(0);
+ await say(page,'make the circle bigger');await expect(panel(page).locator('.status')).toContainText('Medium');await expect(page.locator('#gaze-web-navigator .circle')).toHaveCSS('width','180px');await expect(panel(page).locator('.prompt button')).toHaveCount(0);expect(await page.evaluate(()=>window.clicks)).toBe(0);
  await say(page,'open nearby page');await expect(page).toHaveURL(/#recovered$/);expect(await page.evaluate(()=>window.clicks)).toBe(1);
 });
 test('size stays bounded, persists, works while paused and manual changes retire confirmation',async({page})=>{

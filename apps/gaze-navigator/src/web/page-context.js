@@ -407,6 +407,12 @@ const RECT_MARGIN = 48;
 // so a named control just outside the circle can still be found; ids start here to stay distinct.
 export const NEARBY_FACTOR = 3;
 const NEARBY_FIRST_ID = 101;
+// Beyond that ring, controls anywhere on screen are listed only when an instruction needs them (onScreen), so a
+// clearly named control far from where the gaze landed can be offered for confirmation.
+export const SCREEN_FIRST_ID = 201;
+// The page's focused text field when it is outside the circle: "press enter" still submits what is being typed.
+const FOCUSED_FIELD_ID = 200;
+const SCREEN_LIMIT = 400;
 
 function searchScopes(document, exclude, cache) {
   const now = document.defaultView?.performance?.now() ?? 0;
@@ -421,7 +427,7 @@ function searchScopes(document, exclude, cache) {
 }
 
 // Elements whose rectangles intersect the circle, nearest first, numbered for clarification.
-export function captureContext(document, { x, y, radius, exclude = null, limit = 12, scopeCache = null }) {
+export function captureContext(document, { x, y, radius, exclude = null, limit = 12, scopeCache = null, focus = null }) {
   if (![x, y, radius].every(Number.isFinite) || radius <= 0) return { x, y, radius, elements: [], region: null, unreachable: [] };
   const { scopes, outOfReach } = searchScopes(document, exclude, scopeCache);
   const candidates = [];
@@ -491,9 +497,24 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
       return rect.width > 0 && rect.height > 0 && distanceToRect(x, y, rect) <= radius;
     })
     .map(({ frame, frames }) => ({ name: clean(frame.getAttribute('title')) || 'Embedded content', frame, frames }));
+  // Everything else on screen, including ring controls beyond the ring's limit.
+  const view = document.defaultView, listed = new Set([...elements, ...nearby].map(candidate => candidate.element));
+  let screen = null;
+  const onScreen = () => screen ??= measured.flatMap(({ element, frames }) => {
+    const rect = viewportRect(element, frames);
+    if (listed.has(element) || !(rect.width > 0 && rect.height > 0) || rect.right <= 0 || rect.bottom <= 0 || rect.left >= view.innerWidth || rect.top >= view.innerHeight) return [];
+    const distance = distanceToRect(x, y, rect);
+    if (distance <= radius || roleOf(element) === 'generic' || !usable(element, exclude) || !unobscured(document, element, rect, x, y)) return [];
+    return [{ element, rect, distance, frames }];
+  }).sort((a, b) => a.distance - b.distance).slice(0, SCREEN_LIMIT).map((candidate, index) => ({
+    id: SCREEN_FIRST_ID + index, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,
+    ...describe(candidate.element),
+  }));
+  const focusedField = focus && isEditable(focus) && !elements.some(candidate => candidate.element === focus) && usable(focus, exclude)
+    ? { id: FOCUSED_FIELD_ID, element: focus, rect: viewportRect(focus), distance: distanceToRect(x, y, viewportRect(focus)), frames: [], ...describe(focus) } : null;
   const pageRegion = document.scrollingElement ?? document.documentElement;
   const region = scrollRegionAt(document, x, y, exclude);
-  return { x, y, radius, elements, disclosureElements, nearby, unreachable, region, pageRegion,
+  return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, unreachable, region, pageRegion,
     scrollRegions: region === pageRegion ? nearbyScrollRegions(document, x, y, radius, exclude) : [],
     pageSearch: findPageSearch(document, exclude) };
 }

@@ -42,7 +42,7 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gap.** The extension supports a wide range of native form controls in software, but the real end-to-end loop (physical gaze tracking plus real speech on real sites) has not been evaluated with intended users. Prioritize making that loop dependable over adding further control types.
 
-**Next (updated 2026-10-26):** with simulated webcam error (120 px), scripted real-site tasks complete about 70% of the time (19 of 20 with exact pointing, custom widgets included) with no unintended actions; most remaining failures are controls more than three circle-radii from the gaze. Keep measuring with `scripts/evaluate-real-sites.mjs --gaze-error`, then evaluate with a real webcam and intended users. Move speech recognition into the extension's capture frame, verified with a real microphone, so the microphone permission also belongs to the extension. Spoken scroll requests should scroll the region the user meant even when the gaze lands just outside it.
+**Next (updated 2026-10-27):** with simulated webcam error (120 px), scripted real-site tasks complete about 90% of the time with no unintended actions; named controls outside the gaze circle are reached directly when just outside it and offered for confirmation when farther. Remaining misses are topic paraphrases ("the stuff about cars") that need the optional model, and scroll regions far from the gaze. The next step is evaluation with a real webcam, a real microphone and intended users on representative sites.
 
 ---
 

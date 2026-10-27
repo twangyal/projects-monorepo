@@ -261,8 +261,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       question.set(candidate.elementId, previous ? `${previous}, ${candidate.number}` : String(candidate.number));
     }
     const shownContext = controller.paused || calibration ? null : pending ? promptContext : spokenContext ?? context;
-    // A question about controls just outside the circle outlines those too.
-    const shown = shownContext ? [...(shownContext.elements ?? []), ...(question ? shownContext.nearby ?? [] : [])] : [];
+    // A question about controls outside the circle outlines those too; confirming a far control outlines only it.
+    const outside = question ? [...(shownContext?.nearby ?? []), ...(pending.candidates.some(candidate => candidate.elementId > 200) ? shownContext?.onScreen?.() ?? [] : [])] : [];
+    const shown = !shownContext ? [] : pending?.farTarget ? [pending.farTarget] : [...(shownContext.elements ?? []), ...outside];
     ui.outlines.replaceChildren();
     for (const element of shown) {
       if (question && !question.has(element.id)) continue;
@@ -272,10 +273,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       const box = document.createElement('div');
       box.className = question ? 'outline question' : 'outline';
       Object.assign(box.style, { left: `${rect.left - 3}px`, top: `${rect.top - 3}px`, width: `${rect.width + 6}px`, height: `${rect.height + 6}px` });
-      const badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.textContent = question ? question.get(element.id) : element.id;
-      box.append(badge);
+      // The control waiting for confirmation is outlined without a number: it is not chosen by saying one.
+      if (!pending?.farTarget) {
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = question ? question.get(element.id) : element.id;
+        box.append(badge);
+      }
       ui.outlines.append(box);
     }
   }
@@ -308,10 +312,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // The panel sits in the top layer, so it would hide fixed website controls under it (cookie banners, chat
   // buttons, sticky toolbars). Each corner is scored by the fixed or sticky controls it would hide, with dialogs
-  // and consent banners counting most; the panel moves only to a corner that hides less, and never while
-  // focus is in it (someone is typing).
+  // and consent banners counting most, and by whether it would cover the gaze circle (where the user is looking,
+  // unless that is the panel itself); the panel moves only to a corner that hides less, and never while focus is in
+  // it (someone is typing).
   const CORNERS = [[false, false], [true, false], [false, true], [true, true]]; // [left, top]
   const PLACEMENT_MS = 400;
+  const GAZE_WEIGHT = 5;
   const CONTROLS = 'a[href], button, input, select, textarea, [role=button], [role=link], [role=checkbox], [tabindex]';
   const DIALOGS = '[role=dialog], [role=alertdialog], [aria-modal=true]';
   let placement = 0;
@@ -346,9 +352,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (stopped || shadow.activeElement) return;
     const { width, height } = ui.panel.getBoundingClientRect(), margin = 12;
     const at = ([left, top]) => [left ? margin : window.innerWidth - margin - width, top ? margin : window.innerHeight - margin - height];
-    const current = hides(...at([ui.panel.classList.contains('left'), ui.panel.classList.contains('top')]), width, height);
+    const here = at([ui.panel.classList.contains('left'), ui.panel.classList.contains('top')]), r = radius();
+    const reading = point && point.x >= here[0] && point.x <= here[0] + width && point.y >= here[1] && point.y <= here[1] + height;
+    const covers = (left, top) => !reading && point && point.x + r > left && point.x - r < left + width && point.y + r > top && point.y - r < top + height;
+    const cost = corner => { const [left, top] = at(corner); return hides(left, top, width, height) + (covers(left, top) ? GAZE_WEIGHT : 0); };
+    const current = cost([ui.panel.classList.contains('left'), ui.panel.classList.contains('top')]);
     if (!current) return;
-    const [best, score] = CORNERS.map(corner => [corner, hides(...at(corner), width, height)]).reduce((a, b) => (b[1] < a[1] ? b : a));
+    const [best, score] = CORNERS.map(corner => [corner, cost(corner)]).reduce((a, b) => (b[1] < a[1] ? b : a));
     if (score >= current) return;
     ui.panel.classList.toggle('left', best[0]);
     ui.panel.classList.toggle('top', best[1]);
@@ -388,7 +398,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     lastCapture = time;
     pageChanged = false;
     capturedAt = { x: point.x, y: point.y, radius: radius() };
-    context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache });
+    context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache, focus: pageFocus() });
     // Embedded frames from other sites answer later; their controls join this context when they do.
     const captured = context;
     embeddedFrames?.extend(captured, {

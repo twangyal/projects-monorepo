@@ -122,7 +122,9 @@ export const TASKS = [
   ] },
 ];
 
-async function run() {
+// Each trial starts from a fresh browser profile, as a first visit: cookie and consent choices from an earlier
+// trial would otherwise hide the banners that later trials are asked to use.
+async function browser() {
   const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'gaze-real-')), {
     // Extensions need full Chromium; the headless shell cannot load them.
     ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: 'chromium' }), headless: true, viewport: { width: 1280, height: 900 },
@@ -132,9 +134,14 @@ async function run() {
   const control = await context.newPage();
   await control.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
   await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  return context;
+}
+
+async function run() {
   const results = [];
   const runs = TASKS.filter(item => !only || item.goal.includes(only)).flatMap(task => Array.from({ length: trials }, (_, trial) => ({ task, trial })));
   for (const { task, trial } of runs) {
+    const context = await browser();
     const page = await context.newPage();
     const panel = page.locator('#gaze-web-navigator section'), status = panel.locator('.status');
     const record = { site: task.site, goal: task.goal, trial, steps: [], completed: false };
@@ -198,9 +205,8 @@ async function run() {
     }
     results.push(record);
     console.log(JSON.stringify({ site: record.site, goal: record.goal, trial, completed: record.completed, steps: record.steps.map(s => [s.say, s.outcome, s.utterances, s.questions, s.offset]), error: record.error }));
-    await page.close();
+    await context.close();
   }
-  await context.close();
   const steps = results.flatMap(result => result.steps);
   const summary = { assist, gazeError, trials, seed, date: new Date().toISOString().slice(0, 10), tasks: results.length, completed: results.filter(result => result.completed).length,
     steps: steps.length, stepsDone: steps.filter(step => step.outcome === 'done').length, unintended: steps.filter(step => step.outcome === 'unintended').length,

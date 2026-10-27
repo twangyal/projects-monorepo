@@ -10,7 +10,8 @@ const HISTORY_LIMIT = 20;
 
 function targetOf(context, id) {
   return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ??
-    context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
+    context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null) ??
+    (context.focusedField?.id === id ? context.focusedField : null) ?? (id > 200 ? context.onScreen?.().find(element => element.id === id) ?? null : null);
 }
 
 // `commands` handles navigator-level actions (tracking source, calibration) outside the page.
@@ -58,6 +59,12 @@ export function createController({ window, actions = pageActions, interpret = in
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
       if (problem) return problem;
+      // A control named far from the gaze is used only once the user agrees it is the one they meant.
+      if (action.far) {
+        pending = { kind: 'confirm', action: { ...action, far: false }, context, farTarget: target, expiresAt: now() + confirmMs };
+        const risk = confirmable(action, target) ? ' and may have consequences' : '';
+        return reply(`"${target.name || target.role}" is not near your gaze${risk}; it is outlined on the page. Say confirm to use it, or cancel.`, 'question');
+      }
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
         const label = action.type === 'choose-option' ? `${action.optionName} in ${target.name || target.role}` : action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
@@ -337,7 +344,7 @@ export function createController({ window, actions = pageActions, interpret = in
     // Performs an already interpreted and confirmed action (used by an embedded frame for the top navigator).
     run: (action, context) => execute(action, context),
     get paused() { return paused; },
-    get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null }; },
+    get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null, farTarget: pending.farTarget ?? null }; },
     cancel() { return handle('cancel', { elements: [] }); },
   };
 }

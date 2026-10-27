@@ -41,11 +41,43 @@ test('naming the nearby control opens it and says where it was', async ({ page }
   await expect(page).toHaveURL(/#byron$/);
 });
 
-test('controls far from the gaze are still refused', async ({ page }) => {
+test('a control far from the gaze is only offered, and opens once confirmed', async ({ page }) => {
   await setup(page);
-  const result = await page.evaluate(() => window.say('open far away'));
-  expect(result.tone).toBe('error');
+  // The far link sits in the screen's corner, where the practice page's own panel would cover it.
+  await page.evaluate(() => {
+    document.getElementById('gaze-web-navigator')?.remove();
+    document.getElementById('far').style.cssText = 'position:fixed;right:10px;bottom:10px';
+  });
+  const asked = await page.evaluate(() => window.say('open far away'));
+  expect(asked.tone).toBe('question');
+  expect(asked.message).toBe('"Far away" is not near your gaze; it is outlined on the page. Say confirm to use it, or cancel.');
   await expect(page).not.toHaveURL(/#far$/);
+  expect((await page.evaluate(() => window.say('confirm'))).tone).toBe('success');
+  await expect(page).toHaveURL(/#far$/);
+});
+
+test('the overlay outlines only the far control waiting for confirmation, without a number', async ({ page }) => {
+  // On phone-sized screens the panel covers most of the page, and a covered control is never offered.
+  test.skip(page.viewportSize().width < 1000, 'needs room beside the panel');
+  await page.goto('/practice-site/contact.html');
+  await page.evaluate(() => {
+    const host = document.getElementById('gaze-web-navigator');
+    for (const child of [...document.body.children]) if (child !== host) child.remove();
+    document.body.insertAdjacentHTML('beforeend', '<a href="#near" style="position:fixed;left:20px;top:20px">Home</a><a id="login" href="#login" style="position:fixed;left:20px;top:420px">Log in</a>');
+  });
+  const panel = page.locator('#gaze-web-navigator section');
+  await page.mouse.move(30, 28);
+  await expect(panel.locator('.context')).toContainText('Home');
+  await panel.getByLabel('Typed instruction').fill('sign in');
+  await panel.getByRole('button', { name: 'Do it', exact: true }).click();
+  await expect(panel.locator('.status')).toContainText('"Log in" is not near your gaze');
+  const outline = page.locator('#gaze-web-navigator .outline');
+  await expect(outline).toHaveCount(1);
+  await expect(outline.locator('.badge')).toHaveCount(0);
+  const box = await page.locator('#login').boundingBox(), drawn = await outline.boundingBox();
+  expect(Math.abs(drawn.y - box.y)).toBeLessThan(8);
+  await panel.getByRole('button', { name: 'Confirm', exact: true }).click();
+  await expect(page).toHaveURL(/#login$/);
 });
 
 for (const nearby of [true, false]) {
@@ -103,4 +135,23 @@ test('one dropdown outline shows every offered option number', async ({ page }) 
   await expect(page.locator('#gaze-web-navigator .outline.question .badge')).toHaveText(['1, 2']);
   await panel.getByRole('button', { name: '1: Price low to high', exact: true }).click();
   await expect(page.locator('#price-sort')).toHaveValue('Price low to high');
+});
+
+test('"press enter" submits the focused field after the gaze has drifted away from it', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const submitted = await page.evaluate(async () => {
+    document.body.innerHTML = '<form id="search" action="#sent"><input id="query" aria-label="Search books" value="Ada"></form><a href="#x" style="position:absolute;left:20px;top:400px">Elsewhere</a>';
+    const { captureContext } = await import('/src/web/page-context.js');
+    const { createController } = await import('/src/web/controller.js');
+    const query = document.getElementById('query');
+    query.focus();
+    let sent = 0;
+    document.getElementById('search').addEventListener('submit', event => { event.preventDefault(); sent++; });
+    const controller = createController({ window });
+    // The gaze rests 300 px below the field, by another link; the field still has focus.
+    const context = captureContext(document, { x: 40, y: 410, radius: 60, focus: document.activeElement });
+    const reply = controller.handle('press enter', context);
+    return { sent, tone: reply.tone, field: context.focusedField?.name };
+  });
+  expect(submitted).toEqual({ sent: 1, tone: 'success', field: 'Search books' });
 });

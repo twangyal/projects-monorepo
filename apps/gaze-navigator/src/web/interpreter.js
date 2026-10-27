@@ -222,17 +222,32 @@ function typedSet(target, value, context, now) {
 }
 
 // A control named but not inside the circle is looked for just outside it (context.nearby), where webcam
-// gaze error usually leaves it. Only named misses are retried: "open this" never reaches outside the circle.
+// gaze error usually leaves it, and then anywhere on screen (context.onScreen), where a unique match is only
+// offered for confirmation and two or three become a question. Only named misses (and bare names that were not
+// understood) are retried: "open this" never reaches outside the circle.
+const FAR_CHOICES = 3;
 export function interpret(utterance, context = { elements: [] }) {
   const action = interpretInCircle(utterance, context);
-  if (!action.missing || !context.nearby?.length) return action;
-  const outside = interpretInCircle(utterance, { ...context, elements: context.nearby, disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null });
-  if (outside.type === 'unknown') return action;
-  if (outside.type !== 'clarify') return { ...outside, outside: true };
-  // Nearby controls have ids from 101; ask with small numbers that are easy to say.
-  const candidates = outside.candidates.map((candidate, index) => ({ ...candidate, number: index + 1 }));
-  return { ...question(candidates, number => outside.choose(outside.candidates[number - 1].number)), outside: true,
-    message: `Not inside the gaze circle, but nearby: ${candidates.map(candidate => `${candidate.number}: ${candidate.label}`).join('; ')}. Say a number or cancel.` };
+  if (!action.missing && !action.unparsed) return action;
+  const elsewhere = { ...context, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null };
+  const near = context.nearby?.length ? beyond(utterance, { ...elsewhere, elements: context.nearby }, 'outside', 'Not inside the gaze circle, but nearby') : null;
+  if (near) return near;
+  const screen = context.onScreen?.() ?? [];
+  return (screen.length && beyond(utterance, { ...elsewhere, elements: screen }, 'far', 'Not near your gaze', FAR_CHOICES)) || action;
+}
+
+// The instruction tried on controls outside the circle; null when it names none of them (or too many).
+function beyond(utterance, context, flag, where, most = Infinity) {
+  const result = interpretInCircle(utterance, context);
+  const ids = new Set(context.elements.map(element => element.id));
+  if (result.type === 'clarify') {
+    if (result.candidates.length > most || !result.candidates.every(candidate => ids.has(candidate.elementId))) return null;
+    // Controls outside the circle have ids from 101; ask with small numbers that are easy to say.
+    const candidates = result.candidates.map((candidate, index) => ({ ...candidate, number: index + 1 }));
+    return { ...question(candidates, number => result.choose(result.candidates[number - 1].number)), [flag]: true,
+      message: `${where}: ${candidates.map(candidate => `${candidate.number}: ${candidate.label}`).join('; ')}. Say a number or cancel.` };
+  }
+  return ids.has(result.targetId) ? { ...result, [flag]: true } : null;
 }
 
 function interpretInCircle(utterance, context) {
@@ -468,7 +483,7 @@ function interpretInCircle(utterance, context) {
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
     // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.
     const focused = context.elements.find(element => textField(element) && element.id === context.focusedId);
-    if (!focused) return { type: 'unknown', message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
+    if (!focused) return { type: 'unknown', missing: true, message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
     return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }
   if ((match = /^(?:clear|empty|erase)(?: (?:the )?(.+?))?$/.exec(text))) {
@@ -480,7 +495,9 @@ function interpretInCircle(utterance, context) {
   if (/^undo( that| typing)?$/.test(text)) return chooseField(null, context, edit('undo'));
   if (/^(submit|press enter|hit enter|press return|hit return|send it|submit (the )?form)$/.test(text)) {
     const act = element => ({ type: 'submit', targetId: element.id });
-    const focused = context.elements.find(element => element.id === context.focusedId && element.editable);
+    // The field being typed in submits even when the gaze has drifted away from it.
+    const focused = context.elements.find(element => element.id === context.focusedId && element.editable) ??
+      (context.focusedField?.editable ? context.focusedField : null);
     return focused ? act(focused) : deictic(context.elements.filter(element => element.editable || element.submits), act, 'form control');
   }
 
