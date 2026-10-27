@@ -10,7 +10,10 @@ const ACTIONABLE = [
 
 const TEXT_INPUTS = new Set(['', 'text', 'search', 'email', 'url', 'tel', 'password', 'number']);
 const INPUT_ROLES = { checkbox: 'checkbox', radio: 'radio', range: 'slider', button: 'button', submit: 'button', reset: 'button', image: 'button', search: 'searchbox' };
-const CONSEQUENTIAL = /\b(delete|remove|erase|destroy|buy|purchase|pay|place order|order now|checkout|check out|send|submit|post|publish|transfer|sign out|log out|logout|unsubscribe|close account|deactivate|confirm)\b/i;
+// Names of controls whose effects are hard to undo or reach other people; activating them asks for confirmation.
+const CONSEQUENTIAL = /\b(delete|remove|erase|destroy|discard|empty trash|buy|purchase|pay|place order|order now|checkout|check out|book|reserve|send|reply|reply all|forward|share|invite|submit|post|publish|upload|apply|accept|decline|transfer|archive|report|block|leave|sign out|log out|logout|unsubscribe|cancel (?:order|subscription|booking|reservation|membership)|close account|deactivate|reset|confirm)\b/i;
+
+export const isConsequentialName = name => CONSEQUENTIAL.test(name ?? '');
 
 // Elements recognized only by their pointer cursor; they have no semantic role of their own.
 const inferred = new WeakSet();

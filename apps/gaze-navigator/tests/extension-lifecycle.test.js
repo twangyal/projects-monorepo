@@ -4,6 +4,8 @@ import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
+// Control messages come from Gaze Navigator's own popup page.
+const POPUP={url:'chrome-extension://test/popup.html'};
 import vm from 'node:vm';
 
 // Execute the shipped entry/content modules with only the DOM runtime replaced.
@@ -42,20 +44,20 @@ test('stopping during entry storage load prevents a late navigator and a newer s
 
 test('background status probes the current page instead of remembered continuation intent',async()=>{
  let listener,probes=0;
- const chrome={runtime:{onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
+ const chrome={runtime:{getURL:p=>'chrome-extension://test/'+p,onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
   storage:{session:{setAccessLevel:async()=>{},get:async()=>({enabledTabs:{7:true}})}},
   commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(){}},onRemoved:{addListener(){}}},
   action:{setBadgeText:async()=>{},setTitle:async()=>{}},
   scripting:{executeScript:async()=>{probes++;return[{result:{on:false,phase:'off',message:''}}];}}};
  vm.runInNewContext(await readFile('extension/background.js','utf8'),{chrome,console});
- const status=await new Promise(resolve=>listener({type:'gaze:status',tabId:7},{},resolve));
+ const status=await new Promise(resolve=>listener({type:'gaze:status',tabId:7},POPUP,resolve));
  assert.equal(status.on,false);assert.equal(probes,1);
 });
 
 test('an old navigation decision cannot restart after a newer explicit Stop',async()=>{
  let listener,onUpdated,releasePreferences,enabled={7:true};
  const world={console,__gazeNavigatorRunning:true};world.__gazeNavigatorStop=()=>{world.__gazeNavigatorRunning=false;};
- const chrome={runtime:{onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
+ const chrome={runtime:{getURL:p=>'chrome-extension://test/'+p,onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
   storage:{session:{setAccessLevel:async()=>{},get:async()=>({enabledTabs:structuredClone(enabled)}),set:async value=>{enabled=value.enabledTabs;}},local:{get:()=>new Promise(resolve=>{releasePreferences=resolve;})}},
   permissions:{contains:async()=>true},commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(fn){onUpdated=fn;}},onRemoved:{addListener(){}}},
   action:{setBadgeText:async()=>{},setTitle:async()=>{}},
@@ -63,7 +65,7 @@ test('an old navigation decision cannot restart after a newer explicit Stop',asy
  vm.runInNewContext(await readFile('extension/background.js','utf8'),world);
  const navigation=onUpdated(7,{status:'complete'},{url:'https://example.test/'});
  await new Promise(r=>setImmediate(r));assert.equal(typeof releasePreferences,'function');
- assert.equal(await new Promise(resolve=>listener({type:'gaze:stop',tabId:7},{},resolve)),'off');
+ assert.equal(await new Promise(resolve=>listener({type:'gaze:stop',tabId:7},POPUP,resolve)),'off');
  assert.equal(world.__gazeNavigatorRunning,false);
  releasePreferences({preferences:{persist:true,autoStart:false}});await navigation;
  assert.equal(world.__gazeNavigatorRunning,false,'old continuation decision stays retired');assert.deepEqual(enabled,{});
@@ -82,11 +84,29 @@ for(const outcome of ['resolve','reject'])test(`a newer start survives the old s
 for(const sequence of [['toggle','toggle'],['stop','toggle']])test(`explicit ${sequence.join(' then ')} preserves request order`,async()=>{
  let listener,enabled={};const world={console,__gazeNavigatorRunning:sequence[0]==='stop'};
  world.__gazeNavigatorStop=()=>{world.__gazeNavigatorRunning=false;};
- const chrome={runtime:{onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
+ const chrome={runtime:{getURL:p=>'chrome-extension://test/'+p,onInstalled:{addListener(){}},onStartup:{addListener(){}},onMessage:{addListener(fn){listener=fn;}}},
  storage:{session:{setAccessLevel:async()=>{},get:async()=>({enabledTabs:structuredClone(enabled)}),set:async value=>{enabled=value.enabledTabs;}},local:{get:async()=>({})}},permissions:{contains:async()=>true},
  commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(){}},onRemoved:{addListener(){}}},action:{setBadgeText:async()=>{},setTitle:async()=>{}},
  scripting:{executeScript:async spec=>{if(spec.files){world.__gazeNavigatorRunning=true;return[];}return[{result:await spec.func(...(spec.args??[]))}];}}};world.chrome=chrome;
  vm.runInNewContext(await readFile('extension/background.js','utf8'),world);
- const responses=await Promise.all(sequence.map(mode=>new Promise(resolve=>listener({type:`gaze:${mode}`,tabId:7},{},resolve))));
+ const responses=await Promise.all(sequence.map(mode=>new Promise(resolve=>listener({type:`gaze:${mode}`,tabId:7},POPUP,resolve))));
  assert.deepEqual(responses,sequence[0]==='toggle'?['on','off']:['off','on']);assert.equal(world.__gazeNavigatorRunning,sequence[0]==='stop');
+});
+
+test('a content script inside a website cannot turn the navigator on or off or read its status', async () => {
+  let listener, scripted = 0;
+  const chrome = { runtime: { getURL: p => 'chrome-extension://test/' + p, onInstalled: { addListener() {} }, onStartup: { addListener() {} }, onMessage: { addListener(fn) { listener = fn; } } },
+    storage: { session: { setAccessLevel: async () => {}, get: async () => ({}) } },
+    commands: { onCommand: { addListener() {} } }, tabs: { onUpdated: { addListener() {} }, onRemoved: { addListener() {} } },
+    action: { setBadgeText: async () => {}, setTitle: async () => {} },
+    scripting: { executeScript: async () => { scripted++; return [{ result: 'stop' }]; } } };
+  vm.runInNewContext(await readFile('extension/background.js', 'utf8'), { chrome, console });
+  const website = { url: 'https://example.com/page', tab: { id: 7 }, frameId: 0 };
+  for (const type of ['gaze:toggle', 'gaze:start', 'gaze:stop', 'gaze:status', 'gaze:page-status']) {
+    let answered = false;
+    assert.equal(listener({ type, tabId: 7 }, website, () => { answered = true; }), false, type);
+    assert.equal(answered, false, type);
+  }
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(scripted, 0);
 });

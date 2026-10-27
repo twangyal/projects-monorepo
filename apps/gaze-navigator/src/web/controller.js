@@ -231,6 +231,14 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
 
+    // Speech that could not be understood at all (noise, a cough, side conversation) leaves a pending
+    // confirmation or question waiting; a new instruction, even one that fails, replaces it.
+    if (pending && action.type === 'unknown' && action.unparsed) {
+      const waiting = pending.kind === 'confirm'
+        ? 'Still waiting: say confirm to continue, or cancel.'
+        : `Still waiting: say one of ${pending.candidates.map(candidate => candidate.number).join(', ')}, or cancel.`;
+      return reply(`"${utterance.trim()}" was not understood. ${waiting}`, 'question');
+    }
     if (pending?.kind === 'confirm') {
       const confirmation = pending;
       if (action.type === 'confirm') {
@@ -260,6 +268,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'confirm':
       case 'deny': return reply('There is nothing waiting for confirmation.', 'info');
       case 'choose': {
+        if (action.bare) return reply(`To use control ${action.index}, say "click ${action.index}". A number on its own only answers a question.`, 'info');
         const target = context.elements.find(element => element.id === action.index);
         if (!target) return reply(`There is no number ${action.index} in the gaze circle.`, 'error');
         return perform({ type: 'activate', targetId: target.id }, context);

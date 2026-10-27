@@ -20,7 +20,9 @@ test('numbers and ordinals answer questions or pick numbered elements', () => {
   assert.equal(parseNumber('second'), 2);
   assert.deepEqual(interpret('number two', context()), { type: 'choose', index: 2 });
   assert.deepEqual(interpret('click 3', context()), { type: 'choose', index: 3 });
-  assert.deepEqual(interpret('first one', context()), { type: 'choose', index: 1 });
+  // Without a verb a number or ordinal is marked bare: it answers a question but never activates on its own.
+  assert.deepEqual(interpret('first one', context()), { type: 'choose', index: 1, bare: true });
+  assert.deepEqual(interpret('two', context()), { type: 'choose', index: 2, bare: true });
 });
 
 test('names resolve to the uniquely best element, with an optional verb and role hint', () => {

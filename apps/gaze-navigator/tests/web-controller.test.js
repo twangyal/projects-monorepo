@@ -121,14 +121,32 @@ test('removed elements are not acted on', () => {
   assert.equal(page.log.length, 0);
 });
 
-test('numbers without a question pick the numbered element; confirm without a question is explained', () => {
+test('numbers without a question pick the numbered element only when asked to; confirm without a question is explained', () => {
   const page = fakePage();
   const controller = createController({ window: {}, actions: page.actions });
   const context = { elements: [describe(1, page.node('Home')), describe(2, page.node('Help'))] };
   controller.handle('number 2', context);
   assert.deepEqual(page.log, [['activate', 'Help']]);
-  assert.match(controller.handle('7', context).message, /no number 7/);
+  assert.match(controller.handle('click 7', context).message, /no number 7/);
+  // A number said on its own (as in conversation) never activates anything.
+  assert.match(controller.handle('two', context).message, /say "click 2"/);
+  assert.deepEqual(page.log, [['activate', 'Help']]);
   assert.match(controller.handle('yes', context).message, /nothing waiting/);
+});
+
+test('speech that is not understood keeps a pending confirmation or question waiting', () => {
+  const page = fakePage();
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, page.node('Delete account'), { consequential: true }), describe(2, page.node('Read more'), { role: 'link' }), describe(3, page.node('Read more'), { role: 'link' })] };
+  controller.handle('delete account', context);
+  const mumble = controller.handle('mm hmm uh', context);
+  assert.equal(mumble.tone, 'question');
+  assert.match(mumble.message, /Still waiting: say confirm/);
+  assert.equal(controller.handle('confirm', { elements: [] }).performed, 'activate');
+  assert.deepEqual(page.log, [['activate', 'Delete account']]);
+  controller.handle('open read more', context);
+  assert.match(controller.handle('blah blah', context).message, /Still waiting: say one of 2, 3/);
+  assert.equal(controller.handle('3', { elements: [] }).performed, 'activate');
 });
 
 test('tracking commands are delegated, work while paused, and clear pending questions', () => {
@@ -381,4 +399,11 @@ test('edits to sensitive fields never echo their text', () => {
   assert.match(typed.message, /hidden/);
   assert.deepEqual(page.log.at(-1), ['write', 'Password', 'hunter2'], 'the text is still written');
   assert.doesNotMatch(controller.handle('undo', context).message, /hunter2/);
+});
+
+test('controls with hard-to-undo or outward effects are consequential', async () => {
+  const { isConsequentialName } = await import('../src/web/page-context.js');
+  for (const name of ['Reply all', 'Forward', 'Archive', 'Book now', 'Upload photo', 'Share', 'Accept invitation', 'Cancel order', 'Discard draft', 'Delete'])
+    assert.ok(isConsequentialName(name), name);
+  for (const name of ['Home', 'Read more', 'Cancel', 'Next', 'Show replies', 'Search']) assert.ok(!isConsequentialName(name), name);
 });

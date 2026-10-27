@@ -163,6 +163,10 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     openPermissionsPage(sender.tab, message.type === 'gaze:microphone-permission').then(() => respond({ ok: true }), error => respond({ ok: false, message: error.message }));
     return true;
   }
+  // Turning the navigator on or off and reading status belong to Gaze Navigator's own pages (the popup),
+  // not to content scripts running inside websites.
+  const fromExtensionPage = typeof sender.url === 'string' && sender.url.startsWith(chrome.runtime.getURL(''));
+  if (!fromExtensionPage && ['gaze:toggle', 'gaze:start', 'gaze:stop', 'gaze:status', 'gaze:page-status'].includes(message?.type)) return false;
   if (message?.type === 'gaze:toggle' || message?.type === 'gaze:start' || message?.type === 'gaze:stop') {
     run(message.tabId, message.type.slice(5)).then(respond);
     return true;

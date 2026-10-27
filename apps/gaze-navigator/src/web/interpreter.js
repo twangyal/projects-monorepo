@@ -246,7 +246,9 @@ function interpretInCircle(utterance, context) {
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
   const chosen = choice && parseNumber(choice[1]);
-  if (chosen) return { type: 'choose', index: chosen };
+  // A number on its own ("two") only answers a question; it is marked so a stray number in conversation
+  // never activates a control.
+  if (chosen) return /^(?:number|option|choice|item|choose|pick|select|click|press|open)\b/.test(text) ? { type: 'choose', index: chosen } : { type: 'choose', index: chosen, bare: true };
 
   // "Next page" and "previous page" follow a pagination link or button inside the circle (as on search results),
   // or just outside it. With none near, "previous page" goes back; "next page" explains rather than moving
