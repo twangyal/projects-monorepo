@@ -156,7 +156,7 @@ class KaraokeServer(ThreadingHTTPServer):
     block_on_close = False
 
     def __init__(self, data_dir, model_dir, port, *, dist_dir, font_path, separate, export, ready,
-                 transcribe=None, transcriber_ready=None):
+                 transcribe=None, transcriber_ready=None, host="127.0.0.1"):
         self.data_dir = Path(data_dir).expanduser().resolve()
         self.model_dir = Path(model_dir).expanduser().resolve()
         self.dist_dir = Path(dist_dir).resolve()
@@ -194,7 +194,7 @@ class KaraokeServer(ThreadingHTTPServer):
         self._data_lock = lock_file
         try:
             self._initialize_data()
-            super().__init__(("127.0.0.1", port), Handler)
+            super().__init__((host, port), Handler)
         except BaseException:
             self._close_directories()
             self._release_data_lock()
@@ -1267,8 +1267,12 @@ def create_server(
     dist_dir: Path | None = None, font_path: Path | None = None,
     separate: Callable | None = None, export: Callable | None = None, ready: Callable | None = None,
     transcribe: Callable | None = None, transcriber_ready: Callable | None = None,
+    listen_all: bool = False,
 ) -> KaraokeServer:
     """Construct a loopback server; callable overrides exist for tests only.
+
+    ``listen_all`` binds every interface for use inside a container, whose port the host publishes on its own
+    loopback address. Requests must still name the loopback Host and Origin, so DNS rebinding stays refused.
 
     A fast test fixture supplies separate/export/ready here, starts
     serve_forever in a thread, and reads server_port when port=0. The production
@@ -1290,7 +1294,8 @@ def create_server(
     return KaraokeServer(data_dir, model_dir, port,
                          dist_dir=dist_dir or app / "dist", font_path=font_path or app / "assets" / "DejaVuSans.ttf",
                          separate=separate, export=export, ready=ready,
-                         transcribe=transcribe, transcriber_ready=transcriber_ready)
+                         transcribe=transcribe, transcriber_ready=transcriber_ready,
+                         host="0.0.0.0" if listen_all else "127.0.0.1")
 
 
 def main(argv=None):
@@ -1298,8 +1303,10 @@ def main(argv=None):
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--listen-all", action="store_true",
+                        help="Bind every interface (inside a container only; publish the port on the host's 127.0.0.1)")
     args = parser.parse_args(argv)
-    server = create_server(args.data_dir, args.model_dir, args.port)
+    server = create_server(args.data_dir, args.model_dir, args.port, listen_all=args.listen_all)
     def terminate(_signum, _frame):
         raise KeyboardInterrupt
 
