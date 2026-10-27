@@ -10,16 +10,34 @@ import { isBottoms, material, teeDimensions, topMeasurements, type Material, typ
  * - The body is a proxy from chest and optional waist/hip girths, with optional chest depth and assumed heights/limbs: a torso of stadium-shaped sections,
  *   sloped shoulders, neck, head and arms along the sleeve angle. It grows from inside the garment to full size before
  *   gravity starts, so the cloth starts outside it.
- * - Fabric weight comes from each part's library material (g/m²); stretch and bending from its construction (knits
- *   stretch, twills bend least). These are approximate relative values, not measured fabric data.
+ * - Fabric weight comes from each part's library material (g/m²). Bending and stretch come from approximate physical
+ *   properties of its construction (FABRIC): bending resists folding through an isometric bending energy, and each
+ *   edge's stretch stiffness is its share of the fabric's membrane stiffness. The ratio of bending rigidity to weight
+ *   (the fabric's bending length, about 1 cm for jersey and 2.5 cm for denim) is what makes fabrics hang differently.
  * Units are centimetres, grams and seconds; y is up with the hem at 0, as in the product's 3D view.
  */
 
-const BEHAVIOUR: Record<Material['texture'], { stretch: number; bend: number }> = {
-  jersey: { stretch: 0.000008, bend: 0.12 }, slub: { stretch: 0.000008, bend: 0.1 }, rib: { stretch: 0.00003, bend: 0.15 },
-  pique: { stretch: 0.000006, bend: 0.25 }, terry: { stretch: 0.000006, bend: 0.5 }, linen: { stretch: 0.000001, bend: 0.8 },
-  twill: { stretch: 0.0000005, bend: 2.5 }, canvas: { stretch: 0.0000004, bend: 4 },
+/**
+ * Approximate properties by fabric construction, at a reference weight: flexural rigidity per width (µN·m, as in
+ * Kawabata bending tests, where 1 gf·cm²/cm ≈ 98 µN·m) and membrane tensile stiffness (N/m). They are typical values
+ * for cotton knits and wovens from published ranges, not measurements of these library fabrics, and the model is
+ * isotropic (no separate warp, weft or bias behaviour).
+ */
+export const FABRIC: Record<Material['texture'], { bending: number; tensile: number; gsm: number }> = {
+  jersey: { bending: 3, tensile: 150, gsm: 180 }, slub: { bending: 2.5, tensile: 150, gsm: 160 }, rib: { bending: 3, tensile: 60, gsm: 220 },
+  pique: { bending: 6, tensile: 300, gsm: 200 }, terry: { bending: 12, tensile: 400, gsm: 300 }, linen: { bending: 12, tensile: 3000, gsm: 170 },
+  twill: { bending: 50, tensile: 6000, gsm: 340 }, canvas: { bending: 150, tensile: 10000, gsm: 400 },
 };
+/** Bending rigidity in dyn·cm and membrane stiffness in dyn/cm for a library material; heavier cloth of the same
+ * construction is thicker, and rigidity grows with thickness, so it scales with the square of the weight ratio. */
+export function fabricProperties(fabric: Material): { bending: number; tensile: number } {
+  const base = FABRIC[fabric.texture], ratio = fabric.gsm / base.gsm;
+  return { bending: base.bending * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio };
+}
+/** Bending length (cm): the cube root of bending rigidity over weight per area, the classic measure of drape stiffness. */
+export function bendingLength(fabric: Material): number {
+  return Math.cbrt(fabricProperties(fabric).bending / (fabric.gsm / 10000 * GRAVITY));
+}
 /** Parts whose shape is modelled in 3D rather than cut from the flat silhouette. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband', 'hood']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
@@ -54,7 +72,14 @@ const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 const HOOD_OFFSET = 1.1;
 const FRICTION = 0.35;    // share of sliding removed while touching the body
 const FRAME = 1 / 60;
+// Fabric loses energy as it bends: a damping force proportional to the bending rate, in seconds. Without it stiff
+// cloth keeps vibrating at its bending frequency instead of settling.
+const BEND_DAMPING = 0.03;
 const GROW_FRAMES = 45;
+/** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
+export const GARMENT_FRAMES = 180;
+export const GARMENT_SUBSTEPS = 24;
+export const GARMENT_SOLVER = 'xpbd-top-isometric-bending-v2';
 
 /** A body a little smaller than the garment: 10 cm less than its chest, within the supported range. */
 export function defaultBodyChest(product: Product): number {
@@ -186,6 +211,28 @@ export interface Cloth {
   /** Distance each particle keeps from the body. */
   offset: Float32Array;
   carried: Carried[];
+  /** Isometric bending stencils: per stencil four particles (an edge, then its two opposite corners), four weights
+   * (whose weighted position sum is zero on the flat rest shape) and a stiffness; see bendingStencil. */
+  bendParticles: Int32Array; bendWeights: Float32Array; bendStiffness: Float32Array;
+}
+
+/**
+ * Isometric bending (Bergou et al., "A quadratic bending model for inextensible surfaces"): for an interior edge with
+ * flat rest corners p0..p3 (edge p0-p1, opposite p2 and p3), weights K from the rest cotangents make Σ Kᵢxᵢ vanish
+ * when the two triangles are flat. Summed over a mesh's edges, ½·q·|Σ Kᵢxᵢ|² with q = rigidity/(A0 + A1) matches the
+ * continuum bending energy ½·rigidity·κ² per area (checked on a cylinder in the tests), and the restoring force is
+ * linear in the positions.
+ */
+export function bendingStencil(p0: [number, number], p1: [number, number], p2: [number, number], p3: [number, number], rigidity: number) {
+  const cot = (o: [number, number], u: [number, number], v: [number, number]) => {
+    const ax = u[0] - o[0], ay = u[1] - o[1], bx = v[0] - o[0], by = v[1] - o[1], cross = Math.abs(ax * by - ay * bx);
+    return cross < 1e-12 ? 0 : (ax * bx + ay * by) / cross;
+  };
+  // Cotangents of the angles at the edge ends, in each triangle.
+  const c01 = cot(p0, p1, p2), c02 = cot(p0, p1, p3), c03 = cot(p1, p0, p2), c04 = cot(p1, p0, p3);
+  const area = (a: [number, number], b: [number, number], c: [number, number]) => Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2;
+  const total = area(p0, p1, p2) + area(p0, p1, p3);
+  return { weights: [c03 + c04, c01 + c02, -c01 - c03, -c02 - c04] as const, stiffness: total > 1e-12 ? rigidity / total : 0 };
 }
 
 /** Sews the product's parts into one cloth: coincident vertices become one particle. */
@@ -239,11 +286,11 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
   };
   const mass = new Float64Array(position.length / 3);
   // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices.
-  const edges = new Map<string, { i: number; j: number; rest: number; stretch: number; bend: number; count: number; opposite: { vertex: number; side: number; modelled: boolean }[] }>();
+  const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: { vertex: number; side: number; modelled: boolean }[] }>();
   for (const mesh of simulated) {
-    const ids = vertices.get(mesh.part)!, fabric = material(product.parts[mesh.part].material), behaviour = BEHAVIOUR[fabric.texture], modelled = MODELLED.has(mesh.part);
-    // Heavier knits are a little stiffer than the reference 180 g/m² jersey.
-    const bend = behaviour.bend * fabric.gsm / 180 * (mesh.part === 'hood' ? 4 : 1);
+    const ids = vertices.get(mesh.part)!, fabric = material(product.parts[mesh.part].material), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
+    // The hood is lined and holds its shape; its modelled 3D form is kept with stiffer bending.
+    const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {
       const tri = [ids[mesh.indices[t]!]!, ids[mesh.indices[t + 1]!]!, ids[mesh.indices[t + 2]!]!];
       if (tri[0] === tri[1] || tri[1] === tri[2] || tri[0] === tri[2]) continue;
@@ -255,30 +302,38 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
       for (let e = 0; e < 3; e++) {
         const i = tri[e]!, j = tri[(e + 1) % 3]!, opposite = tri[(e + 2) % 3]!, k = i < j ? `${i},${j}` : `${j},${i}`;
         let edge = edges.get(k);
-        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : flat(i, j), stretch: 0, bend: 0, count: 0, opposite: [] }; edges.set(k, edge); }
-        edge.stretch += behaviour.stretch; edge.bend += bend; edge.count++;
+        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : flat(i, j), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
+        edge.tensile += properties.tensile; edge.bend += bend; edge.area += area; edge.count++;
         edge.opposite.push({ vertex: opposite, side, modelled });
       }
     }
   }
   const a: number[] = [], b: number[] = [], rest: number[] = [], compliance: number[] = [], structural: number[] = [];
+  const bendParticles: number[] = [], bendWeights: number[] = [], bendStiffness: number[] = [];
   const add = (i: number, j: number, length: number, value: number, isStructural: boolean) => { a.push(i); b.push(j); rest.push(length); compliance.push(value); structural.push(isStructural ? 1 : 0); };
   for (const edge of edges.values()) {
-    const stretch = edge.stretch / edge.count, bend = edge.bend / edge.count;
-    add(edge.i, edge.j, edge.rest, stretch, true);
+    const tensile = edge.tensile / edge.count, bend = edge.bend / edge.count;
+    // A triangle-lattice edge carrying its share of the membrane: k = E·(A0 + A1)/L² (k = E·A/L² on a boundary).
+    add(edge.i, edge.j, edge.rest, edge.rest > 1e-9 && edge.area > 0 ? edge.rest * edge.rest / (tensile * edge.area) : 1e-9, true);
     if (edge.opposite.length !== 2) continue;
     const [o1, o2] = edge.opposite as [typeof edge.opposite[0], typeof edge.opposite[0]];
-    let length: number;
-    if (o1.modelled || o2.modelled) length = spatial(o1.vertex, o2.vertex);
-    else if (o1.side === o2.side) length = flat(o1.vertex, o2.vertex);
-    else {
-      // Across a front-to-back seam: the distance with both triangles unfolded flat about the shared edge.
-      const ex = p(edge.j, 0) - p(edge.i, 0), ey = p(edge.j, 1) - p(edge.i, 1), span = Math.hypot(ex, ey) || 1;
-      const along = (o: number) => ((p(o, 0) - p(edge.i, 0)) * ex + (p(o, 1) - p(edge.i, 1)) * ey) / span;
-      const across = (o: number) => Math.abs((p(o, 0) - p(edge.i, 0)) * ey - (p(o, 1) - p(edge.i, 1)) * ex) / span;
-      length = Math.hypot(across(o1.vertex) + across(o2.vertex), along(o1.vertex) - along(o2.vertex));
+    if (o1.modelled || o2.modelled) {
+      // Modelled 3D parts keep their shape with a distance between the opposite corners.
+      add(o1.vertex, o2.vertex, spatial(o1.vertex, o2.vertex), 1 / (bend * 0.16), false);
+      continue;
     }
-    add(o1.vertex, o2.vertex, length, 1 / (bend * 40), false);
+    // The edge laid flat along x, with each opposite corner where it is on its own flat panel; across a front-to-back
+    // seam the two triangles unfold about the shared edge, so a seam does not hold a crease.
+    const ex = p(edge.j, 0) - p(edge.i, 0), ey = p(edge.j, 1) - p(edge.i, 1), span = Math.hypot(ex, ey) || 1;
+    const along = (o: number) => ((p(o, 0) - p(edge.i, 0)) * ex + (p(o, 1) - p(edge.i, 1)) * ey) / span;
+    const across = (o: number) => ((p(o, 1) - p(edge.i, 1)) * ex - (p(o, 0) - p(edge.i, 0)) * ey) / span;
+    let y1 = across(o1.vertex), y2 = across(o2.vertex);
+    if (o1.side !== o2.side) { y1 = Math.abs(y1); y2 = -Math.abs(y2); }
+    if (Math.sign(y1) === Math.sign(y2)) continue;
+    const stencil = bendingStencil([0, 0], [span, 0], [along(o1.vertex), y1], [along(o2.vertex), y2], bend);
+    bendParticles.push(edge.i, edge.j, o1.vertex, o2.vertex);
+    bendWeights.push(...stencil.weights);
+    bendStiffness.push(stencil.stiffness);
   }
   // Pockets ride on the front body: each vertex keeps its place on the front triangle under it (flat coordinates).
   const carried: Carried[] = [], front = meshes.find(mesh => mesh.part === 'front'), frontIds = vertices.get('front');
@@ -306,7 +361,8 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
   const sewn = new Set<number>();
   for (const [part, ids] of vertices) if (part !== 'hood') for (const id of ids) sewn.add(id);
   for (const id of vertices.get('hood') ?? []) if (!sewn.has(id)) offset[id] = HOOD_OFFSET;
-  return { offset, positions: Float32Array.from(position), inverseMass, a: Int32Array.from(a), b: Int32Array.from(b), rest: Float32Array.from(rest), compliance: Float32Array.from(compliance), structural: Uint8Array.from(structural), vertices, carried };
+  return { offset, positions: Float32Array.from(position), inverseMass, a: Int32Array.from(a), b: Int32Array.from(b), rest: Float32Array.from(rest), compliance: Float32Array.from(compliance), structural: Uint8Array.from(structural), vertices, carried,
+    bendParticles: Int32Array.from(bendParticles), bendWeights: Float32Array.from(bendWeights), bendStiffness: Float32Array.from(bendStiffness) };
 }
 
 export interface GarmentDrapeMetrics {
@@ -331,10 +387,22 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   if (isBottoms(product)) throw new Error('Draping on a body is available for tops.');
   const body = bodyProxy(product, validateBodyChest(bodyChest),options.bodyShape), cloth = buildCloth(product, meshes);
-  const frames = options.frames ?? 240, substeps = options.substeps ?? 10, dt = FRAME / substeps;
+  const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
   const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
-  const { a, b, inverseMass } = cloth, count = inverseMass.length, lambdas = new Float32Array(cloth.rest.length);
+  const { a, b, inverseMass, bendParticles, bendWeights } = cloth, count = inverseMass.length, lambdas = new Float32Array(cloth.rest.length);
+  const stencils = cloth.bendStiffness.length;
+  // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry:
+  // for its natural frequency ω (ω² = q·Σ Kᵢ²/mᵢ), dt²·ω² ≤ 1 and dt·β·ω² ≤ 1. Only tiny, very stiff triangles are
+  // affected; ordinary cloth keeps its full stiffness and damping.
+  const bendStiffness = new Float32Array(stencils), bendDamping = new Float32Array(stencils);
+  for (let s = 0; s < stencils; s++) {
+    let spread = 0;
+    for (let c = 0; c < 4; c++) spread += bendWeights[s * 4 + c]! ** 2 * inverseMass[bendParticles[s * 4 + c]!]!;
+    const q = Math.min(cloth.bendStiffness[s]!, spread > 0 ? 1 / (dt * dt * spread) : 0), omega2 = q * spread;
+    bendStiffness[s] = q;
+    bendDamping[s] = omega2 > 0 ? Math.min(BEND_DAMPING, 1 / (dt * omega2)) : 0;
+  }
   // The shell is the cloth stretched over a pillow: while the body grows inside it, every rest length eases from its
   // length on the shell to its flat length, so the fabric shrinks onto the body instead of snapping.
   const shell = Float32Array.from(cloth.rest, (_, n) => {
@@ -351,6 +419,20 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     const damping = Math.exp((growing ? -12 : -1.2) * dt), gravity = growing ? 0 : GRAVITY;
     if (frame <= GROW_FRAMES) { const t = frame / GROW_FRAMES; for (let n = 0; n < rest.length; n++) rest[n] = shell[n]! + (cloth.rest[n]! - shell[n]!) * t; }
     for (let step = 0; step < substeps; step++) {
+      // Bending: each stencil pushes its corners back towards flat, with a force linear in the positions, damped in
+      // proportion to how fast the stencil is bending.
+      for (let s = 0; s < stencils; s++) {
+        const q = bendStiffness[s]! * dt, beta = bendDamping[s]!;
+        let sx = 0, sy = 0, sz = 0;
+        for (let c = 0; c < 4; c++) {
+          const k = bendParticles[s * 4 + c]! * 3, w = bendWeights[s * 4 + c]!;
+          sx += w * (positions[k]! + beta * velocity[k]!); sy += w * (positions[k + 1]! + beta * velocity[k + 1]!); sz += w * (positions[k + 2]! + beta * velocity[k + 2]!);
+        }
+        for (let c = 0; c < 4; c++) {
+          const i = bendParticles[s * 4 + c]!, k = i * 3, f = -q * bendWeights[s * 4 + c]! * inverseMass[i]!;
+          velocity[k] += f * sx; velocity[k + 1] += f * sy; velocity[k + 2] += f * sz;
+        }
+      }
       for (let i = 0; i < count; i++) {
         const k = i * 3;
         previous[k] = positions[k]!; previous[k + 1] = positions[k + 1]!; previous[k + 2] = positions[k + 2]!;

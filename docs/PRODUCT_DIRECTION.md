@@ -65,7 +65,7 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gaps:** material-dependent drape that is visibly convincing in the browser across garments (bottoms are undraped and the body is a proxy), AI style interpretation, layered garments and personalized bodies.
 
-**Fix first (review, 2026-10-25):** the app has three separate garment systems (concept tee, product bases, skirt construction) with two solvers, two fabric lists and two body models; unify them on the product-base system. In the current drape, jersey, denim and linen all stretch about 62% at the worst edge with nearly identical body contact, so fabrics do not yet behave differently. Save body measurements in the project, stop re-decoding every image on each autosave, keep typing out of the undo history, and stop the style prompt from silently dropping words ("red" in "washed black denim with red topstitching").
+**Next (updated 2026-10-27):** unify the three garment systems (concept tee, product bases, skirt construction), which still have two solvers, two fabric lists and two body models, on the product-base system. Fabrics now differ through approximate physical bending and stretch properties, but the roughly 2 cm mesh cannot form soft-knit folds, the model is isotropic, and nothing is compared with reference drapes; a finer simulation mesh, warp/weft/bias behaviour and a cantilever or drape-test comparison are the next physics steps. Bottoms are not draped, and there is no cloth-to-cloth contact for layers.
 
 ---
 

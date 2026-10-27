@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
-import { bodyProxy, buildCloth, defaultBodyChest, simulateGarment, validateBodyChest } from '../src/garment-drape.ts';
-import { teeDimensions, teeMesh, template, topMeasurements, type Product } from '../src/product.ts';
+import { bendingLength, bendingStencil, bodyProxy, buildCloth, defaultBodyChest, simulateGarment, validateBodyChest } from '../src/garment-drape.ts';
+import { material, teeDimensions, teeMesh, template, topMeasurements, type Product } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 const extent = (positions: Float32Array, axis: number) => {
@@ -86,4 +86,50 @@ test('the body fits the garment: arms inside the sleeves, shoulders under the sh
   assert.equal(defaultBodyChest(ringer()), 94);
   assert.throws(() => validateBodyChest(200), /Body chest must be from 70 to 140 cm/);
   assert.throws(() => simulateGarment(template('trousers'), [], 90), /available for tops/);
+});
+
+test('isometric bending matches the continuum bending energy on a cylinder', () => {
+  // A 20 × 10 cm sheet of 0.5 cm cells bent onto a 15 cm radius: energy ½·D·κ²·area, less the boundary edges.
+  const W = 20, H = 10, h = 0.5, R = 15, D = 100, nx = W / h + 1, ny = H / h + 1, id = (i: number, j: number) => j * nx + i;
+  const flat: [number, number][] = [], bent: [number, number, number][] = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { flat.push([i * h, j * h]); bent.push([R * Math.sin(i * h / R), j * h, R * (1 - Math.cos(i * h / R))]); }
+  const edges = new Map<string, number[]>();
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    for (const t of [[id(i, j), id(i + 1, j), id(i + 1, j + 1)], [id(i, j), id(i + 1, j + 1), id(i, j + 1)]]) {
+      for (let e = 0; e < 3; e++) { const a = t[e]!, b = t[(e + 1) % 3]!, k = a < b ? `${a},${b}` : `${b},${a}`; edges.set(k, [...(edges.get(k) ?? [Math.min(a, b), Math.max(a, b)]), t[(e + 2) % 3]!]); }
+    }
+  }
+  let energy = 0;
+  for (const [a, b, o1, o2] of edges.values()) {
+    if (o2 === undefined) continue;
+    const stencil = bendingStencil(flat[a!]!, flat[b!]!, flat[o1!]!, flat[o2]!, D), v = [0, 0, 0];
+    [a!, b!, o1!, o2].forEach((p, c) => { for (let k = 0; k < 3; k++) v[k] += stencil.weights[c]! * bent[p]![k]!; });
+    energy += 0.5 * stencil.stiffness * (v[0]! ** 2 + v[1]! ** 2 + v[2]! ** 2);
+  }
+  const ratio = energy / (0.5 * D * W * H / (R * R));
+  assert.ok(ratio > 0.93 && ratio < 1.02, `energy ratio ${ratio}`);
+  // A flat sheet has no bending energy.
+  const flatStencil = bendingStencil([0, 0], [2, 0], [1, 1.5], [0.8, -1.7], D);
+  assert.ok(Math.abs(flatStencil.weights.reduce((sum, w, c) => sum + w * [0, 2, 1, 0.8][c]!, 0)) < 1e-9);
+});
+
+test('library fabrics have realistic bending lengths, stiffest for denim', () => {
+  const jersey = bendingLength(material('jersey-180')), linen = bendingLength(material('linen-170')), denim = bendingLength(material('denim-340'));
+  assert.ok(jersey > 1 && jersey < 1.5, `jersey ${jersey}`);
+  assert.ok(denim > 2 && denim < 3, `denim ${denim}`);
+  assert.ok(jersey < linen && linen < denim);
+});
+
+test('fabric changes how the same tee hangs: denim stands off the body, jersey clings, and both settle', () => {
+  const dressed = (id: string) => {
+    const product: Product = template('ringer');
+    for (const part of Object.keys(product.parts) as (keyof Product['parts'])[]) product.parts[part].material = id;
+    return simulateGarment(product, teeMesh(product, Delaunator), 94).metrics;
+  };
+  const jersey = dressed('jersey-180'), denim = dressed('denim-340');
+  assert.ok(denim.contact < jersey.contact - 0.04, `contact ${denim.contact} vs ${jersey.contact}`);
+  for (const metrics of [jersey, denim]) {
+    assert.ok(metrics.maxStrain < 0.4, `stretch ${metrics.maxStrain}`);
+    assert.ok(metrics.residualSpeed < 10, `still moving at ${metrics.residualSpeed} cm/s`);
+  }
 });
