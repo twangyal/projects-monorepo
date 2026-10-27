@@ -5,6 +5,7 @@ import * as pageActions from './page-actions.js';
 import { composedContains, isConsequentialName } from './page-context.js';
 
 const CONFIRM_MS = 15000;
+const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
 
 function targetOf(context, id) {
@@ -238,6 +239,15 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
 
+    // A number answers only the current question. Noise never extends its deadline;
+    // a fresh instruction after expiry can still start a new action normally.
+    if (pending?.kind === 'clarify' && now() >= pending.expiresAt) {
+      pending = null;
+      if (action.type === 'choose' || (action.type === 'unknown' && action.unparsed)) {
+        return reply('That question expired. Give the instruction again.', 'error');
+      }
+    }
+
     // Speech that could not be understood at all (noise, a cough, side conversation) leaves a pending
     // confirmation or question waiting; a new instruction, even one that fails, replaces it.
     if (pending && action.type === 'unknown' && action.unparsed) {
@@ -300,7 +310,7 @@ export function createController({ window, actions = pageActions, interpret = in
   function respond(action, context) {
     switch (action.type) {
       case 'clarify':
-        pending = { kind: 'clarify', candidates: action.candidates, choose: action.choose, context };
+        pending = { kind: 'clarify', candidates: action.candidates, choose: action.choose, context, expiresAt: now() + CLARIFY_MS };
         return reply(action.message, 'question');
       case 'unknown': return reply(action.message, 'error');
       default: {

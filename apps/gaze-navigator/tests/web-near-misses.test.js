@@ -47,3 +47,53 @@ test('the controller acts on the nearby control, says where it was, and still co
   controller.handle('confirm', { elements: [] });
   assert.deepEqual(log, ['Lord Byron', 'Delete page']);
 });
+
+test('clarification expires after thirty seconds and noise cannot revive it', () => {
+  let clock = 0;
+  const log = [];
+  const controller = createController({ window: {}, now: () => clock,
+    actions: { activate: (_, name) => { log.push(name); return { ok: true, message: 'Opened.' }; } } });
+  const context = { elements: [], nearby: [control(101, 'Read more'), control(102, 'Read more')] };
+  for (const answer of ['two', 'nine', 'murmur banana']) {
+    clock = 0;
+    controller.handle('open read more', context);
+    clock = 30000;
+    const result = controller.handle(answer, { elements: [] });
+    assert.equal(result.tone, 'error');
+    assert.match(result.message, /question expired.*instruction again/i);
+    assert.equal(controller.pending, null);
+    controller.handle('two', { elements: [] });
+  }
+  assert.deepEqual(log, []);
+});
+
+test('noise does not extend a question and a fresh instruction works after expiry', () => {
+  let clock = 0;
+  const log = [];
+  const controller = createController({ window: {}, now: () => clock,
+    actions: { activate: (_, name) => { log.push(name); return { ok: true, message: 'Opened.' }; } } });
+  const context = { elements: [control(1, 'Help')], nearby: [control(101, 'Read more'), control(102, 'Read more')] };
+  controller.handle('open read more', context);
+  clock = 29999;
+  assert.equal(controller.handle('murmur banana', context).tone, 'question');
+  clock = 30001;
+  assert.match(controller.handle('two', context).message, /expired/);
+  controller.handle('open read more', context);
+  clock = 60001;
+  assert.equal(controller.handle('open help', context).performed, 'activate');
+  assert.deepEqual(log, ['Help']);
+});
+
+test('a timely nearby choice retains consequential confirmation with its own deadline', () => {
+  let clock = 0;
+  const log = [];
+  const controller = createController({ window: {}, now: () => clock,
+    actions: { activate: (_, name) => { log.push(name); return { ok: true, message: 'Opened.' }; } } });
+  const context = { elements: [], nearby: [control(101, 'Delete page', 'button', { consequential: true }), control(102, 'Delete page', 'button', { consequential: true })] };
+  controller.handle('open delete page', context);
+  clock = 29999;
+  assert.equal(controller.handle('two', { elements: [] }).pending.kind, 'confirm');
+  clock = 40000;
+  assert.equal(controller.handle('confirm', { elements: [] }).performed, 'activate');
+  assert.deepEqual(log, ['Delete page']);
+});

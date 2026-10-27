@@ -254,7 +254,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function renderOutlines() {
     const pending = controller.pending;
-    const question = pending?.kind === 'clarify' ? new Set(pending.candidates.map(candidate => candidate.elementId)) : null;
+    const question = pending?.kind === 'clarify' ? new Map() : null;
+    for (const candidate of question ? pending.candidates : []) {
+      const previous = question.get(candidate.elementId);
+      question.set(candidate.elementId, previous ? `${previous}, ${candidate.number}` : String(candidate.number));
+    }
     const shownContext = controller.paused ? null : pending ? promptContext : spokenContext ?? context;
     // A question about controls just outside the circle outlines those too.
     const shown = shownContext ? [...(shownContext.elements ?? []), ...(question ? shownContext.nearby ?? [] : [])] : [];
@@ -268,7 +272,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       Object.assign(box.style, { left: `${rect.left - 3}px`, top: `${rect.top - 3}px`, width: `${rect.width + 6}px`, height: `${rect.height + 6}px` });
       const badge = document.createElement('span');
       badge.className = 'badge';
-      badge.textContent = element.id;
+      badge.textContent = question ? question.get(element.id) : element.id;
       box.append(badge);
       ui.outlines.append(box);
     }
