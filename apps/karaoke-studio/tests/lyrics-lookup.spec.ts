@@ -53,3 +53,26 @@ test('confirmed absent recognition allows clearly explained estimated timings',a
   await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:{...record,duration:2},headers:{'access-control-allow-origin':'*'}}));
   await setup(page,2);await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);await expect(page.locator('#lookup-use')).toBeEnabled();await page.locator('#lookup-use').click();await expect(page.locator('#message')).toContainText('evenly spaced');expect(await lines(page)).toEqual(words.split('\n'));await expect(page.getByLabel('Start line 1',{exact:true})).toHaveValue('0');
 });
+// A WAV with RIFF INFO title and artist tags, as music libraries write them.
+function tagged(title:string,artist:string,duration=16){
+  const info=Buffer.concat([['INAM',title],['IART',artist]].map(([id,text])=>{const data=Buffer.from(`${text}\0`,'utf8'),padded=Buffer.alloc(data.length+(data.length%2));data.copy(padded);const head=Buffer.alloc(8);head.write(id);head.writeUInt32LE(data.length,4);return Buffer.concat([head,padded]);}));
+  const list=Buffer.alloc(12);list.write('LIST');list.writeUInt32LE(info.length+4,4);list.write('INFO',8);
+  const wav=Buffer.concat([tone(duration),list,info]);wav.writeUInt32LE(wav.length-8,4);return wav;
+}
+test('a song file’s own title and artist name the clip and prefill the lookup, which still waits for a click',async({page})=>{
+  const queries:URL[]=[];await page.route('https://lrclib.net/api/get?**',route=>{queries.push(new URL(route.request().url()));return route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}});});
+  await page.goto('/');await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await page.getByLabel('Upload song clip').setInputFiles({name:'03 - track.wav',mimeType:'audio/wav',buffer:tagged('Test song','Example singer')});
+  await expect(page.locator('#message')).toContainText('Your stems and 3 automatically timed lyric lines',{timeout:15000});
+  await expect(page.getByLabel('Clip title')).toHaveValue('Test song');
+  await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
+  await expect(page.getByLabel('Song title for lookup',{exact:true})).toHaveValue('Test song');
+  await expect(page.getByLabel('Artist for lookup',{exact:true})).toHaveValue('Example singer');
+  await expect(page.locator('#lookup-status')).toHaveText('Title and artist come from the song file. Check them, then look up lyrics.');
+  expect(queries).toHaveLength(0);
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
+  expect(queries[0].searchParams.get('track_name')).toBe('Test song');expect(queries[0].searchParams.get('artist_name')).toBe('Example singer');
+  // After a reload the clip still offers the artist its file named.
+  await page.reload();await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
+  await expect(page.getByLabel('Artist for lookup',{exact:true})).toHaveValue('Example singer');
+});

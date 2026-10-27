@@ -16,7 +16,7 @@ import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -132,8 +132,18 @@ interface ArchiveFocus {
   direction: 'forward' | 'backward' | 'none' | null;
 }
 let archiveFocus: ArchiveFocus | null = null;
+// Song titles and artists read from uploaded files' tags, per saved clip. A convenience kept in this browser only.
+const SONG_TAGS_KEY = 'karaoke-song-tags';
+function songTags(): Record<string, { title?: string; artist?: string }> {
+  try { const value = JSON.parse(localStorage.getItem(SONG_TAGS_KEY) ?? '{}'); return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; } catch { return {}; }
+}
+function rememberSongTags(projectId: string, song: { title?: string; artist?: string }) {
+  const clean = (text: unknown) => (typeof text === 'string' ? text.slice(0, 100) : undefined);
+  try { localStorage.setItem(SONG_TAGS_KEY, JSON.stringify({ ...songTags(), [projectId]: { title: clean(song.title), artist: clean(song.artist) } })); } catch { /* storage unavailable */ }
+}
 const lyricsLookup=mountLyricsLookup({
-  context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,duration:working.duration,
+  suggest:()=>{ if (!working) return null; const tags = songTags()[working.id]; return { title: tags?.title ?? working.title, artist: tags?.artist ?? '' }; },
+  context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,projectId:working.id,duration:working.duration,
     busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
     pastedDirty:draftDirty,alignmentState:transcriptState}:null,
   useLyrics:text=>{
@@ -1292,6 +1302,7 @@ async function pollJob(id: string, epoch = pollEpoch) {
           message('Saved archive ready. Unsaved lyric edits are not included.');
         } else message('The studio finished its archive backup. Back up the saved clip here to prepare its download.');
       } else if (job.kind === 'separate') {
+        if (job.song) rememberSongTags(job.projectId, job.song);
         if (ownedJob && (followJobProject || (!(dirty || draftDirty) && !working))) {
           await openProject(job.projectId);
           if (!ownsPoll(id, epoch)) return;

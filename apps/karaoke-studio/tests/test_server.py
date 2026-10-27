@@ -113,6 +113,21 @@ class ServerTests(unittest.TestCase):
             time.sleep(.01)
         self.fail("Worker did not finish promptly")
 
+    @unittest.skipUnless(__import__('shutil').which('ffmpeg'), 'FFmpeg is not installed')
+    def test_a_tagged_song_names_its_clip_and_reports_its_artist(self):
+        source = self.root / 'tagged.mp3'
+        subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=d=1', '-metadata', 'title=Bohemian Rhapsody',
+                        '-metadata', 'artist=Queen', '-y', str(source)], check=True)
+        status, _, payload = self.request('POST', '/api/projects', source.read_bytes(), {'X-Audio-Name': '03%20track.mp3'})
+        self.assertEqual(status, 202, payload)
+        job = self.wait_job(payload['job']['id'])
+        self.assertEqual(job['status'], 'complete')
+        self.assertEqual(job['song'], {'title': 'Bohemian Rhapsody', 'artist': 'Queen'})
+        status, _, project = self.request('GET', f"/api/projects/{job['projectId']}")
+        self.assertEqual(project['title'], 'Bohemian Rhapsody')
+        # Untagged audio keeps its file name and reports no song.
+        self.assertNotIn('song', self.upload())
+
     def test_session_and_static_files_are_local_and_bounded(self):
         status, headers, session = self.request("GET", "/api/session")
         self.assertEqual(session["maxDuration"], MAX_DURATION)

@@ -447,3 +447,35 @@ class PipelineTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'FFmpeg is not installed')
+class SongTagTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def clip(self, name, **tags):
+        import subprocess
+        path = self.root / name
+        metadata = [part for key, value in tags.items() for part in ('-metadata', f'{key}={value}')]
+        subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=d=1', *metadata, '-y', str(path)], check=True)
+        return path
+
+    def test_titles_and_artists_come_from_each_container_tag_format(self):
+        cancel = threading.Event()
+        for name, tags in [('a.mp3', {'title': 'Bohemian Rhapsody', 'artist': 'Queen'}), ('b.ogg', {'TITLE': 'Ölgemälde', 'ARTIST': 'Ännie'}),
+                           ('c.flac', {'title': 'Flac song', 'album_artist': 'Band'}), ('d.wav', {'title': 'Wave song', 'artist': 'Singer'})]:
+            with self.subTest(name=name):
+                expected = {'title': next(iter(tags.values())), 'artist': list(tags.values())[1]}
+                self.assertEqual(pipeline.read_song_tags(self.clip(name, **tags), cancel), expected)
+
+    def test_tags_are_single_bounded_lines_and_unreadable_clips_have_none(self):
+        cancel = threading.Event()
+        long = self.clip('long.mp3', title='  Very\tlong   ' + 'x' * 300, artist='')
+        self.assertEqual(pipeline.read_song_tags(long, cancel), {'title': ('Very long ' + 'x' * 300)[:100]})
+        self.assertEqual(pipeline.read_song_tags(self.clip('plain.wav'), cancel), {})
+        junk = self.root / 'junk.mp3'
+        junk.write_bytes(b'not audio')
+        self.assertEqual(pipeline.read_song_tags(junk, cancel), {})

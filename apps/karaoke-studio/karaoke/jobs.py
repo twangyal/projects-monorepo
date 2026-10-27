@@ -20,6 +20,8 @@ class JobPublication:
     publish: Callable[[], str | None]
     retain_on_cancel: bool = False
     recognition_failed: bool = False
+    # A completed upload's song title and artist from its own tags, for a lyrics lookup.
+    song: dict | None = None
 
 
 @dataclass
@@ -34,6 +36,7 @@ class _Job:
     finalizing: bool = False
     retained_on_cancel: bool = False
     recognition_failed: bool = False
+    song: dict | None = None
     cancel: threading.Event = field(default_factory=threading.Event)
     thread: threading.Thread | None = None
 
@@ -48,6 +51,8 @@ class _Job:
             value["recognitionFailed"] = True
         if self.retained_on_cancel:
             value["retainedOnCancel"] = True
+        if self.song:
+            value["song"] = dict(self.song)
         return value
 
 
@@ -132,6 +137,7 @@ class JobManager:
                             job.result_url = publication.publish()
                             job.retained_on_cancel = cancelled
                             job.recognition_failed = kind == "separate" and publication.recognition_failed and not cancelled
+                            job.song = publication.song if kind == "separate" else None
                             outcome, final_stage = "complete", "Complete"
                             if cancelled:
                                 final_stage = 'Stems saved; recognition cancelled'
