@@ -59,8 +59,10 @@ test('captured custom detached changed-type and ancestor-locked targets never re
     }, mutate);
     expect(result.tone, mutate).toBe('error');expect(await page.evaluate(() => window.sliderEvents)).toEqual([]);
   }
+  // A custom slider is driven by keys, and one that ignores them is reported unchanged.
   await setup(page, '<div role="slider" aria-label="Volume" tabindex="0" aria-valuenow="50"></div>');
-  expect((await command(page, 'set Volume slider to 70')).tone).toBe('error');
+  const custom = await page.evaluate(async () => { const result = window.commandSlider('set Volume slider to 70'); return await result.followUp; });
+  expect(custom).toMatchObject({ tone: 'error', message: 'Volume did not respond to the keyboard; it is 50.' });
   await expect(page.getByRole('slider')).toHaveAttribute('aria-valuenow', '50');
 });
 

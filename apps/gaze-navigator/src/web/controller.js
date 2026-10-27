@@ -2,7 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
-import { composedContains } from './page-context.js';
+import { composedContains, isConsequentialName } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 const HISTORY_LIMIT = 20;
@@ -37,6 +37,7 @@ export function createController({ window, actions = pageActions, interpret = in
   function confirmable(action, element) {
     if (['activate', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
     if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
+    if (action.type === 'choose-option') return element.consequential || isConsequentialName(action.optionName);
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
   }
@@ -49,14 +50,14 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
       if (problem) return problem;
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
-        const label = action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
+        const label = action.type === 'choose-option' ? `${action.optionName} in ${target.name || target.role}` : action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
         return reply(`"${label}" may have consequences. Say confirm to continue, or cancel.`, 'question');
       }
     }
@@ -68,7 +69,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -133,14 +134,20 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'range': {
         const values = rangeHistory.get(element) ?? [];
         if (action.undo && !values.length) { result = { ok: false, message: 'Nothing to undo in this slider.' }; break; }
-        result = actions.setRangeValue(element, action.undo ? Number(values.at(-1)) : action.value);
-        if (result.changed) {
-          if (action.undo) { if (result.ok) values.pop(); }
-          else { values.push(result.before); if (values.length > HISTORY_LIMIT) values.shift(); }
-          rangeHistory.set(element, values);
-        }
+        result = actions.setRangeValue(element, action.undo ? Number(values.at(-1)) : action.value, { isCurrent: () => turn === executionTurn && !paused });
+        // A custom slider settles after key presses, so its history is kept when it has.
+        const record = outcome => {
+          if (outcome.changed) {
+            if (action.undo) { if (outcome.ok) values.pop(); }
+            else { values.push(outcome.before); if (values.length > HISTORY_LIMIT) values.shift(); }
+            rangeHistory.set(element, values);
+          }
+          return outcome;
+        };
+        if (result.followUp) result.followUp = Promise.resolve(result.followUp).then(record); else record(result);
         break;
       }
+      case 'choose-option': result = actions.chooseListOption(element, action.optionName, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'scroll': {
         let region = action.scope === 'page' ? null : context.region;
         let recovered = false;

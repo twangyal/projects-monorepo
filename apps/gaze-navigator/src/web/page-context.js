@@ -4,7 +4,7 @@
 const ACTIONABLE = [
   'a[href]', 'button', 'input:not([type=hidden])', 'select', 'textarea', 'summary',
   '[contenteditable=""]', '[contenteditable="true"]', '[tabindex]:not([tabindex="-1"])',
-  ...['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'option', 'combobox', 'textbox', 'searchbox']
+  ...['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'option', 'combobox', 'textbox', 'searchbox', 'slider', 'spinbutton']
     .map(role => `[role=${role}]`),
 ].join(',');
 
@@ -360,6 +360,16 @@ function describe(element) {
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {
     if (element.tagName === 'INPUT' && ['checkbox', 'radio'].includes(element.type)) description.checked = element.checked;
     else if (['true', 'false'].includes(element.getAttribute('aria-checked'))) description.checked = element.getAttribute('aria-checked') === 'true';
+  }
+  // Custom ARIA widgets: a slider or spinbutton reports its value in aria-valuenow; a combobox (or a button
+  // that pops up a listbox) offers options that often exist only while it is open.
+  if (['slider', 'spinbutton'].includes(role) && element.tagName !== 'INPUT') {
+    description.customRange = true;
+    description.value = clean(element.getAttribute('aria-valuetext') ?? element.getAttribute('aria-valuenow'));
+  }
+  if ((role === 'combobox' && element.tagName !== 'SELECT') || element.getAttribute('aria-haspopup') === 'listbox') {
+    description.customList = true;
+    if (!description.editable) description.value = clean(visibleText(element));
   }
   if (element.tagName === 'INPUT' && element.type === 'number') {
     description.nativeNumber = true; description.numberSnapshot = captureNumberSnapshot(element);

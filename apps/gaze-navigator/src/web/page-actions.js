@@ -314,10 +314,13 @@ function setTemporalValue(element, value, snapshot, { restore = false }, kind, c
     }) };
 }
 
-export function setRangeValue(element, value) {
+export function setRangeValue(element, value, options = {}) {
+  if (!(element.tagName === 'INPUT' && element.type === 'range') && ['slider', 'spinbutton'].includes(element.getAttribute('role'))) {
+    return setAriaRangeValue(element, value, options);
+  }
   const available = () => element.tagName === 'INPUT' && element.type === 'range' &&
     element.isConnected && !element.readOnly && unlocked(element);
-  if (!available()) return { ok: false, message: 'This command needs an available native range slider. Custom ARIA sliders are not supported.' };
+  if (!available()) return { ok: false, message: 'This command needs an available slider.' };
   if (typeof value !== 'number' || !Number.isFinite(value)) return { ok: false, message: 'Say a finite numeric slider value.' };
   // Range setters silently clamp and snap. The detached native control must
   // retain exactly the requested number before any live focus, event or write.
@@ -344,6 +347,161 @@ export function setRangeValue(element, value) {
   if (!available()) return retired();
   const ok = element.valueAsNumber === value;
   return { ok, changed: element.value !== before, before, message: ok ? `Slider set to ${element.value}.` : `The website changed the slider to ${element.value}. Check it before continuing.` };
+}
+
+// Custom ARIA widgets are driven the way their keyboard contract (WAI-ARIA Authoring Practices) promises, and
+// judged only by the state they report afterwards. Websites may update that state after the key event.
+const ARIA_RANGE_PRESSES = 400;
+const LIST_OPEN_MS = 1500;
+const LIST_SEARCH_MS = 2500;
+
+function ariaNumber(element, attribute) {
+  const value = Number(element.getAttribute(attribute));
+  return element.hasAttribute(attribute) && element.getAttribute(attribute).trim() !== '' && Number.isFinite(value) ? value : null;
+}
+
+function pressKey(element, key) {
+  const view = element.ownerDocument.defaultView;
+  for (const type of ['keydown', 'keyup']) element.dispatchEvent(new view.KeyboardEvent(type, { key, code: key, bubbles: true, cancelable: true, composed: true }));
+}
+
+const pause = (view, ms = 0) => new Promise(resolve => view.setTimeout(resolve, ms));
+
+/** Move a custom slider or spinbutton to exactly `value` with arrow keys (Home/End first when an end is nearer). */
+export function setAriaRangeValue(element, value, { isCurrent = () => true } = {}) {
+  const role = element.getAttribute('role'), noun = role === 'spinbutton' ? 'number' : 'slider';
+  const label = accessibleName(element) || (role === 'spinbutton' ? 'Number' : 'Slider');
+  const available = () => element.isConnected && element.getAttribute('role') === role && unlocked(element);
+  if (!available()) return { ok: false, message: `This ${noun} is not available.` };
+  if (typeof value !== 'number' || !Number.isFinite(value)) return { ok: false, message: `Say a finite numeric ${noun} value.` };
+  const now = () => ariaNumber(element, 'aria-valuenow');
+  const before = now(), min = ariaNumber(element, 'aria-valuemin'), max = ariaNumber(element, 'aria-valuemax');
+  if (before === null) return { ok: false, message: `${label} does not report its value, so it cannot be set safely.` };
+  if ((min !== null && value < min) || (max !== null && value > max)) {
+    return { ok: false, message: `${value} is outside ${label}’s range of ${min ?? 'any'} to ${max ?? 'any'}.` };
+  }
+  if (before === value) return { ok: true, changed: false, message: `${label} is already ${value}.` };
+  element.focus({ preventScroll: true });
+  if (!available() || !ownsFocus(element) || now() !== before) return { ok: false, message: `The ${noun} changed while focusing it. Look at it and try again.` };
+  const view = element.ownerDocument.defaultView;
+  const vertical = role === 'spinbutton' || element.getAttribute('aria-orientation') === 'vertical';
+  const [up, down] = vertical ? ['ArrowUp', 'ArrowDown'] : ['ArrowRight', 'ArrowLeft'];
+  const outcome = (ok, message) => ({ ok, changed: now() !== before, before: String(before), message });
+  // A key press may show its result at once, after a microtask or after the next frame.
+  const press = async key => {
+    const previous = now();
+    pressKey(element, key);
+    for (const wait of [0, 0, 50]) {
+      if (now() !== previous || !available()) break;
+      await pause(view, wait);
+    }
+    return now();
+  };
+  return { before: String(before), message: `Moving ${label} to ${value}…`, followUp: (async () => {
+    if (min !== null && value - min < Math.abs(value - before)) await press('Home');
+    else if (max !== null && max - value < Math.abs(value - before)) await press('End');
+    for (let presses = 0; presses < ARIA_RANGE_PRESSES; presses++) {
+      if (!isCurrent()) return outcome(false, `Stopped moving ${label}; it is ${now()}.`);
+      if (!available()) return outcome(false, `The website replaced, removed or locked ${label}. Check it before continuing.`);
+      const current = now();
+      if (current === value) break;
+      const next = await press(current < value ? up : down);
+      if (next === current || next === null) return outcome(false, `${label} did not respond to the keyboard; it is ${current}.`);
+      if ((current < value) !== (next < value) && next !== value) return outcome(false, `${label} moves in steps and cannot be exactly ${value}; it is now ${next}.`);
+    }
+    const final = now();
+    return outcome(final === value, final === value ? `${label} set to ${element.getAttribute('aria-valuetext') || final}.` : `${label} stopped at ${final}. Check it before continuing.`);
+  })() };
+}
+
+const comparable = text => (text ?? '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+function shown(node) {
+  if (!node.isConnected || !node.getClientRects().length) return false;
+  return node.ownerDocument.defaultView.getComputedStyle(node).visibility !== 'hidden';
+}
+
+// The options a custom combobox offers now: in the list it controls or owns, else in the one open listbox.
+function listOptions(element) {
+  const root = element.getRootNode(), document = element.ownerDocument;
+  const ids = [element, ...element.querySelectorAll('[aria-controls], [aria-owns]')]
+    .flatMap(node => `${node.getAttribute('aria-controls') ?? ''} ${node.getAttribute('aria-owns') ?? ''}`.split(/\s+/)).filter(Boolean);
+  const controlled = ids.map(id => root.getElementById?.(id) ?? document.getElementById(id)).filter(Boolean).filter(shown);
+  let lists = controlled;
+  if (!lists.length) {
+    const open = [...document.querySelectorAll('[role=listbox]')].filter(shown);
+    lists = open.length === 1 ? open : [];
+  }
+  const options = lists.flatMap(list => list.matches('[role=option]') ? [list] : [...list.querySelectorAll('[role=option]')]);
+  return [...new Set(options)].filter(shown);
+}
+
+function pickOption(options, query) {
+  const wanted = comparable(query), named = options.map(option => ({ option, name: comparable(accessibleName(option)) }));
+  for (const test of [name => name === wanted, name => name.startsWith(wanted), name => name.includes(wanted)]) {
+    const found = named.filter(entry => wanted && test(entry.name));
+    if (found.length === 1) return { option: found[0].option };
+    if (found.length > 1) return { ambiguous: found.map(entry => accessibleName(entry.option)) };
+  }
+  return { none: options.map(option => accessibleName(option)) };
+}
+
+function pressOption(option) {
+  const view = option.ownerDocument.defaultView, init = { bubbles: true, cancelable: true, composed: true, view, button: 0 };
+  option.dispatchEvent(new view.PointerEvent('pointerdown', { ...init, pointerType: 'mouse', isPrimary: true }));
+  option.dispatchEvent(new view.MouseEvent('mousedown', init));
+  option.dispatchEvent(new view.PointerEvent('pointerup', { ...init, pointerType: 'mouse', isPrimary: true }));
+  option.dispatchEvent(new view.MouseEvent('mouseup', init));
+  option.click();
+}
+
+const listing = names => names.slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
+
+/**
+ * Choose the option named `optionName` in a custom combobox: open its list (typing the name first into an
+ * editable combobox when the shown choices do not include it), press the one matching option, then check
+ * that the combobox shows it. Several or no matches leave the list open and name the choices.
+ */
+export function chooseListOption(element, optionName, { isCurrent = () => true } = {}) {
+  const label = accessibleName(element) || 'The list';
+  const available = () => element.isConnected && unlocked(element);
+  if (!available()) return { ok: false, message: `${label} is not available.` };
+  const view = element.ownerDocument.defaultView, editable = isEditable(element);
+  const shows = name => comparable(editable ? element.value : element.textContent).includes(comparable(name));
+  const until = async (ms, test) => {
+    for (let waited = 0; ; waited += 50) {
+      const found = test();
+      if (found || waited >= ms || !isCurrent()) return found;
+      await pause(view, 50);
+    }
+  };
+  return { message: `Opening ${label}…`, followUp: (async () => {
+    if (!listOptions(element).length) {
+      element.focus({ preventScroll: true });
+      if (editable) pressKey(element, 'ArrowDown'); else element.click();
+      await until(LIST_OPEN_MS, () => listOptions(element).length);
+    }
+    let choice = pickOption(listOptions(element), optionName);
+    if (!choice.option && editable && isCurrent() && available()) {
+      writeValue(element, optionName);
+      await until(LIST_SEARCH_MS, () => pickOption(listOptions(element), optionName).option);
+      choice = pickOption(listOptions(element), optionName);
+    }
+    if (!isCurrent()) return { ok: false, message: `Stopped before choosing in ${label}.` };
+    if (!available()) return { ok: false, message: `The website removed or locked ${label}. Check it before continuing.` };
+    if (choice.ambiguous) return { ok: false, message: `Several choices match “${optionName}”: ${listing(choice.ambiguous)}. Say “click” and the one you mean.` };
+    if (!choice.option) {
+      return { ok: false, message: choice.none.length ? `No choice called “${optionName}” in ${label}. Shown: ${listing(choice.none)}.` : `${label} did not show any choices.` };
+    }
+    const option = choice.option, name = accessibleName(option);
+    if (option.getAttribute('aria-disabled') === 'true') return { ok: false, message: `${name} is unavailable in ${label}.` };
+    if (shows(name) && option.getAttribute('aria-selected') === 'true') return { ok: true, message: `${name} is already chosen in ${label}.` };
+    option.scrollIntoView?.({ block: 'nearest' });
+    pressOption(option);
+    const chosen = await until(300, () => shows(name));
+    return chosen ? { ok: true, message: `${name} chosen in ${label}.` }
+      : { ok: false, message: `The website did not show ${name} as chosen in ${label}. Check it before continuing.` };
+  })() };
 }
 
 // Selection APIs are deliberately limited to native, writable text controls. Rich-text

@@ -36,6 +36,8 @@ const STYLE = `
 .outline.question .badge { background: #f5c76b; }
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
 .panel.collapsed .body { display: none; }
+.panel.left { right: auto; left: 12px; }
+.panel.top { bottom: auto; top: 12px; }
 @media (max-height: 700px) { .panel { max-height: 45vh; padding: 10px; } }
 h2 { margin: 0; font-size: 16px; }
 .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -106,7 +108,8 @@ export function describeElement(element) {
   const state = element.checked !== undefined ? (element.checked ? ', checked' : ', not checked') : '';
   const value = element.options ? `, ${element.value || 'no choice'}`
     : element.sensitive ? (element.hasValue ? ', contains hidden text' : '')
-    : element.editable && element.value ? `, contains "${element.value.slice(0, 40)}"` : '';
+    : element.editable && element.value ? `, contains "${element.value.slice(0, 40)}"`
+    : (element.customRange || element.customList) && element.value ? `, ${element.value.slice(0, 40)}` : '';
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 
@@ -166,6 +169,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">Radio choices: "select Express radio button" or "select that radio button" selects and checks the requested choice. Repeating it keeps it selected. Native and binary ARIA radios use the website’s click behavior; mixed or missing custom state is refused.</p>
         <p class="hint">Checkboxes: "check Newsletter" or "uncheck that checkbox" sets the requested state; repeating it keeps that state. Binary ARIA checkboxes and switches use one website click and verify its state. Missing or mixed state is refused. "Click" and "toggle" keep ordinary website activation.</p>
         <p class="hint">Dates, times and numbers: "set departure to November first", "set appointment time to 2:30 pm", "set guests to four", "set volume to forty percent", "set reporting month to next month". Spoken words and digits both work. "Undo departure date field" restores the earlier value. The website's own min, max and step rules still apply.</p>
+        <p class="hint">Custom lists and sliders: "set size to large" or "choose Finland from country" opens a website's own list, types to search it when it is a search box, and picks the named choice. Custom sliders move by their arrow keys and stop if they cannot reach the exact value.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
       </details>
@@ -182,6 +186,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // The element list is open by default only where the panel has room to spare.
   if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
   document.documentElement.append(host);
+  // The browser's top layer keeps the panel and circle above website content (cookie banners, sticky headers),
+  // whatever z-index the website uses. A manual popover never closes on its own.
+  if (typeof host.showPopover === 'function') {
+    host.popover = 'manual';
+    try { host.showPopover(); } catch { /* left in the page's own stacking order */ }
+  }
   // Reserve scroll space so the panel never permanently covers the end of a page.
   const spacer = document.createElement('div');
   spacer.id = 'gaze-web-navigator-spacer';
@@ -290,6 +300,57 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const onFocusOut = event => { if (!event.relatedTarget) lastPageFocus = null; };
   const pageFocus = () => { const active = deepActiveElement(document); return inPanel(active) ? lastPageFocus : active; };
 
+  // The panel sits in the top layer, so it would hide fixed website controls under it (cookie banners, chat
+  // buttons, sticky toolbars). Each corner is scored by the fixed or sticky controls it would hide, with dialogs
+  // and consent banners counting most; the panel moves only to a corner that hides less, and never while
+  // focus is in it (someone is typing).
+  const CORNERS = [[false, false], [true, false], [false, true], [true, true]]; // [left, top]
+  const PLACEMENT_MS = 400;
+  const CONTROLS = 'a[href], button, input, select, textarea, [role=button], [role=link], [role=checkbox], [tabindex]';
+  const DIALOGS = '[role=dialog], [role=alertdialog], [aria-modal=true]';
+  let placement = 0;
+  const fixedLayer = node => {
+    if (node === host || node === spacer) return null;
+    for (let scope = node, depth = 0; scope?.nodeType === 1 && scope !== document.body && depth < 25; scope = scope.parentElement, depth++) {
+      if (['fixed', 'sticky'].includes(window.getComputedStyle(scope).position)) return scope;
+    }
+    return null;
+  };
+  const hides = (left, top, width, height) => {
+    const layers = new Set();
+    for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.1, 0.4, 0.7, 0.95]) {
+      for (const node of document.elementsFromPoint(left + width * fx, top + height * fy)) {
+        const layer = fixedLayer(node);
+        if (layer) layers.add(layer);
+      }
+    }
+    let score = 0;
+    for (const layer of layers) {
+      const weight = layer.matches(DIALOGS) || layer.closest(DIALOGS) || layer.querySelector(DIALOGS) || /\b(cookies?|consent)\b/i.test(layer.textContent.slice(0, 2000)) ? 10 : 1;
+      for (const control of [layer, ...layer.querySelectorAll(CONTROLS)]) {
+        if (!control.matches(CONTROLS)) continue;
+        const box = control.getBoundingClientRect(), x = box.left + box.width / 2, y = box.top + box.height / 2;
+        if (box.width && x >= left && x <= left + width && y >= top && y <= top + height) score += weight;
+      }
+    }
+    return score;
+  };
+  function placePanel() {
+    placement = 0;
+    if (stopped || shadow.activeElement) return;
+    const { width, height } = ui.panel.getBoundingClientRect(), margin = 12;
+    const at = ([left, top]) => [left ? margin : window.innerWidth - margin - width, top ? margin : window.innerHeight - margin - height];
+    const current = hides(...at([ui.panel.classList.contains('left'), ui.panel.classList.contains('top')]), width, height);
+    if (!current) return;
+    const [best, score] = CORNERS.map(corner => [corner, hides(...at(corner), width, height)]).reduce((a, b) => (b[1] < a[1] ? b : a));
+    if (score >= current) return;
+    ui.panel.classList.toggle('left', best[0]);
+    ui.panel.classList.toggle('top', best[1]);
+  }
+  function schedulePlacement() {
+    if (!placement && typeof document.elementsFromPoint === 'function') placement = window.setTimeout(placePanel, PLACEMENT_MS);
+  }
+
   // Capturing scans the page, so a resting gaze on an unchanged page reuses the last context.
   const scopeCache = { entry: null, rects: null };
   let pageChanged = true, capturedAt = null;
@@ -298,8 +359,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     pageChanged = true;
     scopeCache.rects = null;
     if (records.some(record => record.type === 'childList')) scopeCache.entry = null;
+    schedulePlacement();
   });
   pageObserver.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+  schedulePlacement();
 
   function recapture(force = false) {
     if (!point || controller.paused) return;
@@ -439,7 +502,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // Frame load events reach their document in capture phase, but skip its window.
   document.addEventListener('load', onFrameLoad, true);
   // Scrolling moves everything under the circle; recapture through the usual interval instead of on every event.
-  const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); };
+  const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); schedulePlacement(); };
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
   document.addEventListener('focusin', onFocusIn, true);
@@ -742,6 +805,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.removeEventListener('resize', refresh);
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.clearTimeout(trailing);
+      window.clearTimeout(placement);
       resizeObserver.disconnect();
       spacer.remove();
       host.remove();
