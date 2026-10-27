@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, isSensitive, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -504,9 +504,10 @@ export function chooseListOption(element, optionName, { isCurrent = () => true }
   })() };
 }
 
-// Selection APIs are deliberately limited to native, writable text controls. Rich-text
-// editors and input types such as email/number do not expose compatible offsets.
+// Selection works in writable native text controls and rich-text editors (in offsets of their text). Input
+// types such as email/number do not expose compatible offsets.
 export function readSelection(element) {
+  if (isRichText(element)) return canWrite(element) ? richSelection(element) : null;
   if (!['INPUT', 'TEXTAREA'].includes(element.tagName) || !canWrite(element)) return null;
   const start = element.selectionStart;
   const end = element.selectionEnd;
@@ -523,23 +524,29 @@ export function deleteSelection(element, snapshot = captureTextSelectionSnapshot
       current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document && frame.element.isConnected);
   };
   const ready = () => !snapshot.blocked && isCurrent() && available() && unchanged();
-  const refused = () => ({ ok: false, message: 'Select nonempty text in an unchanged available native text field. Look at it and try again.' });
+  const refused = () => ({ ok: false, message: 'Select nonempty text in an unchanged available text field. Look at it and try again.' });
   const { value, start, end } = snapshot;
   const splitsPair = index => index > 0 && index < value.length && /[\uD800-\uDBFF]/.test(value[index - 1]) && /[\uDC00-\uDFFF]/.test(value[index]);
   if (typeof value !== 'string' || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start >= end || end > value.length || splitsPair(start) || splitsPair(end) || !ready()) return refused();
   element.focus({ preventScroll: true });
+  // Focusing an editor can move its caret; the selection the instruction was given about is put back.
+  if (isRichText(element) && element.textContent === value) selectRichText(element, start, end);
   const tick = () => new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, 0));
   return { message: 'Removing selected text…', followUp: (async () => {
     await tick();
     if (!ready() || !ownsFocus(element)) return refused();
-    const after = value.slice(0, start) + value.slice(end), view = element.ownerDocument.defaultView;
-    setNativeValue(element, after); element.setSelectionRange(start, start);
+    const after = value.slice(0, start) + value.slice(end), view = element.ownerDocument.defaultView, rich = isRichText(element);
+    // A rich-text editor removes just that span through the browser's editing command, keeping its formatting.
+    const announced = rich ? writeRichText(element, after) : (setNativeValue(element, after), element.setSelectionRange(start, start), false);
+    if (rich) rememberRichSelection(element, start, start);
     // Record immediately after the write, before site handlers can start Undo.
     onWrite(value);
-    element.dispatchEvent(new view.InputEvent('input', { bubbles: true, composed: true, inputType: 'deleteContentBackward', data: null }));
-    if (available() && unchanged(false)) element.dispatchEvent(new view.Event('change', { bubbles: true }));
+    if (!announced) element.dispatchEvent(new view.InputEvent('input', { bubbles: true, composed: true, inputType: 'deleteContentBackward', data: null }));
+    if (!rich && available() && unchanged(false)) element.dispatchEvent(new view.Event('change', { bubbles: true }));
     await tick();
-    const ok = isCurrent() && available() && unchanged(false) && element.value === after;
+    // Editors keep a space visible at a line end as a no-break space; to the reader it is the same text.
+    const visible = text => (rich ? text.replace(/\u00a0/g, ' ') : text);
+    const ok = isCurrent() && element.isConnected && controlVisible(element) && unchanged(false) && visible(readValue(element)) === visible(after);
     return { ok, wrote: true, message: ok ? 'Selected text removed. Say “undo” to restore it.' : 'The website did not retain the requested available text change. Check the field before continuing.' };
   })() };
 }
@@ -581,19 +588,31 @@ function ownsFocus(element) {
 }
 
 export function selectText(element, position, { text, occurrence = null } = {}) {
-  if (!readSelection(element)) return { ok: false, message: 'Selection commands need a writable native text field. This field does not support them.' };
-  const value = element.value;
+  const rich = isRichText(element);
+  if (rich ? !canWrite(element) : !readSelection(element)) return { ok: false, message: 'Selection commands need a writable text field. This field does not support them.' };
+  const value = readValue(element);
   const length = value.length;
   const start = position === 'end' ? length : 0;
   const range = position === 'phrase' ? phraseSelection(value, text, occurrence) : { ok: true, start, end: position === 'all' ? length : start };
   if (!range.ok) return range;
   element.focus({ preventScroll: true });
   // A site's focus handler can replace or lock the field before offsets apply.
-  if (element.value !== value || !readSelection(element) || element.isConnected === false || !ownsFocus(element)) {
+  if (readValue(element) !== value || (rich ? !canWrite(element) : !readSelection(element)) || element.isConnected === false || !ownsFocus(element)) {
     return { ok: false, message: 'The field changed while focusing it. Look at it and try again.' };
   }
-  element.setSelectionRange(range.start, range.end);
+  if (rich) selectRichText(element, range.start, range.end);
+  else element.setSelectionRange(range.start, range.end);
   return { ok: true, message: position === 'phrase' ? 'Text selected. Say “replace selected text with” followed by the correction.' : position === 'all' ? 'All text selected.' : `Cursor moved to the ${position}.` };
+}
+
+/** Selects text offsets `start` to `end` of a rich-text editor, and remembers them for later commands. */
+function selectRichText(element, start, end) {
+  const document = element.ownerDocument, selected = document.createRange(), selection = document.getSelection();
+  selected.setStart(...textPoint(element, start));
+  selected.setEnd(...textPoint(element, end));
+  selection?.removeAllRanges();
+  selection?.addRange(selected);
+  rememberRichSelection(element, start, end);
 }
 
 // The text node and offset at a textContent offset (text nodes in tree order make up textContent).

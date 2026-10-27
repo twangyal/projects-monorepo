@@ -207,7 +207,7 @@ export function createController({ window, actions = pageActions, interpret = in
     const values = history.get(element) ?? [];
     const selection = change.kind === 'insert-selection' ? actions.readSelection(element) : null;
     if (change.kind === 'insert-selection' && !selection) {
-      return { ok: false, message: 'Insertion commands need a writable native text field. This field does not support them.' };
+      return { ok: false, message: 'Insertion commands need a writable text field. This field does not support them.' };
     }
     if (change.kind === 'insert-selection' && change.requireSelection && selection.start === selection.end) {
       return { ok: false, message: 'No text is selected. Say “select all text” or select the words first.' };
