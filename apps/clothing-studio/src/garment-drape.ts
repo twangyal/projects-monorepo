@@ -7,7 +7,7 @@ import { skirtDraft, skirtHeight } from './product-skirt.ts';
  *
  * - Rest lengths are flat fabric distances: every piece is meshed from its pattern piece and carries its flat position
  *   in its UVs. Across a seam (front to back, sleeve to armhole) bending rest lengths are measured unfolded, so seams
- *   do not hold a crease. The neck rib and hood keep their modelled 3D lengths.
+ *   do not hold a crease. The neck rib keeps its modelled 3D lengths.
  * - The body is a proxy from chest and optional waist/hip girths, with optional chest depth and assumed heights/limbs: a torso of stadium-shaped sections,
  *   sloped shoulders, neck, head and arms along the sleeve angle. It grows from inside the garment to full size before
  *   gravity starts, so the cloth starts outside it.
@@ -62,7 +62,7 @@ export function bendingLength(fabric: Material): number {
   return Math.cbrt(fabricProperties(fabric).bending / (fabric.gsm / 10000 * GRAVITY));
 }
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
-const MODELLED: ReadonlySet<PartId> = new Set(['neckband', 'hood']);
+const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
 const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35]]);
 
@@ -112,7 +112,7 @@ const GATHER_FRAMES = 30;
 /** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
 export const GARMENT_FRAMES = 180;
 export const GARMENT_SUBSTEPS = 24;
-export const GARMENT_SOLVER = 'xpbd-pattern-pieces-v3';
+export const GARMENT_SOLVER = 'xpbd-pattern-pieces-v4';
 
 /** A body a little smaller than the garment: 10 cm less than a top's chest. For a skirt, the chest whose automatic
  * waist (0.86 × chest) sits about 2 cm inside the skirt's waist; for trousers, the one whose automatic waist is theirs.
@@ -384,19 +384,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
     }
   }
   const ribWidth = ribIds && ribIds.length > 1 ? spatial(ribIds[0]!, ribIds[1]!) : 0, ribEdge = new Set(ribIds ? [...ribIds].filter((_, v) => v % 2) : []);
-  // The hood rises from the same neckline: its lengths around the head shrink by the neckline's flat-to-modelled
-  // ratio, keeping its height. Its first row is the neck edge (see hoodMesh).
-  const hoodMesh = meshes.find(mesh => mesh.part === 'hood'), hoodIds = vertices.get('hood');
-  let hoodScale = 1;
-  if (hoodMesh && hoodIds) {
-    const base: number[] = [];
-    for (let v = 0; v < hoodIds.length && Math.abs(hoodMesh.uvs[v * 2 + 1]!) < 1e-9; v++) base.push(hoodIds[v]!);
-    let flatLength = 0, modelledLength = 0;
-    for (let v = 1; v < base.length; v++) { flatLength += flat(base[v - 1]!, base[v]!); modelledLength += spatial(base[v - 1]!, base[v]!); }
-    if (modelledLength > 0) hoodScale = Math.min(1, flatLength / modelledLength);
-  }
   const modelledRest = (part: PartId, i: number, j: number) => {
-    if (part === 'hood') return Math.hypot(Math.hypot(p(i, 0) - p(j, 0), p(i, 2) - p(j, 2)) * hoodScale, p(i, 1) - p(j, 1));
     if (part !== 'neckband' || !ribAlong.has(i) || !ribAlong.has(j)) return spatial(i, j);
     let along = Math.abs(ribAlong.get(i)! - ribAlong.get(j)!);
     // The ring closes: the last neck point joins the first.
@@ -413,7 +401,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: Opposite[] }>();
   for (const mesh of simulated) {
     const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
-    // The hood is lined and holds its shape; its modelled 3D form is kept with stiffer bending.
+    // The hood is lined, so it bends four times as stiffly.
     const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {
       const corners = [mesh.indices[t]!, mesh.indices[t + 1]!, mesh.indices[t + 2]!], tri = corners.map(v => ids[v]!);
@@ -592,6 +580,35 @@ export function clothSolver(cloth: Cloth, inverseMass: Float32Array, dt: number,
   return { positions, previous, velocity, rest, a, b, step };
 }
 
+/** How far a hood starts folded back from upright before draping, in radians. */
+const HOOD_FOLD = Math.PI * 0.8;
+
+/**
+ * A hood drapes worn down: before the simulation it is folded back over the shoulders about the back of the neck,
+ * each point further the higher it is on the hood pattern (its flat y runs from the crown down to the neck edge).
+ * Points sewn to the neckline stay where they are.
+ */
+function foldHood(cloth: Cloth, meshes: PartMesh[]) {
+  const mesh = meshes.find(item => item.part === 'hood'), ids = cloth.vertices.get('hood');
+  if (!mesh || !ids) return;
+  const sewn = new Set<number>();
+  for (const [part, others] of cloth.vertices) if (part !== 'hood') for (const id of others) sewn.add(id);
+  const p = cloth.positions, neck = ids.filter(id => sewn.has(id) && p[id * 3 + 2]! < 0);
+  if (!neck.length) return;
+  // The centre back of the neck: the sewn hood point nearest the middle, behind.
+  const pivot = neck.reduce((best, id) => Math.abs(p[id * 3]!) < Math.abs(p[best * 3]!) ? id : best, neck[0]!);
+  const py = p[pivot * 3 + 1]!, pz = p[pivot * 3 + 2]!, height = Math.max(...mesh.uvs.filter((_, i) => i % 2 === 1)) || 1;
+  const done = new Set<number>();
+  ids.forEach((id, v) => {
+    if (sewn.has(id) || done.has(id)) return;
+    done.add(id);
+    const t = Math.min(1, Math.max(0, (height - mesh.uvs[v * 2 + 1]!) / height)), angle = HOOD_FOLD * t * t * (3 - 2 * t);
+    const dy = p[id * 3 + 1]! - py, dz = p[id * 3 + 2]! - pz, cos = Math.cos(angle), sin = Math.sin(angle);
+    p[id * 3 + 1] = py + dy * cos + dz * sin;
+    p[id * 3 + 2] = pz - dy * sin + dz * cos;
+  });
+}
+
 /**
  * Drapes `meshes` (the product's 3D parts, as teeMesh builds them) on a body of `bodyChest`. Deterministic for the
  * same inputs; `progress` receives completed frames and can return false to stop early.
@@ -628,6 +645,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       inverseMass[id] = 0;
     }
   }
+  foldHood(cloth, meshes);
   const solver = clothSolver(cloth, inverseMass, dt), { positions, previous } = solver;
   // The shell is the cloth stretched over a pillow: while the body grows inside it, every rest length eases from its
   // length on the shell to its flat length, so the fabric shrinks onto the body instead of snapping.

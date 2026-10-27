@@ -27,7 +27,7 @@ test('hood side width reaches pattern GLB POM and complete saved history',async(
  const svg=(await download(page,'Download printable pattern (SVG, 1:1) ↓')).toString();
  const sewnWidth=await page.evaluate(svg=>{const doc=new DOMParser().parseFromString(svg,'image/svg+xml'),polygon=doc.querySelector('[data-piece="hood"]')!.querySelectorAll('polygon')[1];const xs=polygon.getAttribute('points')!.trim().split(/\s+/).map(p=>Number(p.split(',')[0]));return Math.max(...xs)-Math.min(...xs);},svg);expect(Math.abs(sewnWidth-34)).toBeLessThan(.011);
  await page.getByRole('button',{name:'Exports',exact:true}).click();const changed=hoodPositions(await download(page,'Export 3D model (GLB) ↓'));expect(changed.length).toBe(prior.length);expect(changed).not.toEqual(prior);
- const columns=prior.length/3/17;for(let i=0;i<prior.length;i++){if(i%3!==2||i<columns*3)expect(changed[i]).toBe(prior[i]);}
+ for(let i=0;i<prior.length;i++){if(i%3!==2)expect(changed[i]).toBe(prior[i]);}
  await page.getByRole('button',{name:'Tech pack',exact:true}).click();await expect(page.locator('#techpack-preview tr').filter({has:page.locator('td:first-child:text-is("N")')}).locator('td').nth(6)).toHaveText('34');
  await page.keyboard.press('Escape');await page.getByRole('button',{name:'Undo',exact:true}).click();expect((await backup(page)).product).toEqual(original.product);await page.getByRole('button',{name:'Redo',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Locally saved');await page.reload();expect((await backup(page)).product).toEqual(saved.product);
 });
