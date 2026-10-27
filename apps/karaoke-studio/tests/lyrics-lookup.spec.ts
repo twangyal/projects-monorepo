@@ -81,7 +81,7 @@ test('opted-in automatic lookup runs once for a tagged song, opens the review, a
   const queries:URL[]=[];await page.route('https://lrclib.net/api/get?**',route=>{queries.push(new URL(route.request().url()));return route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}});});
   await page.goto('/');await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
   await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
-  const automatic=page.getByLabel(/Look up automatically when a song file names its title and artist/);
+  const automatic=page.getByLabel(/Look up automatically when a song file’s tags or name give its title and artist/);
   await expect(automatic).not.toBeChecked();await automatic.check();
   await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=false);
   await page.getByLabel('Upload song clip').setInputFiles({name:'03 - track.wav',mimeType:'audio/wav',buffer:tagged('Test song','Example singer')});
@@ -178,4 +178,19 @@ test('a song not found exactly is searched, and the same song at this duration i
   await setup(page);await page.getByLabel('Song title for lookup',{exact:true}).fill('Test song - Remastered 2020');
   await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
   await expect(page.locator('#lookup-match')).toContainText('Test Song (Remastered) — Example singer');
+});
+test('an untagged file named "Title - Artist" is looked up from its name, the other way round when needed',async({page})=>{
+  const queries:URL[]=[];
+  await page.route('https://lrclib.net/api/**',route=>{const url=new URL(route.request().url());queries.push(url);
+    if(url.pathname==='/api/search')return route.fulfill({json:[],headers:{'access-control-allow-origin':'*'}});
+    return url.searchParams.get('track_name')==='Test song'?route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}}):route.fulfill({status:404,body:'{}',headers:{'access-control-allow-origin':'*'}});});
+  await page.goto('/');await page.evaluate(()=>localStorage.setItem('karaoke-lookup-auto','on'));await page.reload();
+  await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await page.getByLabel('Upload song clip').setInputFiles({name:'01 - Test song - Example singer (Official Video).wav',mimeType:'audio/wav',buffer:tone(16)});
+  await expect(page.locator('#lookup-status')).toContainText('Found automatically from the song file’s name.',{timeout:15000});
+  await expect(page.getByLabel('Song title for lookup',{exact:true})).toHaveValue('Test song');
+  await expect(page.getByLabel('Artist for lookup',{exact:true})).toHaveValue('Example singer');
+  expect(queries.filter(url=>url.pathname==='/api/get').map(url=>url.searchParams.get('track_name'))).toEqual(['Example singer','Test song']);
+  // Nothing is used without a click.
+  await expect(page.getByRole('button',{name:'Use lyrics and align',exact:true})).toBeVisible();
 });

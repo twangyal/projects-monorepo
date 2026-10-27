@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {lookupLyrics,parseLyricsRecord,lookupQuery} from '../src/lyrics-lookup.ts';
+import {lookupLyrics,parseLyricsRecord,lookupQuery,songFromFileName} from '../src/lyrics-lookup.ts';
 const query={title:'Test song',artist:'Example singer',duration:16};
 const record={id:42,trackName:'Test song',artistName:'Example singer',albumName:'Demo',duration:16,instrumental:false,plainLyrics:'Hello little world\nThis is our chorus\nSing it back to me',syncedLyrics:'ignored'};
 test('metadata lookup uses only the fixed provider and returns reviewed plain lines',async()=>{
@@ -66,4 +66,14 @@ test('editions and featured credits match the same song, and a missed exact look
   assert.deepEqual([urls[1]!.pathname, urls[1]!.searchParams.get('track_name'), urls[1]!.searchParams.get('artist_name')], ['/api/search', 'bohemian rhapsody', 'queen']);
   const none = async (input: URL | RequestInfo) => new URL(String(input)).pathname === '/api/get' ? new Response('{}', { status: 404 }) : Response.json([{ ...edition, duration: 200 }]);
   await assert.rejects(lookupLyrics({ title: 'Bohemian Rhapsody', artist: 'Queen', duration: 354 }, new AbortController().signal, none), /No matching lyrics/);
+});
+test('a song file name gives its artist and title without track numbers or video notes',()=>{
+ assert.deepEqual(songFromFileName('Adele - Hello'),{artist:'Adele',title:'Hello'});
+ assert.deepEqual(songFromFileName('03. Daft Punk – Get Lucky (Official Video) [HD]'),{artist:'Daft Punk',title:'Get Lucky'});
+ assert.deepEqual(songFromFileName('07 - Queen - Bohemian Rhapsody - Remastered 2011'),{artist:'Queen',title:'Bohemian Rhapsody - Remastered 2011'});
+ assert.deepEqual(songFromFileName('50 Cent - In da Club'),{artist:'50 Cent',title:'In da Club'});
+ assert.deepEqual(songFromFileName('Nina_Simone_-_Feeling_Good'),{artist:'Nina Simone',title:'Feeling Good'});
+ assert.deepEqual(songFromFileName('Hey Jude (Lyrics)'),null);
+ assert.deepEqual(songFromFileName('demo-take-3'),null);
+ assert.deepEqual(songFromFileName(' - Title'),null);
 });

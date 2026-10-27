@@ -54,6 +54,21 @@ const comparable=(text:string)=>text.normalize('NFC').toLowerCase().replace(/\s+
 // Editions and credits that tags and catalogues add to the same song: "Song - Remastered 2011", "Song (Live)", "feat. X".
 const EDITION=/\s+-\s+(?:[^-]*\b(?:remaster(?:ed)?|live|version|edit|mix|mono|stereo|demo|acoustic|bonus|single|radio|deluxe|instrumental)\b[^-]*|\d{4})$/u;
 const plainWords=(text:string)=>text.replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+const VIDEO_NOTE=/\s*[([][^)\]]*\b(?:official|video|audio|lyrics?|hd|hq|4k|visuali[sz]er|mv)\b[^)\]]*[)\]]/giu;
+/**
+ * The artist and title a song file's name gives, as in "Artist - Title.mp3", without track numbers or video notes
+ * ("(Official Video)"). Null when the name does not have both. Names are often written "Title - Artist" too, so a
+ * lookup with these may need to try them the other way round.
+ */
+export function songFromFileName(name:string):{title:string;artist:string}|null {
+  let text=name.normalize('NFC').trim();
+  if(!/\s/u.test(text))text=text.replace(/_+/gu,' ');
+  text=text.replace(VIDEO_NOTE,'').replace(/^(?:\d{1,3}\s*[.)]|\d{1,3}\s+[-–—]|0\d)\s+/u,'').trim();
+  const parts=text.split(/\s+[-–—]\s+/u);
+  if(parts.length<2)return null;
+  const artist=parts[0]!.trim(),title=parts.slice(1).join(' - ').trim();
+  return artist&&title?{title,artist}:null;
+}
 /** A song title without edition notes or featured artists, for matching catalogue entries. */
 export function coreTitle(text:string):string {
   let title=comparable(text).replace(/\s*[([][^)\]]*[)\]]/gu,' ').replace(/\s+(?:feat\.?|ft\.?|featuring)\s.*$/u,'');
