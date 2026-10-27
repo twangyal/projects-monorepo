@@ -27,9 +27,10 @@ test('the panel moves aside from a fixed cookie banner, whose button can then be
     banner.innerHTML = 'We use cookies. <button id="essential">Essential only</button>';
     document.body.append(banner);
   });
-  await expect.poll(async () => (await panel.boundingBox()).x).toBeLessThan(before.x - 200);
+  // Wide screens move it to the left; on narrow ones, where it spans the width, it moves to the top.
   const button = await page.locator('#essential').boundingBox();
-  expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.id, [button.x + button.width / 2, button.y + button.height / 2])).toBe('essential');
+  await expect.poll(() => page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.id, [button.x + button.width / 2, button.y + button.height / 2])).toBe('essential');
+  expect(await panel.boundingBox()).not.toEqual(before);
   // The banner's own button now works with the navigator too.
   await page.mouse.move(button.x + button.width / 2, button.y + button.height / 2);
   await panel.getByLabel('Typed instruction').fill('click essential only');
