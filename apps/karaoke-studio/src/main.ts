@@ -1,4 +1,5 @@
 import {lyricsLookupMarkup,mountLyricsLookup} from './lyrics-lookup-view.ts';
+import {songFromFileName} from './lyrics-lookup.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
@@ -144,7 +145,12 @@ function rememberSongTags(projectId: string, song: { title?: string; artist?: st
   try { localStorage.setItem(SONG_TAGS_KEY, JSON.stringify({ ...songTags(), [projectId]: { title: clean(song.title), artist: clean(song.artist) } })); } catch { /* storage unavailable */ }
 }
 const lyricsLookup=mountLyricsLookup({
-  suggest:()=>{ if (!working) return null; const tags = songTags()[working.id]; return { title: tags?.title ?? working.title, artist: tags?.artist ?? '' }; },
+  // Tags name the song; without them, a file name such as "Artist - Title" may.
+  suggest:()=>{
+    if (!working) return null;
+    const tags = songTags()[working.id], named = tags?.title || tags?.artist ? null : songFromFileName(working.title);
+    return named ? { ...named, fromName: true } : { title: tags?.title ?? working.title, artist: tags?.artist ?? '' };
+  },
   context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,projectId:working.id,duration:working.duration,
     busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
     pastedDirty:draftDirty,alignmentState:transcriptState}:null,
