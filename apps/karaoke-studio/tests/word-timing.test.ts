@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { cueWords, parseWordTiming, splitSung, sungCharacters } from '../src/word-timing.ts';
 
 const cues = [{ start: 1, end: 4, text: 'Hello  darling\nwhere' }, { start: 5, end: 6, text: 'é 漢字' }];
 const reply = { recognized: true, lines: [
   [{ text: 'Hello', start: 1.2, heard: true }, { text: 'darling', start: 1.6, heard: true }, { text: 'where', start: 2.5, heard: false }],
-  [{ text: 'é', start: 5.1, heard: false }, { text: '漢字', start: 5.4, heard: false }],
+  [{ text: 'é', start: 5.1, heard: false }, { text: '漢', start: 5.4, heard: false }, { text: '字', start: 5.6, heard: false }],
 ] };
 
 test('word timing replies are accepted only for exactly the requested words, in order and inside each line', () => {
@@ -24,10 +25,17 @@ test('word timing replies are accepted only for exactly the requested words, in 
   for (const [label, mutate] of broken) { const copy = structuredClone(reply); mutate(copy); assert.throws(() => parseWordTiming(copy, cues), Error, label); }
 });
 
+test('lyric words split like the studio: spaceless scripts by character, Tibetan by syllable', () => {
+  // The same examples are checked against karaoke/lyrics_auto.py in tests/test_lyrics_auto.py.
+  const cases = JSON.parse(readFileSync(new URL('./lyric-words.json', import.meta.url), 'utf8')) as [string, string[]][];
+  for (const [text, words] of cases) assert.deepEqual(cueWords(text), words, text);
+});
+
 test('the sung prefix counts code points of words already started and skips spaces', () => {
   const lines = parseWordTiming(reply, cues).lines;
   assert.deepEqual([0, 1.2, 1.7, 3].map(t => sungCharacters(lines[0], t)), [0, 5, 12, 17]);
-  assert.equal(sungCharacters(lines[1], 5.5), 3, 'é and 漢字 are three code points');
+  assert.equal(sungCharacters(lines[1], 5.5), 2, 'é and 漢 have started');
+  assert.equal(sungCharacters(lines[1], 5.7), 3, 'é, 漢 and 字 are three code points');
   assert.deepEqual(splitSung('Hello darling', 5), ['Hello', ' darling']);
   assert.deepEqual(splitSung('darling', 0), ['', 'darling']);
   assert.deepEqual(splitSung('é 漢字', 3), ['é 漢字', '']);

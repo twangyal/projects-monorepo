@@ -32,6 +32,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
 from .jobs import JobBusy, JobManager, JobPublication
 from .lyrics_auto import align_lines, word_timings, words_to_cues
 from .lrc import render_lrc
+from .transcription import CHOICES
 from .word_alignment import AlignmentLimitError
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
@@ -1037,8 +1038,8 @@ class Handler(BaseHTTPRequestHandler):
                 value = self._read_json()
                 model_choice = value.get("modelChoice", "auto")
                 if (set(value) - {"modelChoice"} or not isinstance(model_choice, str)
-                        or model_choice not in ("auto", "english", "multilingual")):
-                    raise RequestError(400, "Choose Automatic, English, or Multilingual lyric recognition.")
+                        or model_choice not in CHOICES):
+                    raise RequestError(400, "Choose Automatic, English, Multilingual or East Asian lyric recognition.")
             elif self.command == "POST" and resource == "word-timings":
                 value = self._read_json()
                 if set(value) != {"cues"} or not isinstance(value["cues"], list):

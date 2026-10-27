@@ -32,6 +32,12 @@ class LrcTests(unittest.TestCase):
         line = render_lrc(self.project, words).splitlines()[3]
         self.assertEqual(line, '[00:01.00]<00:01.20>Hello <00:01.60>(there) <00:02.30>world')
 
+    def test_words_of_spaceless_scripts_are_stamped_without_spaces(self):
+        project = update_project(create_project('c' * 32, 'Song', 20.0), 'Song', [dict(start=1.0, end=4.0, text='我爱你 love')], 0)
+        words = [dict(text=character, start=1.2 + 0.5 * index, end=1.5 + 0.5 * index) for index, character in enumerate('我爱你')]
+        self.assertEqual(render_lrc(project, words).splitlines()[3],
+                         '[00:01.00]<00:01.20>我<00:01.70>爱<00:02.20>你 <00:02.61>love')
+
 
 if __name__ == '__main__':
     unittest.main()

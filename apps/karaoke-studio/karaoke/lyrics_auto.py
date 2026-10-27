@@ -27,6 +27,72 @@ UNSURE = 0.7
 LEAD_IN = 0.15
 HOLD = 0.35
 
+# Scripts written without spaces between words. Each Chinese, Japanese, Thai, Lao, Myanmar or Khmer
+# character is its own lyric word for timing and highlighting; Tibetan words end at a syllable mark.
+# word-timing.ts splits words with the same rule.
+_EACH = ((0x0E00, 0x0EFF), (0x1000, 0x109F), (0x1780, 0x17FF), (0x2E80, 0x2FDF), (0x3005, 0x3007),
+         (0x3021, 0x3029), (0x3038, 0x303B), (0x3040, 0x30FF), (0x31F0, 0x31FF), (0x3400, 0x4DBF),
+         (0x4E00, 0x9FFF), (0xF900, 0xFAFF), (0xFF66, 0xFF9F), (0x20000, 0x3134F))
+_TIBETAN = (0x0F00, 0x0FFF)
+_SYLLABLE_ENDS = frozenset('\u0f0b\u0f0c\u0f0d\u0f0e')
+
+
+def _kind(character: str) -> str:
+    code = ord(character)
+    if any(low <= code <= high for low, high in _EACH):
+        return 'each'
+    return 'tibetan' if _TIBETAN[0] <= code <= _TIBETAN[1] else 'other'
+
+
+def lyric_words(text: str) -> list[str]:
+    """A lyric line's words: whitespace-separated, with spaceless scripts split as described above.
+
+    Combining marks and punctuation stay with the word before them; opening punctuation joins the next.
+    """
+    words: list[str] = []
+    for part in text.split():
+        pieces: list[str] = []
+        for character in part:
+            category = unicodedata.category(character)
+            if pieces:
+                last = pieces[-1][-1]
+                opening = all(unicodedata.category(c) in ('Ps', 'Pi') for c in pieces[-1])
+                kind, previous = _kind(character), _kind(last)
+                if (opening or category[0] == 'M' or (category[0] == 'P' and category not in ('Ps', 'Pi'))
+                        or (kind == previous == 'tibetan' and last not in _SYLLABLE_ENDS)
+                        or (kind == previous == 'other')):
+                    pieces[-1] += character
+                    continue
+            pieces.append(character)
+        words.extend(pieces)
+    return words
+
+
+def _edge(word: str, last: bool) -> str:
+    """The script kind of a word's first (or last) letter, passing over punctuation and marks."""
+    for character in reversed(word) if last else word:
+        if unicodedata.category(character)[0] not in 'PM':
+            return _kind(character)
+    return 'other'
+
+
+def needs_space(left: str, right: str) -> bool:
+    """Whether two adjacent lyric words are written with a space between them."""
+    return not _edge(left, True) == _edge(right, False) != 'other'
+
+
+def join_words(words: list[str]) -> str:
+    """Words back into a line: no space between two words of the same spaceless script."""
+    text = ''
+    for word in words:
+        text += (' ' if text and needs_space(text, word) else '') + word
+    return text
+
+
+def _width(text: str) -> int:
+    """Line length in Latin-letter widths; a character of a spaceless script counts twice."""
+    return sum(2 if _kind(character) == 'each' else 1 for character in text)
+
 
 def _clean(word: object) -> dict | None:
     if not isinstance(word, dict):
@@ -61,7 +127,7 @@ def _finish(groups: list[list[dict]], duration: float, scores: list[float] | Non
     if len(groups) > MAX_CUES:
         raise ValueError('The complete lyrics exceed the line limit; shorten or regroup them.')
     for index, group in enumerate(groups):
-        text = ' '.join(word['text'] for word in group).strip()
+        text = join_words([word['text'] for word in group]).strip()
         if len(text) > MAX_CUE_CHARS or total + len(text) > MAX_LYRIC_CHARS:
             raise ValueError('The complete lyrics exceed the text limit; shorten or regroup them.')
         if not text:
@@ -98,8 +164,8 @@ def words_to_cues(words: list, duration: float, confidence: bool = False) -> lis
         if groups:
             line = groups[-1]
             gap = word['start'] - line[-1]['end']
-            length = sum(len(w['text']) + 1 for w in line)
-            if not (gap >= BREAK_PAUSE or (gap >= SOFT_PAUSE and length >= SOFT_CHARS) or length + len(word['text']) > HARD_CHARS):
+            length = sum(_width(w['text']) + 1 for w in line)
+            if not (gap >= BREAK_PAUSE or (gap >= SOFT_PAUSE and length >= SOFT_CHARS) or length + _width(word['text']) > HARD_CHARS):
                 line.append(word)
                 continue
         groups.append([word])
@@ -141,7 +207,7 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
     heard = [_token(word['text']) for word in words]
     reference, owner = [], []
     for index, line in enumerate(lines):
-        for part in line.split():
+        for part in lyric_words(line):
             token = _token(part)
             if token:
                 reference.append(token)
@@ -156,7 +222,7 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
         spans.append((words[min(found)]['start'], words[max(found)]['end']) if found else None)
     # A single stray match in a mostly unmatched line is unreliable; treat it as unknown.
     for index, span in enumerate(spans):
-        if span is not None and shares[index] < 0.34 and len(lines[index].split()) >= 3:
+        if span is not None and shares[index] < 0.34 and len(lyric_words(lines[index])) >= 3:
             spans[index] = None
     # Enforce order: drop anchors that would run backwards.
     last = -1.0
@@ -199,7 +265,7 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
     return _finish(groups, duration, shares)
 
 
-# Word-by-word highlighting: each saved line is split on whitespace and every word gets the time it
+# Word-by-word highlighting: each saved line is split into lyric words and every word gets the time it
 # starts being sung. A line highlights in at most this many steps, which bounds video cards.
 MAX_STEPS = 16
 NEARBY = 0.25
@@ -218,7 +284,7 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
     budget = AlignmentBudget()
     for cue in cues:
         start, end = float(cue['start']), float(cue['end'])
-        tokens = cue['text'].split()
+        tokens = lyric_words(cue['text'])
         if not tokens:
             result.append([])
             continue

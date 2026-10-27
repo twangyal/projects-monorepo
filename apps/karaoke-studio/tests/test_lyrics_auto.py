@@ -12,12 +12,13 @@ from unittest import mock
 import wave
 import zipfile
 
-from karaoke.lyrics_auto import MAX_STEPS, align_lines, sung_count, word_timings, words_to_cues
+from karaoke.lyrics_auto import MAX_STEPS, align_lines, join_words, lyric_words, sung_count, word_timings, words_to_cues
 from karaoke.model import validate_project
 from karaoke import transcribe_worker, transcription
 from karaoke.transcribe_worker import recognize, words_from
 from karaoke.transcription import (
-    ENGLISH, MULTILINGUAL, archive_model, asr_ready, installed_models, model_ready, sounds_english, validate_transcript,
+    EAST_ASIAN, ENGLISH, MULTILINGUAL, archive_model, asr_ready, installed_models, model_ready, sounds_east_asian, sounds_english,
+    validate_transcript,
 )
 
 
@@ -137,7 +138,52 @@ class WordTimingTests(unittest.TestCase):
         self.assertEqual(word_timings([dict(start=1.0, end=2.0, text='— !')], SUNG, 40)[0][0]['heard'], False)
 
 
+class SpacelessScriptTests(unittest.TestCase):
+    def test_lyric_words_match_the_editor_examples(self):
+        # tests/word-timing.test.ts checks the same examples against the editor's word split.
+        for text, expected in json.loads((Path(__file__).with_name('lyric-words.json')).read_text(encoding='utf-8')):
+            self.assertEqual(lyric_words(text), expected, text)
+            self.assertEqual(join_words(expected), ' '.join(text.split()), text)
+
+    def test_recognized_chinese_characters_form_unspaced_lines_timed_per_character(self):
+        sung = [dict(text=character, start=2 + 0.4 * index, end=2.3 + 0.4 * index, confidence=1.0)
+                for index, character in enumerate('我爱你中国')]
+        sung += [dict(text='Love', start=6.0, end=6.4, confidence=1.0), dict(text='我', start=6.5, end=6.8, confidence=1.0)]
+        cues = words_to_cues(sung, 10)
+        self.assertEqual([cue['text'] for cue in cues], ['我爱你中国', 'Love 我'])
+        timings = word_timings(cues, sung, 10)
+        self.assertEqual([word['text'] for word in timings[0]], list('我爱你中国'))
+        self.assertTrue(all(word['heard'] for word in timings[0]))
+        self.assertEqual([word['start'] for word in timings[0]], [2.0, 2.4, 2.8, 3.2, 3.6])
+
+    def test_supplied_japanese_lyrics_align_to_recognized_characters(self):
+        sung = [dict(text=character, start=1 + 0.3 * index, end=1.25 + 0.3 * index, confidence=1.0)
+                for index, character in enumerate('きみのなは')]
+        sung += [dict(text=character, start=5 + 0.3 * index, end=5.25 + 0.3 * index, confidence=1.0)
+                 for index, character in enumerate('あいしてる')]
+        cues = align_lines(['君のなは', '愛してる'], sung, 9)
+        self.assertGreater(cues[0]['matched'], 0.6)
+        self.assertGreater(cues[1]['matched'], 0.6)
+        # 愛 was heard as あい, so the line starts at し (5.6 s) less the lead-in.
+        self.assertAlmostEqual(cues[1]['start'], 5.6 - 0.15, places=3)
+
+    def test_wide_characters_break_lines_sooner(self):
+        sung = [dict(text=character, start=0.2 * index, end=0.2 * index + 0.15, confidence=1.0)
+                for index, character in enumerate('天地玄黄宇宙洪荒日月盈昃辰宿列张寒来暑往秋收冬藏闰余成岁律吕调阳')]
+        self.assertTrue(all(len(cue['text']) <= 20 for cue in words_to_cues(sung, 20)))
+
+
 class TranscriptTests(unittest.TestCase):
+    def test_character_tokens_become_lyric_words_each_with_its_own_time(self):
+        # SenseVoice: Chinese characters without spaces, then English words that begin with one.
+        result = words_from(['不', '愿', '人', ' if', ' i', ' know'], [0.18, 0.48, 1.08, 2.0, 2.3, 2.6], [], 10.0)
+        self.assertEqual([(w['text'], w['start']) for w in result], [('不', 10.18), ('愿', 10.48), ('人', 11.08), ('if', 12.0), ('i', 12.3), ('know', 12.6)])
+        # Without reported durations a sung character is held until the next one starts (at most two seconds).
+        self.assertEqual([w['end'] for w in result], [10.48, 11.08, 12.0, 12.3, 12.6, 12.9])
+        self.assertTrue(all(w['confidence'] == 1.0 for w in result), 'no probabilities reported')
+        # A space token (as character models emit) separates words.
+        self.assertEqual([w['text'] for w in words_from(list('ask not'), [0.1 * i for i in range(7)], [], 0)], ['ask', 'not'])
+
     def test_subword_tokens_become_words_with_times(self):
         tokens = [' Lay', ' a', 'wake', ' at', ' night', '.']
         log_probs = [0.0, -0.2, -0.6, -0.01, float('nan'), -2.0]
@@ -153,6 +199,7 @@ class TranscriptTests(unittest.TestCase):
         self.assertEqual(validate_transcript(json.loads(json.dumps(good)), 40.0)['words'], SUNG)
         # Either recognizer's transcripts are readable and keep their model; unknown models are not.
         self.assertEqual(validate_transcript(dict(good, model=MULTILINGUAL.name), 40.0)['model'], MULTILINGUAL.name)
+        self.assertEqual(validate_transcript(dict(good, model=EAST_ASIAN.name), 40.0)['model'], EAST_ASIAN.name)
         with self.assertRaises(ValueError):
             validate_transcript(dict(good, model='whisper-large'), 40.0)
         for bad in (dict(good, model='other'), dict(good, extra=1), dict(good, words=[dict(text='x', start=5, end=4, confidence=1)]),
@@ -207,17 +254,20 @@ class RecognizerChoiceTests(unittest.TestCase):
 
     def run_choice(self, models, language, choice="auto"):
         sung = {'en': 'the night is young and you are mine tonight love'.split(),
-                'fr': 'la nuit est jeune et toi tu es à moi'.split()}[language]
+                'fr': 'la nuit est jeune et toi tu es à moi'.split(), 'zh': list('今夜的月光照在我心上')}[language.removesuffix('?')]
         phrases = [(index * 16000, index) for index in range(40)]
         loads, heard = [], []
 
         def phrase_words(recognizer, start, phrase):
             heard.append((recognizer, phrase))
+            unsure = recognizer == 'multilingual' and language in ('zh', 'fr?')
+            if recognizer == 'east-asian' and language == 'zh':
+                transcribe_worker.heard_languages['zh'] += 1
             return [dict(text=f'{recognizer}:{word}' if recognizer == 'english' else word, start=start / 16000 + i * 0.1,
-                         end=start / 16000 + i * 0.1 + 0.08, confidence=0.9) for i, word in enumerate(sung)]
+                         end=start / 16000 + i * 0.1 + 0.08, confidence=0.4 if unsure else 0.9) for i, word in enumerate(sung)]
 
-        def load(model):
-            loads.append(model.key)
+        def load(model, language=''):
+            loads.append(model.key + (f':{language}' if language else ''))
             return model.key
 
         progress = []
@@ -257,6 +307,38 @@ class RecognizerChoiceTests(unittest.TestCase):
         for choice in ("French", None, True, ["english"]):
             with self.assertRaises(ValueError):
                 self.run_choice((ENGLISH, MULTILINGUAL), "en", choice)
+
+    def test_the_east_asian_model_takes_songs_the_multilingual_model_is_unsure_of_when_it_hears_them(self):
+        everything = (ENGLISH, MULTILINGUAL, EAST_ASIAN)
+        model, result, loads, heard, progress = self.run_choice(everything, 'zh')
+        self.assertEqual((model, loads), (EAST_ASIAN, ['multilingual', 'east-asian', 'east-asian:zh']))
+        # It listens to the first phrases, then hears the whole song in Chinese.
+        self.assertEqual([phrase for recognizer, phrase in heard if recognizer == 'east-asian'], list(range(10)) + list(range(40)))
+        self.assertEqual(len(result), 400)
+        self.assertEqual(progress[-1], (40, 40))
+        # A confidently heard song stays where it is; an unsure one the East Asian model does not hear as East Asian returns.
+        model, _result, loads, _heard, _progress = self.run_choice(everything, 'fr')
+        self.assertEqual((model, loads), (MULTILINGUAL, ['multilingual']))
+        model, result, loads, heard, _progress = self.run_choice(everything, 'fr?')
+        self.assertEqual((model, loads), (MULTILINGUAL, ['multilingual', 'east-asian', 'multilingual']))
+        self.assertEqual(sum(1 for recognizer, _ in heard if recognizer == 'east-asian'), 10)
+        self.assertEqual(len(result), 400)
+        model, _result, loads, _heard, _progress = self.run_choice(everything, 'en')
+        self.assertEqual((model, loads), (ENGLISH, ['multilingual', 'english']))
+        # Without the multilingual model the East Asian one listens first; other songs go to the English model.
+        model, _result, loads, _heard, _progress = self.run_choice((EAST_ASIAN, ENGLISH), 'zh')
+        self.assertEqual((model, loads), (EAST_ASIAN, ['east-asian', 'east-asian:zh']))
+        model, _result, loads, _heard, _progress = self.run_choice((EAST_ASIAN, ENGLISH), 'fr')
+        self.assertEqual((model, loads), (ENGLISH, ['east-asian', 'english']))
+        model, _result, loads, _heard, _progress = self.run_choice(everything, 'en', 'east-asian')
+        self.assertEqual((model, loads), (EAST_ASIAN, ['east-asian']))
+
+    def test_east_asian_songs_are_recognized_from_their_script(self):
+        self.assertTrue(sounds_east_asian(list('今夜的月光照在我心上')))
+        self.assertTrue(sounds_east_asian('어떻게 내가 어떻게 너를 바다처럼 깊은'.split()))
+        self.assertTrue(sounds_east_asian(list('なかないでいきることも') + ['my', 'heart']))
+        self.assertFalse(sounds_east_asian('the night is young and you are mine'.split()))
+        self.assertFalse(sounds_east_asian(['愛', 'you']), 'too few letters to tell')
 
     def test_a_single_installed_model_hears_everything(self):
         for models, language in (((ENGLISH,), 'fr'), ((MULTILINGUAL,), 'en')):

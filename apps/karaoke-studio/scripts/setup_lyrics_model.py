@@ -3,10 +3,12 @@
 - NVIDIA Parakeet TDT 0.6B v2 (English), installed to ``MODEL_DIR/lyrics-asr``, and v3 (English and
   24 other European languages), installed to ``MODEL_DIR/lyrics-asr-v3``: int8 ONNX exports published
   by the sherpa-onnx project. Model license: CC-BY-4.0 (NVIDIA). sherpa-onnx: Apache-2.0.
+- SenseVoice Small (Chinese, Cantonese, Japanese, Korean and English), int8, installed to
+  ``MODEL_DIR/lyrics-asr-sensevoice``. Model license: the FunASR model license (FunAudioLLM).
 - Silero VAD (MIT), the copy published by the sherpa-onnx project, alongside each.
 
-Both are installed by default; with both, English songs use v2 and other songs v3. ``--only`` installs
-one. The studio never downloads models at startup.
+All three are installed by default; the studio then chooses one for each song from its first words.
+``--only`` installs one. The studio never downloads models at startup.
 """
 from __future__ import annotations
 
@@ -88,7 +90,7 @@ def setup(model_root: Path, model: AsrModel, archive: Path | None = None, vad: P
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--model-dir', type=Path, required=True, help='The same model directory passed to the studio')
-    parser.add_argument('--only', choices=[model.key for model in ASR_MODELS], help='Install one recognizer instead of both')
+    parser.add_argument('--only', choices=[model.key for model in ASR_MODELS], help='Install one recognizer instead of all')
     parser.add_argument('--archive', type=Path, action='append', default=[],
                         help='Optional existing official archive, repeatable (matched by size, verified before extraction)')
     parser.add_argument('--vad', type=Path, help='Optional existing silero_vad.onnx (verified before use)')
@@ -97,7 +99,7 @@ def main() -> None:
     for path in args.archive:
         model = archive_model(path)
         if model is None:
-            raise RuntimeError(f'{path} is not the pinned size of either recognition model archive.')
+            raise RuntimeError(f'{path} is not the pinned size of any recognition model archive.')
         archives[model.key] = path
     for model in ASR_MODELS:
         if args.only and model.key != args.only:

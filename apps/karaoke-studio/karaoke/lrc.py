@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from .lyrics_auto import word_timings
+from .lyrics_auto import needs_space, word_timings
 from .model import validate_project
 
 # LRC has no escaping: tag brackets inside lyrics or the title would read as timestamps.
@@ -33,7 +33,12 @@ def render_lrc(project: dict, words: list | None = None) -> str:
     timings = word_timings(cues, words or [], project['duration'])
     lines = [f'[ti:{_plain(project["title"])}]', f'[length:{_stamp(project["duration"])[:5]}]', '[re:Karaoke Studio]']
     for index, cue in enumerate(cues):
-        sung = ' '.join(f'<{_stamp(word["start"])}>{_plain(word["text"])}' for word in timings[index] if _plain(word['text']))
+        sung, previous = '', ''
+        for word in timings[index]:
+            text = _plain(word['text'])
+            if text:
+                sung += f'{" " if previous and needs_space(previous, text) else ""}<{_stamp(word["start"])}>{text}'
+                previous = text
         lines.append(f'[{_stamp(cue["start"])}]{sung}')
         following = cues[index + 1]['start'] if index + 1 < len(cues) else None
         if following is None or following - cue['end'] >= 0.01:

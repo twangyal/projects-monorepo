@@ -3,8 +3,9 @@
 The parent process imports no ML packages. ``transcribe_vocals`` runs ``transcribe_worker.py`` on a
 vocals WAV and returns validated, timed words. Silero voice-activity detection splits the vocals into
 sung phrases, recognized through sherpa-onnx by NVIDIA's Parakeet TDT 0.6B (int8): v2 for English
-songs, v3 for the 24 other European languages it covers. With both installed, v3 hears the song's
-first words and an English song is then recognized by v2. Models are installed explicitly by
+songs, v3 for the 24 other European languages it covers; and by SenseVoice Small (int8) for
+Chinese, Cantonese, Japanese and Korean songs. ``recognize`` in the worker chooses among the
+installed models from the song's first words. Models are installed explicitly by
 ``scripts/setup_lyrics_model.py``; nothing is downloaded at run time.
 """
 from __future__ import annotations
@@ -61,7 +62,20 @@ MULTILINGUAL = AsrModel(
         'tokens.txt': 'd58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d',
         VAD_FILE: VAD_SHA256,
     })
-ASR_MODELS = (ENGLISH, MULTILINGUAL)
+# SenseVoice Small (FunAudioLLM; FunASR model license) hears Chinese, Cantonese, Japanese, Korean and
+# English, writing each in its own script. On clean sung phrases (GTSinger) it got 7% character error
+# for Chinese, 34-45% for Japanese and 55% for Korean. It reports no token probabilities, so its words
+# carry no confidence.
+EAST_ASIAN = AsrModel(
+    'east-asian', 'sensevoice-small-int8+silero-vad', 'lyrics-asr-sensevoice',
+    'sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17.tar.bz2', 163002883,
+    '7d1efa2138a65b0b488df37f8b89e3d91a60676e416f515b952358d83dfd347e', {
+        'model.int8.onnx': 'c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51',
+        'tokens.txt': 'f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc',
+        VAD_FILE: VAD_SHA256,
+    })
+ASR_MODELS = (ENGLISH, MULTILINGUAL, EAST_ASIAN)
+CHOICES = ('auto', *(model.key for model in ASR_MODELS))
 KNOWN_MODELS = frozenset(model.name for model in ASR_MODELS)
 
 # Language choice from the multilingual model's first words: function words that are English and
@@ -115,8 +129,8 @@ def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
 
 def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple[AsrModel, ...]:
     """A deliberate retry choice never silently falls back to another installed model."""
-    if not isinstance(choice, str) or choice not in ('auto', 'english', 'multilingual'):
-        raise ValueError('Choose Automatic, English, or Multilingual lyric recognition.')
+    if not isinstance(choice, str) or choice not in CHOICES:
+        raise ValueError('Choose Automatic, English, Multilingual or East Asian lyric recognition.')
     selected = models if choice == 'auto' else tuple(model for model in models if model.key == choice)
     if not selected:
         option = '' if choice == 'auto' else f' --only {choice}'
@@ -125,7 +139,7 @@ def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple
 
 
 def asr_ready(model_root: Path) -> bool:
-    """Automatic lyrics work with either recognizer; with both, each song gets the better one."""
+    """Automatic lyrics work with any recognizer; with several, each song gets the one that suits it."""
     return bool(installed_models(model_root))
 
 
@@ -144,6 +158,19 @@ def sounds_english(words: list[str]) -> bool:
     sample = [_plain(word) for word in words[:DETECTION_WORDS]]
     sample = [word for word in sample if word]
     return len(sample) >= 5 and sum(word in ENGLISH_MARKERS for word in sample) >= ENGLISH_SHARE * len(sample)
+
+
+# Chinese characters, Japanese kana and Korean Hangul.
+_EAST_ASIAN = ((0x1100, 0x11FF), (0x3040, 0x30FF), (0x3130, 0x318F), (0x3400, 0x4DBF), (0x4E00, 0x9FFF),
+               (0xAC00, 0xD7AF), (0xF900, 0xFAFF), (0x20000, 0x3134F))
+EAST_ASIAN_SHARE = 0.5
+
+
+def sounds_east_asian(words: list[str]) -> bool:
+    """Whether the first ``DETECTION_WORDS`` recognized words are mostly written in Chinese, Japanese or Korean."""
+    letters = [character for word in words[:DETECTION_WORDS] for character in word if character.isalpha()]
+    inside = sum(1 for character in letters if any(low <= ord(character) <= high for low, high in _EAST_ASIAN))
+    return len(letters) >= 5 and inside >= EAST_ASIAN_SHARE * len(letters)
 
 
 def validate_transcript(value: object, duration: float) -> dict:

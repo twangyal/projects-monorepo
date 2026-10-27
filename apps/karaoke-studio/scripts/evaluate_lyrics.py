@@ -31,6 +31,7 @@ import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from karaoke.limits import MAX_DURATION  # noqa: E402
+from karaoke.transcription import CHOICES  # noqa: E402
 from karaoke.lyrics_auto import LEAD_IN, _align, _token, align_lines, words_to_cues  # noqa: E402
 
 
@@ -113,7 +114,7 @@ def main() -> None:
     parser.add_argument('--output', type=Path)
     parser.add_argument('--max-seconds', type=float, default=MAX_DURATION)
     parser.add_argument('--language', default='English', help='JamendoLyrics language: English, French, German or Spanish')
-    parser.add_argument('--model-choice', choices=('auto', 'english', 'multilingual'), default='auto')
+    parser.add_argument('--model-choice', choices=CHOICES, default='auto')
     parser.add_argument('--limit', type=int, help='Only the first N songs of the language (in dataset order)')
     args = parser.parse_args()
     rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == args.language][:args.limit]

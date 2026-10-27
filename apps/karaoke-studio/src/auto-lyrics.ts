@@ -34,6 +34,7 @@ function cues(value: unknown, duration: number, score: 'matched' | 'confidence')
 export function recognizerName(model: string): string {
   if (model.startsWith('parakeet-tdt-0.6b-v2')) return 'the English recognition model';
   if (model.startsWith('parakeet-tdt-0.6b-v3')) return 'the multilingual recognition model';
+  if (model.startsWith('sensevoice')) return 'the East Asian recognition model';
   return 'the local recognition model';
 }
 
