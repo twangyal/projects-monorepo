@@ -406,6 +406,7 @@ class KaraokeServer(ThreadingHTTPServer):
 
     def upload(self, title: str, upload: Path, work_dir: Path):
         project_id = uuid.uuid4().hex
+        song: dict = {}
 
         def work(cancel, stage):
             work_fd = self._open_work(work_dir)
@@ -413,10 +414,13 @@ class KaraokeServer(ThreadingHTTPServer):
                 owned = self._descriptor_path(work_fd)
                 media = owned / "media"
                 media.mkdir()
+                # The song's own title tag names the clip better than its file name.
+                from .pipeline import read_song_tags
                 with inherit_media_handles(work_fd):
+                    song.update(read_song_tags(owned / upload.name, cancel))
                     duration = self.separate(owned / upload.name, media, self.model_dir, cancel, stage)
                 self.check_storage()
-                project = create_project(project_id, title, duration)
+                project = create_project(project_id, song.get("title", title), duration)
                 complete = owned / "completed"
                 complete.mkdir()
                 for name in _AUDIO_FILES.values():
@@ -457,7 +461,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     # stems-only result as one observed inside recognition.
                     if cancel.is_set():
                         complete = self._descriptor_path(parent_fd) / "completed"
-                        project = create_project(project_id, title, duration)
+                        project = create_project(project_id, song.get("title", title), duration)
                         (complete / _TRANSCRIPT).unlink(missing_ok=True)
                         _atomic_json(complete / "project.json", project)
                     os.replace("completed", project_id, src_dir_fd=parent_fd,
@@ -468,7 +472,7 @@ class KaraokeServer(ThreadingHTTPServer):
                 self._project_identities[project_id] = self._identity(os.stat(project_id, dir_fd=self._directory_fds[self.projects_dir], follow_symlinks=False))
                 return None
 
-            return JobPublication(publish, retain_on_cancel=True, recognition_failed=recognition_failed)
+            return JobPublication(publish, retain_on_cancel=True, recognition_failed=recognition_failed, song=dict(song) or None)
 
         return self.jobs.start(project_id, "separate", work, lambda: self.cleanup_work(work_dir))
 

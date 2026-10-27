@@ -220,6 +220,36 @@ def _probe(source: Path, input_format: str, cancel: threading.Event) -> float:
     return duration
 
 
+def read_song_tags(source: Path, cancel: threading.Event) -> dict:
+    """The song title and artist from a supported clip's own tags (ID3, Vorbis comments), when present.
+
+    Best effort: a clip without tags, or one ffprobe cannot read, has none. Values are single lines of at most
+    100 characters, so they can name a clip or a lyrics lookup."""
+    try:
+        _input_format(source)
+        output, _ = _run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file',
+                          '-format_whitelist', 'wav,mp3,flac,ogg', '-show_entries',
+                          'format_tags=title,artist,album_artist:stream_tags=title,artist,album_artist',
+                          '-of', 'json', str(source)], cancel, timeout=10)
+        probe = json.loads(output)
+    except (OSError, ValueError, RuntimeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(probe, dict):
+        return {}
+    # Ogg keeps its comments on the audio stream; other containers keep them on the format.
+    sources = [probe.get('format', {}).get('tags', {})] + [stream.get('tags', {}) for stream in probe.get('streams', []) if isinstance(stream, dict)]
+    tags = {}
+    for found in sources:
+        if not isinstance(found, dict):
+            continue
+        for key, value in found.items():
+            name = {'title': 'title', 'artist': 'artist', 'album_artist': 'artist'}.get(str(key).lower())
+            text = ' '.join(str(value).split()) if isinstance(value, str) else ''
+            if name and text and name not in tags and '\x00' not in text:
+                tags[name] = text[:100].strip()
+    return tags
+
+
 def _write_source(samples: array.array, output: Path, cancel: threading.Event | None = None) -> dict:
     def check():
         if cancel is not None:
