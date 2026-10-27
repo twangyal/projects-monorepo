@@ -46,3 +46,12 @@ test('an unchanged fabric choice is disabled and comparison preserves the preced
 test('an explicitly confirmed identical template can be freshly compared after a no-op project commit',async({page})=>{
  test.setTimeout(90000);await open(page);for(let i=0;i<2;i++){page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Templates',exact:true}).click();await page.getByRole('button',{name:/^Use the Blank tee template/}).click();await page.getByRole('button',{name:'Body & drape',exact:true}).click();}await page.getByRole('button',{name:'Compare garment fabrics',exact:true}).click();await expect(page.locator('#garment-comparison-status')).not.toContainText('The garment changed');await expect(page.locator('#garment-comparison-status')).toContainText('Comparison ready',{timeout:60000});
 });
+test('trousers compare two fabrics on their own lower body, and one is chosen deliberately',async({page})=>{
+ test.setTimeout(120000);await page.goto('/');await page.getByRole('button',{name:'Templates',exact:true}).click();await page.getByRole('button',{name:/^Use the Straight trousers template/}).click();
+ await page.getByRole('button',{name:'Body & drape',exact:true}).click();await page.getByText('Compare fabrics on this garment',{exact:true}).click();
+ await expect(page.locator('#garment-comparison-status')).toHaveText('Ready to compare fabrics on this garment.');
+ await page.getByRole('combobox',{name:'Comparison fabric A',exact:true}).selectOption('linen-170');await page.getByRole('combobox',{name:'Comparison fabric B',exact:true}).selectOption('denim-340');
+ await page.getByRole('button',{name:'Compare garment fabrics',exact:true}).click();await expect(page.locator('#garment-comparison-status')).toContainText('Comparison ready. Captured body: 76 cm waist',{timeout:90000});
+ await expect(page.locator('#garment-comparison-results img')).toHaveCount(4);
+ await page.getByRole('button',{name:'Use Linen',exact:true}).click();const after=await backup(page);expect(after.product.parts.front.material).toBe('linen-170');expect(after.product.parts.back.material).toBe('linen-170');
+});

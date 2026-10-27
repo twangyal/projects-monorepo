@@ -164,6 +164,11 @@ export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?
   return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, torso, capsules, bottom: crotchY };
 }
 
+/** The body a product drapes on: a top's from its chest and shape, a skirt's or trousers' lower body from waist and hip. */
+export function garmentBody(product: Product, chest: number, shape: TopBodyShape = {}): BodyProxy {
+  return product.base === 'skirt' ? skirtBodyProxy(product, shape) : product.base === 'trousers' ? trouserBodyProxy(product, shape) : bodyProxy(product, validateBodyChest(chest), shape);
+}
+
 export function validateBodyChest(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < BODY_CHEST[0] || value > BODY_CHEST[1]) throw new Error(`Body chest must be from ${BODY_CHEST[0]} to ${BODY_CHEST[1]} cm.`);
   return value;
@@ -480,7 +485,7 @@ export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32A
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
   options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   const skirt = product.base === 'skirt', trousers = product.base === 'trousers';
-  const body = skirt ? skirtBodyProxy(product, options.bodyShape) : trousers ? trouserBodyProxy(product, options.bodyShape) : bodyProxy(product, validateBodyChest(bodyChest), options.bodyShape);
+  const body = garmentBody(product, bodyChest, options.bodyShape);
   const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
