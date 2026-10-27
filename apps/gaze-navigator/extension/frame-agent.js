@@ -8,19 +8,23 @@ if (window !== window.top && !globalThis.__gazeFrameAgent) {
     import(chrome.runtime.getURL('src/web/page-context.js')),
     import(chrome.runtime.getURL('src/web/controller.js')),
   ]));
-  // The top navigator posts a random nonce into this frame's window to learn which extension frame it is.
+  // Pointer moves over this frame never reach the top page, where pointer mode follows them; pass them on (at most
+  // 30 per second) for the navigator to place its circle.
+  let lastPointer = 0, pointer = null;
+  const sendPointer = () => chrome.runtime.sendMessage({ type: 'gaze:frame-pointer', x: pointer.x, y: pointer.y }).catch(() => {});
+  window.addEventListener('pointermove', event => {
+    pointer = { x: event.clientX, y: event.clientY, time: event.timeStamp };
+    if (event.timeStamp - lastPointer < 33) return;
+    lastPointer = event.timeStamp;
+    sendPointer();
+  }, { capture: true, passive: true });
+  // The top navigator posts a random nonce into this frame's window to learn which extension frame it is. A pointer
+  // that came to rest here before then is passed on again once the navigator knows this frame.
   window.addEventListener('message', event => {
     if (event.source !== window.parent || typeof event.data?.gazeNavigatorProbe !== 'string' || !/^[0-9a-f]{32}$/.test(event.data.gazeNavigatorProbe)) return;
     chrome.runtime.sendMessage({ type: 'gaze:frame-hello', nonce: event.data.gazeNavigatorProbe }).catch(() => {});
+    if (pointer && performance.now() - pointer.time < 5000) setTimeout(sendPointer, 250);
   });
-  // Pointer moves over this frame never reach the top page, where pointer mode follows them; pass them on (at most
-  // 30 per second) for the navigator to place its circle.
-  let lastPointer = 0;
-  window.addEventListener('pointermove', event => {
-    if (event.timeStamp - lastPointer < 33) return;
-    lastPointer = event.timeStamp;
-    chrome.runtime.sendMessage({ type: 'gaze:frame-pointer', x: event.clientX, y: event.clientY }).catch(() => {});
-  }, { capture: true, passive: true });
   // Only what is needed to interpret and confirm: no element references, snapshots or sensitive values.
   const FIELDS = ['id', 'name', 'role', 'editable', 'submits', 'consequential', 'value', 'options', 'consequentialOptions', 'checked', 'expanded',
     'sensitive', 'hasValue', 'nativeNumber', 'nativeDate', 'nativeTime', 'nativeMonth', 'nativeWeek', 'customRange', 'customList', 'distance'];
