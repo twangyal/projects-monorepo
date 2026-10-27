@@ -61,3 +61,22 @@ test('drape on a body: a hoodie hangs from the shoulders with its hood, and trou
   await expect(editor(page).getByLabel('Body waist girth (cm, optional)')).toHaveAttribute('placeholder', 'Auto: 76');
   await shot(page, 'trousers-front');
 });
+
+test('an entered body height says where the hem and trouser legs end, and is saved with the design', async ({ page }) => {
+  test.setTimeout(180000);
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Straight trousers template/ }).click();
+  await editor(page).locator('#top-body-shape').evaluate(node => { (node as HTMLDetailsElement).open = true; });
+  await editor(page).getByLabel('Body height (cm, optional)', { exact: true }).fill('158');
+  await editor(page).getByRole('button', { name: 'Apply body settings', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  await expect(status(page)).toContainText(/On this 158 cm body the hems would reach \d+ cm below the floor, too long for this body\./, { timeout: 90000 });
+  await editor(page).getByLabel('Body height (cm, optional)', { exact: true }).fill('190');
+  await editor(page).getByRole('button', { name: 'Apply body settings', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Drape again', exact: true }).click();
+  await expect(status(page)).toContainText(/On this 190 cm body the hems end \d+ cm above the floor\./, { timeout: 90000 });
+  await page.reload();
+  await editor(page).locator('#top-body-shape').evaluate(node => { (node as HTMLDetailsElement).open = true; });
+  await expect(editor(page).getByLabel('Body height (cm, optional)', { exact: true })).toHaveValue('190');
+});

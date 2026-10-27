@@ -7,7 +7,7 @@ async function setup(page:Page){
   constructor(...args:ConstructorParameters<typeof Worker>){super(...args);if(String(args[0]).includes('garment-drape.worker'))this.addEventListener('message',event=>{if(event.data.kind==='result')Object.assign(window,{depthResult:event.data.result});});}
  };});
  await page.goto('/');await page.getByRole('button',{name:'Templates',exact:true}).click();await page.getByRole('button',{name:/^Use the Blank tee template/}).click();
- await page.getByRole('button',{name:'Body & drape',exact:true}).click();await page.getByText('Waist, hip and depth (optional)',{exact:true}).click();
+ await page.getByRole('button',{name:'Body & drape',exact:true}).click();await page.getByText('Waist, hip, depth and height (optional)',{exact:true}).click();
 }
 async function backup(page:Page){const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export project backup',exact:true}).click();return readFile((await(await pending).path())!,'utf8');}
 const depth=(page:Page)=>page.getByLabel('Chest front-to-back depth (cm, optional)',{exact:true});

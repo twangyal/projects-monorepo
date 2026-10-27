@@ -21,10 +21,30 @@ test('depth admission rejects impossible stadium dimensions and accepts round an
 });
 test('actual garment solve responds to depth at the same chest girth with finite results',()=>{
  const p=template('ringer'),meshes=teeMesh(p,Delaunator),a=simulateGarment(p,meshes,94,{frames:90}),b=simulateGarment(p,meshes,94,{frames:90,bodyShape:{chestDepth:20}});
- assert.equal(b.body.chestDepth,20);assert.notDeepEqual(a.parts[0]!.positions,b.parts[0]!.positions);assert.ok(b.parts.every(p=>p.positions.every(Number.isFinite)));assert.ok(Object.values(b.metrics).every(Number.isFinite));
+ assert.equal(b.body.chestDepth,20);assert.notDeepEqual(a.parts[0]!.positions,b.parts[0]!.positions);assert.ok(b.parts.every(p=>p.positions.every(Number.isFinite)));assert.ok(Object.values(b.metrics).every(value=>typeof value==='object'?Object.values(value).every(Number.isFinite):Number.isFinite(value)));
 });
 
 test('coupled-depth guidance gives a two-decimal maximum that is actually admissible',()=>{
  assert.throws(()=>bodyProxy(template('ringer'),108,{chestDepth:35}),/34\.37 cm/);
  assert.doesNotThrow(()=>bodyProxy(template('ringer'),108,{chestDepth:34.37}));
+});
+
+test('body height sets torso landmarks, arm length and trouser legs, and the drape reports where the garment ends',async()=>{
+ const {validateProfileBody}=await import('../src/top-body-profiles.ts');
+ const {bodyProxy,trouserBodyProxy}=await import('../src/garment-drape.ts');
+ const tee=template('ringer'),short=bodyProxy(tee,94,{height:155}),tall=bodyProxy(tee,94,{height:195});
+ assert.ok(tall.landmarks!.hip!<short.landmarks!.hip!-10,'a taller body has its hip further below the shoulders');
+ assert.ok(tall.landmarks!.sleeveBeyondWrist!<short.landmarks!.sleeveBeyondWrist!,'and longer arms');
+ assert.equal(bodyProxy(tee,94).landmarks!.sleeveBeyondWrist,undefined,'without height, sleeve length against the wrist is not claimed');
+ assert.throws(()=>bodyProxy(tee,94,{height:120}),/Body height must be from 140 to 210 cm/);
+ const trousers=template('trousers');
+ assert.ok(trouserBodyProxy(trousers,{height:190}).landmarks!.floor!<trouserBodyProxy(trousers,{height:160}).landmarks!.floor!);
+ const meshes=teeMesh(trousers,Delaunator),longLegs=simulateGarment(trousers,meshes,90,{bodyShape:{height:190},frames:90}),shortLegs=simulateGarment(trousers,meshes,90,{bodyShape:{height:155},frames:90});
+ assert.ok(longLegs.metrics.fit!.hemAboveFloor!>0&&shortLegs.metrics.fit!.hemAboveFloor!<0,`${longLegs.metrics.fit!.hemAboveFloor} vs ${shortLegs.metrics.fit!.hemAboveFloor}`);
+ const top=simulateGarment(tee,teeMesh(tee,Delaunator),94,{bodyShape:{height:175},frames:90});
+ assert.ok(Number.isFinite(top.metrics.fit!.hemBelowHip)&&Number.isFinite(top.metrics.fit!.sleeveBeyondWrist));
+ // Saved bodies keep an optional height; older ones without it stay valid.
+ assert.deepEqual(validateProfileBody({chest:94,waist:null,hip:null,chestDepth:null}),{chest:94,waist:null,hip:null,chestDepth:null});
+ assert.deepEqual(validateProfileBody({chest:94,waist:null,hip:null,chestDepth:null,height:172}),{chest:94,waist:null,hip:null,chestDepth:null,height:172});
+ assert.throws(()=>validateProfileBody({chest:94,waist:null,hip:null,chestDepth:null,height:300}),/Body height/);
 });
