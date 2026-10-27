@@ -6,10 +6,16 @@
 import { createLocalCamera } from './camera-source.js';
 import { createCameraLoader } from '../camera-loader.js';
 import { createSpeechInput } from './speech-input.js';
+import { bundledOnlyFetch } from './face-models.js';
 
 const CALIBRATION = 'gaze-calibration';
 const nonce = location.hash.slice(1);
 let port = null;
+
+// WebGazer's face models are bundled with the extension (scripts/build-extension.js). Their usual tfhub.dev
+// addresses are answered from the bundle, and this frame makes no other network request, so camera tracking works
+// offline and nothing about it reaches a third party.
+window.fetch = bundledOnlyFetch(window.fetch.bind(window), path => chrome.runtime.getURL(path));
 
 const camera = createLocalCamera({
   document, window,

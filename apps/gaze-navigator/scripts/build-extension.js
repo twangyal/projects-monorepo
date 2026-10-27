@@ -1,5 +1,6 @@
 // Assembles the unpacked Chrome extension in dist/extension from the app's own modules.
-// WebGazer is fetched with npm (registry integrity) and pinned again by SHA-256.
+// WebGazer is fetched with npm (registry integrity) and pinned again by SHA-256. WebGazer's face models are bundled
+// too (pinned by SHA-256), so the camera never downloads them at run time.
 //   node scripts/build-extension.js            -> dist/extension
 //   node scripts/build-extension.js --test     -> dist/extension-test (fake estimator, host access pre-granted)
 import { createHash } from 'node:crypto';
@@ -17,6 +18,39 @@ const SHARED = ['gaze-filter.js', 'camera-loader.js', 'camera-calibration.js', '
 
 function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+// The TensorFlow.js models WebGazer would otherwise fetch from tfhub.dev on every camera start.
+export const FACE_MODELS = [
+  { name: 'blazeface', path: 'tensorflow/tfjs-model/blazeface/1/default/1', files: {
+    'model.json': '7b6bb6f35e5a7899232de51dda8bf514ef9664ca7ec58388c9fecc088c883b58',
+    'group1-shard1of1.bin': '60b481ab6c19352673cdb21e02e639f90883db1393ac52d07c7ea4e1e11cb2cd' } },
+  { name: 'facemesh', path: 'mediapipe/tfjs-model/facemesh/1/default/1', files: {
+    'model.json': 'c922985d95e101e7fe56576a9a00366c72d3fab3604ce371cc9d85394abda99c',
+    'group1-shard1of1.bin': 'f4a7075c1fff12ceafd2cd6fc000a464da90b1e0c35236971ed5bb3b343366cb' } },
+  { name: 'iris', path: 'mediapipe/tfjs-model/iris/1/default/2', files: {
+    'model.json': '934baa53c85d37c4e22ef46e63183b99a641710411ca3af0a362331174e71e38',
+    'group1-shard1of1.bin': 'd7f296d184274213d4642681ae186112cbbec77fd2ab066257d3c56a1940bc71' } },
+];
+
+function faceModels(target) {
+  for (const model of FACE_MODELS) {
+    const cache = join(root, 'dist', '.cache', 'face-models', model.name);
+    mkdirSync(cache, { recursive: true });
+    for (const [file, expected] of Object.entries(model.files)) {
+      const local = join(cache, file);
+      if (!existsSync(local) || sha256(local) !== expected) {
+        execFileSync('curl', ['-fsSL', '--retry', '3', '-o', local, `https://tfhub.dev/${model.path}/${file}?tfjs-format=file`]);
+      }
+      const actual = sha256(local);
+      if (actual !== expected) {
+        rmSync(local, { force: true });
+        throw new Error(`Face model ${model.name}/${file} checksum mismatch: ${actual}`);
+      }
+      mkdirSync(join(target, model.name), { recursive: true });
+      cpSync(local, join(target, model.name, file));
+    }
+  }
 }
 
 function webgazer() {
@@ -58,6 +92,7 @@ if (testBuild) {
   const { bundle, license } = webgazer();
   cpSync(bundle, join(out, 'vendor', 'webgazer.js'));
   cpSync(license, join(out, 'vendor', 'WEBGAZER-LICENSE.md'));
+  faceModels(join(out, 'vendor', 'face-models'));
   // Smarter matching: the pinned runtime is bundled; the model downloads on request in the offscreen page.
   vendorWaterSheep(join(out, 'vendor', 'watersheep'));
   writeFileSync(join(out, 'vendor', 'assistant.js'), `import { loadWaterSheepInBrowser } from '../src/web/watersheep-browser.js';
