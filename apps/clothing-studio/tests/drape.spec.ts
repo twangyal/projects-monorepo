@@ -37,25 +37,25 @@ test('a measured skirt drapes by fabric on the body proxy, exports its draped su
   expect(await backup(page)).toEqual(before);
 
   // Fabric is one undoable saved edit; stiffer denim forms fewer folds than fluid chiffon.
-  await page.getByLabel('Fabric', { exact: true }).selectOption('denim');
+  await page.getByLabel('Fabric', { exact: true }).selectOption('denim-340');
   await expect(page.locator('#drape-status')).toContainText('Simulate again');
   await expect(page.getByRole('button', { name: 'Export draped OBJ', exact: true })).toBeDisabled();
-  expect((await backup(page)).construction.fabric).toBe('denim');
+  expect((await backup(page)).construction.fabric).toBe('denim-340');
   const denimFolds = await simulate(page);
-  await page.getByLabel('Fabric', { exact: true }).selectOption('chiffon');
+  await page.getByLabel('Fabric', { exact: true }).selectOption('chiffon-50');
   const chiffonFolds = await simulate(page);
   expect(chiffonFolds).toBeGreaterThan(denimFolds);
   expect(cottonFolds).toBeGreaterThanOrEqual(denimFolds);
 
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
-  expect((await backup(page)).construction.fabric).toBe('denim');
+  expect((await backup(page)).construction.fabric).toBe('denim-340');
   // Pattern edits keep the chosen fabric.
   await page.getByLabel('Slant seam length (cm)', { exact: true }).fill('55');
   await page.getByRole('button', { name: 'Apply measured pattern', exact: true }).click();
-  expect((await backup(page)).construction).toMatchObject({ slant: 55, fabric: 'denim' });
+  expect((await backup(page)).construction).toMatchObject({ slant: 55, fabric: 'denim-340' });
   await expect(page.locator('#save-state')).toHaveText('Locally saved');
   await page.reload();
-  await expect(page.getByLabel('Fabric', { exact: true })).toHaveValue('denim');
+  await expect(page.getByLabel('Fabric', { exact: true })).toHaveValue('denim-340');
 });
 
 test('simulation uses entered body measurements, can be cancelled, and fits a phone screen', async ({ page }) => {
@@ -85,10 +85,10 @@ test('changing drape fabric preserves unapplied measured-pattern drafts', async 
   await page.getByRole('button', { name: 'Apply measured pattern', exact: true }).click();
   const before = await backup(page);
   await page.getByLabel('Waist circumference (cm)', { exact: true }).fill('90');
-  await page.getByLabel('Fabric', { exact: true }).selectOption('denim');
+  await page.getByLabel('Fabric', { exact: true }).selectOption('denim-340');
   await expect(page.getByLabel('Waist circumference (cm)', { exact: true })).toHaveValue('90');
   expect(await backup(page)).toEqual(before);
   await page.getByRole('button', { name: 'Discard pattern edits', exact: true }).click();
-  await page.getByLabel('Fabric', { exact: true }).selectOption('denim');
-  expect((await backup(page)).construction.fabric).toBe('denim');
+  await page.getByLabel('Fabric', { exact: true }).selectOption('denim-340');
+  expect((await backup(page)).construction.fabric).toBe('denim-340');
 });
