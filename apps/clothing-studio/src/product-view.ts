@@ -4,6 +4,7 @@ import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
 import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, defaultBodyChest, garmentBody, outfitShape, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { listDesigns, readDesign } from './design-library.ts';
+import { gradable, gradedProduct } from './size-grades.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
@@ -11,7 +12,7 @@ import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
   chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
-  CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
+  CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
@@ -58,8 +59,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
         <details id="top-body-shape"><summary>Waist, hip, depth and height (optional)</summary><div class="measure-grid"><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Body height (cm, optional)<input id="garment-drape-height" type="number" min="${BODY_HEIGHT[0]}" max="${BODY_HEIGHT[1]}" step="0.5"></label><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Height sets torso heights, arm length and trouser leg length as typical proportions; without it they follow the chest. Hip depth and shoulders remain assumed. Applied body settings are saved with this design. Unapplied fields stay as drafts. These measurements do not establish physical fit.</p></details>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
+        <label class="field">Size shown<select id="garment-size"></select></label>
         <label class="field">Wear with<select id="garment-wear-with"></select></label>
-        <p class="fine-print">A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
+        <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
       <p id="product-status" class="fine-print" role="status"></p>
@@ -175,6 +177,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   let draping = false, bodyChest: number | null = null, bodyWaist: number | null = null, bodyHip: number | null = null, bodyDepth: number | null = null, bodyHeight: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
   let drapeWorker: Worker | null = null, drapeTimer = 0, drapeKey = '', failedDrapeKey = '';
   let departed = false, shownBody = '';
+  // The size shown in 3D (null: the sample). A view setting for this session: the design itself stays the sample.
+  let shownSize: Size | null = null;
+  const sampleOf = (design: Product): Size => design.spec?.sampleSize ?? 'M';
+  const viewed = (design: Product): Product => {
+    if (!shownSize || shownSize === sampleOf(design) || !gradable(design)) return design;
+    try { return gradedProduct(design, shownSize); } catch { return design; }
+  };
   // An outfit: the garment worn with the design, when one is a top and the other bottoms.
   const companionOf = (design: Product) => { const worn = options.current().wornWith; return worn && isBottoms(worn) !== isBottoms(design) ? worn : null; };
   const outfitTop = (design: Product) => isBottoms(design) ? companionOf(design) : design;
@@ -187,7 +196,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const entered = {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined,height:bodyHeight??undefined};
     // Girths the bottoms cannot be worn on are left for the drape to explain.
     if (companion) try { return outfitShape(isBottoms(design) ? design : companion, chestFor(design), entered); } catch { return entered; }
-    return design.base === 'trousers' ? {waist:bodyWaist??undefined,hip:bodyHip??undefined,height:bodyHeight??undefined} : shapeFor(design);
+    if (design.base === 'trousers') {
+      const drafted = legMeasurements(design);
+      return {waist:bodyWaist??drafted.waist,hip:bodyHip??drafted.hip,height:bodyHeight??undefined};
+    }
+    return shapeFor(design);
   };
   const shapeKey = (design: Product) => [design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline, partsOf(design).map(id => design.parts[id].material)];
   // A fabric comparison drapes on the same body; a skirt's or trousers' waist and hip are the ones their drape uses.
@@ -196,7 +209,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
     return {chest:chestFor(design),waist:body.waist,hip:body.hip};
   };
-  const drapeKeyOf = (design: Product) => { const companion = companionOf(design); return JSON.stringify([shapeKey(design), companion ? shapeKey(companion) : null, chestFor(design), drapeShapeFor(design)]); };
+  const drapeKeyOf = (design: Product) => { const companion = companionOf(design); return JSON.stringify([shapeKey(viewed(design)), companion ? shapeKey(companion) : null, chestFor(design), drapeShapeFor(design)]); };
   const currentDrape = (design: Product) => (draping && drape?.key === drapeKeyOf(design) ? drape.result : null);
   function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
   function startDrape(design: Product) {
@@ -221,7 +234,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       };
       worker.onerror = () => { if (worker === drapeWorker) { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run. Choose Drape again to retry, or Show styling shell.'; } };
       const companion = companionOf(design);
-      try { worker.postMessage({ product: design, ...(companion ? { companion } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design) }); }
+      try { worker.postMessage({ product: viewed(design), ...(companion ? { companion } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design) }); }
       catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not receive this design. Choose Drape again to retry.'; }
     }, 250);
   }
@@ -239,7 +252,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const companion = result.companion && companionOf(design);
     const worn = !companion ? '' : isBottoms(design) ? ` Worn under the ${companion.name}: the top drapes over these bottoms on the same body.`
       : ` Worn over the ${companion.name}: the bottoms drape first on the same body and do not carry this garment's weight.`;
-    return drapeDescription(design, result) + worn + fitSentence(result);
+    const size = viewed(design) === design ? '' : `Size ${shownSize}, graded from ${sampleOf(design)}. `;
+    return size + drapeDescription(viewed(design), result) + worn + fitSentence(result);
   }
   function drapeDescription(design: Product, result: GarmentDrapeResult): string {
     const { ease, contact, residualSpeed, maxStrain } = result.metrics;
@@ -276,6 +290,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     else { drape = null; failedDrapeKey = ''; stopDrape(); }
     draping = on; shown = ''; render(options.current());
   }
+  const sizeSelect = $('garment-size') as HTMLSelectElement;
+  function renderSizeSelect(design: Product) {
+    const sample = sampleOf(design), html = SIZES.map(size => `<option value="${size}">${size}${size === sample ? ' (sample)' : ''}</option>`).join('');
+    if (sizeSelect.dataset.html !== html) { sizeSelect.dataset.html = html; sizeSelect.innerHTML = html; }
+    sizeSelect.disabled = !gradable(design);
+    sizeSelect.value = gradable(design) ? shownSize ?? sample : sample;
+  }
+  sizeSelect.addEventListener('change', () => {
+    const design = product() ?? template('blank'), size = sizeSelect.value as Size;
+    if (!SIZES.includes(size)) return;
+    try { gradedProduct(design, size); }
+    catch (error) { options.notice(error instanceof Error ? error.message : 'That size cannot be shown.', true); renderSizeSelect(design); return; }
+    shownSize = size === sampleOf(design) ? null : size;
+    shown = ''; render(options.current());
+    options.notice(shownSize ? `Showing size ${size}, graded from ${sampleOf(design)}, on the same body. The design itself is unchanged.` : `Showing the sample size ${size}.`);
+  });
   // Wear with: templates of the other kind, the kept copy, and saved designs of the other kind (read when the list opens).
   const wearWith = $('garment-wear-with') as HTMLSelectElement;
   let savedOutfits = new Map<string, Product>(), loadingSaved = false;
@@ -615,10 +645,6 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
   }, 'Measurements applied to the 3D garment and its pattern pieces.', 'measurements'));
   // Fit: a point of measure is stored only when it differs from its proportional value.
-  const fitValues = (design: Product): Record<FitKey, number> => {
-    const d = teeDimensions(design);
-    return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
-  };
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
     for (const key of FIT_KEYS) {
@@ -724,7 +750,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const button = $(id) as HTMLButtonElement;
     button.addEventListener('click', () => void exporting(async () => {
       if (button.disabled) return;
-      const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), settled = captureDrape(design);
+      const snapshot = structuredClone(options.current()), sample = snapshot.product ?? template('blank'), settled = captureDrape(sample), design = viewed(sample);
       button.disabled = true;
       try {
         if (!await ready) throw new Error('The 3D view is unavailable.');
@@ -1044,7 +1070,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement;
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
-    renderWearWith(design);
+    renderWearWith(design); renderSizeSelect(design);
     chestInput.closest('label')!.hidden = !onTop; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = !onTop;
     if (draped && drapeKey && drapeKey !== drapeKeyOf(design)) stopDrape();
     if (!hasDrafts('body')) {
@@ -1062,17 +1088,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
     else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
     else startDrape(design);
-    const signature = JSON.stringify([design, companion, selected, !!project.product, draping, drape?.key ?? '', !!draped]);
+    const signature = JSON.stringify([design, companion, shownSize, selected, !!project.product, draping, drape?.key ?? '', !!draped]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
-      scene?.setProduct(design, selected, draped, true, draped?.companion ? companion : null);
+      scene?.setProduct(viewed(design), selected, draped, true, draped?.companion ? companion : null);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; shownSize = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

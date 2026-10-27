@@ -384,6 +384,12 @@ const capCurve = (width: number, height: number): Pt[] =>
   Array.from({ length: 13 }, (_, i) => { const t = i / 12; return { x: t * width, y: height * (1 - Math.sin(Math.PI * t)) }; });
 
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
+/** Every fit point of measure of a top as it is now: edited ones as edited, the rest at their proportional values. */
+export function fitValues(product: Product): Record<FitKey, number> {
+  const d = teeDimensions(product);
+  return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+}
+
 export function teeDimensions(product: Product) {
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, fit = product.fit ?? {}, shoulderDrop = fit.shoulderDrop ?? 4;
   const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2, shoulderX = (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2;
