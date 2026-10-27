@@ -1,30 +1,47 @@
 import { validateCues, type Cue } from './lyrics.ts';
 import { cueWords } from './word-timing.ts';
 
-/** What the studio recognized from a clip's separated vocals. */
-export interface RecognizedCue extends Cue { confidence: number }
+/** A recognized word, its time in the clip and how sure recognition was of it (0–1). */
+export interface RecognizedWord { text: string; start: number; end: number; confidence: number }
+/** What the studio recognized from a clip's separated vocals: lines with their mean confidence and their words. */
+export interface RecognizedCue extends Cue { confidence: number; words: RecognizedWord[] }
 export type Transcript = { available: false } | { available: true; model: string; words: number; cues: RecognizedCue[] };
 export interface AlignedCue extends Cue { matched: number }
 
 /** Lines whose words were mostly not heard are placed between neighbours and need a listen. */
 export const UNCERTAIN_SHARE = 0.5;
-/** Automatic lines whose words averaged below this confidence were usually misheard (see README). */
+/** Automatic lines whose words averaged below this confidence were usually misheard (see README). Single words
+ * below it are marked for a listen: on English benchmark songs, about a third of them were right. */
 export const UNSURE_CONFIDENCE = 0.7;
+const MAX_LINE_WORDS = 400;
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('The studio returned an unreadable lyric reply.');
   return value as Record<string, unknown>;
 }
 
-function cues(value: unknown, duration: number, score: 'matched' | 'confidence'): (Cue & { score: number })[] {
+function recognizedWords(value: unknown, duration: number): RecognizedWord[] {
+  if (!Array.isArray(value) || value.length > MAX_LINE_WORDS) throw new Error('The studio returned an unreadable lyric reply.');
+  return value.map(raw => {
+    const word = record(raw);
+    const { text, start, end, confidence } = word;
+    if (Object.keys(word).sort().join(',') !== 'confidence,end,start,text' || typeof text !== 'string' || !text.trim() || text.length > 100
+      || typeof start !== 'number' || typeof end !== 'number' || !(start >= 0 && start <= end && end <= duration)
+      || typeof confidence !== 'number' || !(confidence >= 0 && confidence <= 1)) throw new Error('The studio returned an unreadable lyric reply.');
+    return { text, start, end, confidence };
+  });
+}
+
+function cues(value: unknown, duration: number, score: 'matched' | 'confidence'): (Cue & { score: number; words?: RecognizedWord[] })[] {
   if (!Array.isArray(value)) throw new Error('The studio returned an unreadable lyric reply.');
   const result = value.map((raw) => {
     const item = record(raw);
     const keys = Object.keys(item).sort().join(',');
-    if (keys !== (score === 'matched' ? 'end,matched,start,text' : 'confidence,end,start,text')) throw new Error('The studio returned an unreadable lyric reply.');
+    if (keys !== (score === 'matched' ? 'end,matched,start,text' : 'confidence,end,start,text,words')) throw new Error('The studio returned an unreadable lyric reply.');
     const share = item[score];
     if (typeof share !== 'number' || !(share >= 0 && share <= 1)) throw new Error('The studio returned an unreadable lyric reply.');
-    return { start: item.start as number, end: item.end as number, text: item.text as string, score: share };
+    return { start: item.start as number, end: item.end as number, text: item.text as string, score: share,
+      ...(score === 'confidence' ? { words: recognizedWords(item.words, duration) } : {}) };
   });
   // The same rules as saving: ordered, non-overlapping, inside the clip, bounded text.
   validateCues(result.map(({ start, end, text }) => ({ start, end, text })), duration);
@@ -47,7 +64,8 @@ export function parseTranscript(value: unknown, duration: number): Transcript {
     || typeof reply.model !== 'string' || reply.model.length > 80 || !Number.isSafeInteger(reply.words) || (reply.words as number) < 0) {
     throw new Error('The studio returned an unreadable lyric reply.');
   }
-  return { available: true, model: reply.model, words: reply.words as number, cues: cues(reply.cues, duration, 'confidence').map(({ start, end, text, score }) => ({ start, end, text, confidence: score })) };
+  return { available: true, model: reply.model, words: reply.words as number,
+    cues: cues(reply.cues, duration, 'confidence').map(({ start, end, text, score, words }) => ({ start, end, text, confidence: score, words: words! })) };
 }
 
 export function parseAlignment(value: unknown, duration: number, lines: readonly string[]): AlignedCue[] {
