@@ -77,6 +77,35 @@ test('a song file’s own title and artist name the clip and prefill the lookup,
   await page.reload();await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
   await expect(page.getByLabel('Artist for lookup',{exact:true})).toHaveValue('Example singer');
 });
+test('opted-in automatic lookup runs once for a tagged song, opens the review, and still applies nothing by itself',async({page})=>{
+  const queries:URL[]=[];await page.route('https://lrclib.net/api/get?**',route=>{queries.push(new URL(route.request().url()));return route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}});});
+  await page.goto('/');await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
+  const automatic=page.getByLabel(/Look up automatically when a song file names its title and artist/);
+  await expect(automatic).not.toBeChecked();await automatic.check();
+  await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=false);
+  await page.getByLabel('Upload song clip').setInputFiles({name:'03 - track.wav',mimeType:'audio/wav',buffer:tagged('Test song','Example singer')});
+  await expect(page.locator('#message')).toContainText('Your stems and 3 automatically timed lyric lines',{timeout:15000});
+  const before=await lines(page);
+  await expect(page.locator('#lookup-status')).toContainText('Found automatically from the song file’s title and artist.');
+  await expect(page.locator('#lyrics-lookup')).toHaveAttribute('open','');
+  await expect(page.locator('#lookup-preview')).toHaveText(words);
+  expect(queries).toHaveLength(1);expect(queries[0].searchParams.get('track_name')).toBe('Test song');
+  expect(await lines(page)).toEqual(before);
+  // The choice is kept, and the same clip is not looked up again on reload.
+  await page.reload();await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await expect(automatic).toBeChecked();
+  await page.waitForTimeout(500);expect(queries).toHaveLength(1);
+});
+// Untagged songs are never looked up automatically.
+test('automatic lookup leaves songs whose file names no artist alone',async({page})=>{
+  const queries:URL[]=[];await page.route('https://lrclib.net/api/**',route=>{queries.push(new URL(route.request().url()));return route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}});});
+  await page.goto('/');await page.evaluate(()=>localStorage.setItem('karaoke-lookup-auto','on'));await page.reload();
+  await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await page.getByLabel('Upload song clip').setInputFiles({name:'plain.wav',mimeType:'audio/wav',buffer:tone(16)});
+  await expect(page.locator('#message')).toContainText('automatically timed lyric lines',{timeout:15000});
+  await page.waitForTimeout(500);expect(queries).toHaveLength(0);
+});
 test('published line timings time each found line directly, without waiting for alignment, and Undo restores the lines',async({page})=>{
   const synced='[00:01.50] Hello, little world!\n[00:05.00] This is our chorus\n[00:09.25] Sing it back to me\n[00:13.00]';
   await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:{...record,syncedLyrics:synced},headers:{'access-control-allow-origin':'*'}}));
