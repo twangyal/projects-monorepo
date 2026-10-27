@@ -161,6 +161,13 @@ function textField(element) {
     (element.element?.tagName === 'INPUT' && element.element.readOnly);
 }
 
+// The field being typed in when the gaze has drifted off it: a correction of words it contains is about that field.
+// A password field's text is never read, so it is never chosen this way.
+function typingIn(context, find) {
+  const field = context.focusedField;
+  return field && textField(field) && !field.sensitive && find && normalize(field.value ?? '').includes(normalize(find)) ? field : null;
+}
+
 function chooseField(fieldName, context, act) {
   const fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
@@ -503,7 +510,9 @@ function interpretInCircle(utterance, context) {
     return chooseField(null, context, edit('replace-all', { text: unquote(match[1]) }));
   }
   if ((match = /^replace\s+(.+?)\s+with\s+(.+)$/i.exec(command))) {
-    return chooseField(null, context, edit('replace', { find: unquote(match[1]), text: unquote(match[2]) }));
+    const act = edit('replace', { find: unquote(match[1]), text: unquote(match[2]) });
+    const typing = context.elements.some(textField) ? null : typingIn(context, unquote(match[1]));
+    return typing ? act(typing) : chooseField(null, context, act);
   }
   // "Set topic to order problem" picks an option; "change message to hi" rewrites a named field;
   // otherwise "change Tuesday to Friday" corrects a word in the current field.
@@ -521,7 +530,7 @@ function interpretInCircle(utterance, context) {
     const fields = context.elements.filter(element => textField(element) && matchScore(target, element.name) >= 0.5);
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
     // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.
-    const focused = context.elements.find(element => textField(element) && element.id === context.focusedId);
+    const focused = context.elements.find(element => textField(element) && element.id === context.focusedId) ?? typingIn(context, unquote(target));
     if (!focused) return { type: 'unknown', missing: true, message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
     return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }

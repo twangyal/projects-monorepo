@@ -81,3 +81,16 @@ test('"press enter" submits the field being typed in even when the gaze has drif
   assert.equal(controller.handle('press enter', { elements: [], focusedField: field }).performed, 'submit');
   assert.deepEqual(log, ['Search Wikipedia']);
 });
+
+test('a correction reaches the field being typed in when the gaze has drifted, if the words are in it', () => {
+  const field = control(200, 'Search Wikipedia', 'searchbox', { editable: true, value: 'Alan Turnig' });
+  const drifted = { elements: [control(1, 'Main page')], focusedField: field };
+  assert.deepEqual(interpret('change Turnig to Turing', drifted), { type: 'edit', targetId: 200, edit: { kind: 'replace', find: 'Turnig', text: 'Turing' } });
+  assert.deepEqual(interpret('replace Turnig with Turing', drifted), { type: 'edit', targetId: 200, edit: { kind: 'replace', find: 'Turnig', text: 'Turing' } });
+  // Words that are not in the field, or a password field whose text is never read, are not corrected there.
+  assert.equal(interpret('change Lovelace to Byron', drifted).type, 'unknown');
+  assert.equal(interpret('change Turnig to Turing', { ...drifted, focusedField: { ...field, sensitive: true, value: '' } }).type, 'unknown');
+  // A field in the circle still comes first.
+  const looked = control(1, 'Comment', 'textbox', { editable: true, value: 'see Turnig' });
+  assert.equal(interpret('replace Turnig with Turing', { elements: [looked], focusedField: field }).targetId, 1);
+});
