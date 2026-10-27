@@ -118,19 +118,23 @@ test('when none of the circle\'s controls is meant, those just outside it are as
   const link = (id, name) => ({ id, name, role: 'link', distance: id > 100 ? 150 : 0, element: { isConnected: true } });
   const context = { elements: [link(1, 'Benefits'), link(2, 'Money and tax')], nearby: [link(101, 'Driving and transport'), link(102, 'Passports')] };
   const model = staged({ 'Driving and transport': 40 });
-  const picked = await createAssistedInterpreter({ model })('take me to the stuff about cars', context);
+  // A phrase with no topic words, which the rules alone cannot place.
+  const picked = await createAssistedInterpreter({ model })('take me to the bit about getting around', context);
   assert.deepEqual({ ...picked, assisted: undefined }, { type: 'activate', targetId: 101, outside: true, assisted: undefined });
   assert.deepEqual(model.calls.map(call => call.options), [['link "Benefits"', 'link "Money and tax"', NONE_OPTION], ['link "Driving and transport"', 'link "Passports"', NONE_OPTION]]);
   // A control in the circle that is meant is picked without looking outside.
   const near = scripted({ 'Money and tax': 9 });
   assert.equal((await createAssistedInterpreter({ model: near })('take me to the tax stuff', context)).targetId, 2);
   assert.equal(near.calls.length, 1);
-  const split = await createAssistedInterpreter({ model: staged({ 'Driving and transport': 4.5, Passports: 4 }) })('take me to the stuff about cars', context);
+  const split = await createAssistedInterpreter({ model: staged({ 'Driving and transport': 4.5, Passports: 4 }) })('take me to the bit about getting around', context);
   assert.equal(split.type, 'clarify');
   assert.equal(split.outside, true);
   assert.deepEqual(split.candidates.map(candidate => [candidate.number, candidate.elementId]), [[1, 101], [2, 102]]);
   assert.match(split.message, /^Did you mean 1: Driving and transport; 2: Passports\?/);
   assert.deepEqual(split.choose(1), { type: 'activate', targetId: 101, outside: true });
+  // Words for the topic let the rules find the section themselves; outside the circle they only offer it.
+  const offered = await createAssistedInterpreter({ model: staged({}) })('take me to the stuff about cars', context);
+  assert.deepEqual({ ...offered, assisted: undefined }, { type: 'activate', targetId: 101, related: true, far: true, assisted: undefined });
   // An empty circle with controls just outside still gets help.
   const empty = await createAssistedInterpreter({ model: staged({ Passports: 40 }) })('take me to the travel documents', { elements: [], nearby: context.nearby });
   assert.equal(empty.targetId, 102);

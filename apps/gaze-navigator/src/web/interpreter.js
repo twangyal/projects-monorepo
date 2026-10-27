@@ -1,6 +1,7 @@
 // Interpretation stage: maps one instruction plus a described gaze context to one typed action.
 // Deterministic rules form the baseline; a model interpreter can implement the same contract.
 import { spokenDate, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
+import { relatedWords } from './topics.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -24,6 +25,12 @@ const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign 
   ['preferences', 'settings'], ['options', 'settings'], ['frequently asked questions', 'faq'],
   ['get in touch', 'contact'], ['contact us', 'contact'], ['my account', 'account'], ['profile', 'account'],
   ['navigation', 'menu'], ['nav', 'menu'], ['dark theme', 'dark mode'], ['alerts', 'notifications'], ['inbox', 'messages']];
+// "The stuff about cars", "information on visas": the topic is what names the control, not the lead-in.
+const TOPIC_LEAD = /^(?:(?:the|some|any|more|all the)\s+)?(?:stuff|things?|bits?|parts?|sections?|pages?|areas?|info|information|details|something|anything|everything|articles?|guidance|advice)\s+(?:about|on|for|regarding|related to|to do with|around|concerning)\s+(.+)$/;
+// Words that carry no topic: what is left of a lead-in, and joining words.
+const TOPIC_FILLER = new Set(['stuff', 'thing', 'info', 'information', 'detail', 'section', 'part', 'bit', 'area', 'about', 'regarding', 'related', 'and', 'or', 'of', 'for', 'with', 'in', 'my', 'some', 'any', 'all']);
+// A word for the same topic as a word on a control ("cars" for "Driving") counts this much of a word the control says.
+const RELATED_CREDIT = 0.75;
 // "Of this page", "on this site": the scope a person adds is not part of a control's name.
 const SCOPE_SUFFIX = / (?:of|on|for|in|from) (?:this|the|that) (?:page|site|website|article|screen)$/;
 
@@ -60,41 +67,68 @@ export function matchScore(query, name) {
   return 0.7 * (shared / qTokens.length) + 0.1 * (shared / nTokens.length);
 }
 
-// Synonyms apply both ways: a site may label its control "Log in" or "Sign in" whichever the user says.
+// How well a topic request fits a control's name when some of its words are only related to the name's words
+// ("cars" and "Driving and transport"); 0 when no related word helps, which plain word matching already covers.
+export function topicScore(query, name) {
+  const asked = tokens(query).filter(token => !TOPIC_FILLER.has(token)), named = tokens(name);
+  if (!asked.length || !named.length) return 0;
+  let credit = 0, related = false;
+  const covered = new Set();
+  for (const word of asked) {
+    if (named.includes(word)) { credit += 1; covered.add(word); continue; }
+    const near = relatedWords(word), found = named.filter(other => near.has(other));
+    if (!found.length) continue;
+    credit += RELATED_CREDIT; related = true;
+    for (const other of found) covered.add(other);
+  }
+  return related ? 0.7 * (credit / asked.length) + 0.1 * (covered.size / new Set(named).size) : 0;
+}
+
+// Synonyms apply both ways: a site may label its control "Log in" or "Sign in" whichever the user says. Each variant
+// has a weight: a synonym or a dropped scope counts a little less than the words actually said, so "options"
+// prefers Options to Settings. A topic lead-in ("the stuff about cars") is dropped at full weight.
 function variants(query) {
-  const scoped = normalize(query), unscoped = scoped.replace(SCOPE_SUFFIX, '');
-  const normalized = ` ${unscoped} `;
-  const found = unscoped === scoped ? [query] : [query, unscoped];
-  for (const [a, b] of SYNONYMS) {
-    for (const [phrase, replacement] of [[a, b], [b, a]]) {
-      if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
+  const scoped = normalize(query), unscoped = scoped.replace(SCOPE_SUFFIX, ''), topic = TOPIC_LEAD.exec(unscoped)?.[1];
+  const found = [{ text: query, weight: 1 }];
+  if (unscoped !== scoped) found.push({ text: unscoped, weight: 0.85 });
+  if (topic) found.push({ text: topic, weight: 1 });
+  for (const base of [unscoped, ...(topic ? [topic] : [])]) {
+    const normalized = ` ${base} `;
+    for (const [a, b] of SYNONYMS) {
+      for (const [phrase, replacement] of [[a, b], [b, a]]) {
+        if (normalized.includes(` ${phrase} `)) found.push({ text: normalized.replace(` ${phrase} `, ` ${replacement} `).trim(), weight: 0.85 });
+      }
     }
   }
   return found;
 }
 
-function rank(query, elements, roles) {
+// With `topics`, words for the same topic count too ("cars" finds "Driving and transport"); `related` marks a
+// control found only that way.
+function rank(query, elements, roles, topics = false) {
   const queries = variants(query);
   return elements
     .map(element => {
-      // A synonym counts a little less than the words actually said, so "options" prefers Options to Settings.
-      let score = Math.max(...queries.map((variant, index) => matchScore(variant, element.name) * (index ? 0.85 : 1)));
+      let score = Math.max(...queries.map(({ text, weight }) => matchScore(text, element.name) * weight)), related = false;
+      const topical = topics ? Math.max(...queries.map(({ text, weight }) => topicScore(text, element.name ?? '') * weight)) : 0;
+      if (topical > score) { score = topical; related = true; }
       if (roles && !roles.includes(element.role)) score *= 0.6;
-      return { element, score };
+      return { element, score, related };
     })
     .filter(entry => entry.score >= 0.5)
     .sort((a, b) => b.score - a.score || a.element.distance - b.element.distance);
 }
 
 // A unique strong match acts; similarly strong matches become a numbered question.
-function resolve(query, elements, roles, act, noun = 'control') {
-  const ranked = rank(query, elements, roles);
+function resolve(query, elements, roles, act, noun = 'control', topics = false) {
+  const ranked = rank(query, elements, roles, topics);
   if (!ranked.length) {
     return { type: 'unknown', missing: true, message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.` };
   }
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN);
   if (close.length > 1) return clarify(close.map(entry => entry.element), act);
-  return act(ranked[0].element);
+  const action = act(ranked[0].element);
+  return ranked[0].related ? { ...action, related: true } : action;
 }
 
 // Candidates carry the number to say, a label, and the page element to outline when there is one.
@@ -247,7 +281,9 @@ function beyond(utterance, context, flag, where, most = Infinity) {
     return { ...question(candidates, number => result.choose(result.candidates[number - 1].number)), [flag]: true,
       message: `${where}: ${candidates.map(candidate => `${candidate.number}: ${candidate.label}`).join('; ')}. Say a number or cancel.` };
   }
-  return ids.has(result.targetId) ? { ...result, [flag]: true } : null;
+  if (!ids.has(result.targetId)) return null;
+  // A control that only shares the topic of what was asked is offered, not used, when it is outside the circle.
+  return result.related ? { ...result, far: true } : { ...result, [flag]: true };
 }
 
 function interpretInCircle(utterance, context) {
@@ -557,7 +593,7 @@ function interpretInCircle(utterance, context) {
   if (!query) return { type: 'unknown', message: 'Say what to open or select.' };
   const counted = ORDINAL.exec(query);
   if (counted) return ordinal(counted[1], counted[2], context.elements, act);
-  let resolved = resolve(query, context.elements, hint ? ROLE_HINTS[hint] : null, act);
+  let resolved = resolve(query, context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);
   // A bare option name ("large print") selects it when no control has that name.
   if (resolved.type === 'unknown') {
     resolved = selectOption(query, context.elements.filter(element => element.options?.length)) ?? resolved;

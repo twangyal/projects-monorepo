@@ -42,7 +42,7 @@ Core capabilities: opening links and selecting controls, scrolling regions, back
 
 **Biggest gap.** The extension supports a wide range of native form controls in software, but the real end-to-end loop (physical gaze tracking plus real speech on real sites) has not been evaluated with intended users. Prioritize making that loop dependable over adding further control types.
 
-**Next (updated 2026-10-27):** with simulated webcam error (120 px), scripted real-site tasks complete about 90% of the time with no unintended actions; named controls outside the gaze circle are reached directly when just outside it and offered for confirmation when farther. Remaining misses are topic paraphrases ("the stuff about cars") that need the optional model, and scroll regions far from the gaze. The next step is evaluation with a real webcam, a real microphone and intended users on representative sites.
+**Next (updated 2026-10-27):** with simulated webcam error (120 px), scripted real-site tasks complete about 90% of the time with no unintended actions; named controls outside the gaze circle are reached directly when just outside it and offered for confirmation when farther. Everyday topic words ("the stuff about cars") are now understood without the optional model; remaining misses are paraphrases outside that vocabulary, scroll regions far from the gaze and dictation after large gaze errors. The practice site's guided tasks measure a session for use with real users. The next step is evaluation with a real webcam, a real microphone and intended users on representative sites.
 
 ---
 
