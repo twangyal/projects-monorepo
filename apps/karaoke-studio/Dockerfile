@@ -15,8 +15,10 @@ COPY assets ./assets
 RUN npm run build
 
 FROM python:3.11-slim-bookworm
+# Noto fonts and fontconfig let exported videos draw lyrics in scripts the bundled font lacks (CJK, Tibetan,
+# Devanagari and more).
 RUN apt-get update \
- && apt-get install --no-install-recommends -y ffmpeg \
+ && apt-get install --no-install-recommends -y ffmpeg fontconfig fonts-noto-core fonts-noto-cjk \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements-core.txt requirements-ml.lock.txt ./

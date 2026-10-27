@@ -22,7 +22,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 ## Known gaps
 
 - Transcription and alignment quality on real songs has not been evaluated with users, and the effort needed to correct them has not been measured. A developer benchmark (`scripts/evaluate_lyrics.py` on JamendoLyrics) found roughly 31% word error on English songs, with large variation between songs. Recognition is a starting point, not a finished transcript.
-- Multilingual lyrics are unfinished. Only 25 European languages are covered, mixed-language songs are not handled, and the bundled font lacks many scripts (for example Tibetan), which show as missing-glyph boxes in videos.
+- Multilingual lyrics are unfinished. Recognition covers only 25 European languages and mixed-language songs are not handled. Videos draw lyrics in other scripts (for example Japanese, Tibetan or Hindi) only when a font for them is installed: the container image includes Noto fonts; on Linux install them yourself (for example `fonts-noto-core fonts-noto-cjk`), or those characters show as boxes. Right-to-left lyrics highlight left to right.
 - Separated stems are estimates. Leftover singing or lost instruments can remain, and anything the model misses as vocals stays in the backing.
 - Separation is slow on CPU: a ten-minute song takes roughly as long as the song itself on 4 cores. No GPU path.
 - Limits: 200 cues, 240 characters per cue, 20,000 lyric characters, 20 clips. Running natively needs Linux (procfs and POSIX process controls); elsewhere use the container image. The image is built and checked for x86-64 in CI; Apple Silicon (arm64) builds are untested. Archives with recognized word data use format version 2; this studio also reads older version 1 archives. Older studio versions cannot open version 2. Restoring word timing needs no recognition model.
@@ -106,7 +106,7 @@ With models installed, `python scripts/smoke_song.py --model-dir MODELS --work-d
 - `src/main.ts`: the browser UI. Other `src/*.ts` modules handle cue editing, alignment and word timing, SRT, practice, the waveform worker and review.
 - `scripts/`: model setup, smoke tests and evaluations.
 - `tests/`: Python tests (`test_*.py`), TypeScript unit tests (`*.test.ts`), Playwright specs (`*.spec.ts`) and test servers.
-- `assets/`: bundled DejaVu Sans font and its licence.
+- `assets/`: bundled DejaVu Sans font and its licence. Installed fonts, found with fontconfig, cover scripts it lacks.
 
 ## Data & privacy
 

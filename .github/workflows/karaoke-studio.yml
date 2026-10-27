@@ -80,6 +80,16 @@ jobs:
         run: |
           docker run --rm --entrypoint ffmpeg karaoke-studio:ci -hide_banner -encoders | grep -q libx264
           docker run --rm karaoke-studio:ci python -c "import onnxruntime, sherpa_onnx, numpy, scipy, PIL; print('runtime ok')"
+      - name: Video lyric cards draw CJK, Tibetan and Devanagari with installed fonts
+        run: |
+          docker run --rm karaoke-studio:ci python -c "
+          from karaoke import video
+          fonts = video._fonts('assets/DejaVuSans.ttf')
+          for text in ['日本語の歌', '노래', 'བོད་ཀྱི་གླུ', 'मेरा गाना']:
+              face = fonts.runs(text)[0][0]
+              assert face != 0, text
+              print(text, fonts.faces[face][0])
+          "
       - name: Serve on the host's loopback port from named volumes
         run: |
           docker run -d --name karaoke -p 127.0.0.1:8765:8765 -v karaoke-data:/data -v karaoke-models:/models karaoke-studio:ci
