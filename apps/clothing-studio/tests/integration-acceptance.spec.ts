@@ -25,9 +25,9 @@ test('drape fabric refuses a pending grading rule without erasing the raw increm
   const field = page.getByLabel('Waist increment per size (cm)',{exact:true});
   await field.fill('5'); await page.getByRole('button',{name:'Apply grading rule',exact:true}).click();
   await page.getByRole('button',{name:'Undo',exact:true}).click(); const before=await backup(page);
-  await field.fill('7'); await page.getByLabel('Fabric',{exact:true}).selectOption('denim');
+  await field.fill('7'); await page.getByLabel('Fabric',{exact:true}).selectOption('denim-340');
   await expect(field).toHaveValue('7'); expect(await backup(page)).toEqual(before);
   await expect(page.getByRole('button',{name:'Redo',exact:true})).toBeEnabled();
   await page.getByRole('button',{name:'Discard grading edits',exact:true}).click();
-  await page.getByLabel('Fabric',{exact:true}).selectOption('denim'); expect((await backup(page)).construction.fabric).toBe('denim');
+  await page.getByLabel('Fabric',{exact:true}).selectOption('denim-340'); expect((await backup(page)).construction.fabric).toBe('denim-340');
 });
