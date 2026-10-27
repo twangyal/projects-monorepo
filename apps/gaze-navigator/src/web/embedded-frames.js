@@ -4,7 +4,9 @@
 // Actions on them are performed by the frame's own controller after this navigator has interpreted and confirmed them.
 import { sameOriginFrames, viewportRect } from './page-context.js';
 
-const PROBE_TRIES = 10;
+// A busy browser can take a while to start a frame's agent; the whole handshake is retried a few times.
+const PROBE_TRIES = 20;
+const RESOLVE_ATTEMPTS = 4;
 const PROBE_WAIT_MS = 50;
 const INJECT_RETRY_MS = 5000;
 // A frame's last answer is reused for a new capture at nearly the same place, so an instruction given right after the
@@ -18,6 +20,9 @@ const nonce = window => [...window.crypto.getRandomValues(new Uint8Array(16))].m
 
 export function createEmbeddedFrames({ window, runtime }) {
   const frameIds = new WeakMap(), injected = new WeakMap(), byId = new Map(), chains = new WeakMap(), answers = new WeakMap();
+  // A pointer move from a frame not yet identified is kept (the latest per frame) and replayed once it is.
+  const early = new Map();
+  let replay = () => {};
   const send = message => runtime.sendMessage(message).catch(() => null);
   const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
 
@@ -33,7 +38,7 @@ export function createEmbeddedFrames({ window, runtime }) {
     for (let tries = 0; tries < PROBE_TRIES; tries++) {
       await wait(PROBE_WAIT_MS);
       const reply = await send({ type: 'gaze:frame-resolve', nonce: probe });
-      if (Number.isInteger(reply?.frameId)) { frameIds.set(frame, reply.frameId); byId.set(reply.frameId, frame); return reply.frameId; }
+      if (Number.isInteger(reply?.frameId)) { frameIds.set(frame, reply.frameId); byId.set(reply.frameId, frame); replay(reply.frameId); return reply.frameId; }
     }
     return null;
   }
@@ -68,16 +73,25 @@ export function createEmbeddedFrames({ window, runtime }) {
     const observer = new window.MutationObserver(later);
     observer.observe(document, { subtree: true, childList: true });
     document.addEventListener('load', onLoad, true);
-    const onMessage = (message, sender) => {
-      if (message?.type !== 'gaze:frame-pointer' || sender.tab || sender.id !== runtime.id) return;
-      const frame = byId.get(message.frameId);
-      if (!frame?.isConnected) return;
+    const point = (frameId, x, y) => {
+      const frame = byId.get(frameId);
+      if (!frame?.isConnected) return false;
       const origin = contentOrigin(frame, chains.get(frame) ?? []);
-      onPointer(origin.left + message.x, origin.top + message.y, window.performance.now());
+      onPointer(origin.left + x, origin.top + y, window.performance.now());
+      return true;
+    };
+    const onMessage = (message, sender) => {
+      if (message?.type !== 'gaze:frame-pointer' || sender.tab || sender.id !== runtime.id || !Number.isInteger(message.frameId)) return;
+      if (!point(message.frameId, message.x, message.y)) early.set(message.frameId, { x: message.x, y: message.y, time: window.performance.now() });
+    };
+    replay = frameId => {
+      const move = early.get(frameId);
+      early.delete(frameId);
+      if (move && window.performance.now() - move.time < REUSE_MS) point(frameId, move.x, move.y);
     };
     runtime.onMessage.addListener(onMessage);
     discover();
-    return () => { observer.disconnect(); document.removeEventListener('load', onLoad, true); runtime.onMessage.removeListener(onMessage); window.clearTimeout(pending); };
+    return () => { replay = () => {}; early.clear(); observer.disconnect(); document.removeEventListener('load', onLoad, true); runtime.onMessage.removeListener(onMessage); window.clearTimeout(pending); };
   }
 
   /** Adds the controls of reachable embedded frames in `context.unreachable` to `context`; calls `changed` after each. */
@@ -104,7 +118,11 @@ export function createEmbeddedFrames({ window, runtime }) {
         continue;
       }
       (async () => {
-        const frameId = await frameIdOf(frame);
+        let frameId = null;
+        for (let attempt = 0; attempt < RESOLVE_ATTEMPTS && frameId === null && isCurrent(); attempt++) {
+          frameId = await frameIdOf(frame);
+          if (frameId === null) injected.delete(frame);
+        }
         if (frameId === null || !isCurrent()) return;
         const reply = await send({ type: 'gaze:frame-capture', frameId, x, y, radius: context.radius });
         if (!reply?.ok) { frameIds.delete(frame); return; }
