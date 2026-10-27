@@ -391,6 +391,17 @@ audio {
 .export-row button {
   font-size:.67rem
 }
+.guide-vocal {
+  display:flex;
+  align-items:center;
+  gap:.35rem;
+  font-size:.62rem;
+  color:#486055
+}
+.guide-vocal select {
+  font-size:.67rem;
+  min-height:44px
+}
 .secondary-exports {
   display:flex;
   align-items:center;

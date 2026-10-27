@@ -192,15 +192,15 @@ def _remaining(cancel: threading.Event, deadline: float) -> float:
 
 
 def _validate_backing(backing: Path, duration: float, cancel: threading.Event,
-                      deadline: float) -> None:
+                      deadline: float, label: str = 'Backing') -> None:
     _remaining(cancel, deadline)
     try:
         with wave.open(str(backing), 'rb') as stream:
             if (stream.getnchannels(), stream.getsampwidth(), stream.getframerate(), stream.getcomptype()) != (2, 2, SAMPLE_RATE, 'NONE'):
-                raise ValidationError('Backing audio must be stereo 44.1 kHz PCM16 WAV.')
+                raise ValidationError(f'{label} audio must be stereo 44.1 kHz PCM16 WAV.')
             frames = stream.getnframes()
             if abs(frames / SAMPLE_RATE - duration) > 1 / SAMPLE_RATE + 1e-9:
-                raise ValidationError('Backing audio duration does not match the project.')
+                raise ValidationError(f'{label} audio duration does not match the project.')
             # Bound memory and cancellation latency while checking actual data,
             # including the end of a full five-minute backing track.
             remaining = frames
@@ -208,21 +208,30 @@ def _validate_backing(backing: Path, duration: float, cancel: threading.Event,
                 _remaining(cancel, deadline)
                 count = min(65536, remaining)
                 if len(stream.readframes(count)) != count * 4:
-                    raise ValidationError('Backing audio is truncated.')
+                    raise ValidationError(f'{label} audio is truncated.')
                 remaining -= count
             _remaining(cancel, deadline)
     except (wave.Error, EOFError, OSError) as exc:
-        raise ValidationError('Backing audio must be a readable canonical WAV file.') from exc
+        raise ValidationError(f'{label} audio must be a readable canonical WAV file.') from exc
 
 
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
-                 font_path: Path, cancel: threading.Event, words: list | None = None) -> None:
-    """Render the karaoke video; ``words`` are recognized words that time the word highlighting."""
+                 font_path: Path, cancel: threading.Event, words: list | None = None,
+                 vocals: Path | None = None, guide: float = 0) -> None:
+    """Render the karaoke video; ``words`` are recognized words that time the word highlighting.
+
+    With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
+    """
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
     _remaining(cancel, deadline)
+    if not (isinstance(guide, (int, float)) and 0 <= guide <= 0.5) or (guide and vocals is None):
+        raise ValidationError('Guide vocal level must be from 0 to 50 percent of the separated vocals.')
     backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
     _validate_backing(backing, project['duration'], cancel, deadline)
+    if guide:
+        vocals = Path(vocals).absolute()
+        _validate_backing(vocals, project['duration'], cancel, deadline, label='Vocal')
     frame_count = math.ceil(project['duration'] * FPS)
     if frame_count > MAX_VIDEO_FRAMES:
         raise ValidationError('Video exceeds its frame limit.')
@@ -266,8 +275,16 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             arguments = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-nostdin', '-y',
                          '-protocol_whitelist', 'file', '-framerate', str(FPS), '-start_number', '0',
                          '-i', str(directory / 'frame%06d.png'),
-                         '-protocol_whitelist', 'file', '-f', 'wav', '-i', str(backing),
-                         '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'libx264', '-threads', '2',
+                         '-protocol_whitelist', 'file', '-f', 'wav', '-i', str(backing)]
+            if guide:
+                # Only validated numbers enter the filter program: backing plus the vocals at the guide share,
+                # limited so the sum cannot clip.
+                arguments += ['-protocol_whitelist', 'file', '-f', 'wav', '-i', str(vocals),
+                              '-filter_complex', f'[1:a][2:a]amix=inputs=2:weights=1 {guide:.2f}:normalize=0,alimiter=limit=0.97[mix]',
+                              '-map', '0:v:0', '-map', '[mix]']
+            else:
+                arguments += ['-map', '0:v:0', '-map', '1:a:0']
+            arguments += ['-c:v', 'libx264', '-threads', '2',
                          '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
                          '-c:a', 'aac', '-b:a', '192k', '-t', f'{project["duration"]:.9f}',
                          '-movflags', '+faststart', '-f', 'mp4', str(temporary_output)]

@@ -49,8 +49,8 @@ app.innerHTML = `
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
-        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
-        <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
+        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
+        <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
         <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled><option value="auto">Automatic language choice</option><option value="english">English</option><option value="multilingual">Multilingual (25 European languages)</option></select></div><p class="fine">If the language choice sounds wrong, select a model and transcribe again. The selected model must be installed locally. Retrying keeps your lyric edits; review and apply the new result when ready.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div></section>
@@ -229,6 +229,8 @@ function controls() {
   element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('export-video').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
+  element<HTMLButtonElement>('lrc-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
+  element<HTMLSelectElement>('guide-vocal').disabled = element<HTMLButtonElement>('export-video').disabled;
   element<HTMLButtonElement>('backing-download').disabled = !working;
   element<HTMLButtonElement>('delete-project').disabled = !working || busy || saving;
   element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving || aligning;
@@ -1227,6 +1229,8 @@ function download(url: string, suffix: string) {
 }
 element('backing-download').addEventListener('click', () => { if (working) download(`/api/projects/${working.id}/audio/backing`, '-backing.wav'); });
 element('lyrics-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
+// Word-timed lyrics for music players and karaoke apps, timed like the preview and the video.
+element('lrc-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lrc`, '.lrc'); });
 element('video-download').addEventListener('click', () => { if (videoUrl && !timingOwner) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
   retirePractice('Deleting a clip stopped practice.');
@@ -1354,7 +1358,9 @@ element('export-video').addEventListener('click', async () => {
   retireSrt('Exporting video cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   requestingJob = true; controls();
-  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', {})); message(''); startPolling(job); }
+  // A guide vocal mixes the separated vocals quietly under the backing so singers can follow the melody.
+  const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value);
+  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', guideVocal ? { guideVocal } : {})); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
 });

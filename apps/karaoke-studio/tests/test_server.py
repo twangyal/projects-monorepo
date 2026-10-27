@@ -317,6 +317,32 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(json.loads(path.read_text("utf-8")), metadata)
         self.assertEqual(self.request("GET", f'/api/projects/{job["projectId"]}/processing.json')[0], 404)
 
+    def test_lrc_download_and_guide_vocal_export_option(self):
+        calls = []
+
+        def recording_export(project, backing, output, work_dir, font_path, cancel, **options):
+            calls.append(options)
+            output.write_bytes(b"test-only MP4")
+        self.server.export = recording_export
+        project_id = self.upload()["projectId"]
+        endpoint = f"/api/projects/{project_id}"
+        changes = {"title": "Guide", "revision": 0, "cues": [{"start": 0.0, "end": 1.0, "text": "Sing [along]"}]}
+        self.assertEqual(self.request("PUT", endpoint, changes)[0], 200)
+        status, headers, lrc = self.request("GET", endpoint + "/lrc")
+        self.assertEqual(status, 200)
+        self.assertIn(".lrc", headers["Content-Disposition"])
+        self.assertIn(b"[00:00.00]<00:00.00>Sing <", lrc)
+        self.assertNotIn(b"[along]", lrc)
+        for body in ({"guideVocal": 51}, {"guideVocal": -1}, {"guideVocal": 0.3}, {"guideVocal": "30"}, {"other": 1}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        for body, guide in (({}, None), ({"guideVocal": 30}, 0.3)):
+            status, _, response = self.request("POST", endpoint + "/export", body)
+            self.assertEqual(status, 202, response)
+            self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+            self.assertEqual(calls[-1].get("guide"), guide)
+            if guide:
+                self.assertEqual(Path(calls[-1]["vocals"]).name, "vocals.wav")
+
     def test_atomic_save_stale_revisions_lyrics_and_export_invalidation(self):
         project_id = self.upload()["projectId"]
         endpoint = f"/api/projects/{project_id}"

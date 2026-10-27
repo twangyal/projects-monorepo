@@ -63,6 +63,29 @@ class VideoTests(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def _mean_volume(self, path):
+        report = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(path), '-map', '0:a:0', '-af', 'volumedetect',
+                                 '-f', 'null', '-'], capture_output=True, text=True, check=True).stderr
+        return float(report.split('mean_volume: ')[1].split(' dB')[0])
+
+    def test_guide_vocal_mixes_the_separated_vocals_under_the_backing(self):
+        vocals = self.root / 'vocals.wav'
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=3:sample_rate=44100',
+                        '-ac', '2', '-c:a', 'pcm_s16le', str(vocals)], check=True)
+        plain, guided = self.root / 'plain.mp4', self.root / 'guided.mp4'
+        video.export_video(self.project, self.backing, plain, self.root / 'work', FONT, threading.Event())
+        video.export_video(self.project, self.backing, guided, self.root / 'work', FONT, threading.Event(),
+                           vocals=vocals, guide=0.3)
+        # The backing is silent: only the guide vocal can be heard in the mixed video.
+        self.assertLess(self._mean_volume(plain), -80)
+        self.assertGreater(self._mean_volume(guided), -40)
+
+    def test_guide_vocal_level_and_source_are_validated(self):
+        for guide, vocals in [(0.6, self.backing), (-0.1, self.backing), (0.2, None)]:
+            with self.assertRaises(ValidationError):
+                video.export_video(self.project, self.backing, self.root / 'x.mp4', self.root / 'work', FONT,
+                                   threading.Event(), vocals=vocals, guide=guide)
+
     def test_word_highlighting_colours_only_the_sung_words(self):
         project = update_project(self.project, 'Words', [dict(start=0, end=3, text='LEFT RIGHT')], 1)
         cards = {}

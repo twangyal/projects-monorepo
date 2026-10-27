@@ -31,6 +31,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager, JobPublication
 from .lyrics_auto import align_lines, word_timings, words_to_cues
+from .lrc import render_lrc
 from .word_alignment import AlignmentLimitError
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
@@ -42,7 +43,9 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info|transcript|transcribe|align|word-timings))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|archive|archive-info|transcript|transcribe|align|word-timings))?")
+# Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
+MAX_GUIDE_VOCAL = 50
 _TRANSCRIPT = "transcript.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
@@ -656,7 +659,7 @@ class KaraokeServer(ThreadingHTTPServer):
             self.cleanup_work(work_dir)
             raise
 
-    def start_export(self, project: dict):
+    def start_export(self, project: dict, guide_vocal: int = 0):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -676,9 +679,12 @@ class KaraokeServer(ThreadingHTTPServer):
                     owned_project = self._descriptor_path(project_fd)
                     stage("Rendering lyric video")
                     output = owned_work / "video.mp4"
+                    # A guide vocal mixes the separated vocals quietly under the backing.
+                    guide = ({"vocals": owned_project / "vocals.wav", "guide": guide_vocal / 100}
+                             if guide_vocal else {})
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
-                                    owned_work, self.font_path, cancel, **timing)
+                                    owned_work, self.font_path, cancel, **timing, **guide)
                     self.check_storage()
                     if (output.is_symlink() or not output.is_file()
                             or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES):
@@ -1019,8 +1025,10 @@ class Handler(BaseHTTPRequestHandler):
                         or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
                     raise RequestError(400, "Provide one portable saved revision when backing up.")
             elif self.command == "POST" and resource == "export":
-                if self._read_json():
-                    raise RequestError(400, "This action takes an empty JSON object.")
+                value = self._read_json()
+                guide = value.get("guideVocal", 0)
+                if set(value) - {"guideVocal"} or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
+                    raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
             elif self.command == "POST" and resource == "transcribe":
                 value = self._read_json()
                 model_choice = value.get("modelChoice", "auto")
@@ -1079,11 +1087,13 @@ class Handler(BaseHTTPRequestHandler):
                         archive_source.close()
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
-                    job = server.start_export(project)
+                    job = server.start_export(project, guide_vocal=guide)
                 if self.command == "POST" and resource == "transcribe":
                     job = server.start_transcribe(project, model_choice)
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
+                if read and resource == "lrc":
+                    transcript = server.optional_transcript(project)
                 if self.command == "POST" and resource == "word-timings":
                     # The same rules as saving, so unsaved but valid drafts can be previewed.
                     timed = validate_project({**project, "cues": value["cues"]})
@@ -1144,6 +1154,10 @@ class Handler(BaseHTTPRequestHandler):
             if read and resource == "lyrics":
                 self._bytes(render_srt(project).encode("utf-8"), "application/x-subrip; charset=utf-8",
                             disposition=self._attachment(project["title"], ".srt"))
+                return
+            if read and resource == "lrc":
+                self._bytes(render_lrc(project, transcript["words"] if transcript else []).encode("utf-8"),
+                            "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".lrc"))
                 return
             if read and resource == "video":
                 self._file(directory / "video.mp4", "video/mp4",

@@ -16,7 +16,7 @@ A local song-to-karaoke maker. Upload a song and it separates vocals from backin
 - **Text correction**: split at caret and playhead, merge with the next line, add a missed line, remove a passage, find a line, and replace words throughout the lyrics. Up to 30 unsaved edits can be undone or redone.
 - **Practice**: play or repeat a range of lines on any track, at 0.5×, 0.75× or 1× speed.
 - **Word-by-word highlighting** in the preview and in the exported video. Word times come from recognition, with words that were not heard estimated by length. If timing fails, the preview explains why and highlights whole lines until you edit the lyrics or transcribe again.
-- **Export** a 1280×720, 24 fps H.264/AAC MP4 with the backing track and lyric cards, plus SRT subtitles.
+- **Export** a 1280×720, 24 fps H.264/AAC MP4 with the backing track and lyric cards. An optional **guide vocal** (Quiet or Medium) mixes the separated vocals under the backing so singers can follow the melody. Lyrics also export as SRT subtitles and as **word-timed LRC** for music players and karaoke apps, timed exactly like the preview.
 - **Local library** of up to 20 saved clips that survives restarts. **Back up saved clip** writes a portable `.karaoke.zip` (audio, stems, saved lyrics and recognized word timings when present); **Import project archive** restores one into any library.
 
 ## Known gaps

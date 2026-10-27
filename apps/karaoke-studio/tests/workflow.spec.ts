@@ -147,6 +147,12 @@ test('explicit fake-separator full-song fixture seeks late, persists boundary cu
   const [srt] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export timed lyrics', exact: true }).click()]);
   expect(await readFile((await srt.path())!, 'utf8')).toBe(
     '1\n00:00:29,750 --> 00:00:30,250\nBOUNDARY chorus 🌓\n\n2\n00:00:58,000 --> 00:00:59,500\nFINAL chorus 🎵\n');
+  const [lrc] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export word-timed LRC', exact: true }).click()]);
+  expect(lrc.suggestedFilename()).toMatch(/\.lrc$/);
+  const lrcText = await readFile((await lrc.path())!, 'utf8');
+  expect(lrcText).toMatch(/^\[00:29\.75\]<00:29\.75>BOUNDARY <00:\d\d\.\d\d>chorus <00:\d\d\.\d\d>🌓$/m);
+  expect(lrcText).toMatch(/^\[00:58\.00\]<00:58\.00>FINAL /m);
+  await expect(page.getByLabel('Guide vocal')).toHaveValue('0');
   const [backing] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download backing WAV', exact: true }).click()]);
   // Only this explicit test fixture copies source to both stems. This byte
   // equality is a complete-duration plumbing assertion, not AI quality evidence.
