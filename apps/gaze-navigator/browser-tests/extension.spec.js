@@ -154,7 +154,7 @@ test('camera mode runs the estimator in an extension frame, not the website, and
   expect(await page.evaluate(() => typeof window.webgazer), 'the estimator is not exposed to the website').toBe('undefined');
   expect(await isolated(() => typeof globalThis.webgazer), 'nor to the content script').toBe('undefined');
   expect(await page.evaluate(() => document.querySelectorAll('video, iframe').length), 'the page sees no video or frame').toBe(0);
-  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.', { timeout: 30000 });
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.', { timeout: 45000 });
   const frame = captureFrame(page);
   expect(frame, 'the capture frame belongs to the extension').toBeTruthy();
   const box = await page.getByRole('button', { name: 'Buy now' }).boundingBox();
@@ -188,7 +188,7 @@ test('a calibration follows navigation in extension memory and is forgotten when
   await page.goto('http://shop.example/');
   await expect(status(page)).toContainText('Ready');
   await typeInstruction(page, 'use camera');
-  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.', { timeout: 30000 });
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.', { timeout: 45000 });
   const stored = await control.evaluate(async () => (await chrome.storage.session.get('gaze-calibration'))['gaze-calibration']);
   expect(stored.samples).toHaveLength(36);
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length]), 'eye data never reaches website storage').toEqual([0, 0]);
@@ -586,7 +586,7 @@ test('camera and extension speech frames stop independently and microphone disco
   await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
   const page=await context.newPage(); await page.goto('http://shop.example/'); await expect(status(page)).toContainText('Ready');
   const speech=await listenInExtension(page); const speechURL=speech.url();
-  await typeInstruction(page,'use camera'); await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.',{timeout:30000});
+  await typeInstruction(page,'use camera'); await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.',{timeout:45000});
   await typeInstruction(page,'stop camera'); await expect(status(page)).toContainText('Camera off');
   expect((await activeSpeechFrame(page)).url()).toBe(speechURL);
   await speech.evaluate(()=>window.__extensionSpeech.say('pause')); await expect(panel(page).getByRole('button',{name:'Resume',exact:true})).toBeVisible();
