@@ -92,3 +92,52 @@ test('published line timings time each found line directly, without waiting for 
   await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
   await expect(page.getByRole('button',{name:'Use lyrics with published timings',exact:true})).toBeHidden();
 });
+
+const synchronized={...record,plainLyrics:'Different plain words',syncedLyrics:'[00:02.25]Supplied first line\n[00:04.50]\n[00:08.10]日本語の歌\n[00:13.00]'};
+test('reviewed supplied timings work without recognition and survive Undo, save, reopen and SRT export',async({page})=>{
+  await page.route('**/api/projects/*/transcript',route=>route.fulfill({status:500,json:{error:'fixture unavailable'}}));
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:synchronized,headers:{'access-control-allow-origin':'*'}}));
+  await setup(page);const before=await lines(page);
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();
+  await expect(page.locator('#lookup-preview')).toHaveText('Different plain words');
+  await expect(page.locator('#lookup-timing-preview')).toContainText('0:02.25 → 0:04.50');
+  await expect(page.locator('#lookup-timing-preview')).toContainText('日本語の歌');
+  expect(await lines(page)).toEqual(before);
+  await expect(page.locator('#lookup-use')).toBeDisabled();
+  await page.getByRole('button',{name:'Use lyrics with published timings',exact:true}).click();
+  expect(await lines(page)).toEqual(['Supplied first line','日本語の歌']);
+  await expect(page.getByLabel('Start line 1',{exact:true})).toHaveValue('2.25');
+  await expect(page.getByLabel('End line 1',{exact:true})).toHaveValue('4.5');
+  await expect(page.getByLabel('Start line 2',{exact:true})).toHaveValue('8.1');
+  await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await lines(page)).toEqual(before);
+  await page.getByRole('button',{name:'Redo lyric edit',exact:true}).click();expect(await lines(page)).toEqual(['Supplied first line','日本語の歌']);
+  await page.getByRole('button',{name:'Save lyrics',exact:true}).click();await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  await page.reload();await expect(page.getByLabel('Start line 1',{exact:true})).toHaveValue('2.25');
+  const projects=(await(await page.request.get('/api/projects')).json()).projects;
+  const saved=await(await page.request.get(`/api/projects/${projects[0].id}`)).json();
+  expect(saved.cues).toEqual([{start:2.25,end:4.5,text:'Supplied first line'},{start:8.1,end:13,text:'日本語の歌'}]);
+  const srt=await(await page.request.get(`/api/projects/${projects[0].id}/lyrics`)).text();
+  expect(srt).toContain('00:00:02,250 --> 00:00:04,500');expect(srt).toContain('日本語の歌');
+});
+
+test('supplied timings cannot overwrite pasted words or a changed editor',async({page})=>{
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:synchronized,headers:{'access-control-allow-origin':'*'}}));
+  await setup(page);const before=await lines(page);
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Private draft');
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();
+  await expect(page.locator('#lookup-timing-preview')).toContainText('Supplied first line');
+  await expect(page.locator('#lookup-use-timed')).toBeDisabled();expect(await lines(page)).toEqual(before);
+  await page.getByRole('button',{name:'Discard pasted draft',exact:true}).click();
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-use-timed')).toBeEnabled();
+  await page.getByLabel('Start line 1',{exact:true}).fill('0.5');
+  await expect(page.locator('#lookup-use-timed')).toBeDisabled();await expect(page.locator('#lookup-review')).toBeHidden();
+  expect(await lines(page)).toEqual(before);
+});
+
+test('unsupported supplied timing explains the plain-word fallback',async({page})=>{
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:{...record,syncedLyrics:'[offset:100]\n[00:01]One'},headers:{'access-control-allow-origin':'*'}}));
+  await setup(page);await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();
+  await expect(page.locator('#lookup-timing-notice')).toContainText('could not be used');
+  await expect(page.locator('#lookup-use-timed')).toBeHidden();await expect(page.locator('#lookup-use')).toBeEnabled();
+  await page.locator('#lookup-use').click();await expect(page.locator('#message')).toContainText('Aligned 3 lines');
+});

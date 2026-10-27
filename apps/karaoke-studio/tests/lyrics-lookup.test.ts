@@ -32,7 +32,7 @@ test('deadline also cancels a stalled response stream even if fetch ignores abor
 
 test('published line timings become cues that end at the next line or gap and fit the clip', async () => {
   const { parseSyncedLyrics, parseLyricsRecord } = await import('../src/lyrics-lookup.ts');
-  const lrc = '[ar:Example]\n[00:01.50] Hello <00:02.00>little world\n[00:04.00][00:12.25] This is our chorus\n[00:07.10]\n[00:09.000] Sing it back\n[00:30.00] Past the end';
+  const lrc = '[ar:Example]\n[00:01.50] Hello <00:02.00>little world\n[00:04.00][00:12.25] This is our chorus\n[00:07.10]\n[00:09.000] Sing it back';
   assert.deepEqual(parseSyncedLyrics(lrc, 16), [
     { start: 1.5, end: 4, text: 'Hello little world' }, { start: 4, end: 7.1, text: 'This is our chorus' },
     { start: 9, end: 12.25, text: 'Sing it back' }, { start: 12.25, end: 16, text: 'This is our chorus' }]);
