@@ -1,4 +1,5 @@
 import { validateCues, type Cue } from './lyrics.ts';
+import { cueWords } from './word-timing.ts';
 
 /** What the studio recognized from a clip's separated vocals. */
 export interface RecognizedCue extends Cue { confidence: number }
@@ -75,4 +76,37 @@ function lineList(numbers: number[]): string {
   const shown = numbers.slice(0, 12);
   const rest = numbers.length - shown.length;
   return `lines ${shown.slice(0, -1).join(', ')}${rest ? `, ${shown.at(-1)} and ${rest} more` : ` and ${shown.at(-1)}`}`;
+}
+
+/** A saved line start this far from every automatic line start was moved by the user. */
+export const MOVED_SECONDS = 0.5;
+export interface Correction { words: number; changed: number; lines: number; moved: number }
+
+/**
+ * How far saved lyrics are from the automatic ones, as a measure of correction effort: word edits (changed, added or
+ * removed words, ignoring case and punctuation) against the automatic words, and saved lines that start more than
+ * MOVED_SECONDS from every automatic line start.
+ */
+export function correction(automatic: readonly Cue[], saved: readonly Cue[]): Correction {
+  const words = (cues: readonly Cue[]) => cues.flatMap(cue => cueWords(cue.text)).map(word => word.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
+  const before = words(automatic), after = words(saved);
+  let previous = Int32Array.from({ length: after.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= before.length; i++) {
+    const current = new Int32Array(after.length + 1);
+    current[0] = i;
+    for (let j = 1; j <= after.length; j++) current[j] = Math.min(previous[j]! + 1, current[j - 1]! + 1, previous[j - 1]! + (before[i - 1] === after[j - 1] ? 0 : 1));
+    previous = current;
+  }
+  const starts = automatic.map(cue => cue.start);
+  const moved = saved.filter(cue => !starts.some(start => Math.abs(start - cue.start) <= MOVED_SECONDS)).length;
+  return { words: before.length, changed: previous[after.length]!, lines: saved.length, moved };
+}
+
+/** The correction in a sentence, or an empty string when there were no automatic words. */
+export function correctionSummary({ words, changed, lines, moved }: Correction): string {
+  if (!words) return '';
+  if (!changed && !moved) return 'Your saved lyrics are the automatic lyrics unchanged.';
+  const share = Math.round(100 * changed / words);
+  return `Compared with them, your saved lyrics changed ${changed.toLocaleString('en-US')} of ${words.toLocaleString('en-US')} words (${share}%)`
+    + ` and moved ${moved} of ${lines} line ${lines === 1 ? 'start' : 'starts'} by over half a second.`;
 }

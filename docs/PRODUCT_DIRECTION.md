@@ -82,7 +82,7 @@ Manual editing is the *correction* workflow. Supplying all lyrics and timing eac
 
 **Biggest gaps:** automatic lyrics are not yet good enough to be the normal path (a developer benchmark on JamendoLyrics English songs found about 31% word error), so users still end up pasting lyrics. Multilingual coverage is partial (European languages, where the optional Whisper model cut word error to 15-35% in Spanish, German and French, plus Chinese, Japanese and Korean, where Japanese and Korean recognition is rough), and correction effort has not been measured with real users.
 
-**Fix first (review, 2026-10-25):** look up existing lyrics (for example LRCLIB) and align them instead of relying on recognition text; replace the word-alignment step, which silently returns no matches above about one million word pairs (long or dense songs); keep finished stems when the user cancels recognition; include `transcript.json` in backups and show why recognition failed; and add a CI job that runs the real models on one short song. Stop adding manual-editing micro-features until correction effort has been measured.
+**Next (updated 2026-10-27):** the fix-first items from the 2026-10-25 review are done: published lyrics are looked up and aligned, the word aligner is bounded, finished stems survive a cancelled recognition, backups keep transcripts and failures are explained, and CI runs the real models on one song. The studio now reports how far saved lyrics are from the automatic ones; collecting that on real songs, with real users, is the evidence still missing. English recognition stays at about 37% word error on the benchmark clips: Whisper did no better on the separated vocals or the original mix, and combining both models' readings saved under 3 points.
 
 ---
 
