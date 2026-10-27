@@ -4,6 +4,8 @@ export interface LyricsCue {start:number;end:number;text:string}
 /** `cues` are the provider's own line timings, when it has synced lyrics that fit this clip. */
 export interface LyricsRecord {id:number; title:string;artist:string;album:string;duration:number;text:string;source:string;cues?:LyricsCue[];timingNotice?:string}
 const MAX_BYTES=128*1024;
+// A search returns up to 20 songs with their lyrics.
+const MAX_SEARCH_BYTES=1024*1024;
 function metadata(value:unknown,label:string,empty=false):string {
   // eslint-disable-next-line no-control-regex -- Query metadata must not contain control characters.
   if(typeof value!=='string'||[...value].length>200||(!empty&&!value.trim())||/[\u0000-\u001f\u007f\ud800-\udfff]/u.test(value))throw new Error(`Enter a valid ${label} of up to 200 characters.`);
@@ -49,13 +51,27 @@ export function parseSyncedLyrics(lrc:string,duration:number):LyricsCue[]|null {
   try{return validateCues(cues,duration);}catch{return null;}
 }
 const comparable=(text:string)=>text.normalize('NFC').toLowerCase().replace(/\s+/gu,' ').trim();
+// Editions and credits that tags and catalogues add to the same song: "Song - Remastered 2011", "Song (Live)", "feat. X".
+const EDITION=/\s+-\s+(?:[^-]*\b(?:remaster(?:ed)?|live|version|edit|mix|mono|stereo|demo|acoustic|bonus|single|radio|deluxe|instrumental)\b[^-]*|\d{4})$/u;
+const plainWords=(text:string)=>text.replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+/** A song title without edition notes or featured artists, for matching catalogue entries. */
+export function coreTitle(text:string):string {
+  let title=comparable(text).replace(/\s*[([][^)\]]*[)\]]/gu,' ').replace(/\s+(?:feat\.?|ft\.?|featuring)\s.*$/u,'');
+  while(EDITION.test(title))title=title.replace(EDITION,'');
+  return plainWords(title);
+}
+/** The lead artist without featured or joint credits. */
+export function coreArtist(text:string):string {
+  return plainWords(comparable(text).split(/\s*(?:,|;|&|\+|\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b|\bx\b|\band\b)\s*/u)[0]!);
+}
+const sameSong=(title:string,artist:string,query:LyricsQuery)=>coreTitle(title)===coreTitle(query.title)&&!!coreTitle(title)&&coreArtist(artist)===coreArtist(query.artist)&&!!coreArtist(artist);
 export function parseLyricsRecord(value:unknown,input:LyricsQuery):LyricsRecord {
   const query=lookupQuery(input);
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('The lyrics provider returned an invalid record.');
   const r=value as Record<string,unknown>;
   const title=metadata(r.trackName,'song title'),artist=metadata(r.artistName,'artist'),album=metadata(r.albumName??'','album',true);
   if(!Number.isSafeInteger(r.id)||Number(r.id)<1||typeof r.duration!=='number'||!Number.isFinite(r.duration)||Math.abs(r.duration-query.duration)>2
-    ||comparable(title)!==comparable(query.title)||comparable(artist)!==comparable(query.artist))throw new Error('The returned title, artist or duration does not match this clip. Check the song edition and metadata.');
+    ||!sameSong(title,artist,query))throw new Error('The returned title, artist or duration does not match this clip. Check the song edition and metadata.');
   if(r.instrumental!==false)throw new Error('No lyrics are available for this song. Local recognition and pasting still work.');
   const cues=typeof r.syncedLyrics==='string'?parseSyncedLyrics(r.syncedLyrics,query.duration):null;
   let lines:string[];
@@ -80,18 +96,33 @@ export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:
   const timer=setTimeout(()=>{timedOut=true;controller.abort();},timeoutMs);
   try {
     if(signal.aborted){controller.abort();return await aborted;}
-    const operation=async()=>{
+    const getJson=async(url:URL,limit:number):Promise<unknown>=>{
       const response=await fetcher(url,{method:'GET',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
       if(controller.signal.aborted)throw new Error('Lyrics lookup cancelled.');
       if(!response.ok)throw new Error(response.status===404?'No matching lyrics found. Check title, artist and full-song duration.':response.status===429?'The lyrics provider is busy. Try again later.':'Lyrics lookup is unavailable. Your current lyrics are unchanged.');
       const declared=response.headers.get('content-length');
-      if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>MAX_BYTES))throw new Error('Lyrics response is too large.');
+      if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>limit))throw new Error('Lyrics response is too large.');
       if(!response.body)throw new Error('The lyrics provider returned an empty response.');
       reader=response.body.getReader();const chunks:Uint8Array[]=[];let size=0;
-      while(true){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>MAX_BYTES)throw new Error('Lyrics response is too large.');chunks.push(part.value);}
+      while(true){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>limit)throw new Error('Lyrics response is too large.');chunks.push(part.value);}
+      reader=undefined;
       const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
-      let value:unknown;try{value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('The lyrics provider returned invalid text.');}
-      return parseLyricsRecord(value,query);
+      try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('The lyrics provider returned invalid text.');}
+    };
+    const operation=async()=>{
+      try{return parseLyricsRecord(await getJson(url,MAX_BYTES),query);}
+      catch(error){
+        // The exact lookup found nothing: search the catalogue, keeping only the same song at this duration.
+        if(!(error instanceof Error&&error.message.startsWith('No matching lyrics')))throw error;
+        const search=new URL('https://lrclib.net/api/search');search.search=new URLSearchParams({track_name:coreTitle(query.title)||query.title,artist_name:coreArtist(query.artist)||query.artist}).toString();
+        const found=await getJson(search,MAX_SEARCH_BYTES);
+        if(!Array.isArray(found))throw new Error('The lyrics provider returned an invalid record.');
+        const candidates=found.filter((item):item is Record<string,unknown>=>!!item&&typeof item==='object'&&typeof item.trackName==='string'&&typeof item.artistName==='string'&&typeof item.duration==='number'
+          &&item.instrumental===false&&Math.abs(item.duration-query.duration)<=2&&sameSong(item.trackName,item.artistName,query))
+          .sort((a,b)=>Math.abs(Number(a.duration)-query.duration)-Math.abs(Number(b.duration)-query.duration)||Number(typeof b.syncedLyrics==='string')-Number(typeof a.syncedLyrics==='string'));
+        for(const candidate of candidates){try{return parseLyricsRecord(candidate,query);}catch{/* the next closest edition */}}
+        throw new Error('No matching lyrics found. Check title, artist and full-song duration.');
+      }
     };
     return await Promise.race([operation(),aborted]);
   } catch(error) {

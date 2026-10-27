@@ -25,8 +25,9 @@ test('dirty pasted words and later edits cannot be replaced by a delayed lookup'
   await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);await page.getByLabel('Artist for lookup',{exact:true}).fill('Another artist');await expect(page.locator('#lookup-use')).toBeDisabled();
 });
 test('provider failure and explicit cancel keep local automatic cues usable',async({page})=>{
+  const searches:URL[]=[];await page.route('https://lrclib.net/api/search?**',route=>{searches.push(new URL(route.request().url()));return route.fulfill({json:[{...record,id:7,duration:200}],headers:{'access-control-allow-origin':'*'}});});
   await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({status:404,body:'PRIVATE PROVIDER RESPONSE',headers:{'access-control-allow-origin':'*'}}));await setup(page);const before=await lines(page);
-  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-status')).toContainText('No matching lyrics');expect(await lines(page)).toEqual(before);await expect(page.locator('#lookup-status')).not.toContainText('PRIVATE');
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-status')).toContainText('No matching lyrics');expect(searches.map(url=>[url.searchParams.get('track_name'),url.searchParams.get('artist_name')])).toEqual([['test song','example singer']]);expect(await lines(page)).toEqual(before);await expect(page.locator('#lookup-status')).not.toContainText('PRIVATE');
   let release:()=>void=()=>undefined;const gate=new Promise<void>(r=>release=r);await page.route('https://lrclib.net/api/get?**',async route=>{await gate;await route.abort().catch(()=>undefined);});await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await page.getByRole('button',{name:'Cancel lyrics lookup',exact:true}).click();release();await expect(page.locator('#lookup-status')).toContainText('cancelled');expect(await lines(page)).toEqual(before);await expect(page.getByRole('button',{name:'Export karaoke MP4',exact:true})).toBeEnabled();
 });
 
@@ -140,4 +141,12 @@ test('unsupported supplied timing explains the plain-word fallback',async({page}
   await expect(page.locator('#lookup-timing-notice')).toContainText('could not be used');
   await expect(page.locator('#lookup-use-timed')).toBeHidden();await expect(page.locator('#lookup-use')).toBeEnabled();
   await page.locator('#lookup-use').click();await expect(page.locator('#message')).toContainText('Aligned 3 lines');
+});
+
+test('a song not found exactly is searched, and the same song at this duration is offered',async({page})=>{
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({status:404,body:'{}',headers:{'access-control-allow-origin':'*'}}));
+  await page.route('https://lrclib.net/api/search?**',route=>route.fulfill({json:[{...record,id:5,duration:120},{...record,id:6,trackName:'Test Song (Remastered)',duration:16.5}],headers:{'access-control-allow-origin':'*'}}));
+  await setup(page);await page.getByLabel('Song title for lookup',{exact:true}).fill('Test song - Remastered 2020');
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
+  await expect(page.locator('#lookup-match')).toContainText('Test Song (Remastered) — Example singer');
 });
