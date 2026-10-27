@@ -120,8 +120,12 @@ def clean_words(words: list, duration: float) -> list[dict]:
     return result
 
 
-def _finish(groups: list[list[dict]], duration: float, scores: list[float] | None = None, key: str = 'matched') -> list[dict]:
-    """Interval rules shared by both modes: ordered, non-overlapping, inside the clip, bounded text."""
+def _finish(groups: list[list[dict]], duration: float, scores: list[float] | None = None, key: str = 'matched',
+            detail: bool = False) -> list[dict]:
+    """Interval rules shared by both modes: ordered, non-overlapping, inside the clip, bounded text.
+
+    With ``detail``, each line also lists its recognized words with their times and confidence.
+    """
     cues = []
     total = 0
     if len(groups) > MAX_CUES:
@@ -148,6 +152,9 @@ def _finish(groups: list[list[dict]], duration: float, scores: list[float] | Non
             continue
         if scores is not None:
             cue[key] = round(scores[index], 3)
+        if detail:
+            cue['words'] = [dict(text=word['text'], start=round(word['start'], 3), end=round(word['end'], 3),
+                                 confidence=round(word['confidence'], 3)) for word in group]
         cues.append(cue)
         total += len(text)
     return cues
@@ -156,7 +163,8 @@ def _finish(groups: list[list[dict]], duration: float, scores: list[float] | Non
 def words_to_cues(words: list, duration: float, confidence: bool = False) -> list[dict]:
     """Group recognized words into singable lines using pauses and line length.
 
-    With ``confidence``, each line also reports the mean confidence of its words.
+    With ``confidence``, each line also reports the mean confidence of its words and lists the words themselves
+    (text, start, end and confidence), so uncertain words can be pointed out.
     """
     words = clean_words(words, duration)
     groups: list[list[dict]] = []
@@ -183,7 +191,7 @@ def words_to_cues(words: list, duration: float, confidence: bool = False) -> lis
             length += len(word['text']) + 1
     if not confidence:
         return _finish(groups, duration)
-    return _finish(groups, duration, [sum(w['confidence'] for w in group) / len(group) for group in groups], 'confidence')
+    return _finish(groups, duration, [sum(w['confidence'] for w in group) / len(group) for group in groups], 'confidence', detail=True)
 
 
 def _token(text: str) -> str:

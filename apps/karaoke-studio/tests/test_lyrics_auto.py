@@ -50,6 +50,15 @@ class AutomaticLineTests(unittest.TestCase):
             self.assertLessEqual(before['end'], after['start'])
         validate_project(dict(schemaVersion=1, id='a' * 32, title='Song', duration=40.0, revision=0, cues=cues))
 
+    def test_confident_lines_list_their_words_for_review(self):
+        words = [dict(SUNG[0], confidence=0.954321), dict(SUNG[1], confidence=0.41)]
+        cue = words_to_cues(words, 40.0, confidence=True)[0]
+        self.assertAlmostEqual(cue['confidence'], 0.682, places=3)
+        self.assertEqual([(w['text'], w['confidence']) for w in cue['words']], [(SUNG[0]['text'], 0.954), (SUNG[1]['text'], 0.41)])
+        self.assertEqual(cue['words'][0]['start'], round(SUNG[0]['start'], 3))
+        # Without confidence, lines are only text and times, as saved.
+        self.assertNotIn('words', words_to_cues(words, 40.0)[0])
+
     def test_long_unbroken_singing_is_split_and_bounds_hold(self):
         flowing = [dict(text=f'word{i}', start=i * 0.3, end=i * 0.3 + 0.28) for i in range(300)]
         cues = words_to_cues(flowing, 90.0)

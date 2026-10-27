@@ -447,3 +447,20 @@ test('automatic review audition uses the selected slow speed and speed changes r
   await page.getByRole('button',{name:'Stop reviewed passage',exact:true}).click();
   expect(await editor(page)).toEqual(before);expect(await(await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
 }));
+
+test('words recognition was unsure of are listed with their line and each plays on its own', async ({ page }) => withClip(page, async () => {
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  // Only the last line's words were heard with low confidence.
+  await expect(page.getByRole('group', { name: 'Unsure words in line 3' }).getByRole('button')).toHaveText(['Sing', 'it', 'back', 'to', 'me']);
+  await expect(page.getByRole('group', { name: 'Unsure words in line 1' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Listen to “back” at 0:10.00, line 3', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  const at = await page.locator('audio').evaluate(a => (a as HTMLAudioElement).currentTime);
+  expect(at).toBeGreaterThanOrEqual(9.6); expect(at).toBeLessThan(10.4);
+  // It stops just after the word instead of playing the rest of the line.
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused), { timeout: 4000 }).toBe(true);
+  expect(await page.locator('audio').evaluate(a => (a as HTMLAudioElement).currentTime)).toBeCloseTo(10.75, 1);
+  // The uncertain filter keeps the line with unsure words.
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(page.locator('#srt-review-list li:visible')).toHaveCount(1);
+}));

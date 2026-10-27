@@ -2,7 +2,7 @@ import {lyricsLookupMarkup,mountLyricsLookup} from './lyrics-lookup-view.ts';
 import {songFromFileName} from './lyrics-lookup.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
-import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
+import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
 import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
@@ -634,6 +634,24 @@ function startAutomaticAudition(owner: SrtOwner, epoch: number, index: number, m
     && working?.duration === range.clipDuration && Number.isFinite(audio.duration)
     && Math.abs(audio.duration - range.clipDuration) <= 1 / 44100 && !timingBusy() && !timingOwner);
 }
+/** A word recognition was unsure of, played once with a little of its surroundings. */
+const WORD_CONTEXT = 0.35;
+function startWordAudition(owner: SrtOwner, epoch: number, index: number, word: RecognizedWord): void {
+  if (!automaticReview || !srtReview || srtReview.owner !== owner || !srtCurrent(owner)
+      || transcriptEpoch !== epoch || !srtAllowed() || !practiceMediaReady(false) || !working) return;
+  const start = Math.max(0, word.start - WORD_CONTEXT), end = Math.min(working.duration, Math.max(word.end + WORD_CONTEXT, start + 0.3));
+  let range;
+  try { range = Object.freeze({ ...createPracticeRange([{ start, end, text: word.text }], working.duration, 0, 0), firstIndex: index, lastIndex: index }); }
+  catch { srtControls(); return; }
+  retirePractice(); timeline.cancelGesture();
+  automaticAuditionOwner = owner;
+  const session = practiceEpoch, media = mediaGeneration, trackName = currentTrack, source = audio.src;
+  practice.start(range, 'once', () => automaticAuditionOwner === owner && practiceEpoch === session
+    && automaticReview && srtCurrent(owner) && transcriptEpoch === epoch && mediaGeneration === media
+    && currentTrack === trackName && audio.src === source && audio.currentSrc === source
+    && working?.duration === range.clipDuration && Number.isFinite(audio.duration)
+    && Math.abs(audio.duration - range.clipDuration) <= 1 / 44100 && !timingBusy() && !timingOwner);
+}
 element('automatic-unsure-only').addEventListener('change', () => {
   if (!automaticReview || !srtReview || !srtCurrent(srtReview.owner)) return;
   if (automaticAuditionOwner) retirePractice('The review filter changed. Listening stopped; lyric edits are kept.');
@@ -642,7 +660,7 @@ element('automatic-unsure-only').addEventListener('change', () => {
 function filterAutomaticReview(): void {
   const only = element<HTMLInputElement>('automatic-unsure-only').checked;
   const rows = [...element('srt-review-list').querySelectorAll<HTMLLIElement>('li')];
-  for (const row of rows) row.hidden = only && row.dataset.unsure !== 'true';
+  for (const row of rows) row.hidden = only && row.dataset.unsure !== 'true' && !row.dataset.unsureWords;
   const excluded = automaticReviewDraft.filter(row => row.excluded).length;
   const outcome = excluded ? `${rows.length - excluded} included lines; ${excluded} excluded` : `all ${rows.length} lines`;
   element('automatic-review-count').textContent = `Showing ${rows.filter(row => !row.hidden).length} of ${rows.length} automatic lines. Applying replaces ${outcome}.`;
@@ -719,7 +737,24 @@ element('auto-review').addEventListener('click', () => {
     label.append(text);
     const original = document.createElement('details'), summary = document.createElement('summary'), words = document.createElement('pre');
     summary.textContent = 'Originally recognized words'; words.textContent = cue.text; original.append(summary, words);
-    row.append(time, label, original);
+    row.append(time, label);
+    // Words recognition was unsure of, each a click from being heard on its own.
+    const doubtful = cue.words.filter(word => word.confidence < UNSURE_CONFIDENCE);
+    if (doubtful.length) {
+      row.dataset.unsureWords = String(doubtful.length);
+      const group = document.createElement('div'); group.className = 'unsure-words'; group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', `Unsure words in line ${index + 1}`);
+      const intro = document.createElement('span'); intro.className = 'fine'; intro.textContent = 'Unsure words, listen: ';
+      group.append(intro);
+      for (const word of doubtful) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'unsure-word'; button.textContent = word.text;
+        button.setAttribute('aria-label', `Listen to “${word.text}” at ${formatTime(word.start)}, line ${index + 1}`);
+        button.addEventListener('click', () => startWordAudition(owner, recognition, index, word));
+        group.append(button);
+      }
+      row.append(group);
+    }
+    row.append(original);
     const exclusion = document.createElement('label'); exclusion.className = 'automatic-line-exclusion';
     const exclude = document.createElement('input'); exclude.type = 'checkbox';
     exclusion.append(exclude, `Exclude automatic line ${index + 1}`);
