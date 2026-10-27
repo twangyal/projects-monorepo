@@ -119,7 +119,14 @@ export function describeElement(element) {
 
 // `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
 // `createCamera` supplies the camera (see camera-source.js); by default WebGazer runs in this document.
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null } = {}) {
+/** What an answer did: acted, asked a question, cancelled, or did nothing (not understood, refused or failed). */
+export function outcomeOf(result) {
+  const outcome = result.performed ? 'acted' : result.pending || result.tone === 'question' ? 'asked' : result.cancelled ? 'cancelled'
+    : result.tone === 'error' ? 'failed' : 'other';
+  return { outcome, message: result.message };
+}
+
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null } = {}) {
   const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
@@ -507,7 +514,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       const captured = { ...keyboardContext, preserveFocus: true };
       finishKeyboard();
       ui.transcript.textContent = `Typed: ${text}`;
-      run(text, captured);
+      run(text, captured, 'typed');
     },
     onCancel() {
       finishKeyboard();
@@ -554,7 +561,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   document.addEventListener('focusout', onFocusOut, true);
   onFocusIn();
 
-  function run(utterance, captured) {
+  // `via` says where the instruction came from (speech, typed or a panel button) for `onResult`, which hears each
+  // instruction's final answer. Only the website's own pages pass `onResult`; the extension never does.
+  function run(utterance, captured, via = 'panel') {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
@@ -562,8 +571,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     spokenContext = null;
     const result = controller.handle(utterance, used);
     show(result, used);
+    const report = answer => { try { onResult?.({ utterance, via, source: settings.source, ...outcomeOf(answer) }); } catch { /* A listener's failure is its own. */ } };
+    if (!result.followUp) report(result);
     // A model-assisted answer follows unless a newer instruction came first.
-    result.followUp?.then(later => { if (later && !stopped && !closing) show(later, used); });
+    result.followUp?.then(later => { if (later && !stopped && !closing) { show(later, used); report(later); } });
     return result;
   }
 
@@ -610,11 +621,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     onInterim(text) { ui.transcript.textContent = `Heard: ${text}`; },
     onImmediate(text) {
       ui.transcript.textContent = `Heard: ${text}`;
-      run(text, { elements: [] });
+      run(text, { elements: [] }, 'speech');
     },
     onFinal(text) {
       ui.transcript.textContent = `Heard: ${text}`;
-      if (text) run(text, null);
+      if (text) run(text, null, 'speech');
     },
     onError(message) {
       spokenContext = null;
@@ -829,7 +840,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const text = ui.instruction.value.trim();
     if (!text) return;
     ui.transcript.textContent = `Typed: ${text}`;
-    const result = run(text, (recapture(true), context));
+    const result = run(text, (recapture(true), context), 'typed');
     if (result.tone !== 'error') ui.instruction.value = '';
   });
   function setCircleSize(requested) {

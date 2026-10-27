@@ -6,4 +6,6 @@ import { loadWaterSheepInBrowser } from './watersheep-browser.js';
 // Automated browser tests may supply a small stand-in model instead of the 158 MB download.
 const runtimeBase = new URL('../../dist/vendor/watersheep/', import.meta.url).href;
 const loadAssistant = window.__gazeTestAssistant ? async () => window.__gazeTestAssistant : progress => loadWaterSheepInBrowser({ runtimeBase, progress });
-window.gazeNavigator = startWebNavigator({ window, loadAssistant });
+// Each instruction's answer is announced to the page as a `gaze-navigator:result` event, which the practice tasks count.
+const onResult = detail => window.dispatchEvent(new CustomEvent('gaze-navigator:result', { detail }));
+window.gazeNavigator = startWebNavigator({ window, loadAssistant, onResult });
