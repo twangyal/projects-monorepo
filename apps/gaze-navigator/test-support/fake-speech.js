@@ -6,6 +6,13 @@
     start() { this.starts++; this.onstart?.(); }
     abort() { this.aborted++; this.onend?.(); }
   }
+  // With "gaze-fake-speech" set to "downloadable" in the extension's storage, it can also run on the device.
+  if (localStorage.getItem('gaze-fake-speech') === 'downloadable') {
+    let status = 'downloadable';
+    Recognition.available = async () => status;
+    Recognition.install = async () => { status = 'available'; return true; };
+    window.SpeechRecognitionPhrase = class { constructor(phrase, boost) { this.phrase = phrase; this.boost = boost; } };
+  }
   window.SpeechRecognition = Recognition;
   window.__extensionSpeech = {
     instances,

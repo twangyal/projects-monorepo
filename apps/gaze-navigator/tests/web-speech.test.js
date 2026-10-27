@@ -115,3 +115,75 @@ test('a synchronous microphone denial carries its permission code for extension 
   const speech=createSpeechInput({SpeechRecognition:Recognition},{onError:(message,code)=>errors.push({message,code})});
   assert.equal(speech.start(),false); assert.equal(speech.listening,false); assert.equal(errors[0].code,'not-allowed');
 });
+
+// A recognizer that can run on the device: `status` is what available() answers.
+function deviceWindow(status) {
+  const instances = [], installs = [];
+  class Phrase { constructor(phrase, boost) { this.phrase = phrase; this.boost = boost; } }
+  class Recognition {
+    static async available(options) { Recognition.asked = options; return status; }
+    static async install(options) { installs.push(options); status = 'available'; return true; }
+    constructor() { this.starts = 0; this.aborted = 0; instances.push(this); }
+    start() { this.starts++; this.onstart?.(); }
+    abort() { this.aborted++; this.onend?.(); }
+  }
+  let now = 0;
+  const window = { SpeechRecognition: Recognition, SpeechRecognitionPhrase: Phrase, navigator: { language: 'en-GB' }, performance: { now: () => now } };
+  return { window, instances, installs, Recognition, advance: ms => { now += ms; } };
+}
+const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+
+test('installed on-device recognition is used after the first start, favouring the phrases given', async () => {
+  const { window, instances, Recognition, advance } = deviceWindow('available');
+  const modes = [];
+  const speech = createSpeechInput(window, { onMode: mode => modes.push(mode) });
+  assert.equal(speech.mode, 'unknown', 'nothing is asked before listening starts');
+  speech.setPhrases(['Buy now', ' Buy  now ', 'Sort by', '']);
+  speech.start();
+  await settle();
+  assert.deepEqual(Recognition.asked, { langs: ['en-GB'], processLocally: true });
+  assert.deepEqual(modes, ['device']);
+  // The session that started on the online service restarts on the device with the phrases.
+  const device = instances.at(-1);
+  assert.equal(instances[0].aborted, 1);
+  assert.equal(device.processLocally, true);
+  assert.deepEqual(device.phrases.map(p => [p.phrase, p.boost]), [['Buy now', 3], ['Sort by', 3]]);
+  // New phrases restart a quiet session, at most every three seconds.
+  advance(3000);
+  speech.setPhrases(['Checkout']);
+  assert.deepEqual(instances.at(-1).phrases.map(p => p.phrase), ['Checkout']);
+  const count = instances.length;
+  speech.setPhrases(['Help']);
+  assert.equal(instances.length, count, 'too soon to restart again');
+});
+
+test('on-device recognition can be installed, and a failing one falls back to the online service', async () => {
+  const { window, instances, installs } = deviceWindow('downloadable');
+  const modes = [], errors = [];
+  const speech = createSpeechInput(window, { onMode: mode => modes.push(mode), onError: (message, code) => errors.push(code) });
+  speech.start();
+  await settle();
+  assert.equal(speech.mode, 'downloadable');
+  assert.equal(instances.at(-1).processLocally, undefined);
+  assert.equal(await speech.installLocal(), true);
+  assert.deepEqual(installs, [{ langs: ['en-GB'], processLocally: true }]);
+  assert.equal(speech.mode, 'device');
+  assert.equal(instances.at(-1).processLocally, true, 'listening continues on the device');
+  // A device failure is reported once and the next session uses the online service.
+  instances.at(-1).onerror({ error: 'language-not-supported' });
+  instances.at(-1).onend();
+  assert.deepEqual(errors, ['device-failed']);
+  assert.equal(speech.mode, 'service');
+  assert.equal(speech.listening, true);
+  assert.equal(instances.at(-1).processLocally, undefined);
+  assert.deepEqual(modes, ['downloadable', 'device', 'service']);
+});
+
+test('without on-device recognition, speech says it uses the online service', async () => {
+  const { window } = fakeWindow();
+  const speech = createSpeechInput(window, {});
+  speech.start();
+  await settle();
+  assert.equal(speech.mode, 'service');
+  assert.equal(await speech.installLocal(), false);
+});

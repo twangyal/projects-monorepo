@@ -540,6 +540,25 @@ async function listenInExtension(page) {
   return activeSpeechFrame(page);
 }
 
+test('extension speech can move onto the device and favours the names of controls around the gaze', async ({context,control}) => {
+  await control.evaluate(() => { localStorage.setItem('gaze-fake-speech', 'downloadable'); return chrome.storage.local.set({preferences:{autoStart:true,persist:false}}); });
+  const page=await context.newPage(); await page.goto('http://shop.example/contact'); await expect(status(page)).toContainText('Ready');
+  const frame=await listenInExtension(page);
+  const mode=panel(page).locator('.speech-mode');
+  await expect(mode).toHaveText("Speech is recognized by the browser's online service. This browser can recognize it on this device instead after a one-time download.");
+  await look(page,page.getByLabel('Message'));
+  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+  await panel(page).getByRole('button',{name:'Use on-device speech'}).click();
+  await expect(status(page)).toHaveText('Speech is now recognized on this device.');
+  await expect(mode).toHaveText('Speech is recognized on this device, so no audio leaves it, and the names of controls around your gaze are favoured.');
+  const session=await frame.evaluate(() => { const r=window.__extensionSpeech.instances.at(-1); return { local:r.processLocally, phrases:(r.phrases??[]).map(p=>p.phrase) }; });
+  expect(session.local).toBe(true);
+  expect(session.phrases).toContain('Message');
+  await frame.evaluate(()=>window.__extensionSpeech.begin());
+  await frame.evaluate(()=>window.__extensionSpeech.say('type on device words')); await expect(page.getByLabel('Message')).toHaveValue('on device words');
+  await control.evaluate(() => localStorage.removeItem('gaze-fake-speech'));
+});
+
 test('extension speech owns its origin, retains utterance context and handles immediate pause before restart', async ({context,control}) => {
   await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:true}}));
   const page=await context.newPage(); await page.goto('http://shop.example/contact'); await expect(status(page)).toContainText('Ready');

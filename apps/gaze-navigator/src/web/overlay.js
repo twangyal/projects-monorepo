@@ -160,6 +160,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <p class="hint assist-note">Understands names that do not match exactly, such as "show the ratings" for Reviews, using the WaterSheep model on this device. It downloads 158 MB once; instructions are not sent anywhere.</p>
           <p class="hint assist-state" role="status"></p>
         </div>
+        <div class="speech-row">
+          <p class="hint speech-mode" role="status"></p>
+          <button class="speech-install" hidden>Use on-device speech</button>
+        </div>
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
@@ -185,6 +189,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
     recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
+    speechMode: $('.speech-mode'), speechInstall: $('.speech-install'),
   };
   // The element list is open by default only where the panel has room to spare.
   if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
@@ -221,6 +226,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let point = null;
   let frozen = false;
   let context = { elements: [], region: null };
+  // Set once speech exists: on-device recognition favours the names of the controls in and just around the circle.
+  let contextChanged = () => {};
   let spokenContext = null;
   let promptContext = null;
   let lastCapture = -Infinity;
@@ -402,6 +409,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     pageChanged = false;
     capturedAt = { x: point.x, y: point.y, radius: radius() };
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache, focus: pageFocus() });
+    contextChanged(context);
     // Embedded frames from other sites answer later; their controls join this context when they do.
     const captured = context;
     embeddedFrames?.extend(captured, {
@@ -597,7 +605,28 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (closing || stopped) return;
       if (state === 'stopped' && settings.listening && !speech.listening) setListening(false);
     },
+    onMode() { renderSpeechMode(); },
   });
+  // Where speech is recognized, and the one-time download that moves it onto this device where the browser offers it.
+  function renderSpeechMode() {
+    const mode = speech.mode;
+    ui.speechMode.textContent = mode === 'device'
+      ? 'Speech is recognized on this device, so no audio leaves it, and the names of controls around your gaze are favoured.'
+      : mode === 'downloadable' ? 'Speech is recognized by the browser\'s online service. This browser can recognize it on this device instead after a one-time download.'
+        : mode === 'service' ? 'Speech is recognized by the browser\'s online service.' : '';
+    ui.speechInstall.hidden = mode !== 'downloadable';
+  }
+  ui.speechInstall.addEventListener('click', () => {
+    ui.speechInstall.disabled = true;
+    feedback({ message: 'Downloading on-device speech recognition. You can keep using the navigator meanwhile.' });
+    Promise.resolve().then(() => speech.installLocal()).then(installed => {
+      feedback(installed ? { message: 'Speech is now recognized on this device.', tone: 'success' }
+        : { message: 'The browser did not install on-device speech. Speech keeps using its online service.', tone: 'error' });
+    }, error => feedback({ message: `On-device speech could not be installed: ${error.message}`, tone: 'error' }))
+      .finally(() => { ui.speechInstall.disabled = false; renderSpeechMode(); });
+  });
+  renderSpeechMode();
+  contextChanged = captured => speech.setPhrases?.([...captured.elements, ...(captured.nearby ?? [])].map(item => item.name).filter(Boolean));
 
   function renderSource() {
     ui.usePointer.setAttribute('aria-pressed', String(settings.source === 'pointer'));
