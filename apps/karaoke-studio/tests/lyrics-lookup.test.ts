@@ -29,3 +29,17 @@ test('deadline also cancels a stalled response stream even if fetch ignores abor
   await assert.rejects(lookupLyrics(query,new AbortController().signal,async()=>response,20),/timed out/i);
   assert.equal(cancelled,true);
 });
+
+test('published line timings become cues that end at the next line or gap and fit the clip', async () => {
+  const { parseSyncedLyrics, parseLyricsRecord } = await import('../src/lyrics-lookup.ts');
+  const lrc = '[ar:Example]\n[00:01.50] Hello <00:02.00>little world\n[00:04.00][00:12.25] This is our chorus\n[00:07.10]\n[00:09.000] Sing it back\n[00:30.00] Past the end';
+  assert.deepEqual(parseSyncedLyrics(lrc, 16), [
+    { start: 1.5, end: 4, text: 'Hello little world' }, { start: 4, end: 7.1, text: 'This is our chorus' },
+    { start: 9, end: 12.25, text: 'Sing it back' }, { start: 12.25, end: 16, text: 'This is our chorus' }]);
+  // Nothing usable, or timings out of order with the clip, fall back to aligning the plain words.
+  assert.equal(parseSyncedLyrics('no timings here', 16), null);
+  assert.equal(parseSyncedLyrics('[00:20.00] after the clip', 16), null);
+  const record = parseLyricsRecord({ id: 7, trackName: 'Song', artistName: 'Band', duration: 16, instrumental: false, plainLyrics: 'Hello little world', syncedLyrics: lrc }, { title: 'Song', artist: 'Band', duration: 16 });
+  assert.equal(record.cues?.length, 4);
+  assert.equal(parseLyricsRecord({ id: 7, trackName: 'Song', artistName: 'Band', duration: 16, instrumental: false, plainLyrics: 'Hello', syncedLyrics: null }, { title: 'Song', artist: 'Band', duration: 16 }).cues, undefined);
+});

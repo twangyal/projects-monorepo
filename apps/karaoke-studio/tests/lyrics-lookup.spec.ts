@@ -76,3 +76,19 @@ test('a song file’s own title and artist name the clip and prefill the lookup,
   await page.reload();await page.locator('#lyrics-lookup').evaluate(n=>(n as HTMLDetailsElement).open=true);
   await expect(page.getByLabel('Artist for lookup',{exact:true})).toHaveValue('Example singer');
 });
+test('published line timings time each found line directly, without waiting for alignment, and Undo restores the lines',async({page})=>{
+  const synced='[00:01.50] Hello, little world!\n[00:05.00] This is our chorus\n[00:09.25] Sing it back to me\n[00:13.00]';
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:{...record,syncedLyrics:synced},headers:{'access-control-allow-origin':'*'}}));
+  await setup(page);const before=await lines(page);
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
+  await expect(page.locator('#lookup-timed-note')).toBeVisible();
+  await page.getByRole('button',{name:'Use lyrics with published timings',exact:true}).click();
+  await expect(page.locator('#message')).toContainText('Timed 3 lines from the published line timings');
+  expect(await lines(page)).toEqual(words.split('\n'));
+  for(const [label,value] of [['Start line 1','1.5'],['End line 1','5'],['Start line 2','5'],['End line 3','13']] as const)await expect(page.getByLabel(label,{exact:true})).toHaveValue(value);
+  await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await lines(page)).toEqual(before);
+  // Without synced lines, only aligning is offered.
+  await page.route('https://lrclib.net/api/get?**',route=>route.fulfill({json:record,headers:{'access-control-allow-origin':'*'}}));
+  await page.getByRole('button',{name:'Look up lyrics',exact:true}).click();await expect(page.locator('#lookup-preview')).toHaveText(words);
+  await expect(page.getByRole('button',{name:'Use lyrics with published timings',exact:true})).toBeHidden();
+});

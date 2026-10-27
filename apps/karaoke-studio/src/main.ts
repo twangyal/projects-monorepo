@@ -146,6 +146,16 @@ const lyricsLookup=mountLyricsLookup({
   context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,projectId:working.id,duration:working.duration,
     busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
     pastedDirty:draftDirty,alignmentState:transcriptState}:null,
+  useTimedLyrics:cues=>{
+    if (!working || !lyricHistory) return;
+    retirePractice('Replacing lyric cues stopped practice.');
+    timeline.cancelGesture();
+    lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+    retireSrt('Lyric cues replaced in memory.');
+    retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
+    working.cues = cues; renderCues(); changed();
+    message(`Timed ${cues.length} lines from the published line timings. Play the preview to check them; Undo restores your previous lines. Save lyrics when ready.`);
+  },
   useLyrics:text=>{
     const field=element<HTMLTextAreaElement>('lyric-draft');field.value=text;draftDirty=true;
     // Alignment records the replacement together; avoid an extra paste-only history step.
