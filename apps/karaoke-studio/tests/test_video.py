@@ -373,3 +373,71 @@ class VideoTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ScriptFallbackTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.project = update_project(create_project('b' * 32, 'Scripts', 3), 'Scripts',
+                                      [dict(start=0, end=3, text='café olé')], 0)
+        self.clear()
+        self.addCleanup(self.clear)
+
+    @staticmethod
+    def clear():
+        for cached in (video._fonts, video._coverage, video._system_font):
+            cached.cache_clear()
+
+    def card(self, name, project, **options):
+        output = self.root / f'{name}.png'
+        video.render_card(project, 0, output, FONT, **options)
+        with Image.open(output) as image:
+            return image.convert('RGB')
+
+    def test_characters_missing_from_the_bundled_font_use_an_installed_font(self):
+        # The bundled font is made to lack accented letters; an installed font (here a copy of it) covers them.
+        fallback = self.root / 'Fallback.ttf'
+        shutil.copyfile(FONT, fallback)
+
+        def coverage(path, _index):
+            return ((0x20, 0x7e),) if path == str(FONT) else ((0x20, 0x10ffff),)
+        with patch.object(video, '_coverage', side_effect=coverage), \
+                patch.object(video, '_system_font', return_value=(str(fallback), 0)) as lookup:
+            fonts = video._fonts(str(FONT))
+            self.assertEqual(fonts.runs('café olé'), [(0, 'caf'), (1, 'é '), (0, 'ol'), (1, 'é')])
+            self.assertEqual(fonts.faces, [(str(FONT), 0), (str(fallback), 0)])
+            # Combining marks stay with the letter before them.
+            self.assertEqual(fonts.runs('café'), [(0, 'café')])
+            self.assertEqual(lookup.call_count, 1, 'fontconfig is asked once for a script')
+            sung = self.card('sung', self.project, sung=['café'])
+            whole = self.card('whole', self.project, sung=['café', 'olé'])
+            legacy = self.card('legacy', self.project)
+        def columns(colour):
+            return [x for x in range(1280) if any(sung.getpixel((x, y)) == colour for y in range(290, 350))]
+        highlighted, unsung = columns((0xe4, 0xb7, 0x7d)), columns((0xf7, 0xf5, 0xed))
+        self.assertTrue(highlighted and unsung and max(highlighted) < min(unsung), 'only the first word is highlighted')
+        self.assertEqual(ImageChops.difference(whole, legacy).getbbox(), None)
+
+    def test_without_fontconfig_every_character_uses_the_bundled_font(self):
+        with patch.object(video.subprocess, 'run', side_effect=FileNotFoundError('fc-query')):
+            fonts = video._fonts(str(FONT))
+            self.assertEqual(fonts.runs('日本 café'), [(0, '日本 café')])
+            self.card('plain', update_project(self.project, 'Scripts', [dict(start=0, end=3, text='日本 café')], 1))
+
+    @unittest.skipUnless(shutil.which('fc-list'), 'fontconfig is not installed')
+    def test_installed_fonts_replace_missing_glyph_boxes(self):
+        lyrics = {'Japanese': '日本語の歌', 'Tibetan': 'བོད་ཀྱི་གླུ', 'Hindi': 'मेरा गाना'}
+        for language, text in lyrics.items():
+            with self.subTest(language=language):
+                if video._system_font(ord(text[0])) is None:
+                    self.skipTest(f'no installed font covers {language}')
+                project = update_project(self.project, 'Scripts', [dict(start=0, end=3, text=text)], 1)
+                self.clear()
+                found = self.card(f'{language}-font', project)
+                self.assertNotEqual(video._fonts(str(FONT)).runs(text)[0][0], 0)
+                self.clear()
+                with patch.object(video, '_system_font', return_value=None):
+                    boxes = self.card(f'{language}-boxes', project)
+                self.assertIsNotNone(ImageChops.difference(found, boxes).getbbox())

@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import unicodedata
 import wave
 
 from PIL import Image, ImageDraw, ImageFont
@@ -26,7 +27,119 @@ MAIN = '#f7f5ed'
 ACCENT = '#e4b77d'
 
 
-def _wrap(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, width: int) -> list[str]:
+# fontconfig is asked once per script: these are short, local queries with plain hex arguments.
+_FONTCONFIG_TIMEOUT = 10
+_REGULAR = {'regular', 'book', 'normal', 'medium'}
+
+
+def _ranges(charset: str) -> list[tuple[int, int]]:
+    """fontconfig's charset text ("20-7e a0-17f 2010") as inclusive code point ranges."""
+    ranges = []
+    for item in charset.split():
+        low, _, high = item.partition('-')
+        try:
+            ranges.append((int(low, 16), int(high or low, 16)))
+        except ValueError:
+            continue
+    return ranges
+
+
+@functools.lru_cache(maxsize=64)
+def _coverage(path: str, index: int) -> tuple[tuple[int, int], ...] | None:
+    """The code points a font file covers, or None when fontconfig is unavailable."""
+    try:
+        result = subprocess.run(['fc-query', '--index', str(index), '--format', '%{charset}', path],
+                                capture_output=True, text=True, timeout=_FONTCONFIG_TIMEOUT, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return tuple(_ranges(result.stdout)) or None
+
+
+@functools.lru_cache(maxsize=1024)
+def _system_font(codepoint: int) -> tuple[str, int] | None:
+    """An installed scalable font with a glyph for ``codepoint``, preferring regular Noto sans faces."""
+    try:
+        result = subprocess.run(['fc-list', '--format', '%{file}\t%{index}\t%{family}\t%{style}\n',
+                                 f':charset={codepoint:x}:scalable=true'],
+                                capture_output=True, text=True, timeout=_FONTCONFIG_TIMEOUT, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    candidates = []
+    for line in result.stdout.splitlines():
+        parts = line.split('\t')
+        if len(parts) != 4 or not parts[0].lower().endswith(('.ttf', '.otf', '.ttc', '.otc')):
+            continue
+        path, index, family, style = parts[0], parts[1], parts[2].split(',')[0], parts[3].split(',')[0].lower()
+        try:
+            index = int(index)
+        except ValueError:
+            continue
+        # Unifont is a bitmap last resort without OpenType shaping (Tibetan stacks, Devanagari conjuncts).
+        candidates.append((('Unifont' in family, not family.startswith('Noto'), 'Sans' not in family, style not in _REGULAR,
+                            'Mono' in family, family, path), (path, index)))
+    return min(candidates)[1] if candidates else None
+
+
+def _covers(ranges: tuple[tuple[int, int], ...], codepoint: int) -> bool:
+    return any(low <= codepoint <= high for low, high in ranges)
+
+
+class _Fonts:
+    """The bundled font first, then installed fonts (found with fontconfig) for characters it has no glyph for,
+    such as CJK, Tibetan, Devanagari or Arabic lyrics. Without fontconfig everything uses the bundled font."""
+
+    def __init__(self, primary: str):
+        self.faces: list[tuple[str, int]] = [(primary, 0)]
+        self.coverage = [_coverage(primary, 0)]
+        self.chosen: dict[str, int | None] = {}
+
+    def face_for(self, char: str) -> int | None:
+        """Index of the face to draw ``char`` with; None for spaces and marks, which follow the previous face."""
+        if char not in self.chosen:
+            self.chosen[char] = self._choose(char)
+        return self.chosen[char]
+
+    def _choose(self, char: str) -> int | None:
+        if char.isspace() or unicodedata.category(char) in ('Mn', 'Mc', 'Me', 'Cf'):
+            return None
+        codepoint = ord(char)
+        if self.coverage[0] is None:
+            return 0
+        for face, ranges in enumerate(self.coverage):
+            if ranges is not None and _covers(ranges, codepoint):
+                return face
+        found = _system_font(codepoint)
+        if found is None:
+            return 0
+        if found not in self.faces:
+            self.faces.append(found)
+            self.coverage.append(_coverage(*found))
+        return self.faces.index(found)
+
+    def runs(self, text: str) -> list[tuple[int, str]]:
+        """``text`` split into consecutive runs drawn with one face each."""
+        runs: list[tuple[int, str]] = []
+        for char in text:
+            face = self.face_for(char)
+            if runs and (face is None or face == runs[-1][0]):
+                runs[-1] = (runs[-1][0], runs[-1][1] + char)
+            else:
+                runs.append((0 if face is None else face, char))
+        return runs
+
+    def font(self, face: int, size: int) -> ImageFont.FreeTypeFont:
+        return _font(*self.faces[face], size)
+
+    def length(self, text: str, size: int) -> float:
+        return sum(self.font(face, size).getlength(run) for face, run in self.runs(text))
+
+
+@functools.lru_cache(maxsize=8)
+def _fonts(primary: str) -> _Fonts:
+    return _Fonts(primary)
+
+
+def _wrap(text: str, measure, width: int) -> list[str]:
     lines = []
     # Keep explicit lyric line breaks; wrap long tokens too. Pillow only draws
     # these strings, so braces, percent signs, shell syntax and markup are data.
@@ -34,14 +147,14 @@ def _wrap(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, wi
         current = ''
         for word in paragraph.split():
             candidate = f'{current} {word}' if current else word
-            if draw.textlength(candidate, font=font) <= width:
+            if measure(candidate) <= width:
                 current = candidate
                 continue
             if current:
                 lines.append(current)
                 current = ''
             for char in word:
-                if current and draw.textlength(current + char, font=font) > width:
+                if current and measure(current + char) > width:
                     lines.append(current)
                     current = ''
                 current += char
@@ -49,9 +162,9 @@ def _wrap(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, wi
     return lines
 
 
-@functools.lru_cache(maxsize=64)
-def _font(font_path: str, size: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(font_path, size)
+@functools.lru_cache(maxsize=256)
+def _font(font_path: str, index: int, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(font_path, size, index=index)
 
 
 def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
@@ -59,44 +172,46 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
                  sung_chars: int | None = None, sung_fill: str = ACCENT) -> None:
     """Draw a centred, wrapped text block. With ``sung_chars``, that many leading non-space
     characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting."""
+    fonts = _fonts(str(font_path))
     for chosen in range(size, minimum - 1, -1):
-        font = _font(str(font_path), chosen)
-        lines = _wrap(text, draw, font, 1000)
+        measure = functools.partial(fonts.length, size=chosen)
+        lines = _wrap(text, measure, 1000)
         spacing = math.ceil(chosen * 1.25)
         if len(lines) * spacing <= max_height:
             break
     # Very newline-heavy lyrics still retain all words without spilling into
     # adjacent regions: compact blank/newline separators and fit one block.
     if len(lines) * spacing > max_height:
-        lines = _wrap(' '.join(text.split()), draw, font, 1000)
+        lines = _wrap(' '.join(text.split()), measure, 1000)
     if len(lines) * spacing > max_height:
         # This is an upcoming-text preview: a visible ellipsis keeps it within
         # its own region. Full active lyrics fit at the main block's minimum.
         lines = lines[:max(1, max_height // spacing)]
-        while lines[-1] and draw.textlength(lines[-1] + '…', font=font) > 1000:
+        while lines[-1] and measure(lines[-1] + '…') > 1000:
             lines[-1] = lines[-1][:-1]
         lines[-1] += '…'
     total = len(lines) * spacing
-    remaining = sung_chars
+    # Every face sits on the bundled font's baseline, centred on the line as that font's text would be.
+    ascent, descent = fonts.font(0, chosen).getmetrics()
+    remaining = len(text) if sung_chars is None else sung_chars
+    colour = sung_fill if sung_chars is not None else fill
     for index, line in enumerate(lines):
-        line_y = y - total / 2 + (index + 0.5) * spacing
-        if remaining is None:
-            draw.text((WIDTH / 2, line_y), line, font=font, fill=fill, anchor='mm')
-            continue
-        # Same placement as centred text: the sung prefix, then the rest of the line after it.
-        left = WIDTH / 2 + font.getbbox(line, anchor='mm')[0] - font.getbbox(line, anchor='lm')[0]
-        prefix, count = '', 0
-        for char in line:
-            if count >= remaining:
-                break
-            prefix += char
-            count += not char.isspace()
-        rest = line[len(prefix):]
-        if prefix:
-            draw.text((left, line_y), prefix, font=font, fill=sung_fill, anchor='lm')
-        if rest:
-            draw.text((left + draw.textlength(prefix, font=font), line_y), rest, font=font, fill=fill, anchor='lm')
-        remaining -= count
+        baseline = y - total / 2 + (index + 0.5) * spacing + (ascent - descent) / 2
+        left = WIDTH / 2 - measure(line) / 2
+        for face, run in fonts.runs(line):
+            font = fonts.font(face, chosen)
+            # The sung prefix of this run, then the rest of it after it.
+            prefix, count = '', 0
+            for char in run:
+                if count >= remaining:
+                    break
+                prefix += char
+                count += not char.isspace()
+            remaining -= count
+            for piece, piece_fill in ((prefix, colour), (run[len(prefix):], fill)):
+                if piece:
+                    draw.text((left, baseline), piece, font=font, fill=piece_fill, anchor='ls')
+                    left += font.getlength(piece)
 
 
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
