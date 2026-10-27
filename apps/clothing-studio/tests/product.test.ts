@@ -221,7 +221,7 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
 
 test('shorts and trousers: leg measurements, two-leg 3D, paired leg panels, waistband and a trouser tech pack', async () => {
   const { buildTechPack, fabricUsage, measurementDiagram } = await import('../src/techpack.ts');
-  const { WAISTBAND_CM, garmentHeight, legMeasurements, partName, trouserDimensions, trouserSilhouette, withOptions } = await import('../src/product.ts');
+  const { WAISTBAND_CM, garmentHeight, legMeasurements, partName, trouserDimensions, withOptions } = await import('../src/product.ts');
   const shorts = template('shorts'), trousers = template('trousers');
   assert.deepEqual([...partsOf(trousers)], ['front', 'back', 'waistband']);
   assert.deepEqual([partName(trousers, 'front'), partName(trousers, 'back'), partName(template('ringer'), 'front')], ['Front legs', 'Back legs', 'Front body']);
@@ -247,20 +247,28 @@ test('shorts and trousers: leg measurements, two-leg 3D, paired leg panels, wais
   const area = (design: typeof trousers) => fabricUsage(design).reduce((sum, usage) => sum + usage.areaM2, 0);
   assert.ok(area(trousers) > area(shorts) * 1.6, 'full-length legs use much more fabric');
 
-  // 3D: two legs open at the hems and joined at the side seams and inseams; the waistband sits on the open waist.
+  // 3D: meshed from the leg panels (UVs are pattern cm); two legs open at the hems, joined at the side seams, inseams
+  // and centre seams, meeting at the crotch point; the waistband sits on the open waist.
   const meshes = teeMesh(trousers, Delaunator), mesh = new Map(meshes.map(m => [m.part, m]));
   assert.deepEqual(meshes.map(m => m.part), ['front', 'back', 'waistband']);
   const points = (part: 'front' | 'back' | 'waistband') => { const m = mesh.get(part)!; return Array.from({ length: m.positions.length / 3 }, (_, i) => ({ x: m.positions[i * 3], y: m.positions[i * 3 + 1], z: m.positions[i * 3 + 2] })); };
-  const front = points('front'), back = points('back'), s = trouserSilhouette(trousers);
-  const hemInner = s.points[7].x, hemOuter = s.points[6].x;
+  const front = points('front'), back = points('back');
   assert.ok(front.every(q => q.z >= 0) && back.every(q => q.z <= 0));
-  const hem = front.filter(q => q.y < 1e-9 && q.x > hemInner + 4 && q.x < hemOuter - 4);
-  assert.ok(hem.length > 3 && hem.every(q => q.z > 3), 'the right leg hem is open');
-  assert.ok(!front.some(q => q.y < 10 && Math.abs(q.x) < hemInner - 1), 'nothing between the legs at the hem');
+  for (const part of ['front', 'back'] as const) {
+    const uvs = mesh.get(part)!.uvs, piece = byPart.get(part)!;
+    const us = uvs.filter((_, i) => i % 2 === 0), vs = uvs.filter((_, i) => i % 2 === 1);
+    assert.ok(Math.abs(Math.max(...us) - piece.width) < 1e-6 && Math.abs(Math.max(...vs) - piece.height) < 1e-6 && Math.min(...us) > -1e-9 && Math.min(...vs) > -1e-9, `${part} UVs are its pattern piece`);
+  }
+  const hem = front.filter(q => q.y < 1e-9);
+  assert.ok(hem.length > 10 && hem.some(q => q.z > 3), 'the leg hems are open');
+  assert.ok(Math.min(...hem.map(q => Math.abs(q.x))) > 2, 'nothing between the legs at the hem');
   const crotch = front.filter(q => Math.abs(q.x) < 1e-9 && Math.abs(q.y - legMeasurements(trousers).inseam) < 1e-9);
   assert.ok(crotch.length && crotch.every(q => Math.abs(q.z) < 1e-9), 'front and back meet at the crotch');
-  const outerSeam = front.filter(q => Math.abs(q.x - d.hipHalf) < 1e-9);
-  assert.ok(outerSeam.length > 5 && outerSeam.every(q => Math.abs(q.z) < 1e-9), 'side seams are joined');
+  const key = (q: { x: number; y: number; z: number }) => [q.x, q.y, q.z].map(v => Math.round(v * 1000)).join();
+  const backKeys = new Set(back.map(key)), seam = front.filter(q => Math.abs(q.z) < 1e-9);
+  assert.ok(seam.length > 40 && seam.every(q => backKeys.has(key(q))), 'side seams and inseams are joined');
+  const centre = front.filter(q => Math.abs(q.x) < 1e-9);
+  assert.ok(centre.length > 10 && centre.every(q => front.filter(o => key(o) === key(q)).length === 2), 'the two legs share the centre seam');
   const band = points('waistband');
   assert.ok(Math.abs(Math.max(...band.map(q => q.y)) - (d.length + WAISTBAND_CM)) < 1e-9 && Math.abs(Math.min(...band.map(q => q.y)) - d.length) < 1e-9);
   assert.equal(garmentHeight(trousers), d.length + WAISTBAND_CM);

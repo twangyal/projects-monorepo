@@ -44,7 +44,7 @@ test('drape on a body: a top settles on a body, keeps its drape when recoloured 
   await expect(editor(page).getByRole('button', { name: 'Show styling shell', exact: true })).toBeHidden();
 });
 
-test('drape on a body: a hoodie hangs from the shoulders with its hood, and trousers explain that draping is for tops and skirts', async ({ page }) => {
+test('drape on a body: a hoodie hangs from the shoulders with its hood, and trousers hang from a gathered waistband', async ({ page }) => {
   test.setTimeout(180000);
   page.on('dialog', dialog => dialog.accept());
   await page.goto('/');
@@ -56,6 +56,8 @@ test('drape on a body: a hoodie hangs from the shoulders with its hood, and trou
   await shot(page, 'hoodie-back');
 
   await editor(page).getByRole('button', { name: /^Use the Straight trousers template/ }).click();
-  await expect(status(page)).toHaveText('Draping on a body is available for tops and skirts.');
-  await expect(editor(page).getByRole('button', { name: 'Drape again', exact: true })).toBeDisabled();
+  await expect(status(page)).toContainText(/Draped on a body with a 76 cm waist and \d+ cm hip, the elastic waistband gathered onto the waist, with 6 cm of hip ease/, { timeout: 90000 });
+  await expect(editor(page).getByLabel('Body chest girth (cm)')).toBeHidden();
+  await expect(editor(page).getByLabel('Body waist girth (cm, optional)')).toHaveAttribute('placeholder', 'Auto: 76');
+  await shot(page, 'trousers-front');
 });

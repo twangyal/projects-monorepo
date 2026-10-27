@@ -1,4 +1,4 @@
-import { isBottoms, material, teeDimensions, topMeasurements, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
@@ -77,15 +77,17 @@ const FRAME = 1 / 60;
 // cloth keeps vibrating at its bending frequency instead of settling.
 const BEND_DAMPING = 0.03;
 const GROW_FRAMES = 45;
+const GATHER_FRAMES = 30;
 /** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
 export const GARMENT_FRAMES = 180;
 export const GARMENT_SUBSTEPS = 24;
 export const GARMENT_SOLVER = 'xpbd-top-isometric-bending-v2';
 
 /** A body a little smaller than the garment: 10 cm less than a top's chest. For a skirt, the chest whose automatic
- * waist (0.86 × chest) sits about 2 cm inside the skirt's waist. Within the supported range. */
+ * waist (0.86 × chest) sits about 2 cm inside the skirt's waist; for trousers, the one whose automatic waist is theirs.
+ * Within the supported range. */
 export function defaultBodyChest(product: Product): number {
-  const chest = product.base === 'skirt' ? (skirtDraft(product).waist - 2) / 0.86 : topMeasurements(product).chest - 10;
+  const chest = product.base === 'skirt' ? (skirtDraft(product).waist - 2) / 0.86 : product.base === 'trousers' ? trouserDimensions(product).waist / 0.86 : topMeasurements(product).chest - 10;
   return Math.min(BODY_CHEST[1], Math.max(BODY_CHEST[0], Math.round(chest)));
 }
 
@@ -111,6 +113,40 @@ export function skirtBodyProxy(product: Product, shape: { waist?: number; hip?: 
   return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, torso, capsules: [] };
 }
 
+/**
+ * The lower body in shorts or trousers: a stadium-sectioned torso from the waist (the waistband) to the hip and down
+ * to the crotch, where it ends, and two straight legs from there to the ankles, apart enough that the inseams pass
+ * between them. By default the waist and hip are the ones the trousers were drafted for. The legs keep within the
+ * trouser legs' circumference where they are inside them. The waistband is held round the body waist.
+ */
+export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?: number } = {}): BodyProxy {
+  const d = trouserDimensions(product), waist = shape.waist ?? d.waist, hip = shape.hip ?? d.hip;
+  if (typeof waist !== 'number' || !Number.isFinite(waist) || waist < BODY_WAIST[0] || waist > BODY_WAIST[1]) throw new Error('Body waist must be from 50 to 180 cm.');
+  if (typeof hip !== 'number' || !Number.isFinite(hip) || hip < BODY_HIP[0] || hip > BODY_HIP[1]) throw new Error('Body hip must be from 50 to 220 cm.');
+  if (hip > d.waistbandLength - 2) throw new Error(`The body hip must be at least 2 cm smaller than the trousers' ${d.waistbandLength} cm hip.`);
+  if (waist > hip) throw new Error('The body waist must not be larger than its hip.');
+  const waistHalf = stadiumHalfWidth(waist, 0.8), hipHalf = stadiumHalfWidth(hip, 0.75), top = d.length + d.waistbandHeight;
+  const crotchY = d.inseam + 3.5, kneeY = crotchY - 38, ankleY = crotchY - 74;
+  // A leg's room at height y: the trouser leg's circumference there (front plus back, linear from crotch to hem).
+  const thighRoom = (d.thighHalf + 1) * 2, room = (y: number, own: number) => y <= 0 ? own
+    : Math.min(own, 0.9 * (thighRoom + (d.legOpening - thighRoom) * (d.inseam - Math.min(d.inseam, y)) / d.inseam) / (2 * Math.PI) - OFFSET);
+  const thigh = room(crotchY - 2, hip * 0.55 / (2 * Math.PI)), knee = Math.min(thigh, room(kneeY, hip * 0.37 / (2 * Math.PI))), ankle = Math.min(knee, room(ankleY, hip * 0.22 / (2 * Math.PI)));
+  const legX = thigh + 2;
+  // The torso carries on above the waistband, so fabric gathered under the band cannot ride over it.
+  const torso: TorsoSection[] = [
+    { y: top + 16, halfWidth: waistHalf * 1.06, halfDepth: waistHalf * 0.84 },
+    { y: top, halfWidth: waistHalf, halfDepth: waistHalf * 0.8 },
+    { y: d.length - d.hipDepth, halfWidth: hipHalf, halfDepth: hipHalf * 0.75 },
+    { y: crotchY, halfWidth: Math.max(legX + thigh * 0.8, hipHalf * 0.9), halfDepth: Math.min(hipHalf * 0.75, thigh * 0.9) },
+  ];
+  const capsules: Capsule[] = [];
+  for (const side of [1, -1]) {
+    capsules.push({ a: [side * legX, crotchY + thigh * 0.6, 0], b: [side * legX * 0.92, kneeY, 0], radius: thigh, end: knee, limb: true });
+    capsules.push({ a: [side * legX * 0.92, kneeY, 0], b: [side * legX * 0.85, ankleY, 0], radius: knee, end: ankle, limb: true });
+  }
+  return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, torso, capsules, bottom: crotchY };
+}
+
 export function validateBodyChest(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < BODY_CHEST[0] || value > BODY_CHEST[1]) throw new Error(`Body chest must be from ${BODY_CHEST[0]} to ${BODY_CHEST[1]} cm.`);
   return value;
@@ -125,7 +161,8 @@ type Vec = [number, number, number];
 export interface Capsule { a: Vec; b: Vec; radius: number; end: number; limb?: boolean }
 /** A torso section at height y: a stadium (rounded rectangle) with this half-width and half-depth. */
 export interface TorsoSection { y: number; halfWidth: number; halfDepth: number }
-export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; torso: TorsoSection[]; capsules: Capsule[] }
+/** `bottom`, when set, is the height below which the torso ends (the crotch, between the legs). */
+export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; torso: TorsoSection[]; capsules: Capsule[]; bottom?: number }
 
 /** Half-width of a stadium section of circumference c whose depth is `ratio` of its width. */
 const stadiumHalfWidth = (c: number, ratio: number) => c / (4 + ratio * (2 * Math.PI - 4));
@@ -182,10 +219,11 @@ function bodyField(body: BodyProxy, core: number, reach: number) {
   const sections = body.torso.length, torso = new Float64Array(sections * 3), count = body.capsules.length;
   // Per capsule: start (3), axis (3), 1 / axis², start radius, radius change, bounding centre (3), bounding radius².
   const capsules = new Float64Array(count * 13);
-  let scaled = NaN;
+  let scaled = NaN, bottom = -Infinity;
   const scale = (s: number) => {
     if (s === scaled) return;
     scaled = s;
+    if (body.bottom !== undefined) bottom = core + (body.bottom - core) * s;
     body.torso.forEach((section, i) => { torso[i * 3] = core + (section.y - core) * s; torso[i * 3 + 1] = section.halfWidth * s; torso[i * 3 + 2] = section.halfDepth * s; });
     body.capsules.forEach((capsule, i) => {
       const place = capsule.limb ? 1 : s, k = i * 13;
@@ -206,6 +244,9 @@ function bodyField(body: BodyProxy, core: number, reach: number) {
       const q = Math.max(Math.abs(x) - (halfWidth - halfDepth), 0), length = Math.sqrt(q * q + z * z);
       best = length - halfDepth;
       if (length > 1e-9) { out[0] = Math.sign(x) * q / length; out[1] = 0; out[2] = z / length; } else { out[0] = 0; out[1] = 0; out[2] = 1; }
+      // A torso that ends at the crotch is cut flat there: under it, or nearer its underside than its side, the way
+      // out is down.
+      if (bottom - y > best) { best = bottom - y; out[0] = 0; out[1] = -1; out[2] = 0; }
     }
     for (let k = 0; k < count * 13; k += 13) {
       const cx = x - capsules[k + 9]!, cy = y - capsules[k + 10]!, cz = z - capsules[k + 11]!;
@@ -311,8 +352,8 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
   };
   const mass = new Float64Array(position.length / 3);
   // Flat fabric coordinates of a mesh vertex on its own pattern piece: a top's body, sleeves and bands are meshed in
-  // their flat silhouette (x, y); a skirt's panels carry their flat pattern position in their UVs.
-  const flatCorner = (mesh: PartMesh, v: number): [number, number] => product.base === 'skirt'
+  // their flat silhouette (x, y); skirt and trouser panels carry their flat pattern position in their UVs.
+  const flatCorner = (mesh: PartMesh, v: number): [number, number] => isBottoms(product)
     ? [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!] : [mesh.positions[v * 3]!, mesh.positions[v * 3 + 1]!];
   type Opposite = { vertex: number; modelled: boolean; edgeI: [number, number]; edgeJ: [number, number]; corner: [number, number] };
   // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices with
@@ -401,7 +442,7 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
 }
 
 export interface GarmentDrapeMetrics {
-  /** Garment chest minus body chest (for a skirt, garment waist minus body waist), cm. */
+  /** Garment chest minus body chest (for a skirt, garment waist minus body waist; for trousers, garment hip minus body hip), cm. */
   ease: number;
   /** Smallest distance from the cloth to the body, cm. */
   minClearance: number;
@@ -420,9 +461,8 @@ export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32A
  */
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
   options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
-  const skirt = product.base === 'skirt';
-  if (isBottoms(product) && !skirt) throw new Error('Draping on a body is available for tops and skirts.');
-  const body = skirt ? skirtBodyProxy(product, options.bodyShape) : bodyProxy(product, validateBodyChest(bodyChest), options.bodyShape);
+  const skirt = product.base === 'skirt', trousers = product.base === 'trousers';
+  const body = skirt ? skirtBodyProxy(product, options.bodyShape) : trousers ? trouserBodyProxy(product, options.bodyShape) : bodyProxy(product, validateBodyChest(bodyChest), options.bodyShape);
   const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
@@ -433,6 +473,24 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     let top = -Infinity;
     for (let i = 0; i < count; i++) top = Math.max(top, cloth.positions[i * 3 + 1]!);
     for (let i = 0; i < count; i++) if (cloth.positions[i * 3 + 1]! > top - 1e-6) inverseMass[i] = 0;
+  }
+  // A trouser waistband is held. Once the body has grown, its elastic gathers it from the hip-wide shell onto the
+  // body's waist (gathering earlier would fold fabric into the space the body grows into): each band point moves along
+  // its direction from the centre line to just outside the waist.
+  const gathered = new Map<number, Vec>();
+  if (trousers) {
+    const keep = OFFSET + 0.15;
+    for (const id of cloth.vertices.get('waistband') ?? []) {
+      if (gathered.has(id)) continue;
+      // The body's section at this point's height, between the torso sections above and below it.
+      const y = cloth.positions[id * 3 + 1]!, below = Math.max(1, body.torso.findIndex(section => section.y <= y)), upper = body.torso[below - 1]!, lower = body.torso[below]!;
+      const t = Math.min(1, Math.max(0, (upper.y - y) / (upper.y - lower.y))), halfWidth = upper.halfWidth + (lower.halfWidth - upper.halfWidth) * t, halfDepth = upper.halfDepth + (lower.halfDepth - upper.halfDepth) * t;
+      const x = cloth.positions[id * 3]!, z = cloth.positions[id * 3 + 2]!, outside = (t: number) => Math.hypot(Math.max(Math.abs(x * t) - (halfWidth - halfDepth), 0), z * t) - halfDepth >= keep;
+      let low = 0, high = 4;
+      for (let k = 0; k < 40; k++) { const t = (low + high) / 2; if (outside(t)) high = t; else low = t; }
+      gathered.set(id, [x * high, cloth.positions[id * 3 + 1]!, z * high]);
+      inverseMass[id] = 0;
+    }
   }
   const stencils = cloth.bendStiffness.length;
   // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry
@@ -460,7 +518,14 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     // The body grows to full size from inside the garment, then gravity starts.
     const growing = frame <= GROW_FRAMES, scale = growing ? 0.5 + 0.5 * frame / GROW_FRAMES : 1;
     const damping = Math.exp((growing ? -12 : -1.2) * dt), gravity = growing ? 0 : GRAVITY;
-    if (frame <= GROW_FRAMES) { const t = frame / GROW_FRAMES; for (let n = 0; n < rest.length; n++) rest[n] = shell[n]! + (cloth.rest[n]! - shell[n]!) * t; }
+    if (frame <= GROW_FRAMES) {
+      const t = frame / GROW_FRAMES;
+      for (let n = 0; n < rest.length; n++) rest[n] = shell[n]! + (cloth.rest[n]! - shell[n]!) * t;
+    }
+    if (gathered.size && frame > GROW_FRAMES && frame <= GROW_FRAMES + GATHER_FRAMES) {
+      const t = (frame - GROW_FRAMES) / GATHER_FRAMES;
+      for (const [id, to] of gathered) for (let axis = 0; axis < 3; axis++) positions[id * 3 + axis] = cloth.positions[id * 3 + axis]! + (to[axis]! - cloth.positions[id * 3 + axis]!) * t;
+    }
     for (let step = 0; step < substeps; step++) {
       // Bending: each stencil pushes its corners back towards flat, with a force linear in the positions, damped in
       // proportion to how fast the stencil is bending.
@@ -559,6 +624,6 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     }
     parts.push({ part: mesh.part, positions: out });
   }
-  const ease = skirt ? skirtDraft(product).waist - body.waist : topMeasurements(product).chest - body.chest;
+  const ease = skirt ? skirtDraft(product).waist - body.waist : trousers ? trouserDimensions(product).waistbandLength - body.hip : topMeasurements(product).chest - body.chest;
   return { parts, body, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed } };
 }

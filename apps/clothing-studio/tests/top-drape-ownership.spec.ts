@@ -17,10 +17,11 @@ test('page departure terminates the real owned drape worker synchronously',async
  await setup(page);await page.locator('#garment-drape-on').click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {topDrapeProbe:{starts:number}}).topDrapeProbe.starts)).toBe(1);
  const terms=await page.evaluate(()=>{dispatchEvent(new Event('pagehide'));return (window as unknown as {topDrapeProbe:{terms:number}}).topDrapeProbe.terms;});expect(terms).toBe(1);
 });
-test('switching to bottoms retires pending top simulation before it finishes',async({page})=>{
+test('switching to trousers retires pending top simulation before it finishes and drapes the trousers',async({page})=>{
  page.on('dialog',d=>d.accept());await setup(page);await page.locator('#garment-drape-on').click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {topDrapeProbe:{starts:number}}).topDrapeProbe.starts)).toBe(1);
  await page.getByRole('button',{name:/^Use the Straight trousers template/}).click();expect(await page.evaluate(()=>(window as unknown as {topDrapeProbe:{terms:number}}).topDrapeProbe.terms)).toBe(1);
- await expect(page.locator('#garment-drape-status')).toContainText('available for tops');
+ await expect(page.locator('#garment-drape-status')).toContainText('Draped on a body with a 76 cm waist',{timeout:60000});
+ expect(await page.evaluate(()=>(window as unknown as {topDrapeProbe:{starts:number}}).topDrapeProbe.starts)).toBe(2);
 });
 test('settled PNG and GLB carry actual captured draped positions without the body',async({page})=>{
  test.setTimeout(90000);await setup(page);const shell=await download(page,'product-png-front');await drape(page);

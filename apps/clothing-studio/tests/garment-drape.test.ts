@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { bendingLength, bendingStencil, bodyProxy, buildCloth, defaultBodyChest, simulateGarment, validateBodyChest } from '../src/garment-drape.ts';
-import { material, teeDimensions, teeMesh, template, topMeasurements, type Product } from '../src/product.ts';
+import { material, teeDimensions, teeMesh, template, topMeasurements, trouserDimensions, type Product } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 const extent = (positions: Float32Array, axis: number) => {
@@ -85,7 +85,6 @@ test('the body fits the garment: arms inside the sleeves, shoulders under the sh
   }
   assert.equal(defaultBodyChest(ringer()), 94);
   assert.throws(() => validateBodyChest(200), /Body chest must be from 70 to 140 cm/);
-  assert.throws(() => simulateGarment(template('trousers'), [], 90), /available for tops/);
 });
 
 test('isometric bending matches the continuum bending energy on a cylinder', () => {
@@ -160,9 +159,36 @@ test('a flared skirt drapes from its held waistline: the hem falls inside the ri
   assert.ok(jersey.radius < denim.radius - 1, `jersey ${jersey.radius} vs denim ${denim.radius}`);
 });
 
-test('skirt bodies must fit inside the waist, and trousers are not draped', () => {
+test('skirt bodies must fit inside the waist', () => {
   const skirt = template('flared-skirt'), meshes = teeMesh(skirt, Delaunator);
   assert.throws(() => simulateGarment(skirt, meshes, 94, { bodyShape: { waist: 85 }, frames: 60 }), /smaller than the skirt's 80 cm waist/);
-  const trousers = template('trousers');
-  assert.throws(() => simulateGarment(trousers, teeMesh(trousers, Delaunator), 94), /tops and skirts/);
+});
+
+test('trousers drape from a waistband gathered onto the body waist, with the crotch under the body and both legs hanging free', () => {
+  for (const id of ['shorts', 'trousers']) {
+    const product: Product = template(id), meshes = teeMesh(product, Delaunator), d = trouserDimensions(product);
+    const result = simulateGarment(product, meshes, defaultBodyChest(product)), { body, metrics } = result;
+    // The body is the one the trousers were drafted for: their waist and hip, ending at the crotch between two legs.
+    assert.deepEqual([body.waist, body.hip, metrics.ease], [d.waist, d.hip, 6]);
+    assert.equal(body.capsules.length, 4);
+    assert.ok(body.bottom! > d.inseam && body.capsules.every(leg => Math.abs(leg.a[0]) > leg.radius), 'the legs stand apart under the torso');
+    assert.ok(metrics.residualSpeed < 10, `${id} still moving at ${metrics.residualSpeed} cm/s`);
+    assert.ok(metrics.minClearance > 0.3, `${id} clearance ${metrics.minClearance}`);
+    assert.ok(metrics.maxStrain < 0.35, `${id} strain ${metrics.maxStrain}`);
+    assert.ok(result.parts.every(part => part.positions.every(Number.isFinite)));
+    const positions = (part: string) => { const p = result.parts.find(item => item.part === part)!.positions; return Array.from({ length: p.length / 3 }, (_, i) => [p[i * 3]!, p[i * 3 + 1]!, p[i * 3 + 2]!] as const); };
+    // The band is gathered from the hip-wide shell to just outside the body waist.
+    const band = positions('waistband'), girth = (ring: readonly (readonly [number, number, number])[]) => ring.reduce((sum, q, i) => { const o = ring[(i + 1) % ring.length]!; return sum + Math.hypot(q[0] - o[0], q[2] - o[2]); }, 0);
+    const bandBottom = band.filter((_, i) => i % 2 === 0), shellBottom = Array.from({ length: bandBottom.length }, (_, i) => { const m = meshes.find(mesh => mesh.part === 'waistband')!.positions; return [m[i * 6]!, m[i * 6 + 1]!, m[i * 6 + 2]!] as const; });
+    assert.ok(girth(shellBottom) > d.hip && girth(bandBottom) < d.waist + 8, `${id} band ${girth(shellBottom)} → ${girth(bandBottom)} cm`);
+    // The crotch hangs under the body, and the two hems stay open and apart.
+    const front = positions('front');
+    assert.ok(Math.min(...front.filter(q => Math.abs(q[0]) < 2).map(q => q[1])) < body.bottom!, 'fabric passes under the body between the legs');
+    const hem = front.filter(q => q[1] < 3);
+    assert.ok(hem.length > 10 && hem.some(q => q[0] > 2) && hem.some(q => q[0] < -2), `${id} hems`);
+  }
+  // Bodies that cannot be pulled into the trousers are refused.
+  const trousers = template('trousers'), meshes = teeMesh(trousers, Delaunator);
+  assert.throws(() => simulateGarment(trousers, meshes, 94, { bodyShape: { hip: 110 }, frames: 60 }), /at least 2 cm smaller than the trousers' 108 cm hip/);
+  assert.throws(() => simulateGarment(trousers, meshes, 94, { bodyShape: { waist: 100, hip: 95 }, frames: 60 }), /waist must not be larger than its hip/);
 });

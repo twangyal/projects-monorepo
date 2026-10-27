@@ -483,37 +483,109 @@ function trouserPieces(product: Product): PatternPiece[] {
   return [makePiece('front', panel(true), 2), makePiece('back', panel(false), 2), makePiece('waistband', band, 1)];
 }
 
-/**
- * The flat front (and back) of shorts or trousers in cm, x across from the centre and y down from the waist: the
- * gathered waist, hips, two legs and the crotch point between them. Side seams and inseams join front to back;
- * the waist and the leg hems stay open.
- */
-export function trouserSilhouette(product: Product): Silhouette {
-  const d = trouserDimensions(product), half = d.legOpening / 4, centre = Math.max(d.hipHalf * 0.5 + 2.5, half + 1);
-  const side: Pt[] = [];
-  for (let i = 0; i <= 4; i++) { const t = i / 4; side.push({ x: d.waistHalf + (d.hipHalf - d.waistHalf) * Math.sin(t * Math.PI / 2), y: d.hipDepth * t }); }
-  side.push({ x: d.hipHalf, y: d.rise });
-  const mirror = (p: Pt) => ({ x: -p.x, y: p.y });
-  const right = [...side, { x: centre + half, y: d.length }, { x: centre - half, y: d.length }];
-  const points = [...right, { x: 0, y: d.rise }, ...right.map(mirror).reverse()];
-  // Edge i runs from point i to i + 1: side seams and inseams are joined; the hems and the waist (last edge) are open.
-  const n = side.length, pinned = points.map((_, i) => i !== n && i !== points.length - n - 2 && i !== points.length - 1);
-  return { points, pinned, neck: points.map(() => false), armholes: [] };
+/** Columns across each trouser leg panel, and its rows from the waist to the hip line, the crotch and the hem. */
+export function trouserGrid(product: Product) {
+  const d = trouserDimensions(product), columns = 12, spacing = (d.frontHip + d.backHip) / 2 / columns;
+  const upper = Math.min(20, Math.max(6, Math.round(d.rise / spacing))), lower = Math.min(40, Math.max(4, Math.round(d.inseam / (spacing * 1.3))));
+  // The hip line splits the upper rows in proportion to the centre seam's straight part and its crotch curve.
+  const curve = Math.PI / 2 * Math.sqrt((d.backCrotch ** 2 + (d.rise - d.hipDepth) ** 2) / 2);
+  return { columns, upper, lower, hip: Math.min(upper - 2, Math.max(1, Math.round(upper * d.hipDepth / (d.hipDepth + curve)))) };
 }
 
-function trouserMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
-  const d = trouserDimensions(product), depth = d.hip / (2 * Math.PI) * 0.85, s = trouserSilhouette(product);
-  const groups = new Map<PartId, PartMesh>(PART_IDS.map(id => [id, { part: id, positions: [], uvs: [], indices: [] }]));
-  const height = (p: Pt, sign: number) => { const dist = Math.min(seamDistance(p, s), depth); return dist < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - dist / depth) ** 2); };
-  for (const side of ['front', 'back'] as const) fillRegion(groups.get(side)!, s.points, Delaunator, p => height(p, side === 'front' ? 1 : -1), d.length, side);
-  // The waistband rises from the open waist edge: front left to right, then back right to left.
-  const ring: { x: number; y: number; z: number }[] = [];
-  for (const sign of [1, -1]) for (let i = 0; i <= 16; i++) {
-    const x = sign * (-d.waistHalf + 2 * d.waistHalf * i / 16);
-    ring.push({ x, y: d.length, z: height({ x, y: 0 }, sign) });
+/** A point `f` of the way along a polyline, by length. */
+function alongPolyline(points: Pt[], f: number): Pt {
+  const lengths = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y)), total = lengths.reduce((s, v) => s + v, 0);
+  let left = f * total;
+  for (let i = 0; i < lengths.length; i++) {
+    if (left <= lengths[i] || i === lengths.length - 1) { const t = lengths[i] ? Math.min(1, left / lengths[i]) : 0; return { x: points[i].x + (points[i + 1].x - points[i].x) * t, y: points[i].y + (points[i + 1].y - points[i].y) * t }; }
+    left -= lengths[i];
   }
-  neckRib(groups.get('waistband')!, ring, d.waistbandHeight);
-  return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+  return points.at(-1)!;
+}
+
+/**
+ * Shorts and trousers in 3D, meshed from the leg panels themselves: each panel is a grid between its side seam and its
+ * centre seam then inseam, so its UVs are its flat pattern position (cm). Above the hip line the four panels make one
+ * tube round the hips; below it each pair turns in to its own leg, the centre seams meeting under the body at the
+ * crotch point; below the crotch each leg is a tube. The waistband rises from the open waist.
+ */
+function trouserMesh(product: Product): PartMesh[] {
+  const d = trouserDimensions(product), { columns, upper, lower, hip } = trouserGrid(product), rows = upper + lower;
+  // Each panel's two long edges at every row, in pattern cm (x from the side seam, y down from the waist).
+  const edges = (front: boolean) => {
+    const hipWidth = front ? d.frontHip : d.backHip, crotch = front ? d.frontCrotch : d.backCrotch, raise = front ? 0 : d.backRaise;
+    const hem = front ? d.frontHem : d.backHem, centre = (hipWidth + crotch) / 2, hipY = raise + d.hipDepth, crotchY = raise + d.rise, hemY = crotchY + d.inseam;
+    const sideHem = { x: centre - hem / 2, y: hemY }, sideCrotch = { x: sideHem.x * (crotchY - hipY) / (hemY - hipY), y: crotchY };
+    const curve: Pt[] = [];
+    for (let i = 0; i <= 6; i++) { const t = Math.PI / 2 * i / 6; curve.push({ x: hipWidth + crotch * (1 - Math.cos(t)), y: hipY + (crotchY - hipY) * Math.sin(t) }); }
+    return Array.from({ length: rows + 1 }, (_, r): [Pt, Pt] => {
+      if (r <= hip) { const t = r / hip; return [{ x: 0.5 * (1 - t), y: raise + d.hipDepth * t }, { x: hipWidth - 0.5 * (1 - t), y: hipY * t }]; }
+      if (r <= upper) { const t = (r - hip) / (upper - hip); return [{ x: sideCrotch.x * t, y: hipY + (crotchY - hipY) * t }, alongPolyline(curve, t)]; }
+      const t = (r - upper) / lower, end = curve.at(-1)!;
+      return [{ x: sideCrotch.x + (sideHem.x - sideCrotch.x) * t, y: crotchY + d.inseam * t }, { x: end.x + (centre + hem / 2 - end.x) * t, y: crotchY + d.inseam * t }];
+    });
+  };
+  const front = edges(true), back = edges(false), width = (e: [Pt, Pt][], r: number) => Math.hypot(e[r][1].x - e[r][0].x, e[r][1].y - e[r][0].y);
+  // Per row: height, the arc each panel spans (a quarter round the hips, half round a leg), radius and leg centre.
+  // Between the hip line and the crotch the centre seams follow a quarter ellipse from the hips down to the crotch
+  // point, so the shell passes under a body's seat rather than through it.
+  const hipRadius = (width(front, hip) + width(back, hip)) / Math.PI;
+  const shape = Array.from({ length: rows + 1 }, (_, r) => {
+    const w = width(front, r) + width(back, r);
+    const y = r <= hip ? d.length - d.hipDepth * r / hip : r <= upper ? d.length - d.hipDepth - (d.rise - d.hipDepth) * (r - hip) / (upper - hip) : d.inseam * (1 - (r - upper) / lower);
+    let span = r <= hip ? Math.PI / 2 : Math.PI;
+    if (r > hip && r < upper) {
+      // The span whose centre seam stands out by the ellipse's depth here; that depth falls as the span grows.
+      const k = (r - hip) / (upper - hip), depth = hipRadius * Math.sqrt(1 - k * k);
+      let low = Math.PI / 2, high = Math.PI;
+      for (let i = 0; i < 40; i++) { span = (low + high) / 2; if (w / (2 * span) * Math.sin(span) > depth) low = span; else high = span; }
+    }
+    return { y, span, radius: w / (2 * span), squeeze: 1, centre: 0 };
+  });
+  // Round legs as wide as the trouser thighs would stand out past the hips, so the legs are narrowed side to side
+  // (squeezed) from the hip line down, as far as keeps both legs within the hips' width.
+  const legSqueeze = Math.min(1, hipRadius / (2 * shape[upper].radius));
+  for (let r = hip; r <= rows; r++) {
+    const row = shape[r], crotch = shape[upper];
+    if (r <= upper) row.squeeze = Math.min(1, hipRadius / (row.radius * (1 - Math.cos(row.span))));
+    else {
+      // Below the crotch the legs round out toward the hems, each inseam staying clear of the other leg's.
+      const k = (r - upper) / lower;
+      row.radius = Math.min(row.radius, crotch.radius);
+      row.squeeze = Math.min(legSqueeze + (1 - legSqueeze) * k, legSqueeze * crotch.radius * (1 - 0.3 * k) / row.radius);
+    }
+    row.centre = r <= upper ? -row.squeeze * row.radius * Math.cos(row.span) : legSqueeze * crotch.radius;
+  }
+  const point = (r: number, u: number, side: number, leg: number) => {
+    const { y, span, radius, squeeze, centre } = shape[r], angle = span * u;
+    // The centre seam lies on x = 0 and the inseam on z = 0: snap rounding there so the panels share those points.
+    const x = u === 1 && r <= upper ? 0 : centre + squeeze * radius * Math.cos(angle), z = u === 0 || (u === 1 && r >= upper) ? 0 : side * radius * Math.sin(angle);
+    return { x: leg * x, y, z };
+  };
+  const meshes = new Map<PartId, PartMesh>();
+  for (const [part, e, side] of [['front', front, 1], ['back', back, -1]] as const) {
+    const mesh: PartMesh = { part, positions: [], uvs: [], indices: [] };
+    for (const leg of [1, -1]) {
+      const base = mesh.positions.length / 3;
+      for (let r = 0; r <= rows; r++) for (let c = 0; c <= columns; c++) {
+        const u = c / columns, p = point(r, u, side, leg), [left, right] = e[r];
+        mesh.positions.push(p.x, p.y, p.z); mesh.uvs.push(left.x + (right.x - left.x) * u, left.y + (right.y - left.y) * u);
+        if (r < rows && c < columns) {
+          const a = base + r * (columns + 1) + c, b = a + 1, g = a + columns + 1, h = g + 1;
+          // Mirrored and back panels keep their faces turned outward.
+          mesh.indices.push(...(side * leg > 0 ? [a, b, g, b, h, g] : [a, g, b, b, g, h]));
+        }
+      }
+    }
+    meshes.set(part, mesh);
+  }
+  // The waistband rises from the open waist: left front side to centre to right side, then the back right to left.
+  const top = (side: number, leg: number, from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => point(0, (from + Math.sign(to - from) * i) / columns, side, leg));
+  const ring = [...top(1, -1, 0, columns), ...top(1, 1, columns - 1, 0), ...top(-1, 1, 1, columns), ...top(-1, -1, columns - 1, 1)];
+  const band: PartMesh = { part: 'waistband', positions: [], uvs: [], indices: [] };
+  neckRib(band, ring, d.waistbandHeight);
+  meshes.set('waistband', band);
+  return partsOf(product).map(id => meshes.get(id)!).filter(group => group.indices.length);
 }
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
@@ -651,7 +723,7 @@ function seamDistance(p: Pt, s: Silhouette): number {
  */
 export function teeMesh(product: Product, Delaunator: { from(points: number[][]): { triangles: Uint32Array | number[] } }): PartMesh[] {
   if (product.base === 'skirt') return skirtMesh(product);
-  if (isBottoms(product)) return trouserMesh(product, Delaunator);
+  if (isBottoms(product)) return trouserMesh(product);
   const m = topMeasurements(product), depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
   const groups = new Map<PartId, PartMesh>();
   for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
