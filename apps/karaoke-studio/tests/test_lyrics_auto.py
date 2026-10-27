@@ -259,8 +259,9 @@ class RecognizerChoiceTests(unittest.TestCase):
         loads, heard = [], []
 
         def phrase_words(recognizer, start, phrase):
+            recognizer = getattr(recognizer, 'fixed', recognizer)  # the East Asian model in the song's language
             heard.append((recognizer, phrase))
-            unsure = recognizer == 'multilingual' and language in ('zh', 'fr?')
+            unsure = recognizer == 'multilingual' and language in ('zh', 'fr?', 'en?')
             if recognizer == 'east-asian' and language == 'zh':
                 transcribe_worker.heard_languages['zh'] += 1
             return [dict(text=f'{recognizer}:{word}' if recognizer == 'english' else word, start=start / 16000 + i * 0.1,
@@ -325,6 +326,10 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual(len(result), 400)
         model, _result, loads, _heard, _progress = self.run_choice(everything, 'en')
         self.assertEqual((model, loads), (ENGLISH, ['multilingual', 'english']))
+        # Unsure English-looking words (as misheard Korean often are) still let the East Asian model listen; an English
+        # song it does not hear as East Asian then goes to the English model.
+        model, _result, loads, _heard, _progress = self.run_choice(everything, 'en?')
+        self.assertEqual((model, loads), (ENGLISH, ['multilingual', 'east-asian', 'english']))
         # Without the multilingual model the East Asian one listens first; other songs go to the English model.
         model, _result, loads, _heard, _progress = self.run_choice((EAST_ASIAN, ENGLISH), 'zh')
         self.assertEqual((model, loads), (EAST_ASIAN, ['east-asian', 'east-asian:zh']))
@@ -332,6 +337,37 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual((model, loads), (ENGLISH, ['east-asian', 'english']))
         model, _result, loads, _heard, _progress = self.run_choice(everything, 'en', 'east-asian')
         self.assertEqual((model, loads), (EAST_ASIAN, ['east-asian']))
+
+    def test_phrases_heard_as_english_keep_the_automatic_language_in_an_east_asian_song(self):
+        class Result:
+            def __init__(self, lang, text):
+                self.lang, self.tokens, self.timestamps = lang, [' ' + word for word in text.split()], [0.2 * i for i in range(len(text.split()))]
+
+        class Recognizer:
+            def __init__(self, answers):
+                self.answers, self.heard = answers, []
+
+            def create_stream(self):
+                recognizer = self
+
+                class Stream:
+                    def accept_waveform(self, rate, samples):
+                        self.samples = samples
+
+                    def decode_stream_by(self):
+                        recognizer.heard.append(self.samples)
+                        return recognizer.answers[self.samples]
+                return Stream()
+
+            def decode_stream(self, stream):
+                stream.result = stream.decode_stream_by()
+
+        auto = Recognizer({'verse': Result('<|ja|>', '어떻 게'), 'hook': Result('<|en|>', 'baby baby')})
+        fixed = Recognizer({'verse': Result('<|ko|>', '어떻게 내가'), 'hook': Result('<|ko|>', '베이비 베이비')})
+        song = transcribe_worker.SongLanguage(auto, fixed)
+        self.assertEqual([w['text'] for w in transcribe_worker.recognize_phrase(song, 0, 'verse')], ['어떻게', '내가'])
+        self.assertEqual([w['text'] for w in transcribe_worker.recognize_phrase(song, 0, 'hook')], ['baby', 'baby'])
+        self.assertEqual(fixed.heard, ['verse'], 'the English hook is not heard again in Korean')
 
     def test_east_asian_songs_are_recognized_from_their_script(self):
         self.assertTrue(sounds_east_asian(list('今夜的月光照在我心上')))
