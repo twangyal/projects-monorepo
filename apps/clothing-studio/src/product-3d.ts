@@ -1,4 +1,5 @@
 import { deformArtwork } from './artwork-deformation.ts';
+import { mannequinMesh } from './body-mesh.ts';
 import { ARTWORK_SHOULDER_OFFSET } from './artwork-placement.ts';
 import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
 // Real-time WebGL view of a product design: one mesh per part, physically scaled fabric tiles, artwork decals.
@@ -144,36 +145,12 @@ export class ProductScene {
   private setBody(body: BodyProxy | null) {
     for (const child of [...this.body.children]) { this.body.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     if (!body) return;
-    const skin = () => new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.85, metalness: 0 });
-    // Torso: stadium sections joined into a tube, down to a little below the hip (a top's body), a little below the
-    // hem (a skirt's lower body, which has no arms or head) or the crotch (trousers' body, which ends between the legs).
-    const kept = body.torso.filter(section => section.y > -50), last = kept.at(-1)!;
-    const sections = body.bottom !== undefined ? kept : [...kept, { ...last, y: body.capsules.length ? last.y - 12 : -12 }], around = 40, positions: number[] = [], indices: number[] = [];
-    for (const section of sections) {
-      const straight = section.halfWidth - section.halfDepth;
-      for (let i = 0; i < around; i++) {
-        const angle = 2 * Math.PI * i / around, cos = Math.cos(angle);
-        positions.push(Math.sign(Math.round(cos * 1e9)) * straight + section.halfDepth * cos, section.y, section.halfDepth * Math.sin(angle));
-      }
-    }
-    for (let r = 0; r + 1 < sections.length; r++) for (let i = 0; i < around; i++) {
-      const a = r * around + i, b = r * around + (i + 1) % around, c = a + around, d = b + around;
-      indices.push(a, c, b, b, c, d);
-    }
-    const torso = new THREE.BufferGeometry();
-    torso.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); torso.setIndex(indices); torso.computeVertexNormals();
-    const mesh = new THREE.Mesh(torso, skin()); mesh.name = 'Body'; this.body.add(mesh);
-    for (const capsule of body.capsules) {
-      const a = new THREE.Vector3(...capsule.a), b = new THREE.Vector3(...capsule.b), length = a.distanceTo(b);
-      for (const [at, radius] of [[a, capsule.radius], [b, capsule.end]] as const) {
-        const ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 14), skin()); ball.position.copy(at); this.body.add(ball);
-      }
-      if (length < 1e-6) continue;
-      const limb = new THREE.Mesh(new THREE.CylinderGeometry(capsule.end, capsule.radius, length, 20, 1, true), skin());
-      limb.position.copy(a).add(b).multiplyScalar(0.5);
-      limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
-      this.body.add(limb);
-    }
+    // One smooth mannequin: the torso the cloth rests on, blended with its arms, neck, head or legs.
+    const { positions, indices } = mannequinMesh(body);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setIndex(new THREE.BufferAttribute(indices, 1)); geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0xcfd2d6, roughness: 0.8, metalness: 0 }));
+    mesh.name = 'Body'; this.body.add(mesh);
   }
 
   private addArtwork(product: Product, art: Product['artwork'][number], rest: PartMesh | null) {
