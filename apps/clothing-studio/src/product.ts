@@ -354,19 +354,47 @@ export function neckSize(m: Measurements, neckline: Product['neckline'], fit: Fi
 }
 
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
+/** The sleeve cap is cut this much longer than the armhole it is sewn into: a little ease, as knits need. */
+export const CAP_EASE = 0.03;
+
+/**
+ * A body piece's left armhole in pattern cm (y down from the neck points, the side seam at x = 0), from the shoulder
+ * point down to the underarm: it runs a little inside the shoulder point, across the chest or back, and turns out
+ * level into the side seam.
+ */
+function armholeCurve(half: number, shoulderX: number, shoulderDrop: number, armDepth: number): Pt[] {
+  const shoulder = half - shoulderX, scoop = Math.max(1.5, shoulder + 1.5), armY = shoulderDrop + armDepth;
+  const [p0, p1, p2, p3] = [{ x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.5 }, { x: scoop, y: armY }, { x: 0, y: armY }];
+  return Array.from({ length: 17 }, (_, i) => {
+    const t = i / 16, u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+    return { x: a * p0.x + b * p1.x + c * p2.x + d * p3.x, y: a * p0.y + b * p1.y + c * p2.y + d * p3.y };
+  });
+}
+const polylineLength = (points: Pt[]) => points.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - points[i].x, p.y - points[i].y), 0);
+/** A sleeve cap `width` wide and `height` high, from one underarm point over the top to the other. */
+const capCurve = (width: number, height: number): Pt[] =>
+  Array.from({ length: 13 }, (_, i) => { const t = i / 12; return { x: t * width, y: height * (1 - Math.sin(Math.PI * t)) }; });
+
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
 export function teeDimensions(product: Product) {
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, fit = product.fit ?? {}, shoulderDrop = fit.shoulderDrop ?? 4;
-  const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2;
+  const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2, shoulderX = (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2;
+  const cuffHeight = product.base === 'tee' ? 0 : fit.cuffHeight ?? BAND_CM;
+  // The sleeve is drafted from its armhole: its cap rises capHeight above the underarm line and is as wide as makes each
+  // half of it CAP_EASE longer than the armhole it is sewn into (front or back; they match).
+  const capHeight = Math.min(14, m.chest * 0.11, (m.sleeve - cuffHeight) * 0.6);
+  const capLength = polylineLength(armholeCurve(half, shoulderX, shoulderDrop, armDepth)) * (1 + CAP_EASE) * 2;
+  let low = 0, high = capLength;
+  for (let i = 0; i < 50; i++) { const width = (low + high) / 2; if (polylineLength(capCurve(width, capHeight)) < capLength) low = width; else high = width; }
   return {
-    panelWidth: panel.width, length: m.length, half, neckHalf: (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2, shoulderX: (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2, shoulderDrop,
+    panelWidth: panel.width, length: m.length, half, neckHalf: (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2, shoulderX, shoulderDrop,
     armDepth, sleeveLength: m.sleeve,
     // Half the hem, side seam to side seam; the side seams run straight from the underarm to it.
     hemHalf: (fit.hemWidth ?? panel.width) / 2,
-    // Long sleeves taper to a rib cuff; tee sleeves stay open and wide. The cap follows the armhole.
-    cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
+    // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
+    cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: low, capHeight,
     neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: fit.backNeckDrop ?? 2, ribHeight: neckSize(m, product.neckline, fit).width, ribLength: neckSize(m, product.neckline, fit).length,
-    band: product.base === 'tee' ? 0 : fit.hemBandHeight ?? BAND_CM, cuffHeight: product.base === 'tee' ? 0 : fit.cuffHeight ?? BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
+    band: product.base === 'tee' ? 0 : fit.hemBandHeight ?? BAND_CM, cuffHeight, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: fit.hoodHeight ?? 32, hoodWidth: fit.hoodWidth ?? 26, hoodHalf: 13, pocketTop: m.length - (fit.hemBandHeight ?? BAND_CM) - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
     hemCurve: optionsOf(product).hem === 'curved' ? HEM_CURVE_CM : 0,
@@ -586,14 +614,14 @@ function bodyOutline(product: Product, front: boolean, length: number) {
   const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product), w = panel.width, half = w / 2;
   const shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   const armY = shoulderDrop + armDepth, inset = (half - dims.hemHalf) * (length - armY) / (panel.length - armY);
-  const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, shoulder = half - dims.shoulderX, scoop = Math.max(1.5, shoulder + 1.5);
+  const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, armhole = armholeCurve(half, dims.shoulderX, shoulderDrop, armDepth);
   // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
   const shift = (p: Pt) => ({ x: p.x + flare(product), y: p.y });
   return {
     neckLeft: shift({ x: half - neckWidth, y: 0 }),
-    armholeLeft: [{ x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY }].map(shift),
+    armholeLeft: armhole.map(shift),
     hem: hemLine(w - 2 * inset, length, dims.hemCurve).map(p => shift({ x: p.x + inset, y: p.y })),
-    armholeRight: [{ x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }].map(shift),
+    armholeRight: armhole.map(p => shift({ x: w - p.x, y: p.y })).reverse(),
     neckRight: shift({ x: half + neckWidth, y: 0 }),
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
     neckline: neckPath(neckWidth, neckDepth, front && product.neckline === 'v').slice(1, -1).map(p => shift({ x: half + p.x, y: p.y })),
@@ -608,9 +636,9 @@ function bodyOutline(product: Product, front: boolean, length: number) {
 function sleeveOutline(product: Product) {
   const m = topMeasurements(product), dims = teeDimensions(product), cap = dims.capWidth, end = sleeveSize(m).length - dims.cuffHeight;
   // The sleeve length runs from the shoulder point, where the top of the cap is sewn, so it includes the cap.
-  const capHeight = Math.min(14, m.chest * 0.11, end * 0.6), opening = dims.cuffHalf * 2 + (dims.cuffHeight ? 4 : 0);
+  const opening = dims.cuffHalf * 2 + (dims.cuffHeight ? 4 : 0);
   return {
-    cap: Array.from({ length: 13 }, (_, i) => { const t = i / 12; return { x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }; }),
+    cap: capCurve(cap, dims.capHeight),
     opening: [{ x: (cap - opening) / 2, y: end }, { x: (cap + opening) / 2, y: end }] as [Pt, Pt],
   };
 }

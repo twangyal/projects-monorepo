@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { motifPlacements } from '../src/fabric-texture.ts';
 import { validateProject, createProject } from '../src/model.ts';
-import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeDimensions, teeMesh, template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
+import { CAP_EASE, MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeDimensions, teeMesh, template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 
@@ -43,7 +43,7 @@ test('pattern pieces follow the measurements', () => {
   const wider = patternPieces({ ...p, measurements: { ...topMeasurements(p), chest: topMeasurements(p).chest + 20 } });
   assert.ok(wider[0].areaCm2 > front.areaCm2 && wider[2].areaCm2 > pieces[2].areaCm2);
   const v = patternPieces({ ...p, neckline: 'v' });
-  assert.ok(Math.max(...v[0].outline.slice(10).map(pt => pt.y)) === 15, 'the V-neck front dips 15 cm');
+  assert.equal(Math.max(...v[0].outline.filter(pt => pt.y < 20 && Math.abs(pt.x - v[0].width / 2) < 1e-9).map(pt => pt.y)), 15, 'the V-neck front dips 15 cm');
 });
 
 test('the 3D garment is sewn from its pattern pieces: front and back meet at the seams, sleeves are set in, hem, cuffs and neck stay open', () => {
@@ -310,7 +310,11 @@ test('fit: edited points of measure drive the pattern, the 3D shell and the tech
   assert.equal(Math.max(...front.outline.filter(p => p.y < 20 && Math.abs(p.x - d.half) < 1e-9).map(p => p.y)), 11, 'front neck drop');
   const hemXs = front.outline.filter(p => Math.abs(p.y - topMeasurements(fitted).length) < 1e-9).map(p => p.x);
   assert.ok(Math.abs(Math.max(...hemXs) - Math.min(...hemXs) - 46) < 1e-9, 'tapered hem is 46 cm side to side');
-  assert.equal(sleeve.width, (24 + 2) * 2, 'the sleeve cap follows the armhole');
+  // The sleeve is drafted from the armhole: its cap is CAP_EASE longer than the front and back armholes together.
+  const length = (points: { x: number; y: number }[]) => points.slice(1).reduce((sum, q, i) => sum + Math.hypot(q.x - points[i].x, q.y - points[i].y), 0);
+  const armhole = front.outline.slice(1, front.outline.findIndex(q => q.x === 0) + 1), cap = sleeve.outline.slice(0, 13);
+  assert.ok(Math.abs(length(cap) - 2 * length(armhole) * (1 + CAP_EASE)) < 0.01, `cap ${length(cap)} for armholes ${2 * length(armhole)}`);
+  assert.ok(Math.abs(armhole.at(-1)!.y - (d.shoulderDrop + 24)) < 1e-9, 'the armhole is as deep as asked');
   assert.ok(Math.abs(sleeve.outline.at(-2)!.x - sleeve.outline.at(-1)!.x - 28) < 1e-9, 'sleeve opening');
   assert.ok(vertexAt(fitted, 'front', 20, topMeasurements(fitted).length - d.shoulderDrop) && vertexAt(fitted, 'front', 23, 0), '3D shoulder and hem corners');
   const pack = buildTechPack(fitted, '2026-10-13'), value = (code: string) => pack.poms.find(p => p.code === code)!.values.M;
