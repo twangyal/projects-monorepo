@@ -16,8 +16,16 @@ const LEADING_FILLER = /^(?:(?:please|ok|okay|now|hey|so|um|uh)\s+|(?:can|could|
 const TRAILING_FILLER = /(?:\s+(?:please|for me))+$/i;
 const ORDINAL = /^(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|\d{1,2}(?:st|nd|rd|th))\s+(.+)$/;
 // Common equivalent names for the same control.
-const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign in'], ['log out', 'sign out'], ['logout', 'sign out'],
-  ['sign up', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['home page', 'home'], ['homepage', 'home'], ['main page', 'home']];
+const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign in'], ['log out', 'sign out'], ['logout', 'sign out'], ['log off', 'sign out'],
+  ['sign up', 'register'], ['create account', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['shopping cart', 'cart'],
+  ['home page', 'home'], ['homepage', 'home'], ['main page', 'home'], ['start page', 'home'],
+  ['past versions', 'history'], ['previous versions', 'history'], ['old versions', 'history'], ['revisions', 'history'], ['revision history', 'history'],
+  ['version history', 'history'], ['edit history', 'history'],
+  ['preferences', 'settings'], ['options', 'settings'], ['frequently asked questions', 'faq'],
+  ['get in touch', 'contact'], ['contact us', 'contact'], ['my account', 'account'], ['profile', 'account'],
+  ['navigation', 'menu'], ['nav', 'menu'], ['dark theme', 'dark mode'], ['alerts', 'notifications'], ['inbox', 'messages']];
+// "Of this page", "on this site": the scope a person adds is not part of a control's name.
+const SCOPE_SUFFIX = / (?:of|on|for|in|from) (?:this|the|that) (?:page|site|website|article|screen)$/;
 
 export const normalize = text => text.toLowerCase().replace(/[’']/g, "'").replace(/[^\p{L}\p{N}'\s]+/gu, ' ').replace(/\s+/g, ' ').trim();
 
@@ -54,8 +62,9 @@ export function matchScore(query, name) {
 
 // Synonyms apply both ways: a site may label its control "Log in" or "Sign in" whichever the user says.
 function variants(query) {
-  const normalized = ` ${normalize(query)} `;
-  const found = [query];
+  const scoped = normalize(query), unscoped = scoped.replace(SCOPE_SUFFIX, '');
+  const normalized = ` ${unscoped} `;
+  const found = unscoped === scoped ? [query] : [query, unscoped];
   for (const [a, b] of SYNONYMS) {
     for (const [phrase, replacement] of [[a, b], [b, a]]) {
       if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
@@ -68,7 +77,8 @@ function rank(query, elements, roles) {
   const queries = variants(query);
   return elements
     .map(element => {
-      let score = Math.max(...queries.map(variant => matchScore(variant, element.name)));
+      // A synonym counts a little less than the words actually said, so "options" prefers Options to Settings.
+      let score = Math.max(...queries.map((variant, index) => matchScore(variant, element.name) * (index ? 0.85 : 1)));
       if (roles && !roles.includes(element.role)) score *= 0.6;
       return { element, score };
     })
