@@ -19,7 +19,7 @@ export const DRAPE_TEST_FRAMES = 300;
  */
 export const TYPICAL_DRAPE: Record<Material['texture'], readonly [number, number]> = {
   jersey: [0.25, 0.5], slub: [0.25, 0.5], rib: [0.2, 0.45], pique: [0.4, 0.65], terry: [0.45, 0.75],
-  linen: [0.4, 0.65], twill: [0.6, 0.85], canvas: [0.75, 0.95],
+  linen: [0.4, 0.65], twill: [0.6, 0.85], canvas: [0.75, 0.95], chiffon: [0.15, 0.35], poplin: [0.45, 0.7],
 };
 
 type DelaunatorLike = { from(points: number[][]): { triangles: Uint32Array | number[] } };

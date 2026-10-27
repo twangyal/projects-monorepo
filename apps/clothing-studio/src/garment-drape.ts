@@ -36,6 +36,7 @@ export const FABRIC: Record<Material['texture'], { bending: number; tensile: num
   rib: { bending: 3, tensile: 60, weft: 0.3, shear: 30, gsm: 220, drape: 3.6 }, pique: { bending: 6, tensile: 300, weft: 0.6, shear: 80, gsm: 200, drape: 3.45 },
   terry: { bending: 12, tensile: 400, weft: 0.6, shear: 100, gsm: 300, drape: 3.27 }, linen: { bending: 12, tensile: 3000, weft: 0.8, shear: 60, gsm: 170, drape: 1.15 },
   twill: { bending: 50, tensile: 6000, weft: 0.7, shear: 120, gsm: 340, drape: 1.29 }, canvas: { bending: 150, tensile: 10000, weft: 0.9, shear: 300, gsm: 400, drape: 0.81 },
+  chiffon: { bending: 0.4, tensile: 1500, weft: 0.9, shear: 15, gsm: 50, drape: 2.97 }, poplin: { bending: 5, tensile: 4000, weft: 0.6, shear: 70, gsm: 120, drape: 2.83 },
 };
 /** In-plane Poisson ratio along the grain, for the off-axis stiffness. */
 const POISSON = 0.25;
@@ -516,10 +517,15 @@ export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32A
 /**
  * The extended position-based solver for one cloth with time step `dt`: `inverseMass` (0 holds a particle still) may
  * differ from the cloth's own, and `rest` lengths may be changed between steps. Each `step` integrates bending
- * explicitly, then gravity and damping, then solves the stretch constraints once (XPBD), calls `contact` to correct
- * positions, and returns the fastest particle speed.
+ * explicitly, then gravity and damping, then solves the stretch constraints once (XPBD), applies `tethers`, calls
+ * `contact` to correct positions, and returns the fastest particle speed.
+ *
+ * One pass of stretch constraints per step carries tension only slowly down long hanging cloth, which then sags as
+ * if it stretched. Tethers (long-range attachments, Kim et al. 2012) fix that for cloth hanging from held particles:
+ * each tethered particle stays within `length` of its held `anchor`.
  */
-export function clothSolver(cloth: Cloth, inverseMass: Float32Array, dt: number) {
+export function clothSolver(cloth: Cloth, inverseMass: Float32Array, dt: number,
+  tethers?: { particle: Int32Array; anchor: Int32Array; length: Float32Array }) {
   const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
   const { a, b, bendParticles, bendWeights } = cloth, count = inverseMass.length, rest = Float32Array.from(cloth.rest), lambdas = new Float32Array(rest.length);
   const alpha = Float32Array.from(cloth.compliance, c => c / (dt * dt));
@@ -570,6 +576,12 @@ export function clothSolver(cloth: Cloth, inverseMass: Float32Array, dt: number)
       const sx = dx / length * delta, sy = dy / length * delta, sz = dz / length * delta;
       positions[ka] += sx * wa; positions[ka + 1] += sy * wa; positions[ka + 2] += sz * wa;
       positions[kb] -= sx * wb; positions[kb + 1] -= sy * wb; positions[kb + 2] -= sz * wb;
+    }
+    if (tethers) for (let t = 0; t < tethers.particle.length; t++) {
+      const k = tethers.particle[t]! * 3, h = tethers.anchor[t]! * 3, limit = tethers.length[t]!;
+      const dx = positions[k]! - positions[h]!, dy = positions[k + 1]! - positions[h + 1]!, dz = positions[k + 2]! - positions[h + 2]!;
+      const length = Math.hypot(dx, dy, dz);
+      if (length > limit) { const scale = limit / length; positions[k] = positions[h]! + dx * scale; positions[k + 1] = positions[h + 1]! + dy * scale; positions[k + 2] = positions[h + 2]! + dz * scale; }
     }
     contact();
     let speed = 0;

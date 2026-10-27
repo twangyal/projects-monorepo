@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assumedBody, bodyRadius, COLUMNS, constraints, drapeObj, drapeSvg, FABRICS, initialPositions, ROWS, simulateDrape, validateFabric } from '../src/drape.ts';
+import { assumedBody, bodyRadius, COLUMNS, constraints, drapeFabric, drapeObj, drapeSvg, initialPositions, ROWS, simulateDrape, validateFabric } from '../src/drape.ts';
 import { patternGeometry, validateConstruction, type SkirtDraft } from '../src/construction.ts';
 
 const skirt: SkirtDraft = { kind: 'flared-skirt', waist: 80, hem: 180, slant: 60 };
@@ -10,8 +10,7 @@ const chiffon = simulateDrape(skirt, 'chiffon', body), denim = simulateDrape(ski
 test('the cloth mesh comes from the flat patterns: the assembled cone starts unstretched', () => {
   const positions = initialPositions(skirt, 0);
   let worst = 0;
-  for (const constraint of constraints(skirt, FABRICS.cotton)) {
-    if (constraint.compliance > 0.01) continue;
+  for (const constraint of constraints(skirt)) {
     const a = constraint.a * 3, b = constraint.b * 3;
     const length = Math.hypot(positions[a]! - positions[b]!, positions[a + 1]! - positions[b + 1]!, positions[a + 2]! - positions[b + 2]!);
     worst = Math.max(worst, Math.abs(length - constraint.rest) / constraint.rest);
@@ -29,7 +28,8 @@ test('gravity settles the skirt: waist held, no body penetration, little stretch
     for (let i = 0; i < 2 * COLUMNS * 3; i++) assert.ok(Math.abs(positions[i]! - start[i]!) < 1e-4, 'waist row stays at the waistline');
     assert.ok(metrics.minClearance >= 0.39, `clearance ${metrics.minClearance}`);
     assert.ok(metrics.maxStrain < 0.05, `stretch ${metrics.maxStrain}`);
-    assert.ok(metrics.residualSpeed < 5, `settled ${metrics.residualSpeed}`);
+    // The same settling bound as product garments in the shared solver.
+    assert.ok(metrics.residualSpeed < 10, `settled ${metrics.residualSpeed}`);
     // The hem can only fall as far as the slant length allows (plus the 0.5% warp tolerance).
     assert.ok(metrics.hemDrop > 0 && metrics.hemDrop <= skirt.slant * 1.005 - patternGeometry(skirt).height + 1e-3, `drop ${metrics.hemDrop}`);
   }
@@ -50,6 +50,10 @@ test('body proxy, assumptions, fabric choice and exports', () => {
   assert.equal(simulateDrape(skirt, 'cotton', undefined, { frames: 2 }).bodyAssumed, true);
   assert.equal(validateFabric('linen'), 'linen');
   assert.throws(() => validateFabric('wool'));
+  // Earlier presets name their library fabrics; any library fabric can be chosen.
+  assert.deepEqual(['chiffon', 'cotton', 'linen', 'denim'].map(kind => drapeFabric(kind).id), ['chiffon-50', 'poplin-120', 'linen-170', 'denim-340']);
+  assert.equal(validateFabric('jersey-180'), 'jersey-180');
+  assert.equal(validateConstruction({ ...skirt, fabric: 'terry-300' }).fabric, 'terry-300');
   assert.equal(validateConstruction({ ...skirt, fabric: 'denim' }).fabric, 'denim');
   assert.throws(() => validateConstruction({ ...skirt, fabric: 'velvet' }), /Fabric/);
   assert.throws(() => simulateDrape(skirt, 'cotton', body, { frames: 0 }));

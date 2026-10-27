@@ -1,4 +1,5 @@
-export interface SkirtDraft {kind:'flared-skirt';waist:number;hem:number;slant:number;allowances?:{seam:number;hem:number};waistband?:{height:number;overlap:number};fabric?:'chiffon'|'cotton'|'linen'|'denim'}
+import {MATERIALS} from './materials.ts';
+export interface SkirtDraft {kind:'flared-skirt';waist:number;hem:number;slant:number;allowances?:{seam:number;hem:number};waistband?:{height:number;overlap:number};fabric?:string}
 export const DEFAULT_CONSTRUCTION:SkirtDraft={kind:'flared-skirt',waist:80,hem:140,slant:60};
 export function validateConstruction(value:unknown):SkirtDraft {
  if(typeof value!=='object'||value===null||Object.getPrototypeOf(value)!==Object.prototype)throw new Error('Construction must be a plain measured skirt draft.');
@@ -26,8 +27,9 @@ export function validateConstruction(value:unknown):SkirtDraft {
   result.waistband={height:values.height as number,overlap:values.overlap as number};
  }
  if(keys.includes('fabric')){
-  if(!['chiffon','cotton','linen','denim'].includes(v.fabric as string))throw new Error('Fabric must be chiffon, cotton, linen or denim.');
-  result.fabric=v.fabric as SkirtDraft['fabric'];
+  // A library fabric, or one of the presets skirts were saved with before they used the library.
+  if(typeof v.fabric!=='string'||!(['chiffon','cotton','linen','denim'].includes(v.fabric)||MATERIALS.some(item=>item.id===v.fabric)))throw new Error('Fabric must be one of the library fabrics.');
+  result.fabric=v.fabric;
  }
  return result;
 }

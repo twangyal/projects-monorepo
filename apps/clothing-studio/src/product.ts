@@ -1,5 +1,6 @@
 import { validateSkirtMeasures, skirtPieces, skirtMesh, skirtHeight, type SkirtMeasures } from './product-skirt.ts';
 import { validateRasterHeader } from './media.ts';
+import { material } from './materials.ts';
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
@@ -65,17 +66,7 @@ export function withOptions(product: Product, next: Options): Product {
 /** Height of rib cuffs and the hem band on sweatshirts and hoodies, in cm. */
 export const BAND_CM = 6;
 
-export interface Material { id: string; name: string; composition: string; gsm: number; texture: 'jersey' | 'rib' | 'pique' | 'slub' | 'terry' | 'linen' | 'twill' | 'canvas'; tileCm: number; sheen: number }
-export const MATERIALS: readonly Material[] = [
-  { id: 'jersey-180', name: 'Cotton jersey', composition: '100% cotton, single jersey', gsm: 180, texture: 'jersey', tileCm: 1.2, sheen: 0.05 },
-  { id: 'jersey-240', name: 'Heavyweight jersey', composition: '100% cotton, single jersey', gsm: 240, texture: 'jersey', tileCm: 1.6, sheen: 0.04 },
-  { id: 'slub-160', name: 'Slub jersey', composition: '100% cotton, slub yarn', gsm: 160, texture: 'slub', tileCm: 6, sheen: 0.05 },
-  { id: 'rib-220', name: '1×1 rib knit', composition: '95% cotton, 5% elastane', gsm: 220, texture: 'rib', tileCm: 1, sheen: 0.06 },
-  { id: 'pique-200', name: 'Cotton piqué', composition: '100% cotton, piqué knit', gsm: 200, texture: 'pique', tileCm: 1.2, sheen: 0.05 },
-  { id: 'terry-300', name: 'French terry', composition: '80% cotton, 20% polyester', gsm: 300, texture: 'terry', tileCm: 2, sheen: 0.03 },
-  { id: 'linen-170', name: 'Linen', composition: '100% linen, plain weave', gsm: 170, texture: 'linen', tileCm: 4, sheen: 0.08 },
-  { id: 'denim-340', name: 'Denim twill', composition: '100% cotton, 3×1 twill', gsm: 340, texture: 'twill', tileCm: 2, sheen: 0.07 },
-];
+export { MATERIALS, material, type Material } from './materials.ts';
 export const MOTIFS = ['stripe', 'dots', 'gingham', 'floral', 'triangles', 'waves'] as const;
 export type Motif = typeof MOTIFS[number];
 export const MOTIF_NAMES: Record<Motif, string> = { stripe: 'Breton stripe', dots: 'Polka dots', gingham: 'Gingham check', floral: 'Ditsy floral', triangles: 'Geometric triangles', waves: 'Waves' };
@@ -161,7 +152,6 @@ export function legMeasurements(product: Pick<Product, 'base' | 'measurements'>)
   return product.base === 'trousers' ? product.measurements as LegMeasurements : fail('Only shorts and trousers have leg measurements.');
 }
 
-export function material(id: string): Material { return MATERIALS.find(item => item.id === id) ?? fail('Choose a fabric from the library.'); }
 
 function validatePrint(value: unknown, uploaded: ReadonlySet<string>): Print | null {
   if (value === null) return null;
