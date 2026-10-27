@@ -254,6 +254,11 @@ function interpretInCircle(utterance, context) {
     return { type: 'tracking', source: 'pointer' };
   }
   if (/^(?:re)?calibrate(?: (?:the )?camera)?$/.test(text)) return { type: 'calibrate' };
+  const circleSize = /^(?:use|set|switch to) (?:a |the )?(small|medium|large) (?:gaze )?circle$/.exec(text)
+    ?? /^(?:set|make) (?:the )?(?:gaze )?circle (?:size )?(?:to )?(small|medium|large)$/.exec(text);
+  if (circleSize) return { type: 'circle-size', size: circleSize[1] };
+  const circleStep = /^make (?:the )?(?:gaze )?circle (bigger|larger|smaller)$/.exec(text);
+  if (circleStep) return { type: 'circle-size', size: circleStep[1] === 'smaller' ? 'smaller' : 'larger' };
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);

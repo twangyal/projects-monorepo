@@ -229,12 +229,12 @@ export function createController({ window, actions = pageActions, interpret = in
       paused = false;
       return reply('Resumed. Look at something and say what to do.', 'info', { paused: false });
     }
-    // Switching or stopping the camera stays available while paused.
-    if (action.type === 'tracking' || action.type === 'calibrate') {
+    // Navigator settings stay available while paused; changing scope retires old targets.
+    if (['tracking', 'calibrate', 'circle-size'].includes(action.type)) {
       pending = null;
-      const handler = action.type === 'tracking' ? commands.tracking : commands.calibrate;
-      if (!handler) return reply('Camera tracking is not available here.', 'error');
-      const result = handler(action.source);
+      const handler = action.type === 'circle-size' ? commands.circleSize : action.type === 'tracking' ? commands.tracking : commands.calibrate;
+      if (!handler) return reply(action.type === 'circle-size' ? 'Circle size adjustment is not available here.' : 'Camera tracking is not available here.', 'error');
+      const result = handler(action.type === 'circle-size' ? action.size : action.source);
       return reply(result.message, result.ok ? 'success' : 'error');
     }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');

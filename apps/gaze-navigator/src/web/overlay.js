@@ -171,6 +171,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">Dates, times and numbers: "set departure to November first", "set appointment time to 2:30 pm", "set guests to four", "set volume to forty percent", "set reporting month to next month". Spoken words and digits both work. "Undo departure date field" restores the earlier value. The website's own min, max and step rules still apply.</p>
         <p class="hint">Custom lists and sliders: "set size to large" or "choose Finland from country" opens a website's own list, types to search it when it is a search box, and picks the named choice. Custom sliders move by their arrow keys and stop if they cannot reach the exact value.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
+        <p class="hint">Say "make the circle bigger" or "make the circle smaller", or "use a small circle", "use a medium circle" or "use a large circle". This changes the visible area without acting on a page control. Give the page instruction again; previous questions are cancelled.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
       </details>
     </div>
@@ -206,7 +207,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let closing = false;
   let sourceGeneration = 0;
   const assistantRelay = { needs: (...args) => Boolean(assistant?.needs(...args)), improve: (...args) => assistant.improve(...args) };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
@@ -259,7 +260,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       const previous = question.get(candidate.elementId);
       question.set(candidate.elementId, previous ? `${previous}, ${candidate.number}` : String(candidate.number));
     }
-    const shownContext = controller.paused ? null : pending ? promptContext : spokenContext ?? context;
+    const shownContext = controller.paused || calibration ? null : pending ? promptContext : spokenContext ?? context;
     // A question about controls just outside the circle outlines those too.
     const shown = shownContext ? [...(shownContext.elements ?? []), ...(question ? shownContext.nearby ?? [] : [])] : [];
     ui.outlines.replaceChildren();
@@ -718,13 +719,22 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const result = run(text, (recapture(true), context));
     if (result.tone !== 'error') ui.instruction.value = '';
   });
-  ui.size.value = settings.size;
-  ui.size.addEventListener('change', () => {
-    settings.size = RADII[ui.size.value] ? ui.size.value : 'medium';
+  function setCircleSize(requested) {
+    const sizes = Object.keys(RADII);
+    const index = Math.max(0, sizes.indexOf(settings.size));
+    const size = requested === 'larger' ? sizes[Math.min(sizes.length - 1, index + 1)]
+      : requested === 'smaller' ? sizes[Math.max(0, index - 1)] : requested;
+    if (!Object.hasOwn(RADII, size)) return { ok: false, message: 'Choose a small, medium or large circle.' };
+    settings.size = size;
+    ui.size.value = size;
+    spokenContext = null; promptContext = null;
     store.save(settings);
-    schedule();
-    recapture(true);
-  });
+    if (!calibration) { schedule(); recapture(true); }
+    const label = size[0].toUpperCase() + size.slice(1);
+    return { ok: true, message: `Circle size: ${label} (${RADII[size]} px radius). Give the page instruction again.${controller.paused ? ' Navigator stays paused.' : ''}` };
+  }
+  ui.size.value = settings.size;
+  ui.size.addEventListener('change', () => run(`use a ${Object.hasOwn(RADII, ui.size.value) ? ui.size.value : 'medium'} circle`, { elements: [] }));
   async function setAssist(on) {
     const load = ++assistLoad;
     settings.assist = on; store.save(settings); ui.assist.checked = on;

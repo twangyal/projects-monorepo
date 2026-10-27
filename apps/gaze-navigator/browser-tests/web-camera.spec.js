@@ -167,3 +167,23 @@ test('a cancelled camera start cannot change the mode of an immediate retry', as
   });
   expect(state).toEqual({ source: 'true', camera: 'ready', calibrating: true });
 });
+
+test('resizing during calibration keeps the stale circle hidden and preserves the calibration session', async ({ page }) => {
+  await open(page, '/practice-site/index.html');
+  const target = await page.getByRole('link', { name: 'Catalog', exact: true }).boundingBox();
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2); await page.clock.runFor(33);
+  await expect(page.locator('#gaze-web-navigator .outline').first()).toBeVisible();
+  await expect(page.locator('#gaze-web-navigator .circle')).toHaveClass(/visible/);
+  await startCamera(page);
+  const circle = page.locator('#gaze-web-navigator .circle');
+  await expect(circle).not.toHaveClass(/visible/);
+  await typeInstruction(page, 'use a large circle'); await page.clock.runFor(33);
+  await expect(panel(page).getByLabel('Circle size')).toHaveValue('large');
+  await expect(circle).not.toHaveClass(/visible/);
+  await expect(page.locator('#gaze-web-navigator .outline')).toHaveCount(0);
+  await expect(dot(page)).toHaveClass(/settling/);
+  expect(await page.evaluate(() => window.__camera.released)).toBe(0);
+  await finishCalibration(page);
+  await gazeAt(page, page.getByRole('link', { name: 'Catalog', exact: true }));
+  await expect(circle).toHaveClass(/visible/); await expect(circle).toHaveCSS('width', '260px');
+});
