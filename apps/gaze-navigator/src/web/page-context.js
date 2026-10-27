@@ -246,6 +246,31 @@ function scrollAxes(node) {
   };
 }
 
+// Scrolling regions anywhere on screen, for requests that name one ("scroll the list down") when the gaze is not on
+// it: a coarse grid of hit tests over the viewport, so only painted regions count and big pages stay cheap.
+function screenScrollRegions(document, exclude) {
+  const view = document.defaultView, found = new Set(), axes = new Map(), step = 60;
+  for (let x = step / 2; x < view.innerWidth; x += step) {
+    for (let y = step / 2; y < view.innerHeight; y += step) for (const region of scrollRegionsAt(document, x, y, exclude, axes)) found.add(region);
+  }
+  return [...found].map(element => ({ element, rect: viewportRect(element), ...axes.get(element) }));
+}
+
+const described = element => `${element.id} ${element.getAttribute('class') ?? ''} ${element.getAttribute('aria-label') ?? ''}`;
+// What a spoken region name can mean: the region itself, or what it holds.
+const REGION_KINDS = {
+  list: element => element.matches('ul, ol, table, [role=list], [role=listbox], [role=tree], [role=grid]') ||
+    element.querySelectorAll('li, tr, [role=option], [role=treeitem], [role=listitem], [role=row]').length >= 5,
+  sidebar: element => Boolean(element.closest('aside, [role=complementary]')) || /side-?bar|side-?nav|aside/i.test(described(element)),
+  menu: element => Boolean(element.closest('nav, [role=navigation], [role=menu], [role=menubar]')) || /menu|\bnav/i.test(described(element)),
+  comments: element => /comment|repl(y|ies)/i.test(described(element)),
+  chat: element => /chat|message|conversation/i.test(described(element)),
+  results: element => /result/i.test(described(element)),
+  table: element => element.matches('table, [role=grid], [role=table]') || Boolean(element.querySelector('table, [role=grid], [role=table]')),
+};
+export const REGION_NAMES = Object.keys(REGION_KINDS);
+export function regionIs(element, kind) { return Boolean(REGION_KINDS[kind]?.(element)); }
+
 // Hit-test a fixed grid, rather than scanning every DOM node on every gaze update.
 // Only painted content within the circle can contribute a recovery candidate.
 function nearbyScrollRegions(document, x, y, radius, exclude) {
@@ -541,7 +566,9 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     ? { id: FOCUSED_FIELD_ID, element: focus, rect: viewportRect(focus), distance: distanceToRect(x, y, viewportRect(focus)), frames: [], ...describe(focus) } : null;
   const pageRegion = document.scrollingElement ?? document.documentElement;
   const region = scrollRegionAt(document, x, y, exclude);
-  return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, unreachable, region, pageRegion,
+  let regions = null;
+  const screenRegions = () => regions ??= screenScrollRegions(document, exclude);
+  return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, screenRegions, unreachable, region, pageRegion,
     scrollRegions: region === pageRegion ? nearbyScrollRegions(document, x, y, radius, exclude) : [],
     pageSearch: findPageSearch(document, exclude) };
 }

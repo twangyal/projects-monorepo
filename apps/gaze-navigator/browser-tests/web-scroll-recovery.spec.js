@@ -173,3 +173,26 @@ test('a region made invisible after capture is refused without moving it', async
   expect(result.performed).toBeNull();
   expect(await page.evaluate(() => window.positions())).toEqual({ page: 0, list: 0 });
 });
+
+// A sidebar list far from the gaze, with page content around the gaze.
+const sidebar = '<aside id="side" class="vertical" style="right:10px;top:20px;width:150px;height:300px"><ul style="margin:0">' +
+  Array.from({ length: 40 }, (_, i) => `<li>Element ${i}</li>`).join('') + '</ul></aside><p style="position:absolute;left:40px;top:400px">Article text</p>';
+
+test('a named region away from the gaze is scrolled, and the reply says so', async ({ page }) => {
+  await setup(page, sidebar);
+  for (const said of ['scroll the list down a bit', 'scroll the sidebar down a bit']) {
+    const result = await page.evaluate(said => window.say(said, window.capture(80, 420)), said);
+    expect(result.performed).toBe('scroll');
+    expect(result.message).toMatch(/It was the (list|sidebar) away from the gaze circle\./);
+  }
+  expect(await page.evaluate(() => [scrollY, document.querySelector('#side').scrollTop])).toEqual([0, 150]);
+});
+
+test('unnamed requests and names with no matching region still scroll the page', async ({ page }) => {
+  await setup(page, sidebar);
+  for (const said of ['scroll down a bit', 'scroll the comments down a bit']) {
+    expect((await page.evaluate(said => window.say(said, window.capture(80, 420)), said)).performed).toBe('scroll');
+  }
+  expect(await page.locator('#side').evaluate(element => element.scrollTop)).toBe(0);
+  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
+});

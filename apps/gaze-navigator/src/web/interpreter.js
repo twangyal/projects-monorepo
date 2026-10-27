@@ -300,12 +300,15 @@ function interpretInCircle(utterance, context) {
   if (/^(go )?forward( a page)?$/.test(text)) return { type: 'forward' };
   if (/^(page down|next screen)$/.test(text)) return { type: 'scroll', direction: 'down', amount: 'page' };
   if (/^page up$/.test(text)) return { type: 'scroll', direction: 'up', amount: 'page' };
-  const scroll = /^scroll(?: (?:the )?(?:page|list|area|region))?(?: (up|down|left|right))?(?: (a bit|a little|slightly|more|a lot))?$/.exec(text) ??
+  const scroll = /^scroll(?: (?:the )?(?:page|area|region|list|side ?bar|menu|navigation|comments|chat|messages|results|table))?(?: (up|down|left|right))?(?: (a bit|a little|slightly|more|a lot))?$/.exec(text) ??
     /^(?:go|move) (up|down)(?: (a bit|a little|slightly|more|a lot))?$/.exec(text) ??
     /^(?:scroll|go|jump) to (?:the )?(top|bottom)(?: of the page)?$/.exec(text);
   if (scroll) {
+    // A named kind of region ("the list", "the sidebar") can be found away from the gaze when the gaze is not on one.
+    const named = /^scroll (?:the )?(list|side ?bar|menu|navigation|comments|chat|messages|results|table)\b/.exec(text)?.[1];
+    const kind = named && ({ 'side bar': 'sidebar', navigation: 'menu', messages: 'chat' }[named] ?? named);
     return { type: 'scroll', direction: scroll[1] ?? 'down', amount: /bit|little|slightly/.test(scroll[2] ?? '') ? 'small' : 'page',
-      ...(/\bpage\b/.test(text) ? { scope: 'page' } : {}) };
+      ...(/\bpage\b/.test(text) ? { scope: 'page' } : {}), ...(kind ? { kind } : {}) };
   }
 
   // Explicit add/remove never replaces the other choices in a native multi-select.
