@@ -2,6 +2,7 @@
 import { startWebNavigator } from './overlay.js';
 import { createFrameCamera } from './frame-camera.js';
 import { createFrameSpeech } from './frame-speech.js';
+import { createEmbeddedFrames } from './embedded-frames.js';
 
 const KEY = 'gaze-web-navigator';
 
@@ -35,5 +36,7 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
   // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
   const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });
   const createSpeech = (window, callbacks) => createFrameSpeech({ document, window, mount: document.getElementById('gaze-web-navigator').shadowRoot, runtime: chrome.runtime, ...callbacks });
-  return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant });
+  // Iframes from other sites are reached through the extension's frame agents.
+  const embeddedFrames = createEmbeddedFrames({ window, runtime: chrome.runtime });
+  return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant, embeddedFrames });
 }

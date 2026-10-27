@@ -20,6 +20,14 @@ const html = path => {
     <body><h1>${title}</h1>${body}</body></html>`;
 };
 
+// A page that embeds a newsletter form from another site, and that form.
+const EMBEDDING = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Shop news</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src http://widgets.example"></head>
+  <body><h1>Shop news</h1><iframe title="Newsletter sign-up" src="http://widgets.example/form" style="width:420px;height:200px;border:4px solid #888;margin:40px"></iframe></body></html>`;
+const WIDGET = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Newsletter</title></head>
+  <body><label>Email <input id="email" type="email"></label> <label>Topic <select id="topic"><option>Shoes</option><option>Hats</option></select></label>
+  <button id="join" type="button" onclick="this.textContent='Joined'">Join</button></body></html>`;
+
 const test = base.extend({
   context: async ({ viewport }, use, testInfo) => {
     const directory = mkdtempSync(join(tmpdir(), 'gaze-extension-'));
@@ -34,8 +42,9 @@ const test = base.extend({
     });
     await context.route('http://shop.example/**', route => {
       const path = new URL(route.request().url()).pathname;
-      return route.fulfill({ contentType: 'text/html', body: html(path) });
+      return route.fulfill({ contentType: 'text/html', body: path === '/embedded' ? EMBEDDING : html(path) });
     });
+    await context.route('http://widgets.example/**', route => route.fulfill({ contentType: 'text/html', body: WIDGET }));
     await use(context);
     await context.close();
     rmSync(directory, { recursive: true, force: true });
@@ -586,4 +595,24 @@ test('camera and extension speech frames stop independently and microphone disco
   await control.evaluate(async ({tab,url}) => chrome.scripting.executeScript({target:{tabId:tab},func:url=>{for(const f of document.getElementById('gaze-web-navigator').shadowRoot.querySelectorAll('iframe'))if(f.src===url)f.remove();},args:[url]}),{tab:id,url:speechURL});
   await expect(panel(page).getByRole('button',{name:'Start listening',exact:true})).toHaveAttribute('aria-pressed','false');
   await expect(status(page)).toContainText('microphone frame closed'); await listenInExtension(page);
+});
+
+test('controls in an embedded frame from another site are listed, outlined and controlled from the top page', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/embedded');await expect(status(page)).toContainText('Ready on "Shop news"');
+  const frame = page.frameLocator('iframe[title="Newsletter sign-up"]');
+  await look(page, page.locator('iframe'));
+  await expect(panel(page).locator('.context')).toContainText('Button: Join', { timeout: 10000 });
+  await expect(panel(page).locator('.context')).not.toContainText('cannot reach');
+  // The frame's controls are outlined where they appear on the page.
+  const outline = overlay(page).locator('.outline').filter({ hasText: /^\d+$/ }).first(), iframe = await page.locator('iframe').boundingBox(), box = await outline.boundingBox();
+  expect(box.x >= iframe.x - 8 && box.y >= iframe.y - 8 && box.x + box.width <= iframe.x + iframe.width + 8).toBe(true);
+  await typeInstruction(page, 'type ada@example.com into email');
+  await expect(frame.locator('#email')).toHaveValue('ada@example.com');
+  await typeInstruction(page, 'set topic to hats');
+  await expect(frame.locator('#topic')).toHaveValue('Hats');
+  await typeInstruction(page, 'click join');
+  await expect(frame.locator('#join')).toHaveText('Joined');
+  await expect(status(page)).toContainText('activated');
 });

@@ -147,7 +147,47 @@ async function ensureOffscreen() {
     .catch(error => { if (!/single offscreen/i.test(error.message)) throw error; });
 }
 
+// Embedded frames: the navigator in a tab's top frame reaches iframes from other sites through frame agents. A frame
+// says hello with the nonce its parent posted to it; the first hello wins. Only the top frame's navigator may ask.
+const frameHellos = new Map();
+const FRAME_HELLO_MS = 60000;
+function onFrameMessage(message, sender, respond) {
+  const tabId = sender.tab?.id;
+  if (tabId === undefined) return false;
+  if (message.type === 'gaze:frame-hello') {
+    if (sender.frameId === 0 || !/^[0-9a-f]{32}$/.test(message.nonce ?? '')) return false;
+    const key = `${tabId}:${message.nonce}`;
+    if (!frameHellos.has(key)) {
+      frameHellos.set(key, sender.frameId);
+      setTimeout(() => frameHellos.delete(key), FRAME_HELLO_MS);
+    }
+    return false;
+  }
+  if (message.type === 'gaze:frame-pointer') {
+    if (sender.frameId === 0 || !Number.isFinite(message.x) || !Number.isFinite(message.y)) return false;
+    chrome.tabs.sendMessage(tabId, { type: 'gaze:frame-pointer', frameId: sender.frameId, x: message.x, y: message.y }, { frameId: 0 }).catch(() => {});
+    return false;
+  }
+  if (sender.frameId !== 0) return false;
+  if (message.type === 'gaze:frame-inject') {
+    chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['frame-agent.js'] })
+      .then(() => respond({ ok: true }), () => respond({ ok: false }));
+    return true;
+  }
+  if (message.type === 'gaze:frame-resolve') {
+    respond({ frameId: frameHellos.get(`${tabId}:${message.nonce}`) ?? null });
+    return false;
+  }
+  if (['gaze:frame-capture', 'gaze:frame-act'].includes(message.type) && Number.isInteger(message.frameId) && message.frameId > 0) {
+    const { frameId, ...request } = message;
+    chrome.tabs.sendMessage(tabId, request, { frameId }).then(reply => respond(reply ?? { ok: false }), () => respond({ ok: false, message: 'The embedded page is not reachable.' }));
+    return true;
+  }
+  return false;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
+  if (typeof message?.type === 'string' && message.type.startsWith('gaze:frame-')) return onFrameMessage(message, sender, respond);
   if (message?.type === 'gaze:assist' && sender.tab?.id !== undefined && ['load', 'decide', 'yes'].includes(message.op)) {
     ensureOffscreen()
       .then(() => chrome.runtime.sendMessage({ target: 'gaze-offscreen', op: message.op, args: message.args ?? [], tabId: sender.tab.id }))
