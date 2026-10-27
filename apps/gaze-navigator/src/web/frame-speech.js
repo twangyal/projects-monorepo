@@ -4,15 +4,18 @@
 const STARTUP_MS = 10000;
 
 export function createFrameSpeech({ document, window, mount, runtime, ...callbacks }) {
-  let wanted = false, session = 0, frame = null, port = null;
-  const deadlines = new Set();
+  let wanted = false, session = 0, frame = null, port = null, mode = 'unknown', phrases = [], nextId = 2;
+  const deadlines = new Set(), requests = new Map();
   function teardown() {
     const closing = port; port = null;
     try { closing?.disconnect(); } catch { /* Already closed. */ }
     frame?.remove(); frame = null;
     for (const pending of deadlines) { window.clearTimeout(pending.timer); pending.reject(new Error('Listening stopped.')); }
     deadlines.clear();
+    for (const pending of requests.values()) pending.reject(new Error('Listening stopped.'));
+    requests.clear();
   }
+  const setMode = next => { if (next && next !== mode) { mode = next; callbacks.onMode?.(mode); } };
   function bounded(promise, message) {
     let pending;
     const timeout = new Promise((_, reject) => {
@@ -47,7 +50,14 @@ export function createFrameSpeech({ document, window, mount, runtime, ...callbac
         if (message?.type === 'ready' && !starting) {
           starting = true;
           if (!message.speechSupported) { reject(new Error('Speech recognition is not available in this browser. Type instructions instead.')); return; }
-          try { connection.postMessage({id:1,op:'speech-start'}); } catch (error) { reject(error); }
+          setMode(message.speechMode);
+          try {
+            if (phrases.length) connection.postMessage({op:'speech-phrases', args:[phrases]});
+            connection.postMessage({id:1,op:'speech-start'});
+          } catch (error) { reject(error); }
+        } else if (requests.has(message?.id)) {
+          const pending = requests.get(message.id); requests.delete(message.id);
+          if (message.error) pending.reject(new Error(message.error)); else pending.resolve(message.result);
         } else if (message?.id === 1) {
           if (message.error || !message.result) reject(new Error(message.error || 'Speech recognition could not start. Type instructions or try again.'));
           else { accepted = true; admit(); }
@@ -60,6 +70,8 @@ export function createFrameSpeech({ document, window, mount, runtime, ...callbac
             else callbacks.onError?.(message.value);
           } else if (message.event === 'state' && message.value === 'listening') {
             nativeReady = true; callbacks.onState?.('listening'); admit();
+          } else if (message.event === 'mode') {
+            setMode(message.value);
           } else if (message.event === 'state' && message.value === 'stopped') {
             stop(); callbacks.onState?.('stopped');
           } else {
@@ -77,6 +89,17 @@ export function createFrameSpeech({ document, window, mount, runtime, ...callbac
   return {
     supported: Boolean(runtime),
     get listening() { return wanted; },
+    get mode() { return mode; },
+    setPhrases(list) {
+      phrases = list.slice(0, 200);
+      try { port?.postMessage({op:'speech-phrases', args:[phrases]}); } catch { /* The frame is closing. */ }
+    },
+    // Asks the microphone frame, which owns recognition, to install on-device recognition.
+    installLocal() {
+      if (!port) return Promise.reject(new Error('Start listening first, then install on-device speech.'));
+      const id = nextId++;
+      return new Promise((resolve, reject) => { requests.set(id, { resolve, reject }); port.postMessage({id, op:'speech-install'}); });
+    },
     start() {
       if (!runtime || wanted) return false;
       wanted = true; const current = ++session;

@@ -76,6 +76,40 @@ test('ordinary page controls are discovered, numbered, and opened from a typed i
   await expect(status(page)).toContainText('Done: Catalog activated. Now on "Catalog');
 });
 
+test('on-device speech can be installed, then favours the names of controls around the gaze', async ({ page }) => {
+  // This browser could recognize speech on the device after a download.
+  await page.addInitScript(() => {
+    let status = 'downloadable';
+    window.SpeechRecognition.available = async () => status;
+    window.SpeechRecognition.install = async options => { window.__speech.installed = options; status = 'available'; return true; };
+    window.SpeechRecognitionPhrase = class { constructor(phrase, boost) { this.phrase = phrase; this.boost = boost; } };
+  });
+  await page.goto('/practice-site/catalog.html');
+  const mode = panel(page).locator('.speech-mode');
+  await expect(mode).toHaveText('', { useInnerText: true });
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await expect(mode).toHaveText("Speech is recognized by the browser's online service. This browser can recognize it on this device instead after a one-time download.");
+  await look(page, page.getByLabel('Sort by'));
+  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+  await panel(page).getByRole('button', { name: 'Use on-device speech' }).click();
+  await expect(status(page)).toHaveText('Speech is now recognized on this device.');
+  await expect(mode).toHaveText('Speech is recognized on this device, so no audio leaves it, and the names of controls around your gaze are favoured.');
+  await expect(panel(page).getByRole('button', { name: 'Use on-device speech' })).toBeHidden();
+  const session = await page.evaluate(() => {
+    const recognition = window.__speech.instances.at(-1);
+    return { installed: window.__speech.installed, local: recognition.processLocally, running: recognition.running, phrases: recognition.phrases.map(p => [p.phrase, p.boost]) };
+  });
+  expect(session.installed.processLocally).toBe(true);
+  expect(session.local).toBe(true);
+  expect(session.running).toBe(true);
+  expect(session.phrases).toContainEqual(['Sort by', 3]);
+  // Speech still drives the page.
+  await look(page, page.getByLabel('Sort by'));
+  await page.evaluate(() => window.__speech.begin());
+  await page.evaluate(() => window.__speech.say('choose title'));
+  await expect(page.getByLabel('Sort by')).toHaveValue('Title');
+});
+
 test('speech context is captured when speaking starts, even if gaze moves before the words finish', async ({ page }) => {
   await page.goto('/practice-site/contact.html');
   await panel(page).getByRole('button', { name: 'Start listening' }).click();

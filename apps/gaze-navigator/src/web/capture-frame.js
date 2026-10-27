@@ -37,10 +37,13 @@ const speech = createSpeechInput(window, {
   onImmediate: text => sendSpeech('immediate', text),
   onError: (message, code) => sendSpeech('error', message, { code, listening: speech.listening }),
   onState: state => sendSpeech('state', state),
+  onMode: mode => sendSpeech('mode', mode),
 });
 
 const operations = {
   'speech-start': () => speech.start(),
+  'speech-phrases': list => { speech.setPhrases(Array.isArray(list) ? list.slice(0, 200) : []); return true; },
+  'speech-install': () => speech.installLocal(),
   start: () => camera.start(),
   stop: () => camera.stop(),
   reset: () => { camera.resetCalibration(); return true; },
@@ -69,5 +72,5 @@ chrome.runtime.onConnect.addListener(candidate => {
     camera.stop();
     speech.stop();
   });
-  port.postMessage({ type: 'ready', speechSupported: speech.supported });
+  port.postMessage({ type: 'ready', speechSupported: speech.supported, speechMode: speech.mode });
 });
