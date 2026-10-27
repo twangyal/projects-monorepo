@@ -2,7 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
-import { composedContains, isConsequentialName } from './page-context.js';
+import { composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 const CLARIFY_MS = 30000;
@@ -177,8 +177,19 @@ export function createController({ window, actions = pageActions, interpret = in
           if (inner.length > 1) return reply('More than one scrolling region touches the gaze circle. Look further inside the one you mean, or say “scroll the page down”.', 'error', { performed: null });
           if (inner.length === 1) { region = inner[0].element; recovered = true; }
         }
+        // A named region ("scroll the list down") the gaze is not on: the nearest such region on screen. Scrolling
+        // changes nothing on the page, so it needs no confirmation; the reply says which region moved.
+        let away = false;
+        if (action.kind && region === context.pageRegion && context.screenRegions) {
+          const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';
+          const matching = context.screenRegions().filter(candidate => candidate[axis] && regionIs(candidate.element, action.kind));
+          const inner = matching.filter(candidate => !matching.some(other => other !== candidate && composedContains(candidate.element, other.element)));
+          const nearest = inner.sort((a, b) => distanceToRect(context.x, context.y, a.rect) - distanceToRect(context.x, context.y, b.rect))[0];
+          if (nearest) { region = nearest.element; away = true; }
+        }
         result = actions.scroll(region, action.direction, action.amount, window);
         if (recovered && result.ok) result.message += ' Found at the edge of the gaze circle.';
+        if (away && result.ok) result.message += ` It was the ${action.kind} away from the gaze circle.`;
         break;
       }
       case 'back':

@@ -96,7 +96,14 @@ test('search prefers a nearby search field, then the page search field', () => {
 test('scrolling takes direction and size', () => {
   assert.deepEqual(interpret('scroll down', context()), { type: 'scroll', direction: 'down', amount: 'page' });
   assert.deepEqual(interpret('scroll up a bit', context()), { type: 'scroll', direction: 'up', amount: 'small' });
-  assert.deepEqual(interpret('scroll the list right', context()), { type: 'scroll', direction: 'right', amount: 'page' });
+  assert.deepEqual(interpret('scroll the list right', context()), { type: 'scroll', direction: 'right', amount: 'page', kind: 'list' });
+  // Named kinds of region can be found away from the gaze; the page and generic names stay as they were.
+  assert.equal(interpret('scroll the side bar down', context()).kind, 'sidebar');
+  assert.equal(interpret('scroll the navigation down a bit', context()).kind, 'menu');
+  assert.equal(interpret('scroll the messages up', context()).kind, 'chat');
+  assert.equal(interpret('scroll the comments down', context()).kind, 'comments');
+  assert.deepEqual(interpret('scroll the page down', context()), { type: 'scroll', direction: 'down', amount: 'page', scope: 'page' });
+  assert.deepEqual(interpret('scroll the area down', context()), { type: 'scroll', direction: 'down', amount: 'page' });
   assert.deepEqual(interpret('scroll to the top', context()), { type: 'scroll', direction: 'top', amount: 'page' });
   assert.deepEqual(interpret('page down', context()), { type: 'scroll', direction: 'down', amount: 'page' });
 });
