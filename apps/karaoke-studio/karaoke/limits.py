@@ -24,9 +24,13 @@ MAX_WORKER_RSS_KIB = 3 * 1024**2
 WORKER_FILE_BYTES = MAX_DECODE_BYTES + 4096
 VIDEO_TIMEOUT = 600
 MAX_VIDEO_BYTES = 128 * 1024**2
-# Word highlighting: each line has up to 16 highlight steps plus its unsung state, and each gap one card.
+# After an instrumental break of at least COUNT_IN_BREAK seconds, the last COUNT_IN seconds before the next line
+# count singers in.
+COUNT_IN, COUNT_IN_BREAK = 3, 4
+# Word highlighting: each line has up to 16 highlight steps plus its unsung state, each gap one card, and each break
+# long enough to count in (at most one per COUNT_IN_BREAK seconds) COUNT_IN more.
 MAX_CARD_BYTES = 192 * 1024**2
-MAX_CARDS = MAX_CUES * 17 + MAX_CUES + 1
+MAX_CARDS = MAX_CUES * 17 + MAX_CUES + 1 + COUNT_IN * (MAX_DURATION // COUNT_IN_BREAK)
 MAX_VIDEO_FRAMES = MAX_DURATION * 24
 # Must exceed a job's scratch budget (checked in tests).
 MIN_FREE_BYTES = 2 * 1024**3

@@ -490,3 +490,15 @@ test('remove passage refuses reversed ranges keeps invalid survivor drafts and a
  await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(before);await selectPassage(page,'0','3');await remove.click();await expect(page.locator('[data-cue]')).toHaveCount(0);await expect(remove).toBeDisabled();
  await page.getByRole('button',{name:'Undo lyric edit',exact:true}).click();expect(await timingEditor(page)).toEqual(before);await page.getByRole('button',{name:'Redo lyric edit',exact:true}).click();await expect(page.locator('[data-cue]')).toHaveCount(0);
 });
+
+test('the preview counts singers in after an instrumental break', async ({ page }) => {
+  await open(page, 'Early line\nLate line');
+  for (const [field, value] of [['Start line 1', '0.2'], ['End line 1', '0.8'], ['Start line 2', '5.2'], ['End line 2', '5.9']]) {
+    await page.getByLabel(field, { exact: true }).fill(value);
+  }
+  const stage = page.locator('#stage');
+  for (const [time, count] of [[1.5, ''], [2.5, '3'], [3.5, '2'], [4.5, '1'], [5.5, '']] as const) {
+    await seek(page, time);
+    await expect(stage).toHaveAttribute('data-count-in', count);
+  }
+});

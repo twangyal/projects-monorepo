@@ -57,6 +57,18 @@ export function draftCues(text: string, duration: number): Cue[] {
 export function activeCue(cues: Cue[], time: number): number {
   return cues.findIndex(cue => Number.isFinite(cue.start) && Number.isFinite(cue.end) && time >= cue.start && time < cue.end);
 }
+/** After a break of at least COUNT_IN_BREAK seconds without a line, the last COUNT_IN seconds count singers in. */
+export const COUNT_IN = 3, COUNT_IN_BREAK = 4;
+/** Seconds left (3, 2 or 1) before a line that follows an instrumental break, or null; the clip's start counts as the
+ * end of a line. The exported video uses the same rule. */
+export function countIn(cues: readonly Cue[], time: number): number | null {
+  if (cues.some(cue => time >= cue.start && time < cue.end)) return null;
+  const following = cues.findIndex(cue => cue.start > time);
+  if (following < 0) return null;
+  const previousEnd = following ? cues[following - 1]!.end : 0, left = cues[following]!.start - time;
+  if (cues[following]!.start - previousEnd < COUNT_IN_BREAK || left > COUNT_IN) return null;
+  return Math.ceil(left - 1e-9);
+}
 export function formatTime(value: number): string {
   const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
   return `${Math.floor(safe / 60)}:${(safe % 60).toFixed(2).padStart(5, '0')}`;

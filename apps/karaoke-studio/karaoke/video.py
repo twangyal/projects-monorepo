@@ -14,7 +14,7 @@ import wave
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .limits import (MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAMES,
+from .limits import (COUNT_IN, COUNT_IN_BREAK, MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAMES,
                      SAMPLE_RATE, VIDEO_TIMEOUT)
 from .model import ValidationError, validate_project
 from .media_io import media_handles
@@ -229,10 +229,27 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
                     left += font.getlength(piece)
 
 
+def count_in(cues: list[dict], position: float) -> int | None:
+    """Seconds left (3, 2 or 1) before a line that follows an instrumental break, or None.
+
+    A break is at least COUNT_IN_BREAK seconds without a line; the clip's start counts as the end of a line.
+    """
+    if any(cue['start'] <= position < cue['end'] for cue in cues):
+        return None
+    following = next((index for index, cue in enumerate(cues) if cue['start'] > position), None)
+    if following is None:
+        return None
+    previous_end = cues[following - 1]['end'] if following else 0.0
+    left = cues[following]['start'] - position
+    if cues[following]['start'] - previous_end < COUNT_IN_BREAK or left > COUNT_IN:
+        return None
+    return math.ceil(left - 1e-9)
+
+
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
-                sung: list[str] | None = None) -> None:
+                sung: list[str] | None = None, count: int | None = None) -> None:
     """One video card. ``sung`` lists the active line's words already sung; without it the whole
-    active line is highlighted."""
+    active line is highlighted. During a break, ``count`` dots count singers in to the next line."""
     project = validate_project(project)
     cues = project['cues']
     if active_index is not None and (type(active_index) is not int or not 0 <= active_index < len(cues)):
@@ -246,6 +263,13 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     else:
         _center_text(draw, active, 320, font_path, 44, 24, 300,
                      ACCENT if active_index is not None else MAIN)
+    if active_index is None and count:
+        # Dots in a row under the break, one fewer each second, in the colour of words not yet sung.
+        radius, gap = 12, 44
+        left = WIDTH / 2 - (count - 1) * gap / 2
+        for dot in range(count):
+            x = left + dot * gap
+            draw.ellipse((x - radius, 430 - radius, x + radius, 430 + radius), fill=MAIN)
     next_index = active_index + 1 if active_index is not None else 0
     if next_index < len(cues):
         _center_text(draw, 'Next: ' + cues[next_index]['text'], 540, font_path, 26, 18, 80, MUTED)
@@ -381,13 +405,14 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                                if cue['start'] <= position < cue['end']), None)
                 upcoming = next((index for index, cue in enumerate(cues) if cue['start'] > position), len(cues))
                 sung = sung_count(timings[active], position) if active is not None else None
-                state = (active, upcoming if active is None else None, sung)
+                count = count_in(cues, position) if active is None else None
+                state = (active, upcoming if active is None else None, sung, count)
                 if state not in states:
                     if len(states) >= MAX_CARDS:
                         raise RuntimeError('Video preparation exceeded its card count limit.')
                     card = directory / f'card{len(states):04}.png'
                     if active is None:
-                        render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path)
+                        render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path, count=count)
                     else:
                         render_card(project, active, card, font_path,
                                     sung=[word['text'] for word in timings[active][:sung]])

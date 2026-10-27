@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { draftCues, validateCues, validateTitle, activeCue, formatTime, MAX_ARCHIVE_BYTES, MAX_DURATION, MAX_UPLOAD_BYTES, type Cue } from '../src/lyrics.ts';
+import { draftCues, validateCues, validateTitle, activeCue, countIn, formatTime, MAX_ARCHIVE_BYTES, MAX_DURATION, MAX_UPLOAD_BYTES, type Cue } from '../src/lyrics.ts';
 
 test('draft timing splits nonempty lines over the full duration without invented words', () => {
   assert.deepEqual(draftCues('Hello\n\nSecond line\n', 10), [
@@ -71,4 +71,12 @@ test('selection uses exclusive end boundaries and preserves instrumental gaps', 
   assert.equal(activeCue(cues, 3), 1);
   assert.equal(activeCue(cues, 5), -1);
   assert.equal(formatTime(12.34), '0:12.34');
+});
+
+test('singers are counted in during the last three seconds before a line that follows a break of four seconds or more', () => {
+  const cues: Cue[] = [{ start: 10, end: 12, text: 'a' }, { start: 13, end: 14, text: 'b' }, { start: 20, end: 22, text: 'c' }];
+  assert.deepEqual([6.5, 7, 8.5, 9.99, 10, 12.5, 15, 17.01, 19.99, 23].map(time => countIn(cues, time)), [null, 3, 2, 1, null, null, null, 3, 1, null]);
+  // The clip's start counts as the end of a line, so a song that opens with singing has no count-in.
+  assert.equal(countIn([{ start: 2, end: 3, text: 'early' }], 0.5), null);
+  assert.equal(countIn([], 1), null);
 });

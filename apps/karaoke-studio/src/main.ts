@@ -3,7 +3,7 @@ import {songFromFileName} from './lyrics-lookup.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
-import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
+import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
@@ -415,6 +415,13 @@ function draw() {
   else drawBlock(current, 320, 44, 24, 300, index >= 0 ? '#e4b77d' : '#f7f5ed');
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
   stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
+  // After a break, dots count singers in to the next line.
+  const count = working ? countIn(working.cues, time) : null;
+  stage.dataset.countIn = count ? String(count) : '';
+  if (count) {
+    context.fillStyle = '#f7f5ed';
+    for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(640 - (count - 1) * 22 + dot * 44, 430, 12, 0, 2 * Math.PI); context.fill(); }
+  }
   if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, 26, 18, 80, '#9dafbb');
   context.font = '20px KaraokeSans'; context.fillStyle = '#9dafbb'; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
   stage.dataset.activeCue = String(index);

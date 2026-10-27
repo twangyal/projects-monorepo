@@ -111,6 +111,48 @@ class VideoTests(unittest.TestCase):
             return ImageChops.difference(image, background).convert('L').point(lambda value: 255 if value else 0)
         self.assertEqual(ImageChops.difference(mask(cards['none']), mask(cards['all'])).getbbox(), None)
 
+    def test_count_in_follows_breaks_of_four_seconds_or_more(self):
+        cues = [dict(start=10, end=12, text='a'), dict(start=13, end=14, text='b'), dict(start=20, end=22, text='c')]
+        self.assertEqual([video.count_in(cues, t) for t in (6.5, 7, 8.5, 9.99, 10, 12.5, 15, 17.01, 19.99, 23)],
+                         [None, 3, 2, 1, None, None, None, 3, 1, None])
+
+    def test_count_in_dots_are_drawn_during_a_break(self):
+        # The colour of words not yet sung: the highlight colour stays for words being sung.
+        unsung = (0xf7, 0xf5, 0xed)
+
+        def dots(count):
+            output = self.root / f'count{count}.png'
+            video.render_card(self.project, None, output, FONT, count=count)
+            with Image.open(output) as image:
+                pixels = image.convert('RGB').load()
+                columns = [x for x in range(1280) if pixels[x, 430] == unsung]
+            # Runs of accent columns are the dots.
+            return sum(1 for index, x in enumerate(columns) if not index or x != columns[index - 1] + 1)
+        self.assertEqual([dots(count) for count in (None, 1, 2, 3)], [0, 1, 2, 3])
+
+    def test_exported_breaks_count_singers_in(self):
+        backing = self.root / 'long.wav'
+        with wave.open(str(backing), 'wb') as stream:
+            stream.setnchannels(2)
+            stream.setsampwidth(2)
+            stream.setframerate(44100)
+            stream.writeframes(b'\0' * 44100 * 7 * 4)
+        project = update_project(create_project('b' * 32, 'Break', 7), 'Break', [dict(start=5, end=6.5, text='LATE LINE')], 0)
+        output = self.root / 'break.mp4'
+        video.export_video(project, backing, output, self.root / 'work', FONT, threading.Event())
+        unsung = (0xf7, 0xf5, 0xed)
+        for seconds, expected in [(1.5, 0), (2.2, 3), (3.5, 2), (4.6, 1)]:
+            with self.subTest(seconds=seconds):
+                decoded = self.root / f'break{seconds}.png'
+                subprocess.run(['ffmpeg', '-v', 'error', '-i', str(output), '-vf', f'select=eq(n\\,{round(seconds * 24)})',
+                                '-frames:v', '1', '-y', str(decoded)], check=True)
+                with Image.open(decoded) as image:
+                    pixels = image.convert('RGB').load()
+                    # Video compression shifts colours slightly: a dot is a run of near-accent pixels.
+                    near = [x for x in range(1280) if sum(abs(a - b) for a, b in zip(pixels[x, 430], unsung)) < 60]
+                runs = sum(1 for index, x in enumerate(near) if not index or x != near[index - 1] + 1)
+                self.assertEqual(runs, expected)
+
     def test_long_lyric_preview_stays_inside_its_layout_region(self):
         project = update_project(self.project, 'Long lyrics',
                                  [dict(start=0, end=1, text='W' * 240),
@@ -309,7 +351,7 @@ class VideoTests(unittest.TestCase):
         card_count = [0]
         sung_states = []
 
-        def card(_project, active, path, _font, sung=None):
+        def card(_project, active, path, _font, sung=None, count=None):
             path.write_text(str(card_count[0]))
             sung_states.append((active, sung))
             card_count[0] += 1
