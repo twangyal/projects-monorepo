@@ -29,3 +29,18 @@ test('another size is shown and draped on the same body without changing the des
   await editor(page).getByRole('button', { name: /^Use the Flared skirt template/ }).click();
   await expect(size).toBeDisabled();
 });
+
+test('an applied edit that invalidates the viewed grade explicitly returns to the sample without discarding the edit', async ({ page }) => {
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const size = page.getByRole('combobox', { name: 'Size shown', exact: true });
+  await size.selectOption('L');
+  await editor(page).getByLabel('Chest (cm)', { exact: true }).fill('146');
+  await editor(page).getByRole('button', { name: 'Apply measurements', exact: true }).click();
+  await expect(size).toHaveValue('M');
+  await expect(page.locator('#garment-size-status')).toContainText('Size L was outside the supported measurements');
+  await expect(page.locator('#garment-size-status')).toContainText('Showing the sample size M');
+  expect((await backup(page)).product.measurements.chest).toBe(146);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect((await backup(page)).product.measurements.chest).toBe(104);
+});

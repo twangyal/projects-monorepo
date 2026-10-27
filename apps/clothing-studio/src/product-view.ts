@@ -59,10 +59,11 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
         <details id="top-body-shape"><summary>Waist, hip, depth and height (optional)</summary><div class="measure-grid"><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Body height (cm, optional)<input id="garment-drape-height" type="number" min="${BODY_HEIGHT[0]}" max="${BODY_HEIGHT[1]}" step="0.5"></label><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Height sets torso heights, arm length and trouser leg length as typical proportions; without it they follow the chest. Hip depth and shoulders remain assumed. Applied body settings are saved with this design. Unapplied fields stay as drafts. These measurements do not establish physical fit.</p></details>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
-        <label class="field">Size shown<select id="garment-size"></select></label>
+        <label class="field">Size shown<select id="garment-size" aria-describedby="garment-size-status"></select></label>
         <label class="field">Wear with<select id="garment-wear-with"></select></label>
         <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
+      <p id="garment-size-status" class="fine-print" role="status"></p>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
       <p id="product-status" class="fine-print" role="status"></p>
     </div>
@@ -115,8 +116,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
     <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
     <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
-  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button></div>
-  <p class="fine-print">A styling model built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here. Renders and the GLB use the shapes shown.</p>
+  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG and GLB</label></div><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
+  <p class="fine-print">PNG and GLB use the size shown in 3D: the styling shell, or the current settled drape. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
   <section class="techpack" aria-labelledby="techpack-heading">
     <div class="techpack-head"><div><p class="eyebrow">TECH PACK</p><h4 id="techpack-heading">Factory-ready tech pack</h4>
     <p class="fine-print">Generated from this design and kept in sync with every change: bill of materials with fabric consumption, graded points of measure, construction and artwork placement.</p></div>
@@ -305,6 +306,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     try { gradedProduct(design, size); }
     catch (error) { options.notice(error instanceof Error ? error.message : 'That size cannot be shown.', true); renderSizeSelect(design); return; }
     shownSize = size === sampleOf(design) ? null : size;
+    $('garment-size-status').textContent = '';
     shown = ''; render(options.current());
     options.notice(shownSize ? `Showing size ${size}, graded from ${sampleOf(design)}, on the same body. The design itself is unchanged.` : `Showing the sample size ${size}.`);
   });
@@ -771,14 +773,18 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const button = $(id) as HTMLButtonElement;
     button.addEventListener('click', () => void exporting(async () => {
       if (button.disabled) return;
-      const snapshot = structuredClone(options.current()), sample = snapshot.product ?? template('blank'), settled = captureDrape(sample), design = viewed(sample);
+      const snapshot = structuredClone(options.current()), sample = snapshot.product ?? template('blank'), includeWorn = ($('export-outfit') as HTMLInputElement).checked;
+      const companion = includeWorn ? snapshot.wornWith ?? null : null;
+      if (includeWorn && (!companion || !draping)) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
+      const settled = captureDrape(sample), design = viewed(sample);
+      if (includeWorn && !settled?.companion) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
       button.disabled = true;
       try {
         if (!await ready) throw new Error('The 3D view is unavailable.');
         const exports = await import('./product-3d.ts');
-        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled)], {type:'model/gltf-binary'})
-          : await exports.productSnapshotPng(design, kind, settled);
-        options.download(blob, suffix, snapshot.title);
+        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled, companion)], {type:'model/gltf-binary'})
+          : await exports.productSnapshotPng(design, kind, settled, companion);
+        options.download(blob, `${includeWorn ? '-outfit' : ''}${suffix}`, snapshot.title);
       } finally { button.disabled = false; }
     }));
   }
@@ -1030,6 +1036,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const selection = active && drafts.has(active.id) && active.selectionStart !== null ? [active.selectionStart, active.selectionEnd!, active.selectionDirection ?? 'none'] as const : null;
     const finishDrafts = () => { restoreDrafts(); if (active && selection && document.activeElement === active) active.setSelectionRange(...selection); };
     const design = project.product ?? template('blank');
+    // Applied edits can invalidate a previously valid grade. Do not leave its label on a sample-sized fallback.
+    if (shownSize) try { gradedProduct(design, shownSize); }
+    catch {
+      $('garment-size-status').textContent = `Size ${shownSize} was outside the supported measurements. Showing the sample size ${sampleOf(design)}. Your applied design is kept.`;
+      shownSize = null;
+    }
     if(pickOwner&&(pickOwner.design!==design||pickOwner.side!==($('artwork-side') as HTMLSelectElement).value))finishPicking('The design or artwork side changed. Pick again.');
     let compared: ReturnType<typeof comparisonBody> | null = null;
     try { compared = comparisonBody(design); } catch { compared = null; }
@@ -1093,6 +1105,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
+    const outfitExport = $('export-outfit') as HTMLInputElement;
+    outfitExport.disabled = !companion; if (!companion) outfitExport.checked = false;
     chestInput.closest('label')!.hidden = !onTop; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = !onTop;
     if (draped && drapeKey && drapeKey !== drapeKeyOf(design)) stopDrape();
     if (!hasDrafts('body')) {
@@ -1122,5 +1136,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; shownSize = null; patternSize = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; shownSize = null; $('garment-size-status').textContent = ''; patternSize = null; ($('export-outfit') as HTMLInputElement).checked = false; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

@@ -20,7 +20,7 @@ export class ProductScene {
   private group = new THREE.Group();
   /** The body a drape was simulated on; kept out of `group` so exports carry only the garment. */
   private body = new THREE.Group();
-  /** The garment worn with this one in an outfit drape; also kept out of exports, and not selectable. */
+  /** The garment worn with this one in an outfit drape; included only in explicit outfit exports, and not selectable. */
   private worn = new THREE.Group();
   private parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
@@ -109,12 +109,13 @@ export class ProductScene {
     }
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.setView(this.view);
-    if (worn) for (const part of teeMesh(companion!, Delaunator)) {
+    const wornRest = worn ? teeMesh(companion!, Delaunator) : [], wornParts = new Map<PartId, THREE.Mesh>();
+    if (worn) for (const part of wornRest) {
       const positions = worn.find(item => item.part === part.part)?.positions;
       if (!positions || positions.length !== part.positions.length) continue;
       const mesh = this.partMesh(companion!, part, positions, false);
       mesh.name = `${companion!.name}: ${mesh.name}`; mesh.userData = {};
-      this.worn.add(mesh);
+      this.worn.add(mesh); wornParts.set(part.part, mesh);
     }
     const restParts = teeMesh(product, Delaunator);
     for (const part of restParts) {
@@ -122,7 +123,11 @@ export class ProductScene {
       const mesh = this.partMesh(product, part, draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, part.part === selected);
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
-    this.group.updateMatrixWorld(true);
+    this.group.updateMatrixWorld(true); this.worn.updateMatrixWorld(true);
+    if (worn) for (const art of companion!.artwork) {
+      const target = wornParts.get(art.part);
+      if (target) this.addArtwork(companion!, art, wornRest.find(part => part.part === art.part)!, target, this.worn);
+    }
     for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
     this.requestRender();
   }
@@ -153,8 +158,7 @@ export class ProductScene {
     mesh.name = 'Body'; this.body.add(mesh);
   }
 
-  private addArtwork(product: Product, art: Product['artwork'][number], rest: PartMesh | null) {
-    const target = this.parts.get(art.part)!;
+  private addArtwork(product: Product, art: Product['artwork'][number], rest: PartMesh | null, target = this.parts.get(art.part)!, holder = this.group) {
     let texture = this.artworkTextures.get(art.dataUrl);
     if (!texture) {
       const image = new Image(); image.src = art.dataUrl;
@@ -178,7 +182,8 @@ export class ProductScene {
     finally { restGeometry?.dispose(); }
     const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     decal.name = `${front ? 'Front' : 'Back'} artwork`; decal.userData.part = art.part;
-    this.group.add(decal);
+    if (holder === this.worn) decal.name = `${product.name}: ${decal.name}`;
+    holder.add(decal);
   }
 
   /** The part under a viewport point, if any. */
@@ -215,8 +220,8 @@ export class ProductScene {
     return blob;
   }
 
-  async glb(): Promise<ArrayBuffer> {
-    const result = await new GLTFExporter().parseAsync(this.group, { binary: true, onlyVisible: true });
+  async glb(includeWorn = false): Promise<ArrayBuffer> {
+    const result = await new GLTFExporter().parseAsync(includeWorn ? [this.group, this.worn] : this.group, { binary: true, onlyVisible: true });
     if (!(result instanceof ArrayBuffer)) throw new Error('The 3D model could not be exported.');
     return result;
   }
@@ -237,12 +242,13 @@ export class ProductScene {
 }
 
 /** Own one immutable scene for the full asynchronous export and always release its resources. */
-async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>): Promise<T> {
-  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null;
-  await prepareMotifImages(snapshot.motifs ?? []);
+async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>, companion: Product | null = null): Promise<T> {
+  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null, worn = companion ? structuredClone(companion) : null;
+  if (worn && !settled?.companion) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
+  await Promise.all([prepareMotifImages(snapshot.motifs ?? []), prepareMotifImages(worn?.motifs ?? [])]);
   const scene = new ProductScene(document.createElement('canvas'));
   try {
-    scene.setProduct(snapshot, null, settled, false);
+    scene.setProduct(snapshot, null, settled, false, worn);
     await scene.prepareArtwork();
     return await exportScene(scene);
   } finally { scene.dispose(); }
@@ -251,9 +257,9 @@ async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResul
 export function productSnapshotRenders(product: Product, drape: GarmentDrapeResult | null = null): Promise<{ front: Blob; back: Blob }> {
   return withProductSnapshot(product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
 }
-export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null): Promise<Blob> {
-  return withProductSnapshot(product, drape, scene => scene.png(view));
+export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.png(view), companion);
 }
-export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null): Promise<ArrayBuffer> {
-  return withProductSnapshot(product, drape, scene => scene.glb());
+export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<ArrayBuffer> {
+  return withProductSnapshot(product, drape, scene => scene.glb(!!companion), companion);
 }
