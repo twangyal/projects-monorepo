@@ -19,11 +19,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from karaoke.limits import (  # noqa: E402
     MAX_DURATION, MAX_WAV_BYTES, SAMPLE_RATE, WORKER_CPU_HARD, WORKER_CPU_SOFT,
 )
-from karaoke.lyrics_auto import lyric_words  # noqa: E402
+from karaoke.lyrics_auto import _token, lyric_words  # noqa: E402
 from karaoke.transcription import (  # noqa: E402
-    CHOICES, DETECTION_WORDS, EAST_ASIAN, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, AsrModel, installed_models,
-    selected_models, sounds_east_asian, sounds_english,
+    CHOICES, DETECTION_WORDS, EAST_ASIAN, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, AsrModel,
+    installed_models, selected_models, sounds_east_asian, sounds_english,
 )
+from karaoke.word_alignment import align  # noqa: E402
 
 RATE = 16000
 # The East Asian model also listens when the multilingual model's first words average below this confidence.
@@ -32,6 +33,18 @@ RATE = 16000
 EAST_ASIAN_CONFIDENCE = 0.6
 # Languages the East Asian model can be told to hear; a fixed one improved sung Japanese from 45% to 34% character error.
 EAST_ASIAN_LANGUAGES = ('zh', 'ja', 'ko', 'yue')
+# Whisper tells a song's language from up to three stretches of about WINDOW seconds of singing (from the start and
+# a third and two thirds of the way through); its phrase-by-phrase guesses wander. It told all 20 JamendoLyrics songs
+# (English, French, German and Spanish) right this way.
+WINDOW = 28
+# Whisper does not read English songs (no better than the English model) or East Asian ones (worse than SenseVoice).
+WHISPER_SKIPS = frozenset({'en', *EAST_ASIAN_LANGUAGES})
+# A Whisper word the multilingual model did not hear the same way gets this confidence, below the review threshold: on
+# French, German and Spanish songs 60-74% of them were right, against 87-98% of the words both models heard the same. A line is
+# flagged when more than about two thirds of its words are unconfirmed.
+UNCONFIRMED = 0.6
+# More Whisper words than this per second of phrase (plus three) is a repetition loop, not singing.
+MAX_WORDS_PER_SECOND = 8
 # Token lengths when a model reports none: up to the next token, at most MAX_HELD; LAST_HELD for a phrase's last.
 MAX_HELD = 2.0
 LAST_HELD = 0.3
@@ -42,6 +55,11 @@ VAD = dict(threshold=0.4, min_silence_duration=0.4, min_speech_duration=0.25, ma
 def load(model_root: Path, model: AsrModel, threads: int = 3, language: str = ''):
     import sherpa_onnx
     directory = Path(model_root) / model.directory
+    if model is WHISPER:
+        # Without a language Whisper detects one per input; with one it writes that language.
+        return sherpa_onnx.OfflineRecognizer.from_whisper(
+            str(directory / 'turbo-encoder.int8.onnx'), str(directory / 'turbo-decoder.int8.onnx'), str(directory / 'turbo-tokens.txt'),
+            language=language, task='transcribe', num_threads=threads)
     if model is EAST_ASIAN:
         # Without inverse text normalization, sung numbers stay words ("ten thousand"), as lyrics write them.
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
@@ -156,6 +174,78 @@ class SongLanguage:
         self.auto, self.fixed = auto, fixed
 
 
+def retime(texts: list[str], timed: list[dict], begin: float, end: float) -> list[dict]:
+    """Whisper's words for a phrase sung from `begin` to `end`, timed from the multilingual model's words for it.
+
+    A word that model heard alike (similar spelling, in order) takes its time, and its confidence if heard exactly the
+    same. Between two such words, as many words as it heard there differently take their times one for one; otherwise
+    they share the time those words were sung in (or the time between their neighbours) in proportion to their length.
+    Words not heard the same have UNCONFIRMED confidence. A phrase Whisper wrote nothing for, or a repetition loop,
+    keeps the multilingual model's words.
+    """
+    texts = [text for text in texts if _token(text) and len(text) <= 60]
+    if not texts or len(texts) > MAX_WORDS_PER_SECOND * (end - begin) + 3:
+        return timed
+    reference = [_token(text) for text in texts]
+    matches = align(reference, [_token(word['text']) for word in timed]) if timed else [None] * len(texts)
+    anchors: list[int | None] = [None] * len(texts)
+    last = -1
+    for index, match in enumerate(matches):
+        if match is not None and match > last:
+            anchors[index], last = match, match
+    first, final = (timed[0]['start'], timed[-1]['end']) if timed else (begin, end)
+    result: list[dict] = []
+    index = 0
+    while index < len(texts):
+        anchor = anchors[index]
+        if anchor is not None:
+            word = timed[anchor]
+            same = _token(word['text']) == reference[index]
+            result.append(dict(text=texts[index], start=word['start'], end=word['end'], confidence=word['confidence'] if same else UNCONFIRMED))
+            index += 1
+            continue
+        run_end = index
+        while run_end < len(texts) and anchors[run_end] is None:
+            run_end += 1
+        # The multilingual model's words between the neighbouring anchors.
+        between = timed[(anchors[index - 1] + 1 if index else 0):(anchors[run_end] if run_end < len(texts) else len(timed))]
+        if len(between) == run_end - index:
+            for k, word in zip(range(index, run_end), between, strict=True):
+                result.append(dict(text=texts[k], start=word['start'], end=word['end'], confidence=UNCONFIRMED))
+            index = run_end
+            continue
+        right = timed[anchors[run_end]]['start'] if run_end < len(texts) else final
+        left = min(result[-1]['end'], right) if result else min(first, right)
+        if between:
+            left, right = max(left, min(between[0]['start'], right)), max(left, min(between[-1]['end'], right))
+        weights = [len(texts[k]) + 1 for k in range(index, run_end)]
+        cursor, total = left, sum(weights)
+        for k, weight in zip(range(index, run_end), weights, strict=True):
+            step = (right - left) * weight / total
+            result.append(dict(text=texts[k], start=round(cursor, 3), end=round(cursor + step, 3), confidence=UNCONFIRMED))
+            cursor += step
+        index = run_end
+    return result
+
+
+def song_language(phrases, recognizer) -> str:
+    """The language Whisper (told none) hears most in up to three WINDOW-second stretches of singing."""
+    import numpy as np
+    votes: collections.Counter = collections.Counter()
+    for begin in sorted({0, len(phrases) // 3, 2 * len(phrases) // 3}):
+        window, total = [], 0
+        for _start, phrase in phrases[begin:]:
+            if window and total + len(phrase) > WINDOW * RATE:
+                break
+            window.append(phrase[:WINDOW * RATE])
+            total += len(window[-1])
+        if window:
+            language = _decode(recognizer, np.concatenate(window)).lang
+            if language:
+                votes[language] += 1
+    return votes.most_common(1)[0][0] if votes else ''
+
+
 def _decode(recognizer, phrase):
     stream = recognizer.create_stream()
     stream.accept_waveform(RATE, phrase)
@@ -207,7 +297,9 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
               progress: Callable[[int, int], None] | None = None, *, model_choice: str = 'auto') -> tuple[AsrModel, list[dict]]:
     """Recognize every phrase with the model that suits the song's language.
 
-    With one model installed it hears everything. With several, one model listens first: it hears phrases
+    When Whisper is installed it first tells the song's language, and reads songs in languages other than English,
+    Chinese, Japanese and Korean itself, timed by the multilingual model (see retime); the other models hear the rest. With one of them
+    installed it hears everything. With several, one model listens first: it hears phrases
     until it has ``DETECTION_WORDS`` words (or the song ends), and the song may then move to another model,
     which hears it again from the start. The multilingual model listens first when installed. When it is unsure
     of what it heard, the East Asian model listens too and keeps the song if it hears Chinese, Japanese or
@@ -218,6 +310,31 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
     models = selected_models(models, model_choice)
     total = len(phrases)
     report = progress or (lambda _completed, _total: None)
+    if WHISPER in models:
+        # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen).
+        listener = load_model(WHISPER)
+        language = song_language(phrases, listener)
+        listener = None
+        gc.collect()
+        if model_choice == 'whisper' or language not in WHISPER_SKIPS:
+            # Whisper writes every phrase's words, then the multilingual model times them: the two models together
+            # would exceed the worker's memory limit.
+            reader = load_model(WHISPER, language=language) if language else load_model(WHISPER)
+            report(0, 2 * total)
+            texts = []
+            for done, (_start, phrase) in enumerate(phrases, 1):
+                texts.append(lyric_words(_decode(reader, phrase).text))
+                report(done, 2 * total)
+            reader = None
+            gc.collect()
+            timing = load_model(MULTILINGUAL)
+            words = []
+            for done, ((start, phrase), text) in enumerate(zip(phrases, texts, strict=True), total + 1):
+                words.extend(retime(text, recognize_phrase(timing, start, phrase), start / RATE, (start + len(phrase)) / RATE))
+                report(done, 2 * total)
+            words.sort(key=lambda word: (word['start'], word['end']))
+            return WHISPER, words[:MAX_WORDS]
+        models = tuple(model for model in models if model is not WHISPER)
     first = MULTILINGUAL if MULTILINGUAL in models else EAST_ASIAN if EAST_ASIAN in models else ENGLISH
     model = models[0] if len(models) == 1 else first
     recognizer = load_model(model)

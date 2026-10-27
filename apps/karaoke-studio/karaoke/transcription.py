@@ -4,8 +4,9 @@ The parent process imports no ML packages. ``transcribe_vocals`` runs ``transcri
 vocals WAV and returns validated, timed words. Silero voice-activity detection splits the vocals into
 sung phrases, recognized through sherpa-onnx by NVIDIA's Parakeet TDT 0.6B (int8): v2 for English
 songs, v3 for the 24 other European languages it covers; and by SenseVoice Small (int8) for
-Chinese, Cantonese, Japanese and Korean songs. ``recognize`` in the worker chooses among the
-installed models from the song's first words. Models are installed explicitly by
+Chinese, Cantonese, Japanese and Korean songs. When installed, Whisper turbo (int8) reads the words
+of songs in other languages, timed by Parakeet v3. ``recognize`` in the worker chooses among the
+installed models from the song's language. Models are installed explicitly by
 ``scripts/setup_lyrics_model.py``; nothing is downloaded at run time.
 """
 from __future__ import annotations
@@ -74,7 +75,21 @@ EAST_ASIAN = AsrModel(
         'tokens.txt': 'f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc',
         VAD_FILE: VAD_SHA256,
     })
-ASR_MODELS = (ENGLISH, MULTILINGUAL, EAST_ASIAN)
+# Whisper large-v3 turbo (OpenAI, MIT; int8) reads sung European lyrics better than Parakeet: on the first two
+# minutes of five JamendoLyrics songs per language, word error fell from 42% to 35% in French, 28% to 22% in German
+# and 43% to 15% in Spanish, but not in English (37.5% against 36%), and it was worse than SenseVoice on Chinese,
+# Japanese and Korean. It reports no word times, so the multilingual model, which must be installed too, times its
+# words; 79-94% of correctly heard words then started within 0.3 s of the singing, against 98-99% from Parakeet.
+WHISPER = AsrModel(
+    'whisper', 'whisper-turbo-int8+parakeet-tdt-0.6b-v3-timing', 'lyrics-asr-whisper',
+    'sherpa-onnx-whisper-turbo.tar.bz2', 563790207,
+    'b11acbbcd660b44a8e0df33724feb5aaa709cf65668f2823d59f656312544f22', {
+        'turbo-encoder.int8.onnx': 'b02dcdf54f348741e93fe732b67d933c8dcb6735655f710640143081db38878b',
+        'turbo-decoder.int8.onnx': '20accd02388482eb3a46bd615631adfdc85e1eb2c7db9ea3f02a40ffe6b81547',
+        'turbo-tokens.txt': 'b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126',
+        VAD_FILE: VAD_SHA256,
+    })
+ASR_MODELS = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
 CHOICES = ('auto', *(model.key for model in ASR_MODELS))
 KNOWN_MODELS = frozenset(model.name for model in ASR_MODELS)
 
@@ -130,10 +145,13 @@ def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
 def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple[AsrModel, ...]:
     """A deliberate retry choice never silently falls back to another installed model."""
     if not isinstance(choice, str) or choice not in CHOICES:
-        raise ValueError('Choose Automatic, English, Multilingual or East Asian lyric recognition.')
-    selected = models if choice == 'auto' else tuple(model for model in models if model.key == choice)
+        raise ValueError('Choose Automatic, English, Multilingual, East Asian or Whisper lyric recognition.')
+    # Whisper's words are timed by the multilingual model; without it, Whisper is not used.
+    usable = tuple(model for model in models if model is not WHISPER or MULTILINGUAL in models)
+    selected = usable if choice == 'auto' else (WHISPER, MULTILINGUAL) if choice == 'whisper' and WHISPER in usable \
+        else tuple(model for model in usable if model.key == choice and model is not WHISPER)
     if not selected:
-        option = '' if choice == 'auto' else f' --only {choice}'
+        option = '' if choice == 'auto' else ' --only whisper and --only multilingual' if choice == 'whisper' else f' --only {choice}'
         raise RuntimeError(f'The requested lyric recognition model is unavailable. Run scripts/setup_lyrics_model.py{option} with this studio’s model directory, then retry.')
     return selected
 

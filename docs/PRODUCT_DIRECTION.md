@@ -79,7 +79,7 @@ Manual editing is the *correction* workflow. Supplying all lyrics and timing eac
 
 **Success** includes real-song separation, transcription and alignment quality and low correction effort, alongside reliable exports. Measure these on real songs; a successful export alone does not prove a useful automatic experience.
 
-**Biggest gaps:** automatic lyrics are not yet good enough to be the normal path (a developer benchmark on JamendoLyrics English songs found about 31% word error), so users still end up pasting lyrics. Multilingual coverage is partial (European languages, plus Chinese, Japanese and Korean, where Japanese and Korean recognition is rough), and correction effort has not been measured with real users.
+**Biggest gaps:** automatic lyrics are not yet good enough to be the normal path (a developer benchmark on JamendoLyrics English songs found about 31% word error), so users still end up pasting lyrics. Multilingual coverage is partial (European languages, where the optional Whisper model cut word error to 15-35% in Spanish, German and French, plus Chinese, Japanese and Korean, where Japanese and Korean recognition is rough), and correction effort has not been measured with real users.
 
 **Fix first (review, 2026-10-25):** look up existing lyrics (for example LRCLIB) and align them instead of relying on recognition text; replace the word-alignment step, which silently returns no matches above about one million word pairs (long or dense songs); keep finished stems when the user cancels recognition; include `transcript.json` in backups and show why recognition failed; and add a CI job that runs the real models on one short song. Stop adding manual-editing micro-features until correction effort has been measured.
 

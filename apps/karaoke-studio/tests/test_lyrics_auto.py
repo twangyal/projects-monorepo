@@ -17,7 +17,7 @@ from karaoke.model import validate_project
 from karaoke import transcribe_worker, transcription
 from karaoke.transcribe_worker import recognize, words_from
 from karaoke.transcription import (
-    EAST_ASIAN, ENGLISH, MULTILINGUAL, archive_model, asr_ready, installed_models, model_ready, sounds_east_asian, sounds_english,
+    EAST_ASIAN, ENGLISH, MULTILINGUAL, WHISPER, archive_model, asr_ready, installed_models, model_ready, sounds_east_asian, sounds_english,
     validate_transcript,
 )
 
@@ -252,10 +252,16 @@ class TranscriptTests(unittest.TestCase):
 class RecognizerChoiceTests(unittest.TestCase):
     """Which model hears the song, with stand-in recognizers (no ML packages)."""
 
+    class Phrase(int):
+        """A stand-in phrase: its index, one second of samples long."""
+
+        def __len__(self):
+            return 16000
+
     def run_choice(self, models, language, choice="auto"):
         sung = {'en': 'the night is young and you are mine tonight love'.split(),
                 'fr': 'la nuit est jeune et toi tu es à moi'.split(), 'zh': list('今夜的月光照在我心上')}[language.removesuffix('?')]
-        phrases = [(index * 16000, index) for index in range(40)]
+        phrases = [(index * 16000, self.Phrase(index)) for index in range(40)]
         loads, heard = [], []
 
         def phrase_words(recognizer, start, phrase):
@@ -391,6 +397,99 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertTrue(sounds_east_asian(list('なかないでいきることも') + ['my', 'heart']))
         self.assertFalse(sounds_east_asian('the night is young and you are mine'.split()))
         self.assertFalse(sounds_east_asian(['愛', 'you']), 'too few letters to tell')
+
+    def run_whisper(self, models, sung, heard_language, choice='auto'):
+        """Like run_choice, with Whisper telling the song's language as `heard_language`."""
+        written = []
+
+        def decode(reader, phrase):
+            written.append((reader, phrase))
+            return mock.Mock(text=f'{sung} words')
+
+        with mock.patch.object(transcribe_worker, 'song_language', lambda phrases, recognizer: heard_language), \
+                mock.patch.object(transcribe_worker, '_decode', decode):
+            return (*self.run_choice(models, sung, choice), written)
+
+    def test_whisper_reads_songs_in_other_languages_timed_by_the_multilingual_model(self):
+        everything = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
+        model, result, loads, heard, progress, written = self.run_whisper(everything, 'fr', 'fr')
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper:fr', 'multilingual']))
+        # Whisper writes each phrase once, then the multilingual model hears each once to time its words.
+        self.assertEqual(written, [('whisper', phrase) for phrase in range(40)])
+        self.assertEqual(heard, [('multilingual', phrase) for phrase in range(40)])
+        self.assertEqual([w['text'] for w in result[:2]], ['fr', 'words'])
+        self.assertEqual(progress, [(0, 80)] + [(done, 80) for done in range(1, 81)])
+        # English and East Asian songs go to the models that hear them best, as without Whisper.
+        model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'en', 'en')
+        self.assertEqual((model, loads), (ENGLISH, ['whisper', 'multilingual', 'english']))
+        model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'zh', 'zh')
+        self.assertEqual((model, loads), (EAST_ASIAN, ['whisper', 'multilingual', 'east-asian', 'east-asian:zh']))
+        # Chosen, Whisper reads any song; without a language heard it detects one per phrase.
+        model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'en', 'en', 'whisper')
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper:en', 'multilingual']))
+        model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'fr', '', 'whisper')
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper', 'multilingual']))
+
+    def test_whisper_needs_the_multilingual_model_to_time_its_words(self):
+        model, _result, loads, _heard, _progress, _written = self.run_whisper((ENGLISH, WHISPER), 'fr', 'fr')
+        self.assertEqual((model, loads), (ENGLISH, ['english']))
+        with self.assertRaisesRegex(RuntimeError, 'only whisper and --only multilingual'):
+            self.run_whisper((ENGLISH, WHISPER), 'fr', 'fr', 'whisper')
+        with self.assertRaisesRegex(RuntimeError, 'setup_lyrics_model.py'):
+            self.run_whisper((ENGLISH, MULTILINGUAL), 'fr', 'fr', 'whisper')
+
+    def test_whisper_words_take_the_times_of_the_words_the_multilingual_model_heard(self):
+        timed = [dict(text=text, start=start, end=end, confidence=0.9) for text, start, end in
+                 (('la', 10.0, 10.2), ('noche', 10.3, 10.6), ('es', 10.7, 10.8), ('joven', 11.0, 11.4))]
+        words = transcribe_worker.retime(['La', 'noches', 'es', 'muy', 'joven'], timed, 9.8, 11.6)
+        self.assertEqual([w['text'] for w in words], ['La', 'noches', 'es', 'muy', 'joven'])
+        # Heard the same: its time and confidence. Heard alike: its time, unconfirmed. Unheard: the gap it was sung in.
+        self.assertEqual([(w['start'], w['end'], w['confidence']) for w in words],
+                         [(10.0, 10.2, 0.9), (10.3, 10.6, 0.6), (10.7, 10.8, 0.9), (10.8, 11.0, 0.6), (11.0, 11.4, 0.9)])
+        # As many words heard differently between two anchors take their times one for one.
+        swapped = transcribe_worker.retime(['la', 'nuit', 'es', 'joven'], timed, 9.8, 11.6)
+        self.assertEqual([(w['start'], w['end'], w['confidence']) for w in swapped],
+                         [(10.0, 10.2, 0.9), (10.3, 10.6, 0.6), (10.7, 10.8, 0.9), (11.0, 11.4, 0.9)])
+        # Otherwise they share the time the other words there were sung in.
+        three = transcribe_worker.retime(['la', 'nuit', 'tres', 'belle', 'joven'], timed, 9.8, 11.6)[1:4]
+        self.assertEqual((three[0]['start'], three[-1]['end']), (10.3, 10.8))
+        self.assertTrue(all(a['end'] == b['start'] for a, b in zip(three, three[1:])))
+        # Unheard words share the singing in proportion to their length.
+        spread = transcribe_worker.retime(['uno', 'dos', 'cuatro!'], [], 2.0, 4.0)
+        self.assertEqual([(w['start'], w['end']) for w in spread], [(2.0, 2.5), (2.5, 3.0), (3.0, 4.0)])
+        self.assertTrue(all(w['confidence'] == 0.6 for w in spread))
+        # Nothing written, or a repetition loop, keeps the multilingual model's words.
+        self.assertEqual(transcribe_worker.retime([], timed, 9.8, 11.6), timed)
+        self.assertEqual(transcribe_worker.retime(['la'] * 30, timed, 9.8, 11.6), timed)
+        # Starts never run backwards, even where the two models heard the words in another order.
+        crossed = transcribe_worker.retime(['joven', 'la', 'noche'], timed, 9.8, 11.6)
+        self.assertEqual([w['start'] for w in crossed], sorted(w['start'] for w in crossed))
+
+    def test_whisper_tells_the_song_language_from_stretches_of_singing(self):
+        import numpy as np
+
+        class Listener:
+            def __init__(self):
+                self.lengths = []
+
+            def create_stream(self):
+                listener = self
+
+                class Stream:
+                    def accept_waveform(self, rate, samples):
+                        listener.lengths.append(len(samples))
+                        self.lang = 'es' if samples.mean() > 0.5 else 'en'
+                return Stream()
+
+            def decode_stream(self, stream):
+                stream.result = stream
+
+        # Thirty 4-second phrases: a Spanish verse, an English bridge, then Spanish again.
+        phrases = [(i * 64000, np.full(64000, 0.0 if 10 <= i < 20 else 1.0, dtype=np.float32)) for i in range(30)]
+        listener = Listener()
+        self.assertEqual(transcribe_worker.song_language(phrases, listener), 'es')
+        self.assertEqual(listener.lengths, [7 * 64000] * 3, 'three stretches of at most 28 seconds')
+        self.assertEqual(transcribe_worker.song_language([], Listener()), '')
 
     def test_a_single_installed_model_hears_everything(self):
         for models, language in (((ENGLISH,), 'fr'), ((MULTILINGUAL,), 'en')):

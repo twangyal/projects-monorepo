@@ -1039,7 +1039,7 @@ class Handler(BaseHTTPRequestHandler):
                 model_choice = value.get("modelChoice", "auto")
                 if (set(value) - {"modelChoice"} or not isinstance(model_choice, str)
                         or model_choice not in CHOICES):
-                    raise RequestError(400, "Choose Automatic, English, Multilingual or East Asian lyric recognition.")
+                    raise RequestError(400, "Choose Automatic, English, Multilingual, East Asian or Whisper lyric recognition.")
             elif self.command == "POST" and resource == "word-timings":
                 value = self._read_json()
                 if set(value) != {"cues"} or not isinstance(value["cues"], list):

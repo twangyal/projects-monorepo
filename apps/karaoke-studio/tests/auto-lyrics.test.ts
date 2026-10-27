@@ -15,6 +15,7 @@ test('transcript replies are validated like saved lyrics before they can be revi
   assert.equal(recognizerName(reply.model), 'the English recognition model');
   assert.equal(recognizerName('parakeet-tdt-0.6b-v3-int8+silero-vad'), 'the multilingual recognition model');
   assert.equal(recognizerName('sensevoice-small-int8+silero-vad'), 'the East Asian recognition model');
+  assert.equal(recognizerName('whisper-turbo-int8+parakeet-tdt-0.6b-v3-timing'), 'Whisper, timed by the multilingual recognition model');
   assert.equal(recognizerName('something-else'), 'the local recognition model');
   for (const bad of [{ available: false, extra: 1 }, { ...reply, words: -1 }, { ...reply, cues: [recognized(3, 1, 'backwards', 1)] }, { ...reply, cues: [recognized(1, 40, 'past the clip', 1)] },
     { ...reply, cues: [{ ...cue(1, 2, 'x'), matched: 1 }] }, { ...reply, cues: [cue(1, 2, 'no confidence')] }, { ...reply, cues: [recognized(1, 2, 'x', 2)] }, { ...reply, cues: [recognized(1, 2, '', 1)] }, { ...reply, extra: true }, [], null]) {

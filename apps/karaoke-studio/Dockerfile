@@ -1,7 +1,7 @@
 # Karaoke Studio in a Linux container, so it also runs on macOS and Windows (through Docker Desktop), where the
 # studio's procfs and POSIX process controls are not available natively.
 #   docker build -t karaoke-studio .
-#   docker run --rm -v karaoke-models:/models karaoke-studio setup-models      # once: about 1 GB of models
+#   docker run --rm -v karaoke-models:/models karaoke-studio setup-models      # once: about 1.8 GB of models
 #   docker run --rm -p 127.0.0.1:8765:8765 -v karaoke-data:/data -v karaoke-models:/models karaoke-studio
 # Models live in their own volume and are installed only by setup-models; the service never downloads them.
 
