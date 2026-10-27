@@ -4,6 +4,7 @@ import Delaunator from 'delaunator';
 import { template, validateProduct, patternPieces, teeMesh, garmentHeight, isBottoms, legMeasurements, topMeasurements } from '../src/product.ts';
 import { buildTechPack, measurementDiagram } from '../src/techpack.ts';
 import { patternSvg, patternDxf } from '../src/pattern-export.ts';
+import { skirtGrid } from '../src/product-skirt.ts';
 
 const skirt = () => template('flared-skirt');
 test('skirt is a strict saved product with shared styles and no top/leg-only data', () => {
@@ -59,7 +60,7 @@ test('skirt exports and tech pack use skirt measures without invented sleeves or
 
 test('skirt UVs follow flat centimetres and both mesh boundaries preserve measured circumferences',()=>{
   const p=skirt(),mesh=teeMesh(p,Delaunator)[0],m=p.measurements as {waist:number;hem:number;slant:number};
-  const columns=64,rows=12;
+  const {columns,rows}=skirtGrid(p);
   for(const [row,circumference] of [[0,m.waist],[rows,m.hem]]){
     for(let c=0;c<=columns;c++){
       const i=(row*(columns+1)+c)*3;

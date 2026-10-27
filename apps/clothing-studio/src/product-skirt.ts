@@ -31,9 +31,16 @@ export function skirtPieces(product: Product): PatternPiece[] {
   return (['front','back'] as const).map(part=>({part,outline:outline.map(p=>({...p})),width:g.width,height:g.length,areaCm2:Math.abs(area)/2,cutCount:1}));
 }
 
+/** Mesh grid per panel: 40 columns around, and rows about 1.5 times as long as a column is wide at the hem, so the
+ * cloth simulation's triangles are not slivers. */
+export function skirtGrid(product: Product): { columns: number; rows: number } {
+  const d=skirtDraft(product),columns=40;
+  return {columns,rows:Math.max(12,Math.min(40,Math.round(d.slant/(d.hem/2/columns)/1.5)))};
+}
+
 /** A rigid open frustum; seams, slant and UVs follow the same two annular-sector panels. */
 export function skirtMesh(product: Product): PartMesh[] {
-  const d=skirtDraft(product),g=patternGeometry(d),columns=64,rows=12;
+  const d=skirtDraft(product),g=patternGeometry(d),{columns,rows}=skirtGrid(product);
   return (['front','back'] as const).map((part,side)=>{
     const mesh:PartMesh={part,positions:[],uvs:[],indices:[]};
     for(let r=0;r<=rows;r++)for(let c=0;c<=columns;c++){

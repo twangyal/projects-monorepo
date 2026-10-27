@@ -133,3 +133,36 @@ test('fabric changes how the same tee hangs: denim stands off the body, jersey c
     assert.ok(metrics.residualSpeed < 10, `still moving at ${metrics.residualSpeed} cm/s`);
   }
 });
+
+test('a flared skirt drapes from its held waistline: the hem falls inside the rigid flare, softest for jersey', () => {
+  const hem = (id: string) => {
+    const skirt: Product = template('flared-skirt');
+    for (const part of Object.keys(skirt.parts) as (keyof Product['parts'])[]) skirt.parts[part].material = id;
+    const meshes = teeMesh(skirt, Delaunator), result = simulateGarment(skirt, meshes, defaultBodyChest(skirt));
+    let radius = 0, count = 0, top = -Infinity, rigidTop = -Infinity;
+    result.parts.forEach((part, n) => {
+      const rest = meshes[n]!.positions;
+      for (let v = 0; v < rest.length / 3; v++) {
+        top = Math.max(top, part.positions[v * 3 + 1]!); rigidTop = Math.max(rigidTop, rest[v * 3 + 1]!);
+        if (rest[v * 3 + 1]! < 1e-6) { radius += Math.hypot(part.positions[v * 3]!, part.positions[v * 3 + 2]!); count++; }
+      }
+    });
+    return { radius: radius / count, top, rigidTop, metrics: result.metrics };
+  };
+  const jersey = hem('jersey-180'), denim = hem('denim-340'), rigid = 140 / (2 * Math.PI);
+  for (const skirt of [jersey, denim]) {
+    assert.ok(Math.abs(skirt.top - skirt.rigidTop) < 1e-4, 'the waist stays at the waistline');
+    assert.ok(skirt.radius < rigid - 1, `hem radius ${skirt.radius} vs rigid ${rigid}`);
+    assert.ok(skirt.metrics.residualSpeed < 10, `still moving at ${skirt.metrics.residualSpeed} cm/s`);
+    assert.ok(skirt.metrics.minClearance > 0.3, `clearance ${skirt.metrics.minClearance}`);
+    assert.equal(skirt.metrics.ease, 2);
+  }
+  assert.ok(jersey.radius < denim.radius - 1, `jersey ${jersey.radius} vs denim ${denim.radius}`);
+});
+
+test('skirt bodies must fit inside the waist, and trousers are not draped', () => {
+  const skirt = template('flared-skirt'), meshes = teeMesh(skirt, Delaunator);
+  assert.throws(() => simulateGarment(skirt, meshes, 94, { bodyShape: { waist: 85 }, frames: 60 }), /smaller than the skirt's 80 cm waist/);
+  const trousers = template('trousers');
+  assert.throws(() => simulateGarment(trousers, teeMesh(trousers, Delaunator), 94), /tops and skirts/);
+});

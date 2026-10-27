@@ -167,7 +167,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined});
   const drapeKeyOf = (design: Product) => JSON.stringify([design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline,
     partsOf(design).map(id => design.parts[id].material), chestFor(design), shapeFor(design)]);
-  const currentDrape = (design: Product) => (draping && !isBottoms(design) && drape?.key === drapeKeyOf(design) ? drape.result : null);
+  // Tops and skirts drape on a body; trousers keep their styling shell.
+  const drapable = (design: Product) => !isBottoms(design) || design.base === 'skirt';
+  const currentDrape = (design: Product) => (draping && drapable(design) && drape?.key === drapeKeyOf(design) ? drape.result : null);
   function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
   function startDrape(design: Product) {
     const key = drapeKeyOf(design);
@@ -196,6 +198,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }
   function drapeSummary(design: Product, result: GarmentDrapeResult): string {
     const { ease, contact, residualSpeed, maxStrain } = result.metrics;
+    if (design.base === 'skirt') return `Draped on a body with a ${Number(result.body.waist.toFixed(2))} cm waist and ${Number(result.body.hip.toFixed(2))} cm hip, held at the waistline with ${Math.round(ease * 10) / 10} cm of waist ease; `
+      + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. Stiffer fabrics hold more of the flare.`
+      + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension).` : '');
     return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; ${Number(result.body.waist.toFixed(2))} cm waist / ${Number(result.body.hip.toFixed(2))} cm hip / ${Number(result.body.chestDepth.toFixed(2))} cm chest depth on the proxy; `
       + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`
       + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension). Enlarge the garment or reduce the proxy girths before interpreting this preview.` : '');
@@ -591,7 +596,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   function captureDrape(design: Product): GarmentDrapeResult | null {
     const result = currentDrape(design);
-    if (draping && !isBottoms(design) && !result) throw new Error('Wait for the top to settle, or choose Show styling shell before exporting.');
+    if (draping && drapable(design) && !result) throw new Error('Wait for the garment to settle, or choose Show styling shell before exporting.');
     return result ? structuredClone(result) : null;
   }
 
@@ -912,23 +917,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
     ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
-    const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement;
+    const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement, undrapable = !drapable(design), skirt = design.base === 'skirt';
+    // A skirt's body is its waist and hip; the chest and chest depth belong to tops.
+    chestInput.closest('label')!.hidden = skirt; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = skirt;
     if (draped && drapeKey && drapeKey !== drapeKeyOf(design)) stopDrape();
     if (!hasDrafts('body')) {
-      chestInput.value = bottoms ? '' : String(chestFor(design));
-      ($('garment-drape-waist') as HTMLInputElement).value=bottoms||bodyWaist===null?'':String(bodyWaist);
-      ($('garment-drape-hip') as HTMLInputElement).value=bottoms||bodyHip===null?'':String(bodyHip);
-      ($('garment-drape-depth') as HTMLInputElement).value=bottoms||bodyDepth===null?'':String(bodyDepth);
+      chestInput.value = undrapable ? '' : String(chestFor(design));
+      ($('garment-drape-waist') as HTMLInputElement).value=undrapable||bodyWaist===null?'':String(bodyWaist);
+      ($('garment-drape-hip') as HTMLInputElement).value=undrapable||bodyHip===null?'':String(bodyHip);
+      ($('garment-drape-depth') as HTMLInputElement).value=undrapable||skirt||bodyDepth===null?'':String(bodyDepth);
     }
-    ($('garment-drape-waist') as HTMLInputElement).placeholder=bottoms?'':`Auto: ${Number((chestFor(design)*.86).toFixed(2))}`;
-    ($('garment-drape-hip') as HTMLInputElement).placeholder=bottoms?'':`Auto: ${Number((chestFor(design)*1.02).toFixed(2))}`;
-    for (const id of ['garment-drape-on', 'garment-drape-chest', 'garment-drape-waist', 'garment-drape-hip', 'garment-drape-depth', 'apply-garment-body']) ($(id) as HTMLInputElement).disabled = bottoms;
+    ($('garment-drape-waist') as HTMLInputElement).placeholder=undrapable?'':`Auto: ${Number((chestFor(design)*.86).toFixed(2))}`;
+    ($('garment-drape-hip') as HTMLInputElement).placeholder=undrapable?'':`Auto: ${Number((chestFor(design)*1.02).toFixed(2))}`;
+    for (const id of ['garment-drape-on', 'garment-drape-chest', 'garment-drape-waist', 'garment-drape-hip', 'garment-drape-depth', 'apply-garment-body']) ($(id) as HTMLInputElement).disabled = undrapable;
     $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
-    if (bottoms) { stopDrape(); drape = null; $('garment-drape-status').textContent = 'Draping on a body is available for tops.'; }
+    if (undrapable) { stopDrape(); drape = null; $('garment-drape-status').textContent = 'Draping on a body is available for tops and skirts.'; }
     else if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
     else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
     else startDrape(design);
-    const signature = JSON.stringify([design, selected, !!project.product, draping && !bottoms, drape?.key ?? '', !!draped]);
+    const signature = JSON.stringify([design, selected, !!project.product, draping && !undrapable, drape?.key ?? '', !!draped]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);

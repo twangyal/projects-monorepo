@@ -1,4 +1,5 @@
 import { isBottoms, material, teeDimensions, topMeasurements, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
  * Drapes a top on a body: the product's own 3D parts become one cloth, sewn at the seams where they already meet,
@@ -81,9 +82,33 @@ export const GARMENT_FRAMES = 180;
 export const GARMENT_SUBSTEPS = 24;
 export const GARMENT_SOLVER = 'xpbd-top-isometric-bending-v2';
 
-/** A body a little smaller than the garment: 10 cm less than its chest, within the supported range. */
+/** A body a little smaller than the garment: 10 cm less than a top's chest. For a skirt, the chest whose automatic
+ * waist (0.86 × chest) sits about 2 cm inside the skirt's waist. Within the supported range. */
 export function defaultBodyChest(product: Product): number {
-  return Math.min(BODY_CHEST[1], Math.max(BODY_CHEST[0], Math.round(topMeasurements(product).chest - 10)));
+  const chest = product.base === 'skirt' ? (skirtDraft(product).waist - 2) / 0.86 : topMeasurements(product).chest - 10;
+  return Math.min(BODY_CHEST[1], Math.max(BODY_CHEST[0], Math.round(chest)));
+}
+
+/** Depth of the hip below the waistline on the skirt body proxy, cm. */
+export const SKIRT_HIP_DEPTH = 20;
+/**
+ * The lower body under a skirt: a stadium-sectioned torso from the waistline (the skirt's top) to the hip, then
+ * straight down with the legs together. The skirt's waist row is held at its waistline, as a waistband would, so the
+ * body waist must be smaller than the skirt waist.
+ */
+export function skirtBodyProxy(product: Product, shape: { waist?: number; hip?: number } = {}): BodyProxy {
+  const draft = skirtDraft(product), top = skirtHeight(product);
+  const waist = shape.waist ?? Math.max(BODY_WAIST[0], draft.waist - 2), hip = shape.hip ?? Math.min(BODY_HIP[1], waist * 1.19);
+  if (typeof waist !== 'number' || !Number.isFinite(waist) || waist < BODY_WAIST[0] || waist > BODY_WAIST[1]) throw new Error('Body waist must be from 50 to 180 cm.');
+  if (typeof hip !== 'number' || !Number.isFinite(hip) || hip < BODY_HIP[0] || hip > BODY_HIP[1]) throw new Error('Body hip must be from 50 to 220 cm.');
+  if (waist > draft.waist - 1) throw new Error(`The body waist must be at least 1 cm smaller than the skirt's ${draft.waist} cm waist.`);
+  const waistHalf = stadiumHalfWidth(waist, 0.8), hipHalf = stadiumHalfWidth(hip, 0.75);
+  const torso: TorsoSection[] = [
+    { y: top, halfWidth: waistHalf, halfDepth: waistHalf * 0.8 },
+    { y: top - SKIRT_HIP_DEPTH, halfWidth: hipHalf, halfDepth: hipHalf * 0.75 },
+    { y: -60, halfWidth: hipHalf, halfDepth: hipHalf * 0.75 },
+  ];
+  return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, torso, capsules: [] };
 }
 
 export function validateBodyChest(value: unknown): number {
@@ -285,26 +310,35 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
     return Math.hypot(along, ribEdge.has(i) === ribEdge.has(j) ? 0 : ribWidth);
   };
   const mass = new Float64Array(position.length / 3);
-  // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices.
-  const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: { vertex: number; side: number; modelled: boolean }[] }>();
+  // Flat fabric coordinates of a mesh vertex on its own pattern piece: a top's body, sleeves and bands are meshed in
+  // their flat silhouette (x, y); a skirt's panels carry their flat pattern position in their UVs.
+  const flatCorner = (mesh: PartMesh, v: number): [number, number] => product.base === 'skirt'
+    ? [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!] : [mesh.positions[v * 3]!, mesh.positions[v * 3 + 1]!];
+  type Opposite = { vertex: number; modelled: boolean; edgeI: [number, number]; edgeJ: [number, number]; corner: [number, number] };
+  // Each edge: rest length, summed compliance and count (averaged where parts meet), and its opposite vertices with
+  // the flat positions of that triangle's corners.
+  const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: Opposite[] }>();
   for (const mesh of simulated) {
     const ids = vertices.get(mesh.part)!, fabric = material(product.parts[mesh.part].material), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
     // The hood is lined and holds its shape; its modelled 3D form is kept with stiffer bending.
     const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {
-      const tri = [ids[mesh.indices[t]!]!, ids[mesh.indices[t + 1]!]!, ids[mesh.indices[t + 2]!]!];
+      const corners = [mesh.indices[t]!, mesh.indices[t + 1]!, mesh.indices[t + 2]!], tri = corners.map(v => ids[v]!);
       if (tri[0] === tri[1] || tri[1] === tri[2] || tri[0] === tri[2]) continue;
-      const side = Math.sign(p(tri[0]!, 2) + p(tri[1]!, 2) + p(tri[2]!, 2)) || 1;
+      const flats = corners.map(v => flatCorner(mesh, v));
       const ux = p(tri[1]!, 0) - p(tri[0]!, 0), uy = p(tri[1]!, 1) - p(tri[0]!, 1), uz = p(tri[1]!, 2) - p(tri[0]!, 2);
       const vx = p(tri[2]!, 0) - p(tri[0]!, 0), vy = p(tri[2]!, 1) - p(tri[0]!, 1), vz = p(tri[2]!, 2) - p(tri[0]!, 2);
-      const area = modelled ? Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2 : Math.abs(ux * vy - uy * vx) / 2;
+      const area = modelled ? Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2
+        : Math.abs((flats[1]![0] - flats[0]![0]) * (flats[2]![1] - flats[0]![1]) - (flats[1]![1] - flats[0]![1]) * (flats[2]![0] - flats[0]![0])) / 2;
       for (const vertex of tri) mass[vertex] += area * fabric.gsm / 10000 / 3;
       for (let e = 0; e < 3; e++) {
         const i = tri[e]!, j = tri[(e + 1) % 3]!, opposite = tri[(e + 2) % 3]!, k = i < j ? `${i},${j}` : `${j},${i}`;
+        const fi = flats[e]!, fj = flats[(e + 1) % 3]!;
         let edge = edges.get(k);
-        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : flat(i, j), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
+        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : Math.hypot(fi[0] - fj[0], fi[1] - fj[1]), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
         edge.tensile += properties.tensile; edge.bend += bend; edge.area += area; edge.count++;
-        edge.opposite.push({ vertex: opposite, side, modelled });
+        // Flat corners in the edge's own (low id, high id) order.
+        edge.opposite.push({ vertex: opposite, modelled, edgeI: i < j ? fi : fj, edgeJ: i < j ? fj : fi, corner: flats[(e + 2) % 3]! });
       }
     }
   }
@@ -322,15 +356,16 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
       add(o1.vertex, o2.vertex, spatial(o1.vertex, o2.vertex), 1 / (bend * 0.16), false);
       continue;
     }
-    // The edge laid flat along x, with each opposite corner where it is on its own flat panel; across a front-to-back
-    // seam the two triangles unfold about the shared edge, so a seam does not hold a crease.
-    const ex = p(edge.j, 0) - p(edge.i, 0), ey = p(edge.j, 1) - p(edge.i, 1), span = Math.hypot(ex, ey) || 1;
-    const along = (o: number) => ((p(o, 0) - p(edge.i, 0)) * ex + (p(o, 1) - p(edge.i, 1)) * ey) / span;
-    const across = (o: number) => ((p(o, 1) - p(edge.i, 1)) * ex - (p(o, 0) - p(edge.i, 0)) * ey) / span;
-    let y1 = across(o1.vertex), y2 = across(o2.vertex);
-    if (o1.side !== o2.side) { y1 = Math.abs(y1); y2 = -Math.abs(y2); }
-    if (Math.sign(y1) === Math.sign(y2)) continue;
-    const stencil = bendingStencil([0, 0], [span, 0], [along(o1.vertex), y1], [along(o2.vertex), y2], bend);
+    // The edge laid flat along x, with each opposite corner placed from its own triangle's flat pattern piece, the two
+    // triangles unfolded on either side of the edge: across a seam they lie flat too, so a seam holds no crease.
+    const place = (o: Opposite) => {
+      const ex = o.edgeJ[0] - o.edgeI[0], ey = o.edgeJ[1] - o.edgeI[1], span = Math.hypot(ex, ey) || 1;
+      const dx = o.corner[0] - o.edgeI[0], dy = o.corner[1] - o.edgeI[1];
+      return { span, along: (dx * ex + dy * ey) / span, across: Math.abs(dy * ex - dx * ey) / span };
+    };
+    const first = place(o1), second = place(o2);
+    if (first.across < 1e-9 || second.across < 1e-9) continue;
+    const stencil = bendingStencil([0, 0], [first.span, 0], [first.along, first.across], [second.along, -second.across], bend);
     bendParticles.push(edge.i, edge.j, o1.vertex, o2.vertex);
     bendWeights.push(...stencil.weights);
     bendStiffness.push(stencil.stiffness);
@@ -366,7 +401,7 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
 }
 
 export interface GarmentDrapeMetrics {
-  /** Garment chest minus body chest, cm. */
+  /** Garment chest minus body chest (for a skirt, garment waist minus body waist), cm. */
   ease: number;
   /** Smallest distance from the cloth to the body, cm. */
   minClearance: number;
@@ -385,23 +420,31 @@ export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32A
  */
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
   options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
-  if (isBottoms(product)) throw new Error('Draping on a body is available for tops.');
-  const body = bodyProxy(product, validateBodyChest(bodyChest),options.bodyShape), cloth = buildCloth(product, meshes);
+  const skirt = product.base === 'skirt';
+  if (isBottoms(product) && !skirt) throw new Error('Draping on a body is available for tops and skirts.');
+  const body = skirt ? skirtBodyProxy(product, options.bodyShape) : bodyProxy(product, validateBodyChest(bodyChest), options.bodyShape);
+  const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
   const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
-  const { a, b, inverseMass, bendParticles, bendWeights } = cloth, count = inverseMass.length, lambdas = new Float32Array(cloth.rest.length);
+  const { a, b, bendParticles, bendWeights } = cloth, inverseMass = Float32Array.from(cloth.inverseMass), count = inverseMass.length, lambdas = new Float32Array(cloth.rest.length);
+  // A skirt's waist row is held at its waistline, as a waistband would hold it.
+  if (skirt) {
+    let top = -Infinity;
+    for (let i = 0; i < count; i++) top = Math.max(top, cloth.positions[i * 3 + 1]!);
+    for (let i = 0; i < count; i++) if (cloth.positions[i * 3 + 1]! > top - 1e-6) inverseMass[i] = 0;
+  }
   const stencils = cloth.bendStiffness.length;
-  // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry:
-  // for its natural frequency ω (ω² = q·Σ Kᵢ²/mᵢ), dt²·ω² ≤ 1 and dt·β·ω² ≤ 1. Only tiny, very stiff triangles are
-  // affected; ordinary cloth keeps its full stiffness and damping.
+  // Bending is integrated explicitly, so each stencil's stiffness and damping stay within what this step can carry
+  // with a margin: for its natural frequency ω (ω² = q·Σ Kᵢ²/mᵢ), dt²·ω² ≤ ¼ and dt·β·ω² ≤ ½. Only tiny or very stiff
+  // triangles are affected; ordinary cloth keeps its full stiffness and damping.
   const bendStiffness = new Float32Array(stencils), bendDamping = new Float32Array(stencils);
   for (let s = 0; s < stencils; s++) {
     let spread = 0;
     for (let c = 0; c < 4; c++) spread += bendWeights[s * 4 + c]! ** 2 * inverseMass[bendParticles[s * 4 + c]!]!;
-    const q = Math.min(cloth.bendStiffness[s]!, spread > 0 ? 1 / (dt * dt * spread) : 0), omega2 = q * spread;
+    const q = Math.min(cloth.bendStiffness[s]!, spread > 0 ? 0.25 / (dt * dt * spread) : 0), omega2 = q * spread;
     bendStiffness[s] = q;
-    bendDamping[s] = omega2 > 0 ? Math.min(BEND_DAMPING, 1 / (dt * omega2)) : 0;
+    bendDamping[s] = omega2 > 0 ? Math.min(BEND_DAMPING, 0.5 / (dt * omega2)) : 0;
   }
   // The shell is the cloth stretched over a pillow: while the body grows inside it, every rest length eases from its
   // length on the shell to its flat length, so the fabric shrinks onto the body instead of snapping.
@@ -436,6 +479,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       for (let i = 0; i < count; i++) {
         const k = i * 3;
         previous[k] = positions[k]!; previous[k + 1] = positions[k + 1]!; previous[k + 2] = positions[k + 2]!;
+        if (inverseMass[i] === 0) { velocity[k] = velocity[k + 1] = velocity[k + 2] = 0; continue; }
         velocity[k] *= damping; velocity[k + 1] = velocity[k + 1]! * damping - gravity * dt; velocity[k + 2] *= damping;
         positions[k] += velocity[k]! * dt; positions[k + 1] += velocity[k + 1]! * dt; positions[k + 2] += velocity[k + 2]! * dt;
       }
@@ -456,6 +500,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       // Body contact with friction: sliding along the body is partly removed, then the point is pushed out.
       field.scale(scale);
       for (let i = 0; i < count; i++) {
+        if (inverseMass[i] === 0) continue;
         const k = i * 3, distance = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
         const keep = cloth.offset[i]!;
         if (distance >= keep) continue;
@@ -514,5 +559,6 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     }
     parts.push({ part: mesh.part, positions: out });
   }
-  return { parts, body, metrics: { ease: topMeasurements(product).chest - body.chest, minClearance, contact: touching / count, maxStrain, residualSpeed: speed } };
+  const ease = skirt ? skirtDraft(product).waist - body.waist : topMeasurements(product).chest - body.chest;
+  return { parts, body, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed } };
 }

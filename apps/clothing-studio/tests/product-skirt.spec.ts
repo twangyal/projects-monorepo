@@ -6,7 +6,7 @@ test('a product skirt shares styling, applied measurements, history, saved reloa
   await editor.getByRole('button',{name:/^Use the Flared skirt template/}).click();
   await expect(editor.locator('#product-status')).toContainText('Editing Flared skirt');
   await expect(editor.getByRole('radiogroup',{name:'Garment parts'}).getByRole('radio')).toHaveCount(2);
-  await expect(editor.locator('#garment-drape-on')).toBeDisabled();
+  await expect(editor.locator('#garment-drape-on')).toBeEnabled();
   await editor.locator('#product-skirt-waist').fill('90');
   await editor.locator('#product-skirt-hem').fill('190');
   await editor.locator('#product-skirt-slant').fill('65');
@@ -35,5 +35,31 @@ test('a product skirt shares styling, applied measurements, history, saved reloa
   for(const [id,match] of [['#pattern-svg',/Waist|Flared skirt/],['#product-glb',null]] as const){
     const button=editor.locator(id);const wait=page.waitForEvent('download');await button.click();const bytes=await readFile((await(await wait).path())!);if(match)expect(bytes.toString()).toMatch(match);else {expect(bytes.subarray(0,4).toString()).toBe('glTF');expect(bytes.length).toBeGreaterThan(1000);}
   }
+  expect(errors).toEqual([]);
+});
+
+test('a product skirt drapes on a lower body held at the waist, and fabric changes how it hangs',async({page})=>{
+  test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/'); const editor=page.locator('#product-editor');
+  await editor.getByRole('button',{name:/^Use the Flared skirt template/}).click();
+  await expect(editor.locator('#product-status')).toContainText('Editing Flared skirt');
+  // A skirt's body is its waist and hip; the chest and chest depth fields belong to tops.
+  await expect(editor.getByLabel('Body chest girth (cm)')).toBeHidden();
+  await editor.locator('#garment-drape-on').click();
+  const status=editor.locator('#garment-drape-status');
+  await expect(status).toContainText('held at the waistline',{timeout:60000});
+  await expect(status).toContainText(/\d cm waist and \d+(\.\d+)? cm hip/);
+  const contact=async()=>Number((await status.textContent())!.match(/over (\d+)%/)![1]);
+  const linen=await contact();
+  await editor.getByRole('button',{name:'Apply Cotton jersey',exact:true}).click();
+  await expect(status).toContainText('Draping on the body');
+  await expect(status).toContainText('held at the waistline',{timeout:60000});
+  // Soft jersey falls closer to the body than crisp linen.
+  expect(await contact()).toBeGreaterThan(linen);
+  // A body waist that does not fit inside the skirt's waist explains itself.
+  await editor.locator('#top-body-shape summary').click();
+  await editor.locator('#garment-drape-waist').fill('85');
+  await editor.locator('#apply-garment-body').click();
+  await expect(status).toContainText('smaller than the skirt',{timeout:30000});
   expect(errors).toEqual([]);
 });

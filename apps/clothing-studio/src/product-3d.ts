@@ -92,7 +92,7 @@ export class ProductScene {
     // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
     const previous = this.height;
     // A draped top is framed with the body's head in view.
-    this.height = Math.max(garmentHeight(product), drape && showBody ? topMeasurements(product).length + 32 : 0) + 6;
+    this.height = Math.max(garmentHeight(product), drape && showBody && product.base !== 'skirt' ? topMeasurements(product).length + 32 : 0) + 6;
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
     const restParts = teeMesh(product, Delaunator);
@@ -119,8 +119,10 @@ export class ProductScene {
     for (const child of [...this.body.children]) { this.body.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     if (!body) return;
     const skin = () => new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.85, metalness: 0 });
-    // Torso: stadium sections joined into a tube, down to a little below the hip.
-    const sections = [...body.torso.slice(0, 4), { ...body.torso[3]!, y: body.torso[3]!.y - 12 }], around = 40, positions: number[] = [], indices: number[] = [];
+    // Torso: stadium sections joined into a tube, down to a little below the hip (a top's body) or a little below the
+    // hem (a skirt's lower body, which has no arms or head).
+    const kept = body.torso.filter(section => section.y > -50).slice(0, 4), last = kept.at(-1)!;
+    const sections = [...kept, { ...last, y: body.capsules.length ? last.y - 12 : -12 }], around = 40, positions: number[] = [], indices: number[] = [];
     for (const section of sections) {
       const straight = section.halfWidth - section.halfDepth;
       for (let i = 0; i < around; i++) {
