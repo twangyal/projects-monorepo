@@ -151,6 +151,34 @@ test('after calibration, an accuracy check sizes the circle to where the gaze la
   await expect(dot(page)).toHaveClass(/hidden/);
 });
 
+test('a control named inside the circle and used becomes one more calibration sample', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await startCamera(page);
+  await finishCalibration(page);
+  const learned = () => page.evaluate(() => { const data = window.webgazer.getRegression()[0].getData(); return { count: data.length, last: data.at(-1) }; });
+  expect((await learned()).count).toBe(36);
+  const add = page.getByRole('button', { name: 'Add to cart' }).first();
+  await gazeAt(page, add);
+  await typeInstruction(page, 'click add to cart');
+  await expect(status(page)).toContainText('Add to cart');
+  const box = await add.boundingBox(), after = await learned();
+  expect(after.count).toBe(37);
+  expect(Math.abs(after.last[0] - (box.x + box.width / 2))).toBeLessThan(1);
+  expect(Math.abs(after.last[1] - (box.y + box.height / 2))).toBeLessThan(1);
+  // At most one sample every two seconds; a control as wide as the page says too little about where the eyes were.
+  await typeInstruction(page, 'click add to cart');
+  expect((await learned()).count).toBe(37);
+  await page.clock.runFor(2100);
+  await gazeAt(page, page.getByLabel('Sort by'));
+  await typeInstruction(page, 'choose title');
+  await expect(page.getByLabel('Sort by')).toHaveValue('Title');
+  expect((await learned()).count).toBe(37);
+  await page.clock.runFor(2100);
+  await gazeAt(page, add);
+  await typeInstruction(page, 'click add to cart');
+  await expect.poll(async () => (await learned()).count).toBe(38);
+});
+
 test('camera mode continues after navigation with a fresh calibration, and stop camera releases it', async ({ page }) => {
   await open(page, '/practice-site/index.html');
   await startCamera(page);
