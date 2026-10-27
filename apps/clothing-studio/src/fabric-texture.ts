@@ -101,6 +101,8 @@ export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document
       case 'pique': if ((Math.floor(x / (unit / 4)) + Math.floor(y / (unit / 4))) % 2 === 0) { ctx.fillStyle = shade(0.1); ctx.beginPath(); ctx.arc(x + unit / 8, y + unit / 8, unit / 12, 0, Math.PI * 2); ctx.fill(); } break;
       case 'twill': ctx.fillStyle = (Math.floor((x + y) / (unit / 4)) % 4 === 0) ? light(0.18) : shade(0.04); ctx.fillRect(x, y, unit / 4, unit / 4); break;
       case 'terry': ctx.fillStyle = random() > 0.5 ? shade(0.07) : light(0.05); ctx.fillRect(x, y, unit / 4, unit / 4); break;
+      case 'chiffon': if (random() > 0.6) { ctx.fillStyle = light(0.06); ctx.fillRect(x, y, unit / 8, unit / 8); } break;
+      case 'poplin': ctx.fillStyle = (Math.floor(x / (unit / 8)) + Math.floor(y / (unit / 8))) % 2 ? shade(0.03) : light(0.02); ctx.fillRect(x, y, unit / 8, unit / 8); break;
       case 'linen': case 'canvas': ctx.fillStyle = (Math.floor(x / (unit / 4)) + Math.floor(y / (unit / 4))) % 2 ? shade(0.05 + random() * 0.05) : light(0.04); ctx.fillRect(x, y, unit / 4, unit / 4); break;
       case 'slub': if (random() > 0.985) { ctx.fillStyle = light(0.12); ctx.fillRect(x, y, unit * (0.6 + random()), unit / 8); } else if ((Math.floor(x / (unit / 4))) % 2) { ctx.fillStyle = shade(0.04); ctx.fillRect(x, y, unit / 8, unit / 4); } break;
     }

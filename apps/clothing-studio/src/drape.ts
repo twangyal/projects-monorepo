@@ -1,33 +1,34 @@
 import { validateConstruction, patternGeometry, type SkirtDraft } from './construction.ts';
 import { validateBodyMeasurements, type BodyMeasurements } from './body-fitting.ts';
+import { clothFromMeshes, clothSolver, GRAVITY } from './garment-drape.ts';
+import { MATERIALS, material, type Material, type PartMesh } from './product.ts';
 
 /**
- * Fabric drape of the measured two-panel skirt: an extended position-based (XPBD) cloth solver.
+ * Fabric drape of the measured two-panel skirt in the shared garment solver (garment-drape.ts) with the product
+ * fabric library, so this skirt drapes as product garments do.
  *
- * Both panels are meshed directly from their flat annular-sector patterns, so every rest length is a
- * real fabric distance. The waist row is held at the waistline; gravity, stretch, shear and bending
- * constraints and contact with a body surface of revolution (from entered measurements) do the
- * rest. Units are centimetres, grams and seconds; +Y points down, as in the rigid shell.
- *
- * Fabric presets use approximate typical weights and relative stiffnesses, not measured fabric data.
+ * Both panels are meshed directly from their flat annular-sector patterns, so every rest length is a real fabric
+ * distance. The waist row is held at the waistline; gravity, the fabric's direction-dependent stretch and bending,
+ * and contact with a body surface of revolution (from entered measurements) do the rest. Units are centimetres,
+ * grams and seconds; +Y points down, as in the rigid shell.
  */
-export type FabricKind = 'chiffon' | 'cotton' | 'linen' | 'denim';
-export interface Fabric { label: string; gsm: number; bend: number; stretch: number }
-export const FABRICS: Readonly<Record<FabricKind, Fabric>> = Object.freeze({
-  chiffon: { label: 'Chiffon (light, fluid)', gsm: 50, bend: 0.02, stretch: 0.0004 },
-  cotton: { label: 'Cotton poplin (medium)', gsm: 120, bend: 0.4, stretch: 0.0002 },
-  linen: { label: 'Linen (crisp)', gsm: 190, bend: 1.6, stretch: 0.0001 },
-  denim: { label: 'Denim (heavy, stiff)', gsm: 380, bend: 8, stretch: 0.00005 },
-});
-export const FABRIC_KINDS = Object.keys(FABRICS) as FabricKind[];
+/** A library fabric id; skirts saved with the earlier presets name one of those instead. */
+export type FabricKind = string;
+const PRESETS: Readonly<Record<string, string>> = Object.freeze({ chiffon: 'chiffon-50', cotton: 'poplin-120', linen: 'linen-170', denim: 'denim-340' });
+/** The fabrics offered for this skirt: the product library. */
+export const FABRIC_KINDS: readonly string[] = MATERIALS.map(item => item.id);
 export function validateFabric(value: unknown): FabricKind {
-  if (typeof value !== 'string' || !Object.hasOwn(FABRICS, value)) throw new Error(`Fabric must be one of ${FABRIC_KINDS.join(', ')}.`);
-  return value as FabricKind;
+  if (typeof value !== 'string' || !(Object.hasOwn(PRESETS, value) || FABRIC_KINDS.includes(value))) throw new Error('Fabric must be one of the library fabrics.');
+  return value;
+}
+/** The library fabric a saved fabric names (earlier presets map to their library equivalent). */
+export function drapeFabric(kind: FabricKind): Material {
+  const id = validateFabric(kind);
+  return material(PRESETS[id] ?? id);
 }
 
 export const ROWS = 24;          // Segments along the slant (waist to hem).
 export const COLUMNS = 48;       // Segments across each panel; 96 around the skirt.
-const GRAVITY = 981;
 const THICKNESS = 0.4;           // Contact offset from the body surface, cm.
 const FRAME = 1 / 60;
 
@@ -74,7 +75,7 @@ function patternPoint(geometry: ReturnType<typeof patternGeometry>, r: number, c
   return [radius * Math.sin(angle), radius * Math.cos(angle)];
 }
 
-interface Constraint { a: number; b: number; rest: number; compliance: number }
+interface Constraint { a: number; b: number; rest: number }
 
 /** Distance between two particles measured on their shared panel's flat pattern. */
 function restLength(geometry: ReturnType<typeof patternGeometry>, r1: number, c1: number, r2: number, c2: number): number {
@@ -110,36 +111,31 @@ export function initialPositions(draft: SkirtDraft, jitter = 0.05): Float32Array
   return positions;
 }
 
-/** Structural, shear and bending constraints with rest lengths from the flat patterns. */
-export function constraints(draft: SkirtDraft, fabric: Fabric): Constraint[] {
+/** Edges around and down the skirt (along and across the grain) with rest lengths from the flat patterns, for stretch.
+ * Diagonals are left out: a flared skirt hangs on the bias at its sides, where the fabric shears rather than stretches. */
+export function constraints(draft: SkirtDraft): Constraint[] {
   const geometry = patternGeometry(validateConstruction(draft)), total = 2 * COLUMNS, list: Constraint[] = [];
-  const add = (r1: number, c1: number, r2: number, c2: number, compliance: number) => {
+  const add = (r1: number, c1: number, r2: number, c2: number) => {
     if (r2 < 0 || r2 > ROWS) return;
     const w1 = (c1 + total) % total, w2 = (c2 + total) % total;
-    list.push({ a: index(r1, w1), b: index(r2, w2), rest: restLength(geometry, r1, w1, r2, w2), compliance });
+    list.push({ a: index(r1, w1), b: index(r2, w2), rest: restLength(geometry, r1, w1, r2, w2) });
   };
-  const bendCompliance = 1 / (fabric.bend * 40);
-  for (let r = 0; r <= ROWS; r++) for (let c = 0; c < total; c++) {
-    add(r, c, r, c + 1, fabric.stretch);           // around (weft)
-    add(r, c, r + 1, c, fabric.stretch);           // down (warp)
-    add(r, c, r + 1, c + 1, fabric.stretch * 4);   // shear
-    add(r, c, r + 1, c - 1, fabric.stretch * 4);
-    add(r, c, r, c + 2, bendCompliance);           // bending across two segments
-    add(r, c, r + 2, c, bendCompliance);
-  }
+  for (let r = 0; r <= ROWS; r++) for (let c = 0; c < total; c++) { add(r, c, r, c + 1); add(r, c, r + 1, c); }
   return list;
 }
 
-/** Mass of each particle from the flat area it represents (grams). */
-function inverseMasses(draft: SkirtDraft, fabric: Fabric): Float32Array {
-  const geometry = patternGeometry(validateConstruction(draft)), total = 2 * COLUMNS, inverse = new Float32Array((ROWS + 1) * total);
-  const dr = (geometry.outerRadius - geometry.innerRadius) / ROWS, density = fabric.gsm / 10000;
-  for (let r = 0; r <= ROWS; r++) {
-    const radius = geometry.innerRadius + dr * r, share = r === 0 || r === ROWS ? 0.5 : 1;
-    const area = radius * (geometry.angle / COLUMNS) * dr * share;
-    for (let c = 0; c < total; c++) inverse[index(r, c)] = r === 0 ? 0 : 1 / (area * density);
-  }
-  return inverse;
+/** The two panels as part meshes for the shared solver: y up (the solver's convention), UVs their flat patterns. */
+function panelMeshes(draft: SkirtDraft, start: Float32Array): PartMesh[] {
+  const geometry = patternGeometry(draft), total = 2 * COLUMNS;
+  return (['front', 'back'] as const).map((part, panel) => {
+    const mesh: PartMesh = { part, positions: [], uvs: [], indices: [] };
+    for (let r = 0; r <= ROWS; r++) for (let c = 0; c <= COLUMNS; c++) {
+      const k = index(r, (panel * COLUMNS + c) % total) * 3, [u, v] = patternPoint(geometry, r, c);
+      mesh.positions.push(start[k]!, -start[k + 1]!, start[k + 2]!); mesh.uvs.push(u, v);
+      if (r < ROWS && c < COLUMNS) { const a = r * (COLUMNS + 1) + c, b = a + 1, g = a + COLUMNS + 1, h = g + 1; mesh.indices.push(a, g, b, b, g, h); }
+    }
+    return mesh;
+  });
 }
 
 export function drapeMetrics(draft: SkirtDraft, body: BodyMeasurements, positions: Float32Array, velocitySpeed = 0): DrapeMetrics {
@@ -155,8 +151,7 @@ export function drapeMetrics(draft: SkirtDraft, body: BodyMeasurements, position
   const smooth = radii.map((_, c) => (radii[(c + total - 1) % total]! + 2 * radii[c]! + radii[(c + 1) % total]!) / 4);
   let crossings = 0;
   for (let c = 0; c < total; c++) if (smooth[c]! < hemRadius && smooth[(c + 1) % total]! >= hemRadius) crossings++;
-  for (const constraint of constraints(d, FABRICS.cotton)) {
-    if (constraint.compliance > 0.01) continue; // Structural and shear only.
+  for (const constraint of constraints(d)) {
     const a = constraint.a * 3, b = constraint.b * 3;
     const length = Math.hypot(positions[a]! - positions[b]!, positions[a + 1]! - positions[b + 1]!, positions[a + 2]! - positions[b + 2]!);
     maxStrain = Math.max(maxStrain, (length - constraint.rest) / constraint.rest);
@@ -174,75 +169,51 @@ export function drapeMetrics(draft: SkirtDraft, body: BodyMeasurements, position
  * same inputs. `progress` receives completed frames and can return false to stop early.
  */
 export function simulateDrape(draft: SkirtDraft, kind: FabricKind, measured?: BodyMeasurements, options: { frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): DrapeResult {
-  const d = validateConstruction(draft), fabric = FABRICS[validateFabric(kind)];
+  const d = validateConstruction(draft), fabric = drapeFabric(kind);
   const body = measured ? validateBodyMeasurements(measured) : assumedBody(d);
-  const frames = options.frames ?? 240, substeps = options.substeps ?? 12, dt = FRAME / substeps;
+  const frames = options.frames ?? 300, substeps = options.substeps ?? 12, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames < 1 || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
-  const positions = initialPositions(d), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);
-  const inverse = inverseMasses(d, fabric), list = constraints(d, fabric), lambdas = new Float32Array(list.length);
-  // Flat typed arrays keep the inner loop fast.
-  const ca = Int32Array.from(list, c => c.a * 3), cb = Int32Array.from(list, c => c.b * 3);
-  const rest = Float32Array.from(list, c => c.rest), compliance = Float32Array.from(list, c => c.compliance / (dt * dt));
-  const wA = Float32Array.from(list, c => inverse[c.a]!), wB = Float32Array.from(list, c => inverse[c.b]!);
-  const pinned = Float32Array.from(positions.subarray(0, 2 * COLUMNS * 3));
-  const damping = Math.exp(-1.5 * dt);
-  // Warp length from the waist to each row, along the flat pattern (straight radial lines).
-  const tether = new Float32Array(inverse.length), slantPerRow = d.slant / ROWS;
-  for (let i = 0; i < inverse.length; i++) tether[i] = Math.floor(i / (2 * COLUMNS)) * slantPerRow * 1.005;
-  let speed = 0;
-  for (let frame = 1; frame <= frames; frame++) {
-    for (let step = 0; step < substeps; step++) {
-      for (let i = 0; i < inverse.length; i++) {
-        const k = i * 3;
-        previous[k] = positions[k]!; previous[k + 1] = positions[k + 1]!; previous[k + 2] = positions[k + 2]!;
-        if (inverse[i] === 0) continue;
-        velocity[k] *= damping; velocity[k + 1] = velocity[k + 1]! * damping + GRAVITY * dt; velocity[k + 2] *= damping;
-        positions[k] += velocity[k]! * dt; positions[k + 1] += velocity[k + 1]! * dt; positions[k + 2] += velocity[k + 2]! * dt;
-      }
-      lambdas.fill(0);
-      for (let n = 0; n < lambdas.length; n++) {
-        const wa = wA[n]!, wb = wB[n]!, w = wa + wb;
-        if (w === 0) continue;
-        const ka = ca[n]!, kb = cb[n]!;
-        const dx = positions[ka]! - positions[kb]!, dy = positions[ka + 1]! - positions[kb + 1]!, dz = positions[ka + 2]! - positions[kb + 2]!;
-        const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (length < 1e-9) continue;
-        const alpha = compliance[n]!, delta = (-(length - rest[n]!) - alpha * lambdas[n]!) / (w + alpha);
-        lambdas[n] += delta;
-        const sx = dx / length * delta, sy = dy / length * delta, sz = dz / length * delta;
-        positions[ka] += sx * wa; positions[ka + 1] += sy * wa; positions[ka + 2] += sz * wa;
-        positions[kb] -= sx * wb; positions[kb + 1] -= sy * wb; positions[kb + 2] -= sz * wb;
-      }
-      // Long-range attachments: woven fabric barely stretches along the warp, so no point may hang
-      // farther from its waist anchor than the fabric between them allows.
-      for (let i = 2 * COLUMNS; i < inverse.length; i++) {
-        const k = i * 3, anchor = (i % (2 * COLUMNS)) * 3, limit = tether[i]!;
-        const dx = positions[k]! - pinned[anchor]!, dy = positions[k + 1]! - pinned[anchor + 1]!, dz = positions[k + 2]! - pinned[anchor + 2]!;
-        const length = Math.hypot(dx, dy, dz);
-        if (length > limit) { const scale = limit / length; positions[k] = pinned[anchor]! + dx * scale; positions[k + 1] = pinned[anchor + 1]! + dy * scale; positions[k + 2] = pinned[anchor + 2]! + dz * scale; }
-      }
-      // Body contact: push points out of the surface of revolution (frictionless).
-      for (let i = 0; i < inverse.length; i++) {
-        if (inverse[i] === 0) continue;
-        const k = i * 3, y = positions[k + 1]!;
-        if (y < 0) { positions[k + 1] = 0; continue; } // Fabric cannot rise above the held waistline.
-        const radius = Math.hypot(positions[k]!, positions[k + 2]!), minimum = bodyRadius(body, y) + THICKNESS;
-        if (radius < minimum) {
-          const scale = radius > 1e-6 ? minimum / radius : 1;
-          positions[k] = radius > 1e-6 ? positions[k]! * scale : minimum; positions[k + 2] = positions[k + 2]! * scale;
-        }
-      }
-      positions.set(pinned, 0);
-      speed = 0;
-      for (let i = 0; i < inverse.length; i++) {
-        const k = i * 3;
-        velocity[k] = (positions[k]! - previous[k]!) / dt; velocity[k + 1] = (positions[k + 1]! - previous[k + 1]!) / dt; velocity[k + 2] = (positions[k + 2]! - previous[k + 2]!) / dt;
-        speed = Math.max(speed, Math.hypot(velocity[k]!, velocity[k + 1]!, velocity[k + 2]!));
+  const start = initialPositions(d), meshes = panelMeshes(d, start), cloth = clothFromMeshes(meshes, () => fabric, true);
+  // Each ring particle's cloth particle (the panels share their side-seam columns).
+  const total = 2 * COLUMNS, particle = new Int32Array((ROWS + 1) * total);
+  meshes.forEach((mesh, panel) => {
+    const ids = cloth.vertices.get(mesh.part)!;
+    for (let r = 0; r <= ROWS; r++) for (let c = 0; c < COLUMNS; c++) particle[index(r, panel * COLUMNS + c)] = ids[r * (COLUMNS + 1) + c]!;
+  });
+  // The waist row is held at the waistline.
+  const inverseMass = Float32Array.from(cloth.inverseMass);
+  for (let c = 0; c < total; c++) inverseMass[particle[index(0, c)]!] = 0;
+  // Woven fabric barely stretches along the warp, so no point may hang farther from its waist point (same column)
+  // than the fabric between them, plus 0.5%.
+  const geometry = patternGeometry(d), tethered: number[] = [], anchors: number[] = [], lengths: number[] = [];
+  for (let r = 1; r <= ROWS; r++) for (let c = 0; c < total; c++) {
+    const [x0, y0] = patternPoint(geometry, 0, c % COLUMNS), [x1, y1] = patternPoint(geometry, r, c % COLUMNS);
+    tethered.push(particle[index(r, c)]!); anchors.push(particle[index(0, c)]!); lengths.push(Math.hypot(x1 - x0, y1 - y0) * 1.005);
+  }
+  const solver = clothSolver(cloth, inverseMass, dt, { particle: Int32Array.from(tethered), anchor: Int32Array.from(anchors), length: Float32Array.from(lengths) });
+  // Air drag only: it brings the swinging hem to rest sooner without changing where it rests.
+  const { positions } = solver, damping = Math.exp(-4 * dt), count = inverseMass.length;
+  // Body contact (frictionless): points are pushed out of the surface of revolution and never rise above the waist.
+  const contact = () => {
+    for (let i = 0; i < count; i++) {
+      if (inverseMass[i] === 0) continue;
+      const k = i * 3, y = -positions[k + 1]!;
+      if (y < 0) { positions[k + 1] = 0; continue; }
+      const radius = Math.hypot(positions[k]!, positions[k + 2]!), minimum = bodyRadius(body, y) + THICKNESS;
+      if (radius < minimum) {
+        const scale = radius > 1e-6 ? minimum / radius : 1;
+        positions[k] = radius > 1e-6 ? positions[k]! * scale : minimum; positions[k + 2] = positions[k + 2]! * scale;
       }
     }
+  };
+  let speed = 0;
+  for (let frame = 1; frame <= frames; frame++) {
+    for (let step = 0; step < substeps; step++) speed = solver.step(damping, GRAVITY, contact);
     if (options.progress && options.progress(frame, frames) === false) break;
   }
-  return { rows: ROWS, columns: 2 * COLUMNS, positions, metrics: drapeMetrics(d, body, positions, speed), body, bodyAssumed: !measured };
+  const out = new Float32Array(particle.length * 3);
+  particle.forEach((id, i) => { out[i * 3] = positions[id * 3]!; out[i * 3 + 1] = -positions[id * 3 + 1]!; out[i * 3 + 2] = positions[id * 3 + 2]!; });
+  return { rows: ROWS, columns: total, positions: out, metrics: drapeMetrics(d, body, out, speed), body, bodyAssumed: !measured };
 }
 
 const fmt = (v: number) => String(Math.round(v * 1e4) / 1e4);
@@ -289,7 +260,7 @@ export function drapeSvg(result: DrapeResult, yaw: number, color: string, showBo
 /** OBJ of the draped surface: centimetres, waist-centre origin, +Y toward the hem. */
 export function drapeObj(result: DrapeResult, fabric: FabricKind): string {
   const { positions, rows, columns } = result, coordinate = (v: number) => String(Math.round(v * 1e6) / 1e6);
-  const lines = ['# Units: centimetres. Waist-center origin; +Y points toward hem.', `# Simulated drape (XPBD cloth, ${FABRICS[validateFabric(fabric)].label}); approximate fabric preset, not measured fabric data.`, '# Body proxy and fabric thickness are not included.'];
+  const lines = ['# Units: centimetres. Waist-center origin; +Y points toward hem.', `# Simulated drape (XPBD cloth, ${drapeFabric(fabric).name}, ${drapeFabric(fabric).gsm} g/m2); typical fabric properties, not measured fabric data.`, '# Body proxy and fabric thickness are not included.'];
   for (let i = 0; i < positions.length; i += 3) lines.push(`v ${coordinate(positions[i]!)} ${coordinate(positions[i + 1]!)} ${coordinate(positions[i + 2]!)}`);
   const vertex = (r: number, c: number) => r * columns + (c % columns) + 1, half = columns / 2;
   for (const [name, first, last] of [['Front_Panel', 0, half], ['Back_Panel', half, columns]] as const) {

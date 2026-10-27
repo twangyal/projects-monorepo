@@ -1,14 +1,15 @@
-import { drapeObj, drapeSvg, FABRICS, FABRIC_KINDS, validateFabric, type DrapeResult, type FabricKind } from './drape.ts';
+import { drapeFabric, drapeObj, drapeSvg, validateFabric, type DrapeResult, type FabricKind } from './drape.ts';
+import { MATERIALS } from './product.ts';
 import { validateProject, type Project } from './model.ts';
 
 export const drapeMarkup = `<fieldset id="drape-panel"><legend>Fabric drape simulation</legend>
-<label for="drape-fabric">Fabric</label><select id="drape-fabric">${FABRIC_KINDS.map(kind => `<option value="${kind}">${FABRICS[kind].label} · ${FABRICS[kind].gsm} g/m²</option>`).join('')}</select>
+<label for="drape-fabric">Fabric</label><select id="drape-fabric">${MATERIALS.map(item => `<option value="${item.id}">${item.name} · ${item.gsm} g/m²</option>`).join('')}</select>
 <div class="construction-actions"><button id="drape-simulate">Simulate drape</button><button id="drape-cancel" class="quiet" hidden>Cancel simulation</button><button id="drape-obj" class="quiet" disabled>Export draped OBJ</button></div>
 <p id="drape-status" role="status">Apply a measured skirt pattern, choose a fabric, then simulate how it hangs.</p>
 <div id="drape-view" class="construction-3d" tabindex="0" aria-label="Simulated drape preview; use Left and Right arrows to rotate"></div>
 <div class="construction-actions"><button id="drape-left" class="quiet" disabled>Rotate drape left</button><button id="drape-right" class="quiet" disabled>Rotate drape right</button><label><input id="drape-body" type="checkbox" checked> Show body proxy</label></div>
 <p id="drape-metrics"></p>
-<p class="fine-print">The skirt panels are meshed from their flat patterns and settled under gravity with stretch, shear and bending resistance (an XPBD cloth solver), held at the waistline and kept outside a body proxy shaped from your entered waist, hip and depth (or an assumed profile). Fabric presets are approximate typical weights and stiffnesses, not measured fabric data; there is no friction, wind, motion or fabric thickness. Validate drape and fit with a physical toile.</p></fieldset>`;
+<p class="fine-print">The skirt panels are meshed from their flat patterns and settled under gravity with stretch, shear and bending resistance (an XPBD cloth solver), held at the waistline and kept outside a body proxy shaped from your entered waist, hip and depth (or an assumed profile). It uses the product fabric library and solver, with typical published fabric properties rather than measured fabric data; there is no friction, wind, motion or fabric thickness. Validate drape and fit with a physical toile.</p></fieldset>`;
 
 export function mountDrape(options: { current: () => Project; commit: (next: Project) => void; guard: () => boolean; notice: (text: string, error?: boolean) => void; download: (blob: Blob, suffix: string) => void }) {
   const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -24,11 +25,12 @@ export function mountDrape(options: { current: () => Project; commit: (next: Pro
     if (!result) { view.innerHTML = ''; metrics.textContent = ''; return; }
     view.innerHTML = drapeSvg(result.draped, yaw, '#b8613d', showBody.checked);
     const m = result.draped.metrics, body = result.draped.body;
-    metrics.textContent = `${FABRICS[result.fabric].label}: ${m.folds} folds around the hem; hem hangs at ${Math.round(m.hemFlare * 100)}% of the rigid cone's flare and ${m.hemDrop.toFixed(1)} cm lower. Largest fabric stretch ${(m.maxStrain * 100).toFixed(1)}%; closest approach to the body ${m.minClearance.toFixed(1)} cm. Body proxy: waist ${body.waist} cm, hip ${body.hip} cm at ${body.hipDepth} cm${result.draped.bodyAssumed ? ' (assumed — apply body measurements to use yours)' : ' (your entered measurements)'}.`;
+    metrics.textContent = `${drapeFabric(result.fabric).name}: ${m.folds} folds around the hem; hem hangs at ${Math.round(m.hemFlare * 100)}% of the rigid cone's flare and ${m.hemDrop.toFixed(1)} cm lower. Largest fabric stretch ${(m.maxStrain * 100).toFixed(1)}%; closest approach to the body ${m.minClearance.toFixed(1)} cm. Body proxy: waist ${body.waist} cm, hip ${body.hip} cm at ${body.hipDepth} cm${result.draped.bodyAssumed ? ' (assumed — apply body measurements to use yours)' : ' (your entered measurements)'}.`;
   }
   function render(p: Project): void {
     const busy = worker !== null;
-    fabricSelect.value = fabricOf(p); fabricSelect.disabled = !p.construction || busy;
+    // A skirt saved with an earlier preset shows it as its library fabric.
+    fabricSelect.value = drapeFabric(fabricOf(p)).id; fabricSelect.disabled = !p.construction || busy;
     simulate.disabled = !p.construction || busy; cancel.hidden = !busy;
     const fresh = !!result && result.signature === signature(p) && result.fabric === fabricOf(p);
     obj.disabled = !fresh || busy; left.disabled = right.disabled = !result;
@@ -39,12 +41,12 @@ export function mountDrape(options: { current: () => Project; commit: (next: Pro
 
   fabricSelect.addEventListener('change', () => {
     const p = options.current();
-    if (!p.construction || !options.guard()) { fabricSelect.value = fabricOf(p); return; }
+    if (!p.construction || !options.guard()) { fabricSelect.value = drapeFabric(fabricOf(p)).id; return; }
     try {
       const fabric = validateFabric(fabricSelect.value);
       options.commit(validateProject({ ...p, construction: { ...p.construction, fabric } }));
-      options.notice(`${FABRICS[fabric].label} chosen for this skirt. Simulate drape to see it hang.`);
-    } catch (error) { options.notice(error instanceof Error ? error.message : 'Could not choose this fabric.', true); fabricSelect.value = fabricOf(p); }
+      options.notice(`${drapeFabric(fabric).name} chosen for this skirt. Simulate drape to see it hang.`);
+    } catch (error) { options.notice(error instanceof Error ? error.message : 'Could not choose this fabric.', true); fabricSelect.value = drapeFabric(fabricOf(p)).id; }
   });
   simulate.addEventListener('click', () => {
     const p = options.current();
