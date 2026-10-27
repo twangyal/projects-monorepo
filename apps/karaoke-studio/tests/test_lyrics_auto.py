@@ -341,7 +341,7 @@ class RecognizerChoiceTests(unittest.TestCase):
     def test_phrases_heard_as_english_keep_the_automatic_language_in_an_east_asian_song(self):
         class Result:
             def __init__(self, lang, text):
-                self.lang, self.tokens, self.timestamps = lang, [' ' + word for word in text.split()], [0.2 * i for i in range(len(text.split()))]
+                self.lang, self.text, self.tokens, self.timestamps = lang, text, [' ' + word for word in text.split()], [0.2 * i for i in range(len(text.split()))]
 
         class Recognizer:
             def __init__(self, answers):
@@ -362,12 +362,28 @@ class RecognizerChoiceTests(unittest.TestCase):
             def decode_stream(self, stream):
                 stream.result = stream.decode_stream_by()
 
-        auto = Recognizer({'verse': Result('<|ja|>', '어떻 게'), 'hook': Result('<|en|>', 'baby baby')})
-        fixed = Recognizer({'verse': Result('<|ko|>', '어떻게 내가'), 'hook': Result('<|ko|>', '베이비 베이비')})
+        auto = Recognizer({'verse': Result('<|ja|>', '어떻 게'), 'hook': Result('<|en|>', 'baby baby'), 'mumble': Result('<|en|>', '득 해여워 my')})
+        fixed = Recognizer({'verse': Result('<|ko|>', '어떻게 내가'), 'hook': Result('<|ko|>', '베이비 베이비'), 'mumble': Result('<|ko|>', '드개 해여')})
         song = transcribe_worker.SongLanguage(auto, fixed)
-        self.assertEqual([w['text'] for w in transcribe_worker.recognize_phrase(song, 0, 'verse')], ['어떻게', '내가'])
-        self.assertEqual([w['text'] for w in transcribe_worker.recognize_phrase(song, 0, 'hook')], ['baby', 'baby'])
+        verse = transcribe_worker.recognize_phrase(song, 0, 'verse')
+        self.assertEqual([w['text'] for w in verse], ['어떻게', '내가'])
+        # The two readings share 3 of 5 letters: agreement 0.6, cubed 0.216, so the line is worth a listen.
+        self.assertEqual({w['confidence'] for w in verse}, {0.216})
+        hook = transcribe_worker.recognize_phrase(song, 0, 'hook')
+        self.assertEqual([w['text'] for w in hook], ['baby', 'baby'])
+        self.assertEqual({w['confidence'] for w in hook}, {1.0})
         self.assertEqual(fixed.heard, ['verse'], 'the English hook is not heard again in Korean')
+        # "English" written in Hangul is not English: it is heard in Korean, and the readings' disagreement flags it.
+        mumble = transcribe_worker.recognize_phrase(song, 0, 'mumble')
+        self.assertEqual([w['text'] for w in mumble], ['드개', '해여'])
+        self.assertLess(mumble[0]['confidence'], 0.7)
+
+    def test_agreement_between_readings_ignores_spaces_case_and_punctuation(self):
+        self.assertEqual(transcribe_worker.agreement('不愿染是与非', '不愿染 是与非。'), 1.0)
+        self.assertEqual(transcribe_worker.agreement('Baby, baby', 'baby baby'), 1.0)
+        self.assertAlmostEqual(transcribe_worker.agreement('어떻게내가', '어떻게너를'), 0.6)
+        self.assertEqual(transcribe_worker.agreement('', ''), 1.0)
+        self.assertEqual(transcribe_worker.agreement('abc', ''), 0.0)
 
     def test_east_asian_songs_are_recognized_from_their_script(self):
         self.assertTrue(sounds_east_asian(list('今夜的月光照在我心上')))
