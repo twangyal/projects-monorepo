@@ -5,9 +5,10 @@ test('hood side width changes linked pattern projection and POM while preserving
  const before=template('hoodie'),after=validateProduct({...before,fit:{hoodWidth:34}}),oldPieces=patternPieces(before),pieces=patternPieces(after);
  assert.equal(pieces.find(p=>p.part==='hood')!.width,34);assert.equal(pieces.find(p=>p.part==='hood')!.height,32);assert.deepEqual(pieces.filter(p=>p.part!=='hood'),oldPieces.filter(p=>p.part!=='hood'));
  const old=teeMesh(before,Delaunator),meshes=teeMesh(after,Delaunator);assert.deepEqual(meshes.filter(m=>m.part!=='hood'),old.filter(m=>m.part!=='hood'));
- const a=old.find(m=>m.part==='hood')!,b=meshes.find(m=>m.part==='hood')!,columns=a.positions.length/3/17;
- for(let v=0;v<a.positions.length/3;v++){assert.equal(b.positions[v*3],a.positions[v*3]);assert.equal(b.positions[v*3+1],a.positions[v*3+1]);if(v<columns)assert.equal(b.positions[v*3+2],a.positions[v*3+2]);if(v>=16*columns)assert.ok(Math.abs(b.positions[v*3+2]-(-5+(a.positions[v*3+2]+5)*34/26))<1e-9);}
- assert.notDeepEqual(b.positions,a.positions);assert.equal(buildTechPack(after,'2026-10-24').poms.find(p=>p.code==='N')!.values.M,34);
+ // The same neck row; a deeper hood, front to back; its UVs span the wider pattern piece.
+ const a=old.find(m=>m.part==='hood')!,b=meshes.find(m=>m.part==='hood')!,u=(m:typeof a)=>Math.max(...m.uvs.filter((_,i)=>i%2===0));
+ assert.equal(b.positions.length,a.positions.length);assert.deepEqual(b.positions.slice(0,3),a.positions.slice(0,3));
+ assert.notDeepEqual(b.positions,a.positions);assert.ok(Math.abs(u(b)-34)<1e-6&&Math.abs(u(a)-26)<1e-6);assert.equal(buildTechPack(after,'2026-10-24').poms.find(p=>p.code==='N')!.values.M,34);
  assert.ok(fabricUsage(after).reduce((n,r)=>n+r.areaM2,0)>fabricUsage(before).reduce((n,r)=>n+r.areaM2,0));assert.deepEqual(validateProduct(JSON.parse(JSON.stringify(after))),after);
 });
 test('omitted and explicit26 preserve exact geometry and changed width reaches finite modelled cloth rest',()=>{

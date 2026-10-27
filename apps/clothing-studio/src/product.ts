@@ -643,6 +643,52 @@ function sleeveOutline(product: Product) {
   };
 }
 
+/** Where the hood leaves the neckline open at the centre front, as a share of half the neck width. */
+const HOOD_OPENING = 0.55;
+/** How far the hood starts folded back from upright, in radians. */
+const HOOD_FOLD = Math.PI * 0.8;
+
+/**
+ * A hood side panel (cut 2, mirrored) in pattern cm: the neck edge along the bottom, from the face to the centre back
+ * (`neck`), and the centre seam from the top of the face over the crown to the back corner and down to the neck
+ * (`crown`, ending at the back corner); the face edge runs up the left side. The neck edge is as long as the half
+ * neckline it is sewn to, the front neckline beside the face opening and half the back neckline.
+ */
+function hoodOutline(product: Product) {
+  const dims = teeDimensions(product), H = dims.hoodHeight, W = dims.hoodWidth, centre = flare(product) + dims.half;
+  const length = (points: Pt[]) => polylineLength(points);
+  // The front neckline to one side of the face opening: the part of each segment beyond the opening.
+  const frontNeck = (() => {
+    const o = bodyOutline(product, true, dims.length), points = [o.neckRight, ...o.neckline, o.neckLeft].map(p => ({ x: p.x - centre, y: p.y }));
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], b = points[i], open = dims.neckHalf * HOOD_OPENING;
+      const t0 = Math.abs(b.x - a.x) < 1e-12 ? (a.x >= open ? 0 : 1) : Math.max(0, Math.min(1, (open - a.x) / (b.x - a.x)));
+      const beyond = a.x >= open && b.x >= open ? 1 : a.x < open && b.x < open ? 0 : a.x >= open ? t0 : 1 - t0;
+      total += Math.hypot(b.x - a.x, b.y - a.y) * beyond;
+    }
+    return total;
+  })();
+  const back = bodyOutline(product, false, dims.length), backNeck = length([back.neckRight, ...back.neckline, back.neckLeft]) / 2;
+  const crown = [{ x: 0, y: 6 }];
+  for (let i = 0; i <= 8; i++) { const t = Math.PI / 2 * i / 8; crown.push({ x: W * 0.55 * (1 - Math.cos(t)), y: 6 * (1 - Math.sin(t)) }); }
+  crown.push({ x: W, y: H * 0.45 });
+  // The neck edge runs level from the face, then curves up toward the back corner at the panel's full width, far
+  // enough to be as long as the neckline it is sewn to; a shorter neckline ends the edge sooner, level.
+  const reach = W, needed = frontNeck + backNeck;
+  const edge = (rise: number, end: number) => Array.from({ length: 9 }, (_, i) => {
+    const t = i / 8;
+    return { x: end * t, y: H - rise * t * t };
+  });
+  let neck = edge(0, Math.min(reach, needed));
+  if (needed > reach) {
+    let low = 0, high = H * 0.5;
+    for (let i = 0; i < 50; i++) { const rise = (low + high) / 2; if (polylineLength(edge(rise, reach)) < needed) low = rise; else high = rise; }
+    neck = edge(low, reach);
+  }
+  return { neck, crown };
+}
+
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
   if (product.base === 'skirt') return skirtPieces(product);
@@ -672,11 +718,8 @@ export function patternPieces(product: Product): PatternPiece[] {
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1),
     make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
   if (product.base === 'hoodie') {
-    // Hood side panel (cut 2, mirrored): neck edge along the bottom, face edge on the left, rounded crown and back.
-    const H = dims.hoodHeight, W = dims.hoodWidth, hood = [{ x: 0, y: H }, { x: 0, y: 6 }];
-    for (let i = 0; i <= 8; i++) { const t = Math.PI / 2 * i / 8; hood.push({ x: W * 0.55 * (1 - Math.cos(t)) + 0, y: 6 * (1 - Math.sin(t)) }); }
-    hood.push({ x: W, y: H * 0.45 }, { x: W * 0.9, y: H });
-    pieces.push(make('hood', hood.map(p => ({ x: p.x, y: p.y })), 2));
+    const hood = hoodOutline(product);
+    pieces.push(make('hood', [hood.neck[0]!, ...hood.crown, ...[...hood.neck].reverse().slice(0, -1)], 2));
     const top = dims.pocketHalfTop, bottom = dims.pocketHalfBottom, h = 22;
     pieces.push(make('pocket', [{ x: bottom - top + 5, y: 0 }, { x: bottom + top - 5, y: 0 }, { x: bottom * 2, y: h }, { x: 0, y: h }], 1));
   }
@@ -817,7 +860,7 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   }
   // The open neck edge, front curve (left to right) then back curve (right to left).
   const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
-  if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, neck, new Set(front.neck.map((_, i) => i)), dims);
+  if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, neck, new Set(front.neck.map((_, i) => i)), dims, hoodOutline(product));
   else neckRib(groups.get('neckband')!, neck, dims.ribHeight);
   return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
 }
@@ -893,33 +936,62 @@ function neckRib(rib: PartMesh, ring: { x: number; y: number; z: number }[], wid
 }
 
 /**
- * Hood: a shell lofted from the sides and back of the neck edge up to a closed crown. The middle of the front
- * neck stays open as the face opening. Rows ease from the neck curve toward a head-sized ellipse set slightly back.
+ * Hood: two side panels lofted from the sides and back of the neck edge up to the crown, where they meet on the centre
+ * seam; their centre back columns meet too. The middle of the front neck stays open as the face opening. Rows ease
+ * from the neck curve toward a head-sized ellipse set slightly back. Each panel's UVs are its pattern piece
+ * (hoodOutline), mapped across the panel between its four edges: neck, face, crown and back seam.
  */
 function hoodMesh(hood: PartMesh, ring: { x: number; y: number; z: number }[], front: ReadonlySet<number>,
-  dims: { neckHalf: number; hoodHeight: number; hoodWidth: number; hoodHalf: number }) {
-  const open = dims.neckHalf * 0.55;
+  dims: { neckHalf: number; hoodHeight: number; hoodWidth: number; hoodHalf: number }, outline: ReturnType<typeof hoodOutline>) {
+  const open = dims.neckHalf * HOOD_OPENING;
   const frontRight = ring.filter((p, i) => front.has(i) && p.x >= open), back = ring.filter((_, i) => !front.has(i)), frontLeft = ring.filter((p, i) => front.has(i) && p.x <= -open);
   const base = [...frontRight, ...back, ...frontLeft], rows = 16;
   const along: number[] = [0];
   for (let i = 1; i < base.length; i++) along.push(along[i - 1] + Math.hypot(base[i].x - base[i - 1].x, base[i].z - base[i - 1].z));
   // Columns go round the head from one side of the face opening, over the back, to the other side.
   const opening = 0.32 * Math.PI, total = along.at(-1) || 1;
+  const grid: P3[][] = [];
   for (let j = 0; j <= rows; j++) {
     const t = j / rows, ease = 1 - (1 - t) ** 2.4;
     // Toward the crown the two sides close onto the centre seam: x narrows, front-to-back depth stays.
     const crown = t < 0.6 ? 1 : Math.cos(((t - 0.6) / 0.4) * Math.PI / 2), rise = dims.hoodHeight * t + (t > 0.6 ? 3 * Math.sin(((t - 0.6) / 0.4) * Math.PI / 2) : 0);
-    for (let i = 0; i < base.length; i++) {
-      const b = base[i], theta = opening + (2 * Math.PI - 2 * opening) * along[i] / total;
+    grid.push(base.map((b, i) => {
+      const theta = opening + (2 * Math.PI - 2 * opening) * along[i] / total;
       const dome = { x: dims.hoodHalf * Math.sin(theta), z: -5 + 14 * (dims.hoodWidth / 26) * Math.cos(theta) };
-      const x = (b.x + (dome.x - b.x) * ease) * crown, z = b.z + (dome.z - b.z) * ease;
-      hood.positions.push(x, b.y + rise, z);
-      hood.uvs.push(along[i], dims.hoodHeight * t);
-    }
+      return { x: (b.x + (dome.x - b.x) * ease) * crown, y: b.y + rise, z: b.z + (dome.z - b.z) * ease };
+    }));
   }
-  const columns = base.length;
-  for (let j = 0; j < rows; j++) for (let i = 0; i + 1 < columns; i++) {
-    const a = j * columns + i, b = a + 1, c = a + columns, d = c + 1;
-    hood.indices.push(a, b, c, b, d, c);
+  // The centre back column, which both panels share; columns sit on the pattern's neck edge by their distance along
+  // the 3D neck edge, which dips at the front.
+  const middle = frontRight.length + back.findIndex(p => Math.abs(p.x) < 1e-6), seam: number[] = [0];
+  // The hood starts folded back over the shoulders, as a hood worn down: each row turns back and down about the back
+  // neck, further the higher it is (the neck row stays sewn where it is).
+  const pivot = base[middle]!;
+  for (let j = 1; j <= rows; j++) {
+    const t = j / rows, angle = HOOD_FOLD * t * t * (3 - 2 * t), cos = Math.cos(angle), sin = Math.sin(angle);
+    grid[j] = grid[j]!.map(p => ({ x: p.x, y: pivot.y + (p.y - pivot.y) * cos + (p.z - pivot.z) * sin, z: pivot.z - (p.y - pivot.y) * sin + (p.z - pivot.z) * cos }));
+  }
+  for (let i = 1; i < base.length; i++) seam.push(seam[i - 1] + Math.hypot(base[i].x - base[i - 1].x, base[i].y - base[i - 1].y, base[i].z - base[i - 1].z));
+  // The pattern panel between its edges (a Coons patch): u from the face to the centre back, v from the neck up.
+  const A = outline.neck[0]!, B = outline.neck.at(-1)!, D = outline.crown[0]!, C = outline.crown.at(-1)!, top = outline.crown;
+  const flat = (u: number, v: number): Pt => {
+    const bottom = alongPolyline(outline.neck, u), upper = alongPolyline(top, u);
+    const left = { x: A.x + (D.x - A.x) * v, y: A.y + (D.y - A.y) * v }, right = { x: B.x + (C.x - B.x) * v, y: B.y + (C.y - B.y) * v };
+    const corner = (axis: 'x' | 'y') => (1 - u) * (1 - v) * A[axis] + u * (1 - v) * B[axis] + (1 - u) * v * D[axis] + u * v * C[axis];
+    return { x: (1 - v) * bottom.x + v * upper.x + (1 - u) * left.x + u * right.x - corner('x'), y: (1 - v) * bottom.y + v * upper.y + (1 - u) * left.y + u * right.y - corner('y') };
+  };
+  for (const columns of [Array.from({ length: middle + 1 }, (_, k) => k), Array.from({ length: base.length - middle }, (_, k) => base.length - 1 - k)]) {
+    const start = hood.positions.length / 3, first = columns[0]!, span = Math.abs(seam[columns.at(-1)!]! - seam[first]!) || 1, mirror = first > middle;
+    for (let j = 0; j <= rows; j++) for (const i of columns) {
+      const p = grid[j]![i]!, f = flat(Math.abs(seam[i]! - seam[first]!) / span, j / rows);
+      hood.positions.push(p.x, p.y, p.z);
+      // The left panel is mirrored, so prints read the same way from outside.
+      hood.uvs.push(mirror ? -f.x : f.x, f.y);
+    }
+    const width = columns.length;
+    for (let j = 0; j < rows; j++) for (let k = 0; k + 1 < width; k++) {
+      const a = start + j * width + k, b = a + 1, c = a + width, d = c + 1;
+      hood.indices.push(...(mirror ? [a, c, b, b, c, d] : [a, b, c, b, d, c]));
+    }
   }
 }
