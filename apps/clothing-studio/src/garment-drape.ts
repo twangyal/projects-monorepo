@@ -13,27 +13,44 @@ import { skirtDraft, skirtHeight } from './product-skirt.ts';
  *   gravity starts, so the cloth starts outside it.
  * - Fabric weight comes from each part's library material (g/m²). Bending and stretch come from approximate physical
  *   properties of its construction (FABRIC): bending resists folding through an isometric bending energy, and each
- *   edge's stretch stiffness is its share of the fabric's membrane stiffness. The ratio of bending rigidity to weight
+ *   edge's stretch stiffness is its share of the fabric's membrane stiffness along that edge's direction to the grain
+ *   (vertical on every pattern piece), so wovens are soft on the bias and knits stretch more across than along. The ratio of bending rigidity to weight
  *   (the fabric's bending length, about 1 cm for jersey and 2.5 cm for denim) is what makes fabrics hang differently.
  * Units are centimetres, grams and seconds; y is up with the hem at 0, as in the product's 3D view.
  */
 
 /**
  * Approximate properties by fabric construction, at a reference weight: flexural rigidity per width (µN·m, as in
- * Kawabata bending tests, where 1 gf·cm²/cm ≈ 98 µN·m) and membrane tensile stiffness (N/m). They are typical values
- * for cotton knits and wovens from published ranges, not measurements of these library fabrics, and the model is
- * isotropic (no separate warp, weft or bias behaviour).
+ * Kawabata bending tests, where 1 gf·cm²/cm ≈ 98 µN·m), membrane tensile stiffness along the grain (N/m), the
+ * cross-grain stiffness as a share of it (`weft`: a knit's courses stretch more than its wales), and in-plane shear
+ * rigidity (N/m per radian; Kawabata shear stiffness G of 1 gf/cm·degree ≈ 56). They are typical values for cotton
+ * knits and wovens from published ranges, not measurements of these library fabrics. Wovens resist stretch along warp
+ * and weft but shear easily, so they are several times softer on the bias.
  */
-export const FABRIC: Record<Material['texture'], { bending: number; tensile: number; gsm: number }> = {
-  jersey: { bending: 3, tensile: 150, gsm: 180 }, slub: { bending: 2.5, tensile: 150, gsm: 160 }, rib: { bending: 3, tensile: 60, gsm: 220 },
-  pique: { bending: 6, tensile: 300, gsm: 200 }, terry: { bending: 12, tensile: 400, gsm: 300 }, linen: { bending: 12, tensile: 3000, gsm: 170 },
-  twill: { bending: 50, tensile: 6000, gsm: 340 }, canvas: { bending: 150, tensile: 10000, gsm: 400 },
+export const FABRIC: Record<Material['texture'], { bending: number; tensile: number; weft: number; shear: number; gsm: number }> = {
+  jersey: { bending: 3, tensile: 150, weft: 0.5, shear: 40, gsm: 180 }, slub: { bending: 2.5, tensile: 150, weft: 0.5, shear: 40, gsm: 160 },
+  rib: { bending: 3, tensile: 60, weft: 0.3, shear: 30, gsm: 220 }, pique: { bending: 6, tensile: 300, weft: 0.6, shear: 80, gsm: 200 },
+  terry: { bending: 12, tensile: 400, weft: 0.6, shear: 100, gsm: 300 }, linen: { bending: 12, tensile: 3000, weft: 0.8, shear: 60, gsm: 170 },
+  twill: { bending: 50, tensile: 6000, weft: 0.7, shear: 120, gsm: 340 }, canvas: { bending: 150, tensile: 10000, weft: 0.9, shear: 300, gsm: 400 },
 };
-/** Bending rigidity in dyn·cm and membrane stiffness in dyn/cm for a library material; heavier cloth of the same
- * construction is thicker, and rigidity grows with thickness, so it scales with the square of the weight ratio. */
-export function fabricProperties(fabric: Material): { bending: number; tensile: number } {
+/** In-plane Poisson ratio along the grain, for the off-axis stiffness. */
+const POISSON = 0.25;
+/** Bending rigidity in dyn·cm, and membrane stiffness along the grain, across it and in shear in dyn/cm, for a library
+ * material; heavier cloth of the same construction is thicker, and rigidity grows with thickness, so it scales with the
+ * square of the weight ratio. */
+export function fabricProperties(fabric: Material): { bending: number; tensile: number; weft: number; shear: number } {
   const base = FABRIC[fabric.texture], ratio = fabric.gsm / base.gsm;
-  return { bending: base.bending * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio };
+  return { bending: base.bending * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
+}
+/**
+ * Membrane stiffness of a fabric stretched along a flat direction (dx, dy), the grain running along y: the
+ * orthotropic off-axis modulus 1/E(θ) = cos⁴θ/E₁ + sin⁴θ/E₂ + (1/G − 2ν/E₁)·sin²θ·cos²θ, θ from the grain.
+ */
+export function directionalStiffness(properties: ReturnType<typeof fabricProperties>, dx: number, dy: number): number {
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-12) return properties.tensile;
+  const c = dy / length, s = dx / length;
+  return 1 / (c ** 4 / properties.tensile + s ** 4 / properties.weft + (1 / properties.shear - 2 * POISSON / properties.tensile) * s * s * c * c);
 }
 /** Bending length (cm): the cube root of bending rigidity over weight per area, the classic measure of drape stiffness. */
 export function bendingLength(fabric: Material): number {
@@ -377,7 +394,8 @@ export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
         const fi = flats[e]!, fj = flats[(e + 1) % 3]!;
         let edge = edges.get(k);
         if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : Math.hypot(fi[0] - fj[0], fi[1] - fj[1]), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
-        edge.tensile += properties.tensile; edge.bend += bend; edge.area += area; edge.count++;
+        // Each edge stretches with the fabric's stiffness along its flat direction; modelled parts have no flat grain.
+        edge.tensile += modelled ? properties.tensile : directionalStiffness(properties, fj[0] - fi[0], fj[1] - fi[1]); edge.bend += bend; edge.area += area; edge.count++;
         // Flat corners in the edge's own (low id, high id) order.
         edge.opposite.push({ vertex: opposite, modelled, edgeI: i < j ? fi : fj, edgeJ: i < j ? fj : fi, corner: flats[(e + 2) % 3]! });
       }
