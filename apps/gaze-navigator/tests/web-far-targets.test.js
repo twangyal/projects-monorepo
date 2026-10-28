@@ -116,3 +116,25 @@ test('unavailable continuation is a recognized refusal, not a model target-match
     assert.equal(action.type, 'unknown'); assert.equal(assistant.needs(command, context, action), false);
   }
 });
+
+test('an explicit in-field dictation target survives gaze misses without becoming literal text in a neighbour',()=>{
+  const other=control(1,'Other','textbox',{editable:true});
+  for(const suffix of ['field','box','input']){
+    const instruction=`type Hello, Sam! in the Message ${suffix}`;
+    const near=control(101,'Message','textbox',{editable:true});
+    assert.deepEqual(interpret(instruction,{elements:[other],nearby:[near]}),{type:'edit',targetId:101,edit:{kind:'append',text:'Hello, Sam!'},outside:true});
+    assert.deepEqual(interpret(instruction,{elements:[other],onScreen:screen([{...near,id:201}])}),{type:'edit',targetId:201,edit:{kind:'append',text:'Hello, Sam!'},far:true});
+    const absent=interpret(instruction,{elements:[other],onScreen:screen([control(201,'Message','button')])});
+    assert.equal(absent.type,'unknown');assert.equal(absent.targetId,undefined);assert.equal(absent.unparsed,undefined);assert.equal(absent.targetQuery,undefined);
+  }
+  assert.deepEqual(interpret('type meet in the park',{elements:[other]}),{type:'edit',targetId:1,edit:{kind:'append',text:'meet in the park'}});
+  assert.deepEqual(interpret('type "meet in the football field"',{elements:[other]}),{type:'edit',targetId:1,edit:{kind:'append',text:'meet in the football field'}});
+});
+
+test('speech punctuation and terminal politeness do not turn named dictation into a neighbouring write',()=>{
+  const other=control(1,'Other','textbox',{editable:true}),message=control(101,'Message','textbox',{editable:true});
+  for(const ending of ['field.','box, please.','input for me','field please for me!','field:','field;','box; please:','input）']){
+    assert.deepEqual(interpret(`write Hello! in the Message ${ending}`,{elements:[other],nearby:[message]}),{type:'edit',targetId:101,edit:{kind:'append',text:'Hello!'},outside:true});
+    const missing=interpret(`write Hello! in the Message ${ending}`,{elements:[other]});assert.equal(missing.type,'unknown');assert.equal(missing.targetId,undefined);assert.equal(missing.unparsed,undefined);assert.equal(missing.targetQuery,undefined);
+  }
+});

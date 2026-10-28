@@ -509,13 +509,13 @@ function interpretInCircle(utterance, context) {
       : { type: 'unknown', message: 'First focus a regular text field, then say “continue typing” and the words. No field was changed.' };
   }
   if ((match = /^(?:type|write|enter|dictate|insert)\s+(.+)$/i.exec(raw))) {
-    // Unquoted "in" is ordinary dictation ("meet in the park"); only "into" or a quoted phrase names a field.
+    // Ordinary "in" stays literal ("meet in the park"); "into", a quoted phrase or an explicit field suffix names a target.
     const quoted = /^["“](.*?)["”](?:\s+(?:into|in)\s+(?:the\s+)?(.+))?$/i.exec(match[1]);
     const into = /^(.+)\s+into\s+(?:the\s+)?(.+)$/i.exec(match[1]);
-    // "in the email field" names a field only when it ends with field/box and matches one.
-    const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box)$/i.exec(match[1]);
-    const namedField = named && context.elements.some(element => textField(element) && matchScore(named[2], element.name) >= 0.5);
-    const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : namedField ? [named[1], named[2]] : [match[1], null];
+    // An explicit field/box/input suffix names a target even when gaze misses it. A missing target must not
+    // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
+    const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
+    const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
     return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, edit('append', { text: content }));
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
