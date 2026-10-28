@@ -30,8 +30,24 @@ export function isBottoms(product: Pick<Product, 'base'>): boolean { return prod
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
-export function partsOf(product: Pick<Product, 'base' | 'options'>): readonly PartId[] {
-  return optionsOf(product).chestPocket ? [...BASE_PARTS[product.base], 'chestPocket'] : BASE_PARTS[product.base];
+export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pick<Product, 'measurements'>>): readonly PartId[] {
+  const parts = product.base === 'skirt' && (product.measurements as SkirtMeasures | undefined)?.waistbandHeight
+    ? [...BASE_PARTS.skirt, 'waistband' as const] : BASE_PARTS[product.base];
+  return optionsOf(product).chestPocket ? [...parts, 'chestPocket'] : parts;
+}
+
+/** Add, resize or remove the skirt band without losing independently styled colourways. */
+export function withSkirtWaistband(product: Product, height: number): Product {
+  if(product.base !== 'skirt') fail('Choose a flared skirt to edit its waistband.');
+  const draft=structuredClone(product),m=draft.measurements as SkirtMeasures;
+  if(height === 0) delete m.waistbandHeight;
+  else m.waistbandHeight=height;
+  const update=(parts: Product['parts'])=>{
+    if(height === 0) delete (parts as Partial<Product['parts']>).waistband;
+    else parts.waistband ??= structuredClone(parts.front);
+  };
+  update(draft.parts);for(const colourway of draft.colorways ?? [])update(colourway.parts);
+  return validateProduct(draft);
 }
 
 /**
@@ -271,7 +287,7 @@ export function validateProduct(value: unknown): Product {
     if (o.chestPocket && !chestPocketAllowed(base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean };
   }
-  const ids = partsOf({ base, options });
+  const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
   if (p.fit !== undefined) {
     if (isBottoms({base})) fail('Fit measurements are for tops; bottoms use their own measurements.');
@@ -459,7 +475,7 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
   }
 }
 
-export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number }
+export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}] }
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {

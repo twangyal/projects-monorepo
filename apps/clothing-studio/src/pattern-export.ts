@@ -40,7 +40,7 @@ export function offsetOutline(points: readonly Pt[], distance: number): Pt[] {
   return out;
 }
 
-export interface LaidOutPiece { piece: PatternPiece; label: string; detail: string; sewing: Pt[]; cutting: Pt[]; grain: [Pt, Pt]; at: Pt }
+export interface LaidOutPiece { piece: PatternPiece; label: string; detail: string; sewing: Pt[]; cutting: Pt[]; grain: [Pt, Pt]; foldLine?: [Pt, Pt]; at: Pt }
 
 /** Pieces with their cutting lines, laid out left to right with a gap, origin at the top-left of the layout. */
 export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): { pieces: LaidOutPiece[]; width: number; height: number } {
@@ -54,14 +54,14 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     const grain: [Pt, Pt] = [shift({ x: cx, y: top + (bottom - top) * 0.2 }), shift({ x: cx, y: top + (bottom - top) * 0.8 })];
     const fabric = material(product.parts[piece.part].material).name;
     laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${BASE_NAMES[product.base]} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric}`,
-      sewing: sewing.map(shift), cutting: cutting.map(shift), grain, at: { x, y: allowance } });
+      sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}), at: { x, y: allowance } });
     x += Math.max(...cutting.map(p => p.x)) - minX + GAP_CM;
   }
   const height = Math.max(...laid.flatMap(item => item.cutting.map(p => p.y))) + allowance;
   return { pieces: laid, width: x - GAP_CM + allowance, height };
 }
 
-// DXF (R12 ASCII). Layers: CUT (cutting line), SEW (finished line), GRAIN, TEXT. Units mm; y points up.
+// DXF (R12 ASCII). Layers: CUT (cutting line), SEW (finished line), GRAIN, FOLD, TEXT. Units mm; y points up.
 // R12 DXF has no UTF-8: user text loses control codes and backslashes (DXF format codes), and characters
 // outside ASCII become \U+XXXX escapes, which CAD readers decode.
 const plainText = (text: string) => [...text.replace(/[\\{}]/g, ' ')].filter(c => c.charCodeAt(0) >= 32).slice(0, 250)
@@ -82,6 +82,7 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
     polyline('SEW', item.sewing);
     const [a, b] = item.grain.map(mm);
     pair(0, 'LINE'); pair(8, 'GRAIN'); pair(10, a.x); pair(20, a.y); pair(30, 0); pair(11, b.x); pair(21, b.y); pair(31, 0);
+    if(item.foldLine){const [a,b]=item.foldLine.map(mm);pair(0,'LINE');pair(8,'FOLD');pair(10,a.x);pair(20,a.y);pair(30,0);pair(11,b.x);pair(21,b.y);pair(31,0);}
     const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), label = mm({ x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 });
     for (const [text, dy, height] of [[item.label, 0, 18], [item.detail, -26, 9]] as const) {
       pair(0, 'TEXT'); pair(8, 'TEXT'); pair(10, label.x); pair(20, label.y + dy); pair(30, 0); pair(40, height); pair(1, plainText(text)); pair(72, 1); pair(11, label.x); pair(21, label.y + dy); pair(31, 0);
@@ -102,6 +103,7 @@ export function patternSvg(product: Product, allowance = SEAM_ALLOWANCE_CM): str
     return `<g data-piece="${item.piece.part}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
       `<polygon points="${points(item.sewing)}" fill="none" stroke="#666" stroke-width="0.04" stroke-dasharray="0.4 0.3"/>` +
       `<line x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
+      (item.foldLine ? `<line data-fold="${item.piece.part}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
       `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" font-size="1.6" text-anchor="middle" font-family="sans-serif">${xml(item.label)}</text>` +
       `<text x="${cx.toFixed(2)}" y="${(cy + 1.6).toFixed(2)}" font-size="0.7" text-anchor="middle" font-family="sans-serif">${xml(item.detail)}</text></g>`;
   }).join('');
@@ -109,5 +111,5 @@ export function patternSvg(product: Product, allowance = SEAM_ALLOWANCE_CM): str
     `<defs><marker id="grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="1.2" markerHeight="1.2" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#111"/></marker></defs>` +
     `<title>${xml(product.name)} pattern</title>${body}` +
     `<g transform="translate(${allowance} ${(height + 2).toFixed(2)})"><rect width="10" height="10" fill="none" stroke="#111" stroke-width="0.05"/>` +
-    `<text x="11" y="5" font-size="0.8" font-family="sans-serif">10 cm square: print at 100% and check it. Solid: cutting line (${allowance} cm seam allowance). Dashed: sewing line. Arrow: grainline.</text></g></svg>`;
+    `<text x="11" y="5" font-size="0.8" font-family="sans-serif">10 cm square: print at 100% and check it. Solid: cutting line (${allowance} cm seam allowance). Dashed: sewing line. Arrow: grainline.${pieces.some(p=>p.foldLine) ? ' Red dash-dot: fold.' : ''}</text></g></svg>`;
 }

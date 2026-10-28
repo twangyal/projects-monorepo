@@ -1,5 +1,5 @@
 import { isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
-import { skirtDraft, skirtHeight } from './product-skirt.ts';
+import { skirtBandHeight, skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
  * Drapes a top on a body: the product's own 3D parts become one cloth, sewn at the seams where they already meet,
@@ -624,11 +624,21 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
   const inverseMass = Float32Array.from(cloth.inverseMass), count = inverseMass.length;
-  // A skirt's waist row is held at its waistline, as a waistband would hold it.
+  // A skirt's upper edge is held. A band starts circular but the body's waist is oval: clear the body before
+  // pinning, since held particles cannot be pushed out by contact. Query just below its open top to avoid rounding
+  // deciding whether a float32 anchor is inside the torso's vertical range.
   if (skirt) {
     let top = -Infinity;
     for (let i = 0; i < count; i++) top = Math.max(top, cloth.positions[i * 3 + 1]!);
-    for (let i = 0; i < count; i++) if (cloth.positions[i * 3 + 1]! > top - 1e-6) inverseMass[i] = 0;
+    const band=skirtBandHeight(product),field=band ? bodyField(body,body.torso[1]!.y,0) : null,normal:Vec=[0,0,0];
+    field?.scale(1);
+    for (let i = 0; i < count; i++) if (cloth.positions[i * 3 + 1]! > top - 1e-6) {
+      if(field){
+        const k=i*3,distance=field.distance(cloth.positions[k]!,Math.min(top,body.torso[0]!.y-0.0001),cloth.positions[k+2]!,normal),keep=cloth.offset[i]!+0.01;
+        if(distance<keep)for(const axis of [0,2])cloth.positions[k+axis]+=normal[axis]!*(keep-distance);
+      }
+      inverseMass[i] = 0;
+    }
   }
   // A trouser waistband is held. Once the body has grown, its elastic gathers it from the hip-wide shell onto the
   // body's waist (gathering earlier would fold fabric into the space the body grows into): each band point moves along

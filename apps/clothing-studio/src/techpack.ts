@@ -1,4 +1,4 @@
-import { skirtDraft, skirtPieces } from './product-skirt.ts';
+import { skirtBandHeight, skirtDraft, skirtPieces } from './product-skirt.ts';
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradable, gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
@@ -329,18 +329,20 @@ ${arrow(bx + d.backHip + d.backCrotch + 2.5, 0, bx + d.backHip + d.backCrotch + 
 
 /** No grading or closure is invented for the measured two-panel skirt. */
 function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: string): Omit<TechPack, 'bom'> {
-  const d = skirtDraft(product);
+  const d = skirtDraft(product), band=skirtBandHeight(product);
   const pom = (code:string,name:string,howToMeasure:string,value:number):Pom => ({code,name,howToMeasure,tolerance:1,
     values:Object.fromEntries(SIZES.map(size=>[size,value])) as Record<Size,number>});
-  return {name:product.name,...spec,base:BASE_NAMES.skirt,neckline:'No waistband or closure',date,
-    poms:[pom('A','Waist circumference','Around the waist seam',d.waist),pom('B','Hem circumference','Around the hem seam',d.hem),pom('C','Side seam slant','Waist to hem along a side seam',d.slant)],
+  return {name:product.name,...spec,base:BASE_NAMES.skirt,neckline:band ? 'Folded waistband; closure not modelled' : 'No waistband or closure',date,
+    poms:[pom('A','Waist circumference','Around the waist seam',d.waist),pom('B','Hem circumference','Around the hem seam',d.hem),pom('C','Side seam slant','Waist seam to hem along a side seam, excluding the band',d.slant),...(band ? [pom('D','Waistband height','Finished height above the waist seam; cut twice this height',band)] : [])],
     construction:[{area:'Panels',operation:'Cut one front and one back',detail:'Matching annular sectors; grain along each panel centre'},
-      {area:'Side seams',operation:'Join matching side edges',detail:'Choose a suitable closure and finish; no closure or waistband is modelled'}],
+      {area:'Side seams',operation:'Join matching side edges',detail:'Choose a suitable closure and finish; the closure is not modelled'},
+      ...(band ? [{area:'Waistband',operation:'Fold in half and sew to the waist seam',detail:`Cut one ${d.waist} × ${band*2} cm strip before seam allowances; finished height ${band} cm. Choose a closure and any extension separately.`}] : [])],
     notes:['Rigid styling shell, not a cloth drape or verified fit. Validate with a physical sample.',
       'All size columns repeat the measured sample; size grading has not been defined for this product.',
-      'Pattern arcs are polygon approximations. Exports add the stated seam allowance; confirm closure, hem finish and cutting layout before production.']};
+      'Pattern arcs are polygon approximations. Exports add the stated seam allowance; confirm closure, hem finish and cutting layout before production.',
+      ...(band ? ['The band is a single outer simulation surface. Its inner facing, fold contact, interfacing and closure are not simulated.'] : [])]};
 }
 function skirtDiagram(product:Product):string {
-  const piece=skirtPieces(product)[0];
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -5 ${piece.width+6} ${piece.height+10}" role="img" aria-label="Measurement diagram"><title>Matching skirt panels: A waist arc, B hem arc, C side seam slant</title><polygon points="${piece.outline.map(p=>`${p.x},${p.y}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/><g font-family="sans-serif" font-size="3" fill="#b5452b"><text x="${piece.width/2}" y="1">A</text><text x="${piece.width/2}" y="${piece.height-1}">B</text><text x="1" y="${piece.height/2}">C</text></g></svg>`;
+  const piece=skirtPieces(product)[0],band=skirtBandHeight(product);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -5 ${piece.width+6+(band?24:0)} ${piece.height+10}" role="img" aria-label="Measurement diagram"><title>Matching skirt panels: A waist arc, B hem arc, C side seam slant${band?", D waistband height":""}</title><polygon points="${piece.outline.map(p=>`${p.x},${p.y}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/><g font-family="sans-serif" font-size="3" fill="#b5452b"><text x="${piece.width/2}" y="1">A</text><text x="${piece.width/2}" y="${piece.height-1}">B</text><text x="1" y="${piece.height/2}">C</text></g>${band?`<g transform="translate(${piece.width+6} 0)"><rect width="18" height="${band}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/><text x="20" y="${band/2}" font-family="sans-serif" font-size="3" fill="#b5452b">D</text><text x="0" y="${band+4}" font-family="sans-serif" font-size="2">Finished band</text></g>`:""}</svg>`;
 }
