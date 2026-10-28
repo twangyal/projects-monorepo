@@ -60,5 +60,7 @@ test('non-M sample and edited fit grade into the export, while unsupported sizes
   await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toBeDisabled();
   await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toHaveValue('M');
   const skirt = await download(page, '#pattern-svg'); expect(skirt.name).toMatch(/-pattern\.svg$/); expect(skirt.name).not.toContain('-size-'); expect(skirt.text).toContain('size M');
+  // Reload only after persistence finishes; the confirmation handler would otherwise accept leaving unsaved work.
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
   await page.reload(); await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toHaveValue('M');
 });
