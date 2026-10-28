@@ -797,6 +797,37 @@ class ServerLyricsTests(unittest.TestCase):
             self.assertEqual(self.request('GET', base)[2], project)
             self.assertEqual(self.request('GET', base + '/transcript')[2]['model'], EAST_ASIAN.name)
 
+    def test_upload_uses_the_explicit_first_pass_choice_and_rejects_invalid_values(self):
+        original = self.server.transcribe
+        calls = []
+
+        def chosen(*args, model_choice='auto'):
+            calls.append(model_choice)
+            return original(*args)
+
+        self.server.transcribe = chosen
+        status, _, started = self.request('POST', '/api/projects', b'fake-audio',
+                                         {'X-Audio-Name': 'known.wav', 'X-Lyrics-Model': 'japanese'})
+        self.assertEqual(status, 202, started)
+        self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
+        self.assertEqual(calls, ['japanese'])
+        before = self.request('GET', '/api/projects')[2]
+        for invalid in ['unknown', 'Japanese', 'japanese,english']:
+            status, _, reply = self.request('POST', '/api/projects', b'fake-audio', {'X-Lyrics-Model': invalid})
+            self.assertEqual(status, 400, reply)
+        self.assertEqual(self.request('GET', '/api/projects')[2], before)
+        self.assertEqual(calls, ['japanese'])
+
+    def test_explicit_upload_without_recognition_keeps_stems_and_reports_failure(self):
+        self.server.lyrics_ready = lambda: False
+        status, _, started = self.request('POST', '/api/projects', b'fake-audio', {'X-Lyrics-Model': 'japanese'})
+        self.assertEqual(status, 202, started)
+        done = self.helper.wait_job(started['job']['id'])
+        self.assertEqual(done['status'], 'complete')
+        self.assertTrue(done.get('recognitionFailed'))
+        self.assertEqual(self.request('GET', f'/api/projects/{done["projectId"]}/audio/backing')[0], 200)
+        self.assertEqual(self.calls, [])
+
     def test_chosen_retry_preserves_saved_cues_and_failed_retry_preserves_transcript(self):
         self.helper.upload()
         project = self.request('GET', '/api/projects')[2]['projects'][0]

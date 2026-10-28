@@ -405,7 +405,7 @@ class KaraokeServer(ThreadingHTTPServer):
             result["cleanupPending"] = True
         return result
 
-    def upload(self, title: str, upload: Path, work_dir: Path):
+    def upload(self, title: str, upload: Path, work_dir: Path, model_choice: str = 'auto'):
         project_id = uuid.uuid4().hex
         song: dict = {}
 
@@ -434,14 +434,16 @@ class KaraokeServer(ThreadingHTTPServer):
                     if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
                         raise RuntimeError("Audio processing provenance is invalid or oversized.")
                     _copy_media(metadata, complete / "processing.json", 16384, cancel)
-                recognition_failed = False
-                if self.lyrics_ready():
+                lyrics_ready = self.lyrics_ready()
+                recognition_failed = model_choice != 'auto' and not lyrics_ready
+                if lyrics_ready:
                     # Automatic lyrics are the starting point; recognition failure leaves an
                     # unlyricked clip that can be transcribed again, never a failed upload.
                     try:
                         with inherit_media_handles(work_fd):
                             transcript = self.transcribe(complete / "vocals.wav", complete / _TRANSCRIPT,
-                                                         self.model_dir, duration, cancel, stage)
+                                                         self.model_dir, duration, cancel, stage,
+                                                         **({"model_choice": model_choice} if model_choice != "auto" else {}))
                         project = validate_project({**project, "cues": words_to_cues(transcript["words"], duration)})
                     except Exception:
                         recognition_failed = True
@@ -1183,6 +1185,9 @@ class Handler(BaseHTTPRequestHandler):
     def _upload(self, *, archive=False):
         server = self.server
         server.check_storage()
+        model_choice = self.headers.get('X-Lyrics-Model', 'auto') if not archive else 'auto'
+        if not archive and (len(self.headers.get_all('X-Lyrics-Model', [])) > 1 or model_choice not in CHOICES):
+            raise RequestError(400, 'Choose Automatic or a supported local recognition model or language.')
         if archive:
             _require_archive_restore_support()
             if self.headers.get('Content-Type', '').split(';', 1)[0].strip().lower() not in {'application/zip', 'application/octet-stream'}:
@@ -1252,7 +1257,7 @@ class Handler(BaseHTTPRequestHandler):
                     server._archive_space()
                 else:
                     server.check_storage()
-                job = server.start_archive_import(work_dir) if archive else server.upload(title, upload, work_dir)
+                job = server.start_archive_import(work_dir) if archive else server.upload(title, upload, work_dir, model_choice=model_choice)
                 submitted = True
             self._json({"job": job}, 202)
         finally:

@@ -255,3 +255,18 @@ test('an explicit Japanese retry keeps corrections until reviewed and exposes al
     for(const p of projects)if(!before.has(p.id))expect((await page.request.delete(`/api/projects/${p.id}`,{headers:{'X-Karaoke-Token':session.token},data:{}})).ok()).toBe(true);
   }
 });
+
+test('a known recognizer can be chosen before a new song without changing the retry choice', async ({ page }) => {
+  await isolatedClip(page, async () => {
+    await page.setViewportSize({width:390,height:850});await page.goto('/');
+    const choice=page.getByRole('combobox',{name:'Lyrics for new uploads',exact:true});
+    await expect(choice).toHaveValue('auto');await choice.selectOption('multilingual');
+    const sent=page.waitForRequest(request=>request.method()==='POST'&&new URL(request.url()).pathname==='/api/projects');
+    await page.getByLabel('Upload song clip').setInputFiles({name:'known-language.wav',mimeType:'audio/wav',buffer:tone(16)});
+    expect((await sent).headers()['x-lyrics-model']).toBe('multilingual');
+    await expect(page.locator('#message')).toContainText('Your stems',{timeout:15000});
+    await expect(page.locator('#recognition-choice')).toHaveValue('auto');
+    await expect(page.locator('#cue-list textarea')).not.toHaveCount(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  });
+});
