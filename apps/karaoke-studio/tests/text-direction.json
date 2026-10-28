@@ -1,0 +1,16 @@
+[
+  ["", "ltr", false],
+  ["123 — !", "ltr", false],
+  ["١٢٣", "ltr", false],
+  ["LEFT RIGHT", "ltr", false],
+  ["漢字 かな", "ltr", false],
+  ["مرحبا بالعالم", "rtl", true],
+  ["123 (مرحبا)", "rtl", true],
+  ["שלום עולם", "rtl", true],
+  ["שָׁלוֹם 123", "rtl", true],
+  ["Sing مرحبا now!", "ltr", true],
+  ["مرحبا hello 123", "rtl", true],
+  ["שלום\nHello", "rtl", true],
+  ["‏123", "rtl", true],
+  ["𞤀𞤁", "rtl", true]
+]

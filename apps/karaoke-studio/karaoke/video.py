@@ -12,7 +12,7 @@ import time
 import unicodedata
 import wave
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, features
 
 from .limits import (COUNT_IN, COUNT_IN_BREAK, MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAMES,
                      SAMPLE_RATE, VIDEO_TIMEOUT)
@@ -99,6 +99,22 @@ def _covers(ranges: tuple[tuple[int, int], ...], codepoint: int) -> bool:
     return any(low <= codepoint <= high for low, high in ranges)
 
 
+def text_layout(text: str) -> tuple[str, bool]:
+    """Base direction from the first RTL character or letter; flag any strong RTL character.
+
+    Bidirectional cues use whole-line highlighting so shaping and reading order never depend on the sung prefix.
+    """
+    direction = None
+    whole_line = False
+    for char in text:
+        if unicodedata.bidirectional(char) in ('R', 'AL'):
+            whole_line = True
+            direction = direction or 'rtl'
+        elif unicodedata.category(char).startswith('L'):
+            direction = direction or 'ltr'
+    return direction or 'ltr', whole_line
+
+
 class _Fonts:
     """The bundled font first, then installed fonts (found with fontconfig) for characters it has no glyph for,
     such as CJK, Tibetan, Devanagari or Arabic lyrics. Without fontconfig everything uses the bundled font."""
@@ -141,6 +157,36 @@ class _Fonts:
             else:
                 runs.append((0 if face is None else face, char))
         return runs
+
+    def whole_face(self, text: str) -> int:
+        """Find a verified face covering the entire bidi block, including combining marks."""
+        needed = sorted({ord(char) for char in text if not char.isspace() and unicodedata.category(char) not in ('Cf', 'Cc')})
+        if not needed:
+            return 0
+        for face, ranges in enumerate(self.coverage):
+            if ranges is not None and all(_covers(ranges, codepoint) for codepoint in needed):
+                return face
+        # Any complete font must cover this character. Search every installed candidate for it,
+        # not only per-character preferred faces: a missing mark may be the only uncovered glyph.
+        primary = self.coverage[0]
+        probe = next((codepoint for codepoint in needed if primary is None or not _covers(primary, codepoint)), needed[0])
+        unknown = any(ranges is None for ranges in self.coverage)
+        for path, index in _system_fonts(probe):
+            if not _loadable(path, index):
+                continue
+            ranges = _coverage(path, index)
+            if ranges is None:
+                unknown = True
+            elif all(_covers(ranges, codepoint) for codepoint in needed):
+                if (path, index) not in self.faces:
+                    self.faces.append((path, index))
+                    self.coverage.append(ranges)
+                return self.faces.index((path, index))
+        if unknown:
+            raise ValidationError('Could not verify bidirectional lyric font coverage. '
+                                  'Install or repair fontconfig (fc-query and fc-list), then retry.')
+        raise ValidationError('Bidirectional lyric export needs one installed font covering the complete line. '
+                              'Install fontconfig and a suitable Unicode font, then retry.')
 
     def font(self, face: int, size: int) -> ImageFont.FreeTypeFont:
         return _font(*self.faces[face], size)
@@ -188,8 +234,18 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
     """Draw a centred, wrapped text block. With ``sung_chars``, that many leading non-space
     characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting."""
     fonts = _fonts(str(font_path))
+    direction, whole_line = text_layout(text)
+    face = None
+    if whole_line:
+        if not features.check_feature('raqm'):
+            raise ValidationError('Bidirectional lyric export requires Pillow with RAQM shaping. '
+                                  'Install the supported Pillow wheel and retry.')
+        face = fonts.whole_face(text)
+        if sung_chars is not None:
+            fill, sung_chars = sung_fill, None
     for chosen in range(size, minimum - 1, -1):
-        measure = functools.partial(fonts.length, size=chosen)
+        measure = (functools.partial(fonts.font(face, chosen).getlength, direction=direction) if face is not None
+                   else functools.partial(fonts.length, size=chosen))
         lines = _wrap(text, measure, 1000)
         spacing = math.ceil(chosen * 1.25)
         if len(lines) * spacing <= max_height:
@@ -212,9 +268,14 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
     colour = sung_fill if sung_chars is not None else fill
     for index, line in enumerate(lines):
         baseline = y - total / 2 + (index + 0.5) * spacing + (ascent - descent) / 2
+        if face is not None:
+            # One native shaping call keeps joining, bidi ordering, numbers and punctuation intact.
+            draw.text((WIDTH / 2, baseline), line, font=fonts.font(face, chosen), fill=fill,
+                      direction=direction, anchor='ms')
+            continue
         left = WIDTH / 2 - measure(line) / 2
-        for face, run in fonts.runs(line):
-            font = fonts.font(face, chosen)
+        for run_face, run in fonts.runs(line):
+            font = fonts.font(run_face, chosen)
             # The sung prefix of this run, then the rest of it after it.
             prefix, count = '', 0
             for char in run:
@@ -398,13 +459,14 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             card_bytes = 0
             cues = project['cues']
             timings = word_timings(cues, words or [], project['duration'])
+            whole_lines = [text_layout(cue['text'])[1] for cue in cues]
             for frame in range(frame_count):
                 _remaining(cancel, deadline)
                 position = frame / FPS
                 active = next((index for index, cue in enumerate(cues)
                                if cue['start'] <= position < cue['end']), None)
                 upcoming = next((index for index, cue in enumerate(cues) if cue['start'] > position), len(cues))
-                sung = sung_count(timings[active], position) if active is not None else None
+                sung = (len(timings[active]) if whole_lines[active] else sung_count(timings[active], position)) if active is not None else None
                 count = count_in(cues, position) if active is None else None
                 state = (active, upcoming if active is None else None, sung, count)
                 if state not in states:

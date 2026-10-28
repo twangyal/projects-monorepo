@@ -15,6 +15,7 @@ import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replace
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
+import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
@@ -48,7 +49,7 @@ app.innerHTML = `
       </aside>
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
-        <p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
+        <p id="bidi-status" class="fine" role="status" hidden>Lyrics containing right-to-left text use whole-line highlighting in preview and MP4 to preserve reading order and joined letters. Word times remain available in word-timed LRC.</p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
@@ -338,6 +339,10 @@ function wrap(text: string, size: number, maxWidth = 1000): string[] {
   return lines.length ? lines : [''];
 }
 function drawBlock(text: string, y: number, initialSize: number, minSize: number, maxHeight: number, color: string, sung?: number, sungColor = '#e4b77d') {
+  context.save();
+  const layout = textLayout(text);
+  context.direction = layout.direction;
+  if (layout.wholeLine && sung !== undefined) { color = sungColor; sung = undefined; }
   let size = initialSize, lines = wrap(text, size);
   while (size > minSize && lines.length * Math.ceil(size * 1.25) > maxHeight) lines = wrap(text, --size);
   const lineHeight = Math.ceil(size * 1.25);
@@ -360,6 +365,7 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
     context.fillStyle = color; context.fillText(rest, left + context.measureText(done).width, lineY);
     context.textAlign = 'center';
   }
+  context.restore();
 }
 
 // Word timing for the lines being previewed, from the studio (recognized words, or estimates). The video
@@ -396,6 +402,7 @@ function draw() {
   context.fillStyle = '#14232f'; context.fillRect(0, 0, 1280, 720);
   context.textAlign = 'center'; context.textBaseline = 'middle';
   const invalid = validateWorking();
+  element('bidi-status').hidden = !!invalid || !working?.cues.some(cue => textLayout(cue.text).wholeLine);
   if (invalid) {
     // Keep the complete invalid draft in its editor/history, but never send
     // unbounded input to native canvas layout, including during playback.
