@@ -19,7 +19,7 @@ const QUIET_MS = 1500, REFRESH_MS = 3000;
 
 // `onMode` reports where recognition runs once listening has started: 'device', 'downloadable' (it could, after
 // installLocal()) or 'service'; until then the mode is 'unknown'.
-export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, onImmediate, onError, onState, onMode }) {
+export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, onImmediate, onError, onState, onMode, onReset }) {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   let recognition = null;
   let wanted = false;
@@ -90,7 +90,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     };
     recognition.onerror = event => {
       if (!wanted || recognition !== current) return;
-      if (event.error === 'no-speech' || event.error === 'aborted') return;
+      if (event.error === 'no-speech' || event.error === 'aborted') { onReset?.(); return; }
       // On-device recognition that fails falls back to the online service in a fresh session.
       if (mode === 'device' && event.error !== 'not-allowed' && event.error !== 'audio-capture') {
         setMode('service');
@@ -105,6 +105,8 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     // Browsers end continuous sessions after silence; restart while the user still wants to listen.
     recognition.onend = () => {
       if (recognition !== current) return;
+      // No more final results can arrive from this session. Release an unfinished gaze capture before restarting.
+      onReset?.();
       handled.clear();
       started.clear();
       if (!wanted) {

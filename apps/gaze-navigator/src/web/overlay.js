@@ -619,6 +619,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       spokenContext = context;
       ui.transcript.textContent = `Listening… ${context.elements.length} element${context.elements.length === 1 ? '' : 's'} captured.`;
     },
+    onReset() { spokenContext = null; },
     onInterim(text) { ui.transcript.textContent = `Heard: ${text}`; },
     onImmediate(text) {
       ui.transcript.textContent = `Heard: ${text}`;
@@ -627,6 +628,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     onFinal(text) {
       ui.transcript.textContent = `Heard: ${text}`;
       if (text) run(text, null, 'speech');
+      else spokenContext = null;
     },
     onError(message) {
       spokenContext = null;
@@ -798,7 +800,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       on = false;
     }
     if (on && !speech.listening && !speech.start()) on = false;
-    if (!on) speech.stop();
+    if (!on) { spokenContext = null; speech.stop(); }
     settings.listening = on;
     store.save(settings);
     ui.listen.setAttribute('aria-pressed', String(on));

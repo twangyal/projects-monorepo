@@ -584,6 +584,22 @@ test('extension speech owns its origin, retains utterance context and handles im
   expect(await page.evaluate(()=>[localStorage.length,sessionStorage.length])).toEqual([0,0]); expect(errors).toEqual([]);
 });
 
+test('extension recognition end releases an unfinished field capture through its private port', async ({context,control}) => {
+  await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page=await context.newPage(); await page.goto('http://shop.example/contact'); await expect(status(page)).toContainText('Ready');
+  await page.evaluate(() => {
+    const gap=document.createElement('div'); for(let n=0;n<12;n++)gap.append(document.createElement('br'));
+    const label=document.createElement('label'); label.textContent='Reply'; const field=document.createElement('textarea'); label.append(field); document.body.append(gap,label);
+  });
+  const frame=await listenInExtension(page);
+  await look(page,page.getByLabel('Message')); await frame.evaluate(()=>{window.__extensionSpeech.begin(); window.__extensionSpeech.say('type abandoned',false);});
+  await expect(panel(page).locator('.transcript')).toContainText('abandoned');
+  await frame.evaluate(()=>window.__extensionSpeech.instances.at(-1).onend());
+  // The port preserves event ordering: the following start is after the reset from that session end.
+  await look(page,page.getByLabel('Reply')); await frame.evaluate(()=>{window.__extensionSpeech.begin(); window.__extensionSpeech.say('type fresh reply');});
+  await expect(page.getByLabel('Reply')).toHaveValue('fresh reply'); await expect(page.getByLabel('Message')).toHaveValue('');
+});
+
 test('speech refusal opens extension microphone setup and typed instructions remain usable', async ({context,control}) => {
   await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
   const page=await context.newPage(); await page.goto('http://shop.example/'); await expect(status(page)).toContainText('Ready');

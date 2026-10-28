@@ -32,6 +32,7 @@ const camera = createLocalCamera({
 const sendSpeech = (event, value, extra = {}) => port?.postMessage({ type: 'speech', event, value, ...extra });
 const speech = createSpeechInput(window, {
   onSpeechStart: () => sendSpeech('start'),
+  onReset: () => sendSpeech('reset'),
   onInterim: text => sendSpeech('interim', text),
   onFinal: text => sendSpeech('final', text),
   onImmediate: text => sendSpeech('immediate', text),

@@ -134,6 +134,40 @@ test('speech context is captured when speaking starts, even if gaze moves before
   await expect(page.getByLabel('Message')).toHaveValue('please hold my order until Friday');
 });
 
+for (const ending of ['end', 'no-speech', 'stop', 'empty final']) test(`abandoned speech capture (${ending}) cannot send the next command to the old field`, async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await look(page, page.getByLabel('Your name'));
+  await page.evaluate(() => window.__speech.begin());
+  await page.evaluate(() => window.__speech.say('type abandoned', false));
+  if (ending === 'stop') {
+    await panel(page).getByRole('button', { name: 'Stop listening' }).click();
+    await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  } else await page.evaluate(ending => {
+    const recognition = window.__speech.instances.at(-1);
+    if (ending === 'end') recognition.onend();
+    if (ending === 'no-speech') window.__speech.fail('no-speech');
+    if (ending === 'empty final') window.__speech.say('  ');
+  }, ending);
+  await look(page, page.getByLabel('Message'));
+  await page.evaluate(() => window.__speech.begin());
+  await page.evaluate(() => window.__speech.say('type current message'));
+  expect(await page.getByLabel('Your name').inputValue(), 'the previous capture must not receive the next command').toBe('');
+  await expect(page.getByLabel('Message')).toHaveValue('current message');
+  await expect(page.getByLabel('Your name')).toHaveValue('');
+});
+
+test('speechend keeps the captured gaze until the delayed final transcript arrives', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await look(page, page.getByLabel('Your name'));
+  await page.evaluate(() => { window.__speech.begin(); window.__speech.say('type Ada', false); window.__speech.instances.at(-1).onspeechend?.(); });
+  await look(page, page.getByLabel('Message'));
+  await page.evaluate(() => window.__speech.say('type Ada Lovelace'));
+  await expect(page.getByLabel('Your name')).toHaveValue('Ada Lovelace');
+  await expect(page.getByLabel('Message')).toHaveValue('');
+});
+
 test('ambiguous targets are outlined, answered by number, and still confirmed when consequential', async ({ page }) => {
   await page.goto('/practice-site/account.html');
   const remove = page.getByRole('button', { name: 'Remove' });

@@ -187,3 +187,16 @@ test('without on-device recognition, speech says it uses the online service', as
   assert.equal(speech.mode, 'service');
   assert.equal(await speech.installLocal(), false);
 });
+
+for (const ending of ['end','no-speech','aborted']) test(`an unfinished recognition capture is reset on ${ending}`, () => {
+  const {window,instances}=fakeWindow(), events=[];
+  const speech=createSpeechInput(window,{onSpeechStart:()=>events.push('start'),onReset:()=>events.push('reset'),onFinal:text=>events.push(text)});
+  speech.start(); const current=instances[0];
+  current.onspeechstart(); emit(current,0,result('open',false)); events.length=0;
+  if(ending==='end') current.onend(); else current.onerror({error:ending});
+  assert.deepEqual(events,['reset']); assert.equal(speech.listening,true);
+  events.length=0;
+  speech.stop(); events.length=0;
+  current.onerror({error:'no-speech'}); current.onresult({resultIndex:0,results:[result('late',true)]});
+  assert.deepEqual(events,[],'stopped recognizers cannot reset or execute a newer capture');
+});

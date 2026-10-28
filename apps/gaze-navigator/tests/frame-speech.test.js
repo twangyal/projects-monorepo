@@ -13,7 +13,7 @@ function harness() {
     const port = { options, onMessage: listeners(), onDisconnect: listeners(), sent: [], postMessage(message) { this.sent.push(message); }, disconnect() { this.disconnected=true; this.onDisconnect.emit(); } };
     ports.push(port); return port;
   } };
-  const callbacks = { onSpeechStart: () => events.push(['start']), onInterim: text => events.push(['interim',text]), onFinal: text => events.push(['final',text]), onImmediate: text => events.push(['immediate',text]), onError: text => events.push(['error',text]), onState: state => events.push(['state',state]) };
+  const callbacks = { onSpeechStart: () => events.push(['start']), onReset: () => events.push(['reset']), onInterim: text => events.push(['interim',text]), onFinal: text => events.push(['final',text]), onImmediate: text => events.push(['immediate',text]), onError: text => events.push(['error',text]), onState: state => events.push(['state',state]) };
   const speech = createFrameSpeech({ document, window, mount: { prepend() {} }, runtime, ...callbacks });
   async function ready() { frames.at(-1).load(); await flush(); const port=ports.at(-1); port.onMessage.emit({type:'ready',speechSupported:true}); port.onMessage.emit({id:1,result:true}); port.onMessage.emit({type:'speech',event:'state',value:'listening'}); await flush(); events.length=0; return port; }
   return { speech, frames, ports, events, requests, timers, ready };
@@ -75,4 +75,14 @@ for(const eventFirst of [false,true]) test(`startup admits native onstart ${even
   port.onMessage.emit(eventFirst?state:ack); await flush(); assert.equal(h.timers.size,1);
   port.onMessage.emit(eventFirst?ack:state); await flush(); assert.equal(h.timers.size,0);
   assert.equal(h.speech.listening,true); assert.deepEqual(h.events,[['state','listening']]); h.speech.stop();
+});
+
+ test('private speech resets release only the current session capture', async () => {
+  const h=harness(); h.speech.start(); const old=await h.ready();
+  old.onMessage.emit({type:'speech',event:'reset'});
+  assert.deepEqual(h.events,[['reset']]);
+  h.speech.stop(); h.speech.start(); const current=await h.ready();
+  old.onMessage.emit({type:'speech',event:'reset'});
+  current.onMessage.emit({type:'speech',event:'start'});
+  assert.deepEqual(h.events,[['start']]); h.speech.stop();
 });

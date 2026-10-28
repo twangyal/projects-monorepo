@@ -75,7 +75,7 @@ export function createFrameSpeech({ document, window, mount, runtime, ...callbac
           } else if (message.event === 'state' && message.value === 'stopped') {
             stop(); callbacks.onState?.('stopped');
           } else {
-            const name = {start:'onSpeechStart',interim:'onInterim',final:'onFinal',immediate:'onImmediate',state:'onState'}[message.event];
+            const name = {start:'onSpeechStart',reset:'onReset',interim:'onInterim',final:'onFinal',immediate:'onImmediate',state:'onState'}[message.event];
             if (name) callbacks[name]?.(message.value);
           }
         }
