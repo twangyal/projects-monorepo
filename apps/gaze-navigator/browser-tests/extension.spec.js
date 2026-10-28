@@ -589,14 +589,16 @@ test('extension recognition end releases an unfinished field capture through its
   const page=await context.newPage(); await page.goto('http://shop.example/contact'); await expect(status(page)).toContainText('Ready');
   await page.evaluate(() => {
     const gap=document.createElement('div'); for(let n=0;n<12;n++)gap.append(document.createElement('br'));
-    const label=document.createElement('label'); label.textContent='Reply'; const field=document.createElement('textarea'); label.append(field); document.body.append(gap,label);
+    const label=document.createElement('label'); label.textContent='Reply'; const field=document.createElement('textarea'); label.append(field); const tail=document.createElement('div');for(let n=0;n<60;n++)tail.append(document.createElement('br'));document.body.append(gap,label,tail);
   });
   const frame=await listenInExtension(page);
   await look(page,page.getByLabel('Message')); await frame.evaluate(()=>{window.__extensionSpeech.begin(); window.__extensionSpeech.say('type abandoned',false);});
   await expect(panel(page).locator('.transcript')).toContainText('abandoned');
   await frame.evaluate(()=>window.__extensionSpeech.instances.at(-1).onend());
   // The port preserves event ordering: the following start is after the reset from that session end.
-  await look(page,page.getByLabel('Reply')); await frame.evaluate(()=>{window.__extensionSpeech.begin(); window.__extensionSpeech.say('type fresh reply');});
+  await page.getByLabel('Reply').evaluate(element=>window.scrollTo({top:element.getBoundingClientRect().top+scrollY-70,behavior:'instant'}));
+  await look(page,page.getByLabel('Reply')); await expect(panel(page).locator('.context')).toContainText('Reply');
+  await frame.evaluate(()=>{window.__extensionSpeech.begin(); window.__extensionSpeech.say('type fresh reply');});
   await expect(page.getByLabel('Reply')).toHaveValue('fresh reply'); await expect(page.getByLabel('Message')).toHaveValue('');
 });
 
