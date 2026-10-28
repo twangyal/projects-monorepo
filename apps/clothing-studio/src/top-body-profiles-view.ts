@@ -10,7 +10,7 @@ export function mountTopBodyProfiles(host:HTMLElement,options:{capture:()=>Profi
  const selected=()=>library.profiles.find(p=>p.name===select.value);
  function render(wanted=select.value){
   select.replaceChildren(new Option('Choose a saved profile',''),...library.profiles.map(p=>new Option(p.name,p.name)));select.value=library.profiles.some(p=>p.name===wanted)?wanted:'';
-  const p=selected();preview.textContent=p?`${p.body.chest} cm chest / ${p.body.waist??'proportional'} waist / ${p.body.hip??'proportional'} hip / ${p.body.chestDepth??'proportional'} chest depth (cm). Choose Use to apply these settings.`:'';
+  const p=selected();preview.textContent=p?`${p.body.chest} cm chest / ${p.body.waist??'proportional'} waist / ${p.body.hip??'proportional'} hip / ${p.body.chestDepth??'proportional'} chest depth${p.body.hipDepth==null?'':` / ${p.body.hipDepth} waist-to-hip depth`} (cm). Choose Use to apply these settings.`:'';
   for(const action of ['update','use','delete'])get<HTMLButtonElement>(`body-profile-${action}`).disabled=!available||!p;
   get<HTMLButtonElement>('body-profile-save').disabled=!available;file.disabled=!available;get<HTMLButtonElement>('body-profile-download').disabled=!available||!library.profiles.length;
   get<HTMLButtonElement>('body-profile-recovery').hidden=recovery===null;

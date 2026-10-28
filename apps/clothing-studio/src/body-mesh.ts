@@ -15,11 +15,12 @@ function roundedMax(a: number, b: number): number {
 
 /** Signed distance from the mannequin (negative inside), before the inset. */
 export function mannequinDistance(body: BodyProxy): (x: number, y: number, z: number) => number {
-  const kept = body.torso.filter(section => section.y > -50);
+  // A measured hip may sit below the old display cutoff; keep that real landmark, not the terminal proxy extension.
+  const kept = body.torso.filter(section => section.y > -50 || section.y === body.landmarks?.hip);
   const sections = kept.length ? kept : body.torso.slice(0, 1);
   const top = sections[0]!.y;
-  // A top's body ends a little below the hip, a skirt's a little below the hem, and trousers' at the crotch.
-  const bottom = body.bottom ?? (body.capsules.length ? sections.at(-1)!.y - 12 : -12);
+  // Keep the complete measured hip even below a short skirt's hem; otherwise retain the established display bounds.
+  const bottom = body.bottom ?? (body.capsules.length ? sections.at(-1)!.y - 12 : Math.min(-12, (body.landmarks?.hip ?? 0) - 12));
   const section = (y: number) => {
     const at = Math.min(top, Math.max(bottom, y));
     let i = 1;
@@ -103,7 +104,7 @@ export function surfaceNet(distance: (x: number, y: number, z: number) => number
 const made = new Map<string, ReturnType<typeof surfaceNet>>();
 /** The mannequin for `body`, cached for the bodies drawn most recently. */
 export function mannequinMesh(body: BodyProxy, step = 1.4) {
-  const key = JSON.stringify([body.torso, body.capsules, body.bottom ?? null, step]);
+  const key = JSON.stringify([body.torso, body.capsules, body.bottom ?? null, body.landmarks?.hip ?? null, step]);
   const cached = made.get(key);
   if (cached) return cached;
   const distance = mannequinDistance(body), inset = (x: number, y: number, z: number) => distance(x, y, z) + INSET;
@@ -113,8 +114,8 @@ export function mannequinMesh(body: BodyProxy, step = 1.4) {
     low[0] = Math.min(low[0]!, x - r); low[1] = Math.min(low[1]!, y - r); low[2] = Math.min(low[2]!, z - r);
     high[0] = Math.max(high[0]!, x + r); high[1] = Math.max(high[1]!, y + r); high[2] = Math.max(high[2]!, z + r);
   };
-  const sections = body.torso.filter(section => section.y > -50);
-  const bottom = body.bottom ?? (body.capsules.length ? (sections.at(-1) ?? body.torso[0]!).y - 12 : -12);
+  const sections = body.torso.filter(section => section.y > -50 || section.y === body.landmarks?.hip);
+  const bottom = body.bottom ?? (body.capsules.length ? (sections.at(-1) ?? body.torso[0]!).y - 12 : Math.min(-12, (body.landmarks?.hip ?? 0) - 12));
   for (const section of sections.length ? sections : body.torso.slice(0, 1)) { include(0, section.y, 0, section.halfWidth); }
   include(0, bottom, 0, 2);
   for (const capsule of body.capsules) { include(...capsule.a, capsule.radius); include(...capsule.b, capsule.end); }
