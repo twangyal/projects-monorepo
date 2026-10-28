@@ -398,7 +398,7 @@ element('construction-product').addEventListener('click',()=>{
   if(constructionView.dirty()||gradingView.dirty()) { message('Apply or discard pattern and grading drafts before copying this skirt. Your drafts are kept.',true);return; }
   try {
     edit(current=>productFromConstruction(current));productView.reset();
-    message('Copied applied skirt measurements to the 3D product with default linen styling. Undo restores the previous product. Legacy work is unchanged; use Back to garment to style the copy.');
+    message(`Copied applied skirt measurements${project.bodyMeasurements?' and body waist, hip and hip depth':''} to the 3D product with default linen styling. Undo restores the previous product and body settings. Legacy work is unchanged; use Back to garment to style the copy.`);
   } catch(error) { message(error instanceof Error?error.message:'Could not copy this skirt. Existing work is unchanged.',true); }
 });
 
