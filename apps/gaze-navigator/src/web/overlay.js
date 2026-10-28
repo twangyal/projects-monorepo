@@ -178,7 +178,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       <details><summary>What can I say?</summary>
       <p class="hint">Keep website suggestions open: focus the page, press Alt+Shift+G, type a command, then Enter. Escape cancels. Use direct keyboard characters or paste.</p>
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "add option Jazz to Genres", "remove option Jazz from Genres", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
-        <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit.</p>
+        <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit. After looking away, say "continue typing" and more words to append in the focused regular field; "undo typing" can recover it when no text field is in the circle.</p>
         <p class="hint">Selected text: say "delete selected text" or "remove highlighted text" to remove only a native selected range. Say "undo" to restore it. Select words first; changed or unavailable selections refuse.</p>
         <p class="hint">Panels: "expand FAQ" or "collapse that panel" requests that state. Repeating it keeps the state. Native details and binary ARIA buttons use the website’s click behavior; unsupported state is refused.</p>
         <p class="hint">Radio choices: "select Express radio button" or "select that radio button" selects and checks the requested choice. Repeating it keeps it selected. Native and binary ARIA radios use the website’s click behavior; mixed or missing custom state is refused.</p>
@@ -418,6 +418,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     pageChanged = false;
     capturedAt = { x: point.x, y: point.y, radius: radius() };
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host, scopeCache, focus: pageFocus() });
+    context.focusIsCurrent = element => pageFocus() === element;
     contextChanged(context);
     // Embedded frames from other sites answer later; their controls join this context when they do.
     const captured = context;

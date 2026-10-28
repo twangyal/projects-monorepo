@@ -168,6 +168,12 @@ function typingIn(context, find) {
   return field && textField(field) && !field.sensitive && find && normalize(field.value ?? '').includes(normalize(find)) ? field : null;
 }
 
+// Explicit continuation names the focused field, independently of gaze. Never recover a sensitive field.
+function continuingIn(context) {
+  const field = context.elements.find(element => element.id === context.focusedId && textField(element)) ?? context.focusedField;
+  return field && textField(field) && !field.sensitive ? field : null;
+}
+
 function chooseField(fieldName, context, act) {
   const fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
@@ -496,6 +502,12 @@ function interpretInCircle(utterance, context) {
     if (context.pageSearch) return act(context.pageSearch);
     return chooseField(null, context, act);
   }
+  if ((match = /^(?:continue|keep)\s+(?:typing|writing|dictating)(?:\s+(.+))?$/i.exec(raw))) {
+    if (!match[1]?.trim()) return { type: 'unknown', message: 'Say “continue typing” followed by the words to add to the focused field.' };
+    const field = continuingIn(context);
+    return field ? { ...edit('append', { text: unquote(match[1]) })(field), requireFocus: true }
+      : { type: 'unknown', message: 'First focus a regular text field, then say “continue typing” and the words. No field was changed.' };
+  }
   if ((match = /^(?:type|write|enter|dictate|insert)\s+(.+)$/i.exec(raw))) {
     // Unquoted "in" is ordinary dictation ("meet in the park"); only "into" or a quoted phrase names a field.
     const quoted = /^["“](.*?)["”](?:\s+(?:into|in)\s+(?:the\s+)?(.+))?$/i.exec(match[1]);
@@ -540,7 +552,10 @@ function interpretInCircle(utterance, context) {
   }
   if (/^(delete|remove|erase) (the )?(last|previous) word$|^backspace word$/.test(text)) return chooseField(null, context, edit('delete-word'));
   if (/^(new line|newline|next line)$/.test(text)) return chooseField(null, context, edit('append', { text: '\n', raw: true }));
-  if (/^undo( that| typing)?$/.test(text)) return chooseField(null, context, edit('undo'));
+  if (/^undo( that| typing)?$/.test(text)) {
+    const field = text === 'undo typing' && !context.elements.some(textField) ? continuingIn(context) : null;
+    return field ? { ...edit('undo')(field), requireFocus: true } : chooseField(null, context, edit('undo'));
+  }
   if (/^(submit|press enter|hit enter|press return|hit return|send it|submit (the )?form)$/.test(text)) {
     const act = element => ({ type: 'submit', targetId: element.id });
     // The field being typed in submits even when the gaze has drifted away from it.

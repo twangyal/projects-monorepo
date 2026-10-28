@@ -572,7 +572,7 @@ function phraseSelection(value, text, occurrence) {
   return { ok: true, ...range };
 }
 
-function ownsFocus(element) {
+export function ownsFocus(element) {
   // A child document can retain its activeElement after an outer field gains
   // focus, so check the entire host/frame chain rather than just the leaf root.
   for (let scope = element; scope;) {

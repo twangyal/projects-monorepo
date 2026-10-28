@@ -47,9 +47,13 @@ export function createController({ window, actions = pageActions, interpret = in
     return false;
   }
 
-  function writingProblem(action, element) {
+  function writingProblem(action, element, context) {
     // A control in an embedded frame is checked by the frame's own controller.
     if (element?.remote) return null;
+    if (action.requireFocus && (actions.isSensitive?.(element) ||
+      !(context.focusIsCurrent ? context.focusIsCurrent(element) : actions.ownsFocus?.(element)))) {
+      return reply('The focused field changed or is protected. Focus the text field again before continuing. No text was changed.', 'error');
+    }
     if (['edit', 'search'].includes(action.type) && actions.canWrite?.(element) === false) {
       return reply('That field is not writable or does not support text editing. Look at a writable field and try again.', 'error');
     }
@@ -60,7 +64,7 @@ export function createController({ window, actions = pageActions, interpret = in
     if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
-      const problem = writingProblem(action, target.element);
+      const problem = writingProblem(action, target.element, context);
       if (problem) return problem;
       // A control named far from the gaze is used only once the user agrees it is the one they meant.
       if (action.far) {
@@ -94,7 +98,7 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
     // original field since capture. Refusal must precede history, events or submit.
-    const problem = writingProblem(action, element);
+    const problem = writingProblem(action, element, context);
     if (problem) return problem;
     let result;
     switch (action.type) {
@@ -116,7 +120,21 @@ export function createController({ window, actions = pageActions, interpret = in
         if (result.ok) result = { ok: true, message: `Searching for "${action.text}".` };
         break;
       }
-      case 'edit': result = edit(element, target.name, action.edit, Boolean(target.sensitive || actions.isSensitive?.(element))); break;
+      case 'edit': {
+        if (action.requireFocus) {
+          // Leaving the navigator's command UI restores page focus and can run site handlers. Recheck before
+          // reading the edit's new value or consuming history; a handler may lock, replace or redirect the field.
+          const beforeFocus = actions.readValue(element);
+          element.focus({ preventScroll: true });
+          const problem = writingProblem(action, element, context);
+          if (problem) return problem;
+          if (!element.isConnected || !actions.ownsFocus?.(element) || actions.readValue(element) !== beforeFocus) {
+            return reply('The field changed while focusing it. Focus it again before continuing. No text was changed.', 'error');
+          }
+        }
+        result = edit(element, target.name, action.edit, Boolean(target.sensitive || actions.isSensitive?.(element)));
+        break;
+      }
       case 'month':
       case 'week':
       case 'time':

@@ -94,3 +94,25 @@ test('a correction reaches the field being typed in when the gaze has drifted, i
   const looked = control(1, 'Comment', 'textbox', { editable: true, value: 'see Turnig' });
   assert.equal(interpret('replace Turnig with Turing', { elements: [looked], focusedField: field }).targetId, 1);
 });
+
+test('explicit continuation uses only focused text and ordinary typing stays gaze-based', () => {
+  const field = control(200, 'Message', 'textbox', { editable: true });
+  const looked = control(1, 'Other', 'textbox', { editable: true });
+  const context = { elements: [looked], focusedField: field };
+  for (const command of ['continue typing Hello there', 'keep typing Hello there', 'continue writing Hello there']) {
+    assert.deepEqual(interpret(command, context), { type: 'edit', targetId: 200, edit: { kind: 'append', text: 'Hello there' }, requireFocus: true });
+  }
+  assert.equal(interpret('type Hello there', context).targetId, 1);
+  assert.equal(interpret('continue typing Hello', { elements: [looked] }).type, 'unknown');
+  assert.equal(interpret('continue typing Hello', { elements: [looked], focusedField: { ...field, sensitive: true } }).type, 'unknown');
+  assert.deepEqual(interpret('undo typing', { elements: [], focusedField: field }), { type: 'edit', targetId: 200, edit: { kind: 'undo' }, requireFocus: true });
+});
+
+test('unavailable continuation is a recognized refusal, not a model target-matching request', async () => {
+  const { createAssistedInterpreter } = await import('../src/web/assisted-interpreter.js');
+  const assistant = createAssistedInterpreter({ model: { decide: () => { throw new Error('must not match another control'); } } });
+  for (const command of ['continue typing', 'continue typing hello']) {
+    const context = { elements: [control(1, 'Continue', 'button')] }, action = interpret(command, context);
+    assert.equal(action.type, 'unknown'); assert.equal(assistant.needs(command, context, action), false);
+  }
+});
