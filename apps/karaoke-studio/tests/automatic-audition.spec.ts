@@ -77,7 +77,7 @@ test('uncertain filter preserves numbering and complete apply, undo and pasted c
   await expect(page.locator('#srt-review-list li:visible')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Listen to automatic line 3', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Listen to automatic line 1', exact: true })).toBeHidden();
-  await expect(page.locator('#automatic-review-count')).toHaveText('Showing 1 of 3 automatic lines. Applying replaces all 3 lines.');
+  await expect(page.locator('#automatic-review-count')).toHaveText('Showing 1 of 3 automatic lines; 0 of 3 checked this session. Applying replaces all 3 lines.');
   expect(await editor(page)).toEqual(before);
   await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
   expect(await page.locator('#cue-list textarea').evaluateAll(nodes => nodes.map(n => (n as HTMLTextAreaElement).value))).toEqual(['Hello little world', 'This is our chorus', 'Sing it back to me']);
@@ -410,7 +410,7 @@ test('phone keyboard exclusion keeps drafts and retired checkbox cannot change a
   await expect(page.getByLabel('Exclude automatic line 2', { exact: true })).not.toBeChecked();
   await expect(page.getByLabel('Reviewed end line 2 (seconds)', { exact: true })).not.toHaveValue('7.5000');
   await retired!.evaluate(node => { (node as HTMLInputElement).checked = true; node.dispatchEvent(new Event('change', { bubbles: true })); });
-  await expect(page.locator('#automatic-review-count')).toHaveText('Showing 3 of 3 automatic lines. Applying replaces all 3 lines.');
+  await expect(page.locator('#automatic-review-count')).toHaveText('Showing 3 of 3 automatic lines; 0 of 3 checked this session. Applying replaces all 3 lines.');
   await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
   await expect(page.locator('#cue-list textarea')).toHaveCount(3);
 }));
