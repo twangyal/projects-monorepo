@@ -4,7 +4,7 @@ import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
 import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, BODY_HIP_DEPTH, defaultBodyChest, garmentBody, outfitShape, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { listDesigns, readDesign } from './design-library.ts';
-import { gradable, gradedProduct } from './size-grades.ts';
+import { gradedProduct } from './size-grades.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
@@ -184,7 +184,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   let patternSize: Size | null = null;
   const sampleOf = (design: Product): Size => design.spec?.sampleSize ?? 'M';
   const viewed = (design: Product): Product => {
-    if (!shownSize || shownSize === sampleOf(design) || !gradable(design)) return design;
+    if (!shownSize || shownSize === sampleOf(design)) return design;
     try { return gradedProduct(design, shownSize); } catch { return design; }
   };
   // An outfit: the garment worn with the design, when one is a top and the other bottoms.
@@ -297,8 +297,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   function renderSizeSelect(design: Product) {
     const sample = sampleOf(design), html = SIZES.map(size => `<option value="${size}">${size}${size === sample ? ' (sample)' : ''}</option>`).join('');
     if (sizeSelect.dataset.html !== html) { sizeSelect.dataset.html = html; sizeSelect.innerHTML = html; }
-    sizeSelect.disabled = !gradable(design);
-    sizeSelect.value = gradable(design) ? shownSize ?? sample : sample;
+    sizeSelect.value = shownSize ?? sample;
   }
   sizeSelect.addEventListener('change', () => {
     const design = product() ?? template('blank'), size = sizeSelect.value as Size;
@@ -314,13 +313,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const patternSizeSelect = $('pattern-export-size') as HTMLSelectElement;
   function renderPatternSize(design: Product) {
     const sample = sampleOf(design);
-    if (!gradable(design)) patternSize = null;
     patternSizeSelect.innerHTML = SIZES.map(size => `<option value="${size}">${size}${size === sample ? ' (sample)' : ''}</option>`).join('');
     patternSizeSelect.value = patternSize ?? sample;
-    patternSizeSelect.disabled = !gradable(design);
-    $('pattern-export-help').textContent = !gradable(design)
-      ? `Flared skirts are not graded. Downloads use the sample size ${sample}.`
-      : `Downloads use size ${patternSize ?? sample}. Pattern previews and saved measurements remain the sample size ${sample}; the size shown in 3D is separate. Apply measurement changes before exporting.`;
+    $('pattern-export-help').textContent = `Downloads use size ${patternSize ?? sample}. Pattern previews and saved measurements remain the sample size ${sample}; the size shown in 3D is separate. Apply measurement changes before exporting.`;
   }
   patternSizeSelect.addEventListener('change', () => {
     const size = patternSizeSelect.value as Size;
@@ -858,7 +853,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
   }, 'Costing applied to the range plan.', 'costing'));
   for (const format of ['dxf', 'svg'] as const) $('pattern-' + format).addEventListener('click', () => void exporting(async () => {
-    const design = product() ?? template('blank'), size = gradable(design) ? patternSize ?? sampleOf(design) : sampleOf(design);
+    const design = product() ?? template('blank'), size = patternSize ?? sampleOf(design);
     // Validate again against the latest applied measurements. Never substitute sample geometry for an invalid grade.
     const graded = gradedProduct(design, size), suffix = size === sampleOf(design) ? '' : `-size-${size}`;
     const content = format === 'dxf' ? patternDxf(graded) : patternSvg(graded);

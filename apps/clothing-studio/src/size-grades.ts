@@ -2,6 +2,8 @@
 // increment (centimetres per size). Fit points the designer edited change by their own increments; points left at their
 // proportional values follow the graded chest and length, as they do when the measurements are edited. The tech pack
 // measures each size from the graded design, so the 3D garment, its patterns and the size chart agree.
+import { DEFAULT_GRADING } from './grading.ts';
+import { skirtDraft } from './product-skirt.ts';
 import { LIMITS, SIZES, fitValues, isBottoms, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
 
 /** Fit increments per size step for tops; points not listed stay the same in every size. */
@@ -21,21 +23,23 @@ function applies(product: Product, key: FitKey): boolean {
   return true;
 }
 
-/** Sizes the design can be graded to: tops, shorts and trousers (a flared skirt has no grading). */
-export function gradable(product: Product): boolean { return product.base !== 'skirt'; }
-
 /**
  * The design graded to `size` from its sample size. Throws when the graded measurements fall outside what the studio
  * supports (a very large design graded up, say).
  */
 export function gradedProduct(product: Product, size: Size): Product {
   const sample = product.spec?.sampleSize ?? 'M', steps = SIZES.indexOf(size) - SIZES.indexOf(sample);
-  if (!gradable(product) && steps) throw new Error('Flared skirts are not graded; every size shows the sample.');
   if (!steps) return product;
   const graded = structuredClone(product);
   // The graded design is its own sample, so its size chart is centred on it.
   graded.spec = { styleNumber: product.spec?.styleNumber ?? '', season: product.spec?.season ?? '', sampleSize: size };
-  if (isBottoms(product)) {
+  if (product.base === 'skirt') {
+    const m = skirtDraft(product);
+    graded.measurements = { ...product.measurements,
+      waist: round(m.waist + steps * DEFAULT_GRADING.waistStep),
+      hem: round(m.hem + steps * DEFAULT_GRADING.hemStep),
+      slant: m.slant };
+  } else if (isBottoms(product)) {
     const m = legMeasurements(product), next = { ...m };
     for (const [key, grade] of Object.entries(LEG_GRADES) as [keyof typeof LEG_GRADES, number][]) next[key] = round(m[key] + steps * grade);
     graded.measurements = next;

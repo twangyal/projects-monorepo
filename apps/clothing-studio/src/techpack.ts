@@ -1,7 +1,8 @@
+import { DEFAULT_GRADING } from './grading.ts';
 import { skirtBandHeight, skirtDraft, skirtPieces } from './product-skirt.ts';
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { gradable, gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
+import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
 import { BASE_NAMES, NECK_RIB_RATIO, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
@@ -38,7 +39,6 @@ export function fabricUsage(product: Product): FabricUsage[] {
  */
 export function buildTechPack(product: Product, date: string): TechPack {
   const pack = samplePack(product, date);
-  if (!gradable(product)) return pack;
   const failed: Size[] = [];
   const measured = SIZES.map(size => {
     try { const graded = gradedProduct(product, size); return graded === product ? null : samplePack(graded, date).poms; }
@@ -327,18 +327,20 @@ ${arrow(bx + d.backHip + d.backCrotch + 2.5, 0, bx + d.backHip + d.backCrotch + 
 </svg>`;
 }
 
-/** No grading or closure is invented for the measured two-panel skirt. */
+/** Relative skirt grades; the closure still needs a separate production decision. */
 function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: string): Omit<TechPack, 'bom'> {
   const d = skirtDraft(product), band=skirtBandHeight(product);
-  const pom = (code:string,name:string,howToMeasure:string,value:number):Pom => ({code,name,howToMeasure,tolerance:1,
-    values:Object.fromEntries(SIZES.map(size=>[size,value])) as Record<Size,number>});
+  // Preserve admitted decimals for the sample and fixed dimensions; changed girths use the grade's precision.
+  const base = SIZES.indexOf(spec.sampleSize);
+  const pom = (code:string,name:string,howToMeasure:string,value:number,grade:number,tolerance:number):Pom => ({code,name,howToMeasure,tolerance,
+    values:Object.fromEntries(SIZES.map((size,i)=>[size,i===base || grade===0 ? value : Math.round((value+(i-base)*grade)*100)/100])) as Record<Size,number>});
   return {name:product.name,...spec,base:BASE_NAMES.skirt,neckline:band ? 'Folded waistband; closure not modelled' : 'No waistband or closure',date,
-    poms:[pom('A','Waist circumference','Around the waist seam',d.waist),pom('B','Hem circumference','Around the hem seam',d.hem),pom('C','Side seam slant','Waist seam to hem along a side seam, excluding the band',d.slant),...(band ? [pom('D','Waistband height','Finished height above the waist seam; cut twice this height',band)] : [])],
+    poms:[pom('A','Waist circumference','Around the waist seam',d.waist,DEFAULT_GRADING.waistStep,1),pom('B','Hem circumference','Around the hem seam',d.hem,DEFAULT_GRADING.hemStep,1),pom('C','Side seam slant','Waist seam to hem along a side seam, excluding the band',d.slant,DEFAULT_GRADING.slantStep,1),...(band ? [pom('D','Waistband height','Finished height above the waist seam; cut twice this height',band,0,1)] : [])],
     construction:[{area:'Panels',operation:'Cut one front and one back',detail:'Matching annular sectors; grain along each panel centre'},
       {area:'Side seams',operation:'Join matching side edges',detail:'Choose a suitable closure and finish; the closure is not modelled'},
       ...(band ? [{area:'Waistband',operation:'Fold in half and sew to the waist seam',detail:`Cut one ${d.waist} × ${band*2} cm strip before seam allowances; finished height ${band} cm. Choose a closure and any extension separately.`}] : [])],
     notes:['Rigid styling shell, not a cloth drape or verified fit. Validate with a physical sample.',
-      'All size columns repeat the measured sample; size grading has not been defined for this product.',
+      `Other sizes are measured from the sample (${spec.sampleSize}) graded by ${DEFAULT_GRADING.waistStep} cm of waist and ${DEFAULT_GRADING.hemStep} cm of hem per size. Side slant and finished band height stay fixed. These starting grades need a fit sample; legacy skirt grading rules are separate.`,
       'Pattern arcs are polygon approximations. Exports add the stated seam allowance; confirm closure, hem finish and cutting layout before production.',
       ...(band ? ['The band is a single outer simulation surface. Its inner facing, fold contact, interfacing and closure are not simulated.'] : [])]};
 }

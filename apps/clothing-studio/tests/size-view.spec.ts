@@ -25,9 +25,9 @@ test('another size is shown and draped on the same body without changing the des
   await expect(page.locator('#garment-drape-status')).toContainText('Draped on a body with a 94 cm chest: 10 cm of ease', { timeout: 120000 });
   await expect(page.locator('#garment-drape-status')).not.toContainText('Size L');
 
-  // A flared skirt has no grading.
+  // A flared skirt participates in the same size view.
   await editor(page).getByRole('button', { name: /^Use the Flared skirt template/ }).click();
-  await expect(size).toBeDisabled();
+  await expect(size).toBeEnabled();
 });
 
 test('an applied edit that invalidates the viewed grade explicitly returns to the sample without discarding the edit', async ({ page }) => {

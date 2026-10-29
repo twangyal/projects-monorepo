@@ -57,7 +57,8 @@ test('non-M sample and edited fit grade into the export, while unsupported sizes
   await page.locator('#pattern-dxf').click(); await expect(page.locator('#message')).toContainText('Size XL would be outside');
   expect(downloads).toEqual([]);
   await page.getByRole('button', { name: /^Use the Flared skirt template/ }).click();
-  await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toBeDisabled();
+  await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toBeEnabled();
+  await page.getByRole('combobox', { name: 'Pattern export size', exact: true }).selectOption('M');
   await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toHaveValue('M');
   const skirt = await download(page, '#pattern-svg'); expect(skirt.name).toMatch(/-pattern\.svg$/); expect(skirt.name).not.toContain('-size-'); expect(skirt.text).toContain('size M');
   // Reload only after persistence finishes; the confirmation handler would otherwise accept leaving unsaved work.
