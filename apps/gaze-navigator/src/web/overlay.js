@@ -228,16 +228,18 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
     onGaze: (x, y, time) => track(x, y, time),
-    onLost: () => ui.circle.classList.add('lost'),
+    onLost: () => loseCameraContext(),
   });
   // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
   let point = null;
+  let cameraUnavailable = false;
   let frozen = false;
   let context = { elements: [], region: null };
   // Set once speech exists: on-device recognition favours the names of the controls in and just around the circle.
   let contextChanged = () => {};
   let spokenContext = null;
+  let spokenInvalid = false;
   let promptContext = null;
   let lastCapture = -Infinity;
   let trailing = null;
@@ -448,6 +450,23 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (frame === null) frame = window.requestAnimationFrame(draw);
   }
 
+  // An explicit missing estimate or capture disconnect cannot leave an old page target actionable.
+  function loseCameraContext(announce = true) {
+    if (settings.source !== 'camera' || cameraUnavailable) return;
+    cameraUnavailable = true;
+    point = null; frozen = false; filter.reset();
+    window.clearTimeout(trailing); trailing = null;
+    capturedAt = null;
+    context = { elements: [], region: null, trackingUnavailable: true };
+    if (keyboardContext) keyboardContext = { elements: [], region: null, trackingUnavailable: true };
+    spokenInvalid ||= !!spokenContext;
+    spokenContext = null; promptContext = null;
+    controller.cancel();
+    ui.circle.classList.add('lost'); ui.circle.classList.remove('visible');
+    contextChanged(context); renderContextList(); renderOutlines();
+    if (announce && !calibration) feedback({ message: 'Camera tracking is lost. Keep your face visible and look at the page again, or say use pointer.', tone: 'error' });
+  }
+
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
     if (calibration) {
@@ -455,7 +474,6 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (next) calibration.sample(next.x, next.y);
       return;
     }
-    ui.circle.classList.remove('lost');
     const next = settings.source === 'camera' ? filter.filter(x, y, time) : { x, y };
     if (!next) return;
     if (settings.source === 'camera') {
@@ -466,6 +484,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         return;
       }
     }
+    cameraUnavailable = false;
+    ui.circle.classList.remove('lost');
     point = next;
     schedule();
   }
@@ -568,7 +588,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
-    const used = calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
+    const used = settings.source === 'camera' && cameraUnavailable
+      ? { elements: [], region: null, trackingUnavailable: true }
+      : calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
     const result = controller.handle(utterance, used);
     show(result, used);
@@ -614,12 +636,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const speech = createSpeech(window, {
     // Keeps the earliest capture of an utterance: where the user looked when they began speaking.
     onSpeechStart() {
-      if (controller.paused || spokenContext) return;
+      if (controller.paused || spokenContext || spokenInvalid) return;
+      if (settings.source === 'camera' && cameraUnavailable) { spokenInvalid = true; return; }
       recapture(true);
       spokenContext = context;
       ui.transcript.textContent = `Listening… ${context.elements.length} element${context.elements.length === 1 ? '' : 's'} captured.`;
     },
-    onReset() { spokenContext = null; },
+    onReset() { spokenContext = null; spokenInvalid = false; },
     onInterim(text) { ui.transcript.textContent = `Heard: ${text}`; },
     onImmediate(text) {
       ui.transcript.textContent = `Heard: ${text}`;
@@ -627,11 +650,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
     onFinal(text) {
       ui.transcript.textContent = `Heard: ${text}`;
-      if (text) run(text, null, 'speech');
+      const invalid = spokenInvalid; spokenInvalid = false;
+      if (text) run(text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech');
       else spokenContext = null;
     },
     onError(message) {
-      spokenContext = null;
+      spokenContext = null; spokenInvalid = false;
       feedback({ message, tone: 'error' });
       if (!speech.listening) setListening(false);
     },
@@ -679,6 +703,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       // Turning the camera off also forgets the saved calibration (eye-patch training data).
       camera.clearCalibration();
       settings.source = 'pointer';
+      cameraUnavailable = false;
       store.save(settings);
       filter.reset();
       ui.circle.classList.remove('lost');
@@ -688,6 +713,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
     const generation = ++sourceGeneration;
     settings.source = 'camera';
+    loseCameraContext(false);
     store.save(settings);
     renderSource();
     camera.start().then(async result => {
@@ -727,6 +753,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function calibrate() {
     if (camera.state !== 'ready') return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
     const session = camera.session;
+    loseCameraContext(false);
     calibration?.cancel();
     camera.resetCalibration();
     filter.reset();
@@ -800,7 +827,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       on = false;
     }
     if (on && !speech.listening && !speech.start()) on = false;
-    if (!on) { spokenContext = null; speech.stop(); }
+    if (!on) { spokenContext = null; spokenInvalid = false; speech.stop(); }
     settings.listening = on;
     store.save(settings);
     ui.listen.setAttribute('aria-pressed', String(on));

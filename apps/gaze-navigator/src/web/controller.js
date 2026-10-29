@@ -287,6 +287,10 @@ export function createController({ window, actions = pageActions, interpret = in
       const result = handler(action.type === 'circle-size' ? action.size : action.source);
       return reply(result.message, result.ok ? 'success' : 'error');
     }
+    if (context.trackingUnavailable) {
+      pending = null;
+      return reply('Camera tracking is lost. Look at the page again when your face is visible, or say use pointer. Nothing was changed.', 'error');
+    }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
 
     // A number answers only the current question. Noise never extends its deadline;

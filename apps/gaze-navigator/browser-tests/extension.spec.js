@@ -653,3 +653,20 @@ test('controls in an embedded frame from another site are listed, outlined and c
   await expect(frame.locator('#join')).toHaveText('Joined');
   await expect(status(page)).toContainText('activated');
 });
+
+test('camera loss and capture disconnect retire extension targets and confirmations',async({context,control})=>{
+  test.setTimeout(60000);
+  await control.evaluate(()=>chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page=await context.newPage();await page.goto('http://shop.example/');await expect(status(page)).toContainText('Ready');
+  await page.getByRole('button',{name:'Buy now',exact:true}).evaluate(button=>{window.__purchases=0;button.addEventListener('click',()=>window.__purchases++);const space=document.createElement('div');space.style.height='600px';document.body.append(space);window.scrollTo(0,Math.max(0,button.getBoundingClientRect().top+scrollY-50));});
+  await typeInstruction(page,'use camera');await expect(status(page)).toContainText('The circle now follows your gaze.',{timeout:45000});
+  const frame=captureFrame(page),buy=page.getByRole('button',{name:'Buy now',exact:true});
+  const gaze=async()=>{const box=await buy.boundingBox();for(let i=0;i<15;i++)await frame.evaluate(([x,y])=>globalThis.webgazer.emit({x,y}),[box.x+box.width/2,box.y+box.height/2]);await expect(panel(page).locator('.context')).toContainText('Button: Buy now');};
+  await gaze();await frame.evaluate(()=>globalThis.webgazer.emit(null));await expect(status(page)).toContainText('tracking is lost');
+  await typeInstruction(page,'click buy now');expect(await page.evaluate(()=>window.__purchases)).toBe(0);
+  await gaze();await typeInstruction(page,'click buy now');await expect(status(page)).toContainText('confirm');
+  await page.locator('#gaze-web-navigator iframe[title="Gaze Navigator camera"]').evaluate(frame=>frame.remove());await expect(status(page)).toContainText('tracking is lost');
+  await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(0);
+  await typeInstruction(page,'use pointer');const box=await buy.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await expect(panel(page).locator('.context')).toContainText('Button: Buy now');
+  await typeInstruction(page,'click buy now');await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(1);
+});

@@ -420,3 +420,22 @@ test('a control named inside the circle and used is reported as where the user a
   assert.equal(outside.aimed, null);
   assert.equal(controller.handle('scroll down', context).aimed, null);
 });
+
+test('unavailable tracking refuses page actions and retires an earlier confirmation',()=>{
+  const page=fakePage(),controller=createController({window:{},actions:page.actions});
+  const context={elements:[describe(1,page.node('Pricing')),describe(2,page.node('Delete account'),{consequential:true})],region:'page'};
+  controller.handle('delete account',context);assert.equal(controller.pending.kind,'confirm');
+  const lost={...context,trackingUnavailable:true};
+  for(const command of ['confirm','open pricing','scroll down','go back']) {
+    const result=controller.handle(command,lost);assert.equal(result.performed,undefined);assert.match(result.message,/tracking.*lost|fresh.*gaze/i);assert.equal(controller.pending,null);
+  }
+  assert.deepEqual(page.log,[]);
+  assert.equal(controller.handle('open pricing',context).performed,'activate');
+});
+
+test('unavailable tracking leaves safety and tracking recovery commands usable',()=>{
+  const calls=[],controller=createController({window:{},commands:{tracking:source=>{calls.push(source);return {ok:true,message:source};},calibrate:()=>({ok:true,message:'Calibrating'}),circleSize:size=>({ok:true,message:size})}}),lost={elements:[],trackingUnavailable:true};
+  assert.equal(controller.handle('pause',lost).paused,true);assert.equal(controller.handle('cancel',lost).cancelled,true);
+  assert.equal(controller.handle('use pointer',lost).tone,'success');assert.deepEqual(calls,['pointer']);
+  assert.equal(controller.handle('recalibrate',lost).tone,'success');assert.equal(controller.handle('use a large circle',lost).tone,'success');assert.equal(controller.handle('resume',lost).paused,false);
+});

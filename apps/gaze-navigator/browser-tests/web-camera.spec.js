@@ -251,3 +251,62 @@ test('resizing during calibration keeps the stale circle hidden and preserves th
   await gazeAt(page, page.getByRole('link', { name: 'Catalog', exact: true }));
   await expect(circle).toHaveClass(/visible/); await expect(circle).toHaveCSS('width', '260px');
 });
+
+test('losing the camera estimate retires its last target until a fresh page gaze arrives',async({page})=>{
+  await open(page,'/practice-site/catalog.html');await startCamera(page);await finishCalibration(page);
+  const sort=page.getByLabel('Sort by'),before=await sort.inputValue();await gazeAt(page,sort);
+  await page.evaluate(()=>window.webgazer.emit(null));await page.clock.runFor(33);
+  await typeInstruction(page,'choose title');await expect(sort).toHaveValue(before);
+  await expect(status(page)).toContainText('tracking is lost');
+  // Looking into the navigator cannot recover the old page target.
+  await panel(page).evaluate(e=>{const r=e.getBoundingClientRect();window.webgazer.emit({x:r.x+r.width/2,y:r.y+r.height/2});});
+  await typeInstruction(page,'choose title');await expect(sort).toHaveValue(before);
+  await gazeAt(page,sort);await typeInstruction(page,'choose title');await expect(sort).toHaveValue('Title');
+});
+
+test('camera loss cancels a pending confirmation even after tracking returns',async({page})=>{
+  await open(page,'/practice-site/catalog.html');await startCamera(page);await finishCalibration(page);
+  const buy=page.getByRole('button',{name:'Add to cart',exact:true}).first();await buy.evaluate(e=>{e.textContent='Buy the quiet river';});const purchase=page.getByRole('button',{name:'Buy the quiet river',exact:true});await gazeAt(page,purchase);await typeInstruction(page,'click buy the quiet river');
+  await expect(status(page)).toContainText('confirm');await expect(page.locator('#cartCount')).toHaveText('0');
+  await page.evaluate(()=>window.webgazer.emit(null));await gazeAt(page,purchase);await typeInstruction(page,'confirm');
+  await expect(page.locator('#cartCount')).toHaveText('0');await expect(status(page)).toContainText('nothing waiting');
+  await typeInstruction(page,'click buy the quiet river');await typeInstruction(page,'confirm');await expect(page.locator('#cartCount')).toHaveText('1');
+});
+
+test('a speech-start target is discarded on loss and a fresh speech capture can use the recovered page',async({page})=>{
+  await page.addInitScript(()=>{window.SpeechRecognition=class {constructor(){window.__lossSpeech=this;}start(){this.onstart?.();}abort(){this.onend?.();}};});
+  await open(page,'/practice-site/catalog.html');await startCamera(page);await finishCalibration(page);
+  const sort=page.getByLabel('Sort by');await gazeAt(page,sort);await panel(page).getByRole('button',{name:'Start listening',exact:true}).click();
+  await page.evaluate(()=>window.__lossSpeech.onspeechstart?.());
+  await page.evaluate(()=>window.webgazer.emit(null));
+  // A second real dropdown is far away so the recovered gaze offers a different, unambiguous target.
+  await page.evaluate(()=>{const label=document.createElement('label');label.textContent='Other sort';label.style.display='block';label.style.marginTop='1200px';const select=document.createElement('select');select.id='other-sort';select.innerHTML='<option>Newest</option><option>Title</option>';label.append(select);document.querySelector('main').append(label);const space=document.createElement('div');space.style.height='600px';label.after(space);});
+  await gazeAt(page,page.locator('#other-sort'));
+  await page.evaluate(()=>window.__lossSpeech.onresult({resultIndex:0,results:[Object.assign([{transcript:'choose title'}],{isFinal:true})]}));
+  await expect(sort).toHaveValue('Newest');await expect(page.locator('#other-sort')).toHaveValue('Newest');
+  // Starting speech while lost must also remain invalid across a typed safety command and recovery.
+  await page.evaluate(()=>window.webgazer.emit(null));await page.evaluate(()=>window.__lossSpeech.onspeechstart?.());await typeInstruction(page,'cancel');
+  await gazeAt(page,page.locator('#other-sort'));await page.evaluate(()=>window.__lossSpeech.onresult({resultIndex:1,results:[Object.assign([{transcript:'ignored prior'}],{isFinal:true}),Object.assign([{transcript:'choose title'}],{isFinal:true})]}));
+  await expect(page.locator('#other-sort')).toHaveValue('Newest');
+  await gazeAt(page,sort);await page.evaluate(()=>{window.__lossSpeech.onspeechstart?.();window.__lossSpeech.onresult({resultIndex:0,results:[Object.assign([{transcript:'choose title'}],{isFinal:true})]});});
+  await expect(sort).toHaveValue('Title');
+});
+
+test('a delayed matching answer cannot act after camera loss, and pointer recovery stays usable',async({page})=>{
+  await page.addInitScript(()=>{window.__gazeTestAssistant={decide:(_state,_question,options)=>new Promise(resolve=>{window.__releaseLostMatch=()=>resolve({probs:options.map(option=>option.includes('"Catalog"')?.99:.001)});}),yes:async()=>0};});
+  await open(page,'/practice-site/index.html');await startCamera(page);await finishCalibration(page);const catalog=page.getByRole('link',{name:'Catalog',exact:true});await gazeAt(page,catalog);
+  await panel(page).getByLabel('Smarter target matching').check();await expect(panel(page).locator('.assist-state')).toContainText('is on');
+  await typeInstruction(page,'show me the book list');await expect(status(page)).toContainText('Working out');
+  await page.evaluate(()=>window.webgazer.emit(null));await page.evaluate(()=>window.__releaseLostMatch());await page.clock.runFor(100);await expect(page).toHaveURL(/index.html$/);
+  await typeInstruction(page,'pause');await expect(status(page)).toContainText('Paused');await typeInstruction(page,'cancel');await expect(status(page)).toContainText('Cancelled');await typeInstruction(page,'use pointer');await typeInstruction(page,'resume');
+  const box=await catalog.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.clock.runFor(150);await typeInstruction(page,'open catalog');await page.waitForURL('**/catalog.html');
+});
+
+test('keyboard command capture cannot reuse the old camera target after loss and recovery',async({page})=>{
+  await open(page,'/practice-site/catalog.html');await startCamera(page);await finishCalibration(page);
+  const sort=page.getByLabel('Sort by');await gazeAt(page,sort);await sort.focus();await page.keyboard.press('Alt+Shift+G');await page.keyboard.type('choose title');
+  await page.evaluate(()=>window.webgazer.emit(null));await expect(panel(page).getByLabel('Typed instruction')).toHaveAttribute('readonly','');
+  await page.evaluate(()=>{const select=document.createElement('select');select.id='other-sort';select.innerHTML='<option>Newest</option><option>Title</option>';select.style.display='block';select.style.marginTop='1200px';document.querySelector('main').append(select);const space=document.createElement('div');space.style.height='600px';select.after(space);});
+  await gazeAt(page,page.locator('#other-sort'));await page.keyboard.press('Enter');
+  await expect(sort).toHaveValue('Newest');await expect(page.locator('#other-sort')).toHaveValue('Newest');await expect(status(page)).toContainText('tracking is lost');
+});
