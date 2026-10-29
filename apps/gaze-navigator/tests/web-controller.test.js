@@ -439,3 +439,10 @@ test('unavailable tracking leaves safety and tracking recovery commands usable',
   assert.equal(controller.handle('use pointer',lost).tone,'success');assert.deepEqual(calls,['pointer']);
   assert.equal(controller.handle('recalibrate',lost).tone,'success');assert.equal(controller.handle('use a large circle',lost).tone,'success');assert.equal(controller.handle('resume',lost).paused,false);
 });
+
+test('unready calibration explains how to recover without changing the page', () => {
+  const page = fakePage(), controller = createController({ window: {}, actions: page.actions });
+  const result = controller.handle('open pricing', { elements: [describe(1, page.node('Pricing'))], trackingUnavailable: 'calibration' });
+  assert.equal(result.performed, undefined); assert.deepEqual(page.log, []);
+  assert.match(result.message, /calibration.*not ready/i); assert.match(result.message, /recalibrate.*use pointer/i);
+});

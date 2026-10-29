@@ -12,6 +12,7 @@ import { decodeCalibration, encodeCalibration } from './calibration-store.js';
 export function createLocalCamera({ document, window, load, store = {}, onGaze, onLost }) {
   const camera = createCameraGaze({ document, window, load, onGaze, onLost });
   let session = 0;
+  let calibrationGeneration = 0;
   return {
     async start() {
       session++;
@@ -20,17 +21,19 @@ export function createLocalCamera({ document, window, load, store = {}, onGaze, 
     stop: () => camera.stop(),
     get state() { return camera.state; },
     get session() { return session; },
-    resetCalibration: () => camera.resetCalibration(),
+    resetCalibration() { calibrationGeneration++; camera.resetCalibration(); },
     recordSample(x, y) {
       const api = camera.api;
       return api ? recordCalibrationSample(api, x, y) : false;
     },
     async restoreCalibration({ width, height, now }) {
+      const attempt = ++calibrationGeneration;
       const api = camera.api;
       let decoded = { ok: false, reason: 'none' };
       try {
         decoded = decodeCalibration(await store.loadCalibration?.(), { width, height, now });
       } catch { /* Fall back to a fresh calibration. */ }
+      if (attempt !== calibrationGeneration) return { ok: false, reason: 'superseded' };
       if (!decoded.ok) return decoded;
       if (!api || camera.api !== api) return { ok: false, reason: 'stopped' };
       try {

@@ -289,7 +289,9 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     if (context.trackingUnavailable) {
       pending = null;
-      return reply('Camera tracking is lost. Look at the page again when your face is visible, or say use pointer. Nothing was changed.', 'error');
+      return reply(context.trackingUnavailable === 'calibration'
+        ? 'Camera calibration is not ready. Say recalibrate and finish the dots, or say use pointer. Nothing was changed.'
+        : 'Camera tracking is lost. Look at the page again when your face is visible, or say use pointer. Nothing was changed.', 'error');
     }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
 

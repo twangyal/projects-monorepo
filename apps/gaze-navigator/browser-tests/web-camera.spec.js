@@ -310,3 +310,62 @@ test('keyboard command capture cannot reuse the old camera target after loss and
   await gazeAt(page,page.locator('#other-sort'));await page.keyboard.press('Enter');
   await expect(sort).toHaveValue('Newest');await expect(page.locator('#other-sort')).toHaveValue('Newest');await expect(status(page)).toContainText('tracking is lost');
 });
+
+test('cancelled partial training refuses camera actions until successful retraining', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page);
+  await page.clock.runFor(2 * 1900); await typeInstruction(page, 'cancel');
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest');
+  await expect(status(page)).toContainText('calibration is not ready');
+  await typeInstruction(page, 'recalibrate'); await finishCalibration(page);
+  await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('six learned dots leave camera actions blocked but pointer fallback works', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page);
+  await page.clock.runFor(6 * 1900); await page.evaluate(() => { window.__camera.faceVisible = false; });
+  await page.clock.runFor(3 * 2 * 1900 + 500); await expect(status(page)).toContainText('Only 6 of 9 dots');
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest');
+  await typeInstruction(page, 'use pointer'); const box = await sort.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.clock.runFor(150);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('redo retires successful calibration while cancelling only the accuracy check keeps it', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await finishCalibration(page);
+  await typeInstruction(page, 'recalibrate'); await page.clock.runFor(1900); await typeInstruction(page, 'cancel');
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest');
+  await typeInstruction(page, 'recalibrate'); await page.clock.runFor(9 * 1900 + 100); await typeInstruction(page, 'cancel');
+  await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('speech begun on unready camera cannot act on a later pointer target', async ({ page }) => {
+  await page.addInitScript(() => { window.SpeechRecognition = class { constructor() { window.__readySpeech = this; } start() { this.onstart?.(); } abort() { this.onend?.(); } }; });
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await typeInstruction(page, 'cancel');
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  await panel(page).getByRole('button', { name: 'Start listening', exact: true }).click();
+  await page.evaluate(() => window.__readySpeech.onspeechstart?.()); await typeInstruction(page, 'use pointer');
+  const box = await sort.boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.clock.runFor(150);
+  await page.evaluate(() => window.__readySpeech.onresult({ resultIndex: 0, results: [Object.assign([{ transcript: 'choose title' }], { isFinal: true })] }));
+  await expect(sort).toHaveValue('Newest'); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('late restore acknowledgement cannot revive a cancelled manual recalibration', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => {
+      const camera = createLocalCamera(options);
+      camera.restoreCalibration = () => new Promise(resolve => { window.__restoreReady = () => resolve({ ok: true }); });
+      return camera;
+    } });
+  });
+  await openSettings(page); await panel(page).getByRole('button', { name: 'Camera', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => typeof window.__restoreReady)).toBe('function');
+  await typeInstruction(page, 'recalibrate'); await page.clock.runFor(1900); await typeInstruction(page, 'cancel');
+  await page.evaluate(() => window.__restoreReady());
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Newest'); await expect(status(page)).toContainText('calibration is not ready');
+});

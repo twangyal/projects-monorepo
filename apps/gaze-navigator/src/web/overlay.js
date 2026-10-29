@@ -234,6 +234,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let calibration = null;
   let point = null;
   let cameraUnavailable = false;
+  let cameraCalibrated = false;
+  let calibrationGeneration = 0;
   let frozen = false;
   let context = { elements: [], region: null };
   // Set once speech exists: on-device recognition favours the names of the controls in and just around the circle.
@@ -588,9 +590,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
-    const used = settings.source === 'camera' && cameraUnavailable
-      ? { elements: [], region: null, trackingUnavailable: true }
-      : calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
+    const used = settings.source === 'camera' && (!cameraCalibrated || calibration)
+      ? { elements: [], region: null, trackingUnavailable: 'calibration' }
+      : settings.source === 'camera' && cameraUnavailable
+        ? { elements: [], region: null, trackingUnavailable: true }
+        : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
     const result = controller.handle(utterance, used);
     show(result, used);
@@ -637,7 +641,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     // Keeps the earliest capture of an utterance: where the user looked when they began speaking.
     onSpeechStart() {
       if (controller.paused || spokenContext || spokenInvalid) return;
-      if (settings.source === 'camera' && cameraUnavailable) { spokenInvalid = true; return; }
+      if (settings.source === 'camera' && (cameraUnavailable || !cameraCalibrated || calibration)) { spokenInvalid = true; return; }
       recapture(true);
       spokenContext = context;
       ui.transcript.textContent = `Listening… ${context.elements.length} element${context.elements.length === 1 ? '' : 's'} captured.`;
@@ -713,6 +717,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
     const generation = ++sourceGeneration;
     settings.source = 'camera';
+    cameraCalibrated = false;
     loseCameraContext(false);
     store.save(settings);
     renderSource();
@@ -734,13 +739,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
   async function restoreOrCalibrate(generation) {
+    const attempt = ++calibrationGeneration;
     const session = camera.session;
     let restored = { ok: false, reason: 'none' };
     try {
       restored = await camera.restoreCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
     } catch { /* Fall back to a fresh calibration. */ }
-    if (generation !== sourceGeneration || camera.state !== 'ready' || camera.session !== session || stopped || closing) return null;
+    if (attempt !== calibrationGeneration || generation !== sourceGeneration || camera.state !== 'ready' || camera.session !== session || stopped || closing) return null;
     if (restored.ok) {
+      cameraCalibrated = true;
       filter.reset();
       return { ok: true, message: 'Camera on with your earlier calibration. Say recalibrate if the circle drifts.', tone: 'success' };
     }
@@ -753,6 +760,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function calibrate() {
     if (camera.state !== 'ready') return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
     const session = camera.session;
+    calibrationGeneration++;
+    cameraCalibrated = false;
     loseCameraContext(false);
     calibration?.cancel();
     camera.resetCalibration();
@@ -776,6 +785,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       calibration = null;
       if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
       else if (result.ok) {
+        cameraCalibrated = true;
         if (camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
         checkAccuracy(`Calibrated with ${result.calibrated} of ${result.total} dots.`);
       }
