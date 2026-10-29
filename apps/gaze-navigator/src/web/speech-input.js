@@ -25,7 +25,10 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
   let wanted = false;
   let failures = 0;
   let mode = 'unknown', probed = false, phrases = [], applied = '', heardAt = 0, refreshedAt = 0, stale = false;
-  const lang = () => window.navigator?.language || 'en-US';
+  // Commands are English-only: keep an English regional preference even when the browser's primary language is not.
+  // Capture once so availability, installation and every recognition session use the same language.
+  const language = [window.navigator?.language, ...(window.navigator?.languages ?? [])].find(value => typeof value === 'string' && /^en(?:-|$)/i.test(value)) || 'en-US';
+  const lang = () => language;
   const options = () => ({ langs: [lang()], processLocally: true });
   const setMode = next => { if (next !== mode) { mode = next; onMode?.(mode); } };
   // The first time listening starts, ask whether on-device recognition is installed (or can be); a session that
