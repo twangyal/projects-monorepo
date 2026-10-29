@@ -1,3 +1,4 @@
+import { switchOutfitEditing } from './outfit-edit.ts';
 import { skirtBandHeight, skirtDraft } from './product-skirt.ts';
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
@@ -60,7 +61,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <details id="top-body-shape"><summary>Waist, hip, depth and height (optional)</summary><div class="measure-grid"><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Waist-to-hip depth (cm, optional)<input id="garment-drape-hip-depth" type="number" min="${BODY_HIP_DEPTH[0]}" max="${BODY_HIP_DEPTH[1]}" step="0.1"></label><label class="field">Body height (cm, optional)<input id="garment-drape-height" type="number" min="${BODY_HEIGHT[0]}" max="${BODY_HEIGHT[1]}" step="0.5"></label><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Height sets torso heights, arm length and trouser leg length as typical proportions; without it they follow the chest. Waist-to-hip depth is the vertical distance from the waist to the fullest hip; blank keeps the current proportions. For trousers, the hip must lie above the displayed crotch. Shoulders remain assumed. Applied body settings are saved with this design. Unapplied fields stay as drafts. These measurements do not establish physical fit.</p></details>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
         <label class="field">Size shown<select id="garment-size" aria-describedby="garment-size-status"></select></label>
-        <label class="field">Wear with<select id="garment-wear-with"></select></label>
+        <label class="field">Wear with<select id="garment-wear-with"></select></label><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping both in the outfit. Apply or discard product drafts first. You can undo the switch.</p>
         <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <p id="garment-size-status" class="fine-print" role="status"></p>
@@ -597,6 +598,18 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
+  $('edit-worn-garment').addEventListener('click', () => {
+    if (hasDrafts()) { refuseDrafts(); return; }
+    try {
+      const next = switchOutfitEditing(options.current());
+      retireAssets();
+      shownSize = null; patternSize = null; selected = 'front'; shown = '';
+      $('garment-size-status').textContent = '';
+      commit(next);
+      options.notice(`Editing the ${next.product!.name}. The ${next.wornWith!.name} stays in this outfit. Both garments are kept; you can undo the switch.`);
+    } catch (error) { options.notice(error instanceof Error ? error.message : 'The worn garment cannot be edited.', true); }
+  });
+
   // The drape test follows the selected part's fabric.
   const drapeTestPanel = mountDrapeTest(() => product()?.parts[selected].material ?? MATERIALS[0]!.id);
   // Inspector fields commit on change.
@@ -1103,6 +1116,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
+    ($('edit-worn-garment') as HTMLButtonElement).disabled = !project.product || !companion;
     const outfitExport = $('export-outfit') as HTMLInputElement;
     outfitExport.disabled = !companion; if (!companion) outfitExport.checked = false;
     chestInput.closest('label')!.hidden = !onTop; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = !onTop;
