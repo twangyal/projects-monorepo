@@ -5,7 +5,7 @@ const field=(page:Page)=>page.getByLabel('Body profile name',{exact:true});
 async function save(page:Page,name:string){await field(page).fill(name);await page.getByRole('button',{name:'Save body as new profile',exact:true}).click();}
 for(const width of [1440,390])test(`saved profile reload, deliberate use and portable backup at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:900});await setup(page);
- await page.getByLabel('Body chest girth (cm)',{exact:true}).fill('100');await page.getByText('Waist, hip, depth and height (optional)',{exact:true}).click();await page.getByLabel('Chest front-to-back depth (cm, optional)',{exact:true}).fill('20');await page.getByRole('button',{name:'Apply body settings',exact:true}).click();await save(page,'Alex');
+ await page.getByLabel('Body chest girth (cm)',{exact:true}).fill('100');await page.getByText('Waist, hip, depth, height and arms (optional)',{exact:true}).click();await page.getByLabel('Chest front-to-back depth (cm, optional)',{exact:true}).fill('20');await page.getByRole('button',{name:'Apply body settings',exact:true}).click();await save(page,'Alex');
  await expect(page.locator('#body-profile-status')).toContainText('saved');
  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download body profiles',exact:true}).click();const raw=await readFile((await(await pending).path())!,'utf8');const data=JSON.parse(raw);expect(data.profiles).toEqual([{name:'Alex',body:{chest:100,waist:null,hip:null,chestDepth:20}}]);
  await page.getByLabel('Body chest girth (cm)',{exact:true}).fill('90');await page.getByRole('button',{name:'Apply body settings',exact:true}).click();await expect(page.locator('#save-state')).toContainText('Locally saved');

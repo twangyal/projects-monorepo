@@ -2,7 +2,7 @@ import {material,partsOf,RIB_PARTS,type Product} from './product.ts';
 import {garmentBody,bendingLength,GARMENT_FRAMES,GARMENT_SOLVER,GARMENT_SUBSTEPS,type GarmentDrapeResult} from './garment-drape.ts';
 /** Every metric is a finite number, including where the garment ends on the body. */
 const finiteMetrics=(metrics:GarmentDrapeResult['metrics'])=>Object.values(metrics).every(value=>typeof value==='object'?Object.values(value).every(Number.isFinite):Number.isFinite(value));
-export interface ComparisonBody {chest:number;waist:number;hip:number;chestDepth?:number;hipDepth?:number;height?:number}
+export interface ComparisonBody {chest:number;waist:number;hip:number;chestDepth?:number;hipDepth?:number;height?:number;upperArmGirth?:number}
 /** Comparison copies only; choosing one is a separate explicit project edit. */
 export function fabricVariants(source:Product,materials:[string,string]):[Product,Product]{
  if(materials.length!==2||materials[0]===materials[1])throw new Error('Choose two different fabrics.');

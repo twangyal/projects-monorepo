@@ -14,7 +14,7 @@ async function measured(page:Page,waist='76'){
 async function bodyTools(page:Page){
  await page.getByRole('button',{name:'Body & drape',exact:true}).click();
  const depth=page.getByLabel('Waist-to-hip depth (cm, optional)',{exact:true});
- if(!await depth.isVisible())await page.getByText('Waist, hip, depth and height (optional)',{exact:true}).click();
+ if(!await depth.isVisible())await page.getByText('Waist, hip, depth, height and arms (optional)',{exact:true}).click();
  return depth;
 }
 for(const width of [1280,390])test(`copied measured skirt carries body into saved 3D drape with Undo at ${width}px`,async({page},info)=>{

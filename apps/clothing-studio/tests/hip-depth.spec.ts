@@ -20,7 +20,7 @@ async function setup(page: Page) {
   await page.getByRole('button', { name: 'Templates', exact: true }).click();
   await page.getByRole('button', { name: /^Use the Blank tee template/ }).click();
   await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
-  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth and height (optional)', { exact: true }).click();
+  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth, height and arms (optional)', { exact: true }).click();
   await expect(field(page)).toBeVisible();
 }
 async function backup(page: Page) {
@@ -62,7 +62,7 @@ for (const width of [1440, 390]) test(`measured hip depth survives history, prof
   await expect(page.locator('#product-status')).toContainText('Editing Flared skirt');
   expect((await backup(page)).product.base).toBe('skirt');
   await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
-  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth and height (optional)', { exact: true }).click();
+  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth, height and arms (optional)', { exact: true }).click();
   await page.getByLabel('Body waist girth (cm, optional)', { exact: true }).fill('70');
   await page.getByLabel('Body hip girth (cm, optional)', { exact: true }).fill('104'); await apply(page);
   await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
@@ -82,7 +82,7 @@ test('a measured hip below a trouser proxy crotch refuses the solve without chan
   await expect(page.locator('#product-status')).toContainText('Editing Straight trousers');
   expect((await backup(page)).product.base).toBe('trousers');
   await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
-  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth and height (optional)', { exact: true }).click();
+  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth, height and arms (optional)', { exact: true }).click();
   const product = (await backup(page)).product;
   await field(page).fill('40'); await apply(page);
   await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
@@ -96,7 +96,7 @@ test('trouser comparisons keep both measured hip depth and height, and a height-
   await page.getByRole('button', { name: /^Use the Straight trousers template/ }).click();
   await expect(page.locator('#product-status')).toContainText('Editing Straight trousers');
   await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
-  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth and height (optional)', { exact: true }).click();
+  if (!(await field(page).isVisible())) await page.getByText('Waist, hip, depth, height and arms (optional)', { exact: true }).click();
   await page.getByLabel('Body waist girth (cm, optional)', { exact: true }).fill('70');
   await page.getByLabel('Body hip girth (cm, optional)', { exact: true }).fill('90');
   const height = page.getByLabel('Body height (cm, optional)', { exact: true });
