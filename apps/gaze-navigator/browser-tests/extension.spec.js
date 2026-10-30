@@ -662,7 +662,7 @@ test('controls in an embedded frame from another site are listed, outlined and c
   await expect(status(page)).toContainText('activated');
 });
 
-test('camera loss and capture disconnect retire extension targets and confirmations',async({context,control})=>{
+test('camera silence, loss and capture disconnect retire extension targets and confirmations',async({context,control})=>{
   test.setTimeout(60000);
   await control.evaluate(()=>chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
   const page=await context.newPage();await page.goto('http://shop.example/');await expect(status(page)).toContainText('Ready');
@@ -672,6 +672,9 @@ test('camera loss and capture disconnect retire extension targets and confirmati
   const gaze=async()=>{const box=await buy.boundingBox();for(let i=0;i<15;i++)await frame.evaluate(([x,y])=>globalThis.webgazer.emit({x,y}),[box.x+box.width/2,box.y+box.height/2]);await expect(panel(page).locator('.context')).toContainText('Button: Buy now');};
   await gaze();await frame.evaluate(()=>globalThis.webgazer.emit(null));await expect(status(page)).toContainText('tracking is lost');
   await typeInstruction(page,'click buy now');expect(await page.evaluate(()=>window.__purchases)).toBe(0);
+  await gaze();await typeInstruction(page,'click buy now');await expect(status(page)).toContainText('confirm');
+  await expect(status(page)).toContainText('tracking is lost',{timeout:7000});
+  await gaze();await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(0);
   await gaze();await typeInstruction(page,'click buy now');await expect(status(page)).toContainText('confirm');
   await page.locator('#gaze-web-navigator iframe[title="Gaze Navigator camera"]').evaluate(frame=>frame.remove());await expect(status(page)).toContainText('tracking is lost');
   await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(0);

@@ -222,7 +222,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let assistant = null, assistLoad = 0, stopped = false;
   let closing = false;
   let sourceGeneration = 0;
-  const assistantRelay = { needs: (...args) => Boolean(assistant?.needs(...args)), improve: (...args) => assistant.improve(...args) };
+  const assistantRelay = {
+    needs: (...args) => Boolean(assistant?.needs(...args)),
+    improve: async (...args) => {
+      try { return await assistant.improve(...args); }
+      finally { expireCameraSilence(); }
+    },
+  };
   const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCamera({
@@ -234,6 +240,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let calibration = null;
   let point = null;
   let cameraUnavailable = false;
+  let cameraSilenceTimer = null;
+  let cameraEstimateAt = null;
   let cameraCalibrated = false;
   let calibrationGeneration = 0;
   let viewport = { width: window.innerWidth, height: window.innerHeight };
@@ -453,8 +461,17 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (frame === null) frame = window.requestAnimationFrame(draw);
   }
 
-  // An explicit missing estimate or capture disconnect cannot leave an old page target actionable.
+  function expireCameraSilence(now = window.performance.now()) {
+    if (settings.source === 'camera' && cameraEstimateAt !== null && now - cameraEstimateAt >= 5000) loseCameraContext();
+  }
+
+  function clearCameraSilence() {
+    window.clearTimeout(cameraSilenceTimer); cameraSilenceTimer = null; cameraEstimateAt = null;
+  }
+
+  // A missing estimate, silent estimator or capture disconnect cannot leave an old page target actionable.
   function loseCameraContext(announce = true) {
+    clearCameraSilence();
     if (settings.source !== 'camera' || cameraUnavailable) return;
     cameraUnavailable = true;
     point = null; frozen = false; filter.reset();
@@ -472,6 +489,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
+    if (stopped || closing) return;
+    if (settings.source === 'camera' && Number.isFinite(x) && Number.isFinite(y)) {
+      const now = window.performance.now();
+      // A resumed estimate must retire the old target before refreshing an overdue deadline.
+      expireCameraSilence(now);
+      clearCameraSilence();
+      cameraEstimateAt = now;
+      const generation = sourceGeneration;
+      cameraSilenceTimer = window.setTimeout(() => {
+        cameraSilenceTimer = null;
+        if (!stopped && !closing && generation === sourceGeneration) loseCameraContext();
+      }, 5000);
+    }
     if (calibration) {
       const next = calibration.sample && filter.filter(x, y, time);
       if (next) calibration.sample(next.x, next.y);
@@ -603,6 +633,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // instruction's final answer. Only the website's own pages pass `onResult`; the extension never does.
   function run(utterance, captured, via = 'panel') {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
+    expireCameraSilence();
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
     const used = settings.source === 'camera' && (!cameraCalibrated || calibration)
@@ -668,6 +699,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       run(text, { elements: [] }, 'speech');
     },
     onFinal(text) {
+      expireCameraSilence();
       ui.transcript.textContent = `Heard: ${text}`;
       const invalid = spokenInvalid; spokenInvalid = false;
       if (text) run(text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech');
@@ -713,6 +745,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function setSource(source) {
     if (source === 'pointer') {
+      clearCameraSilence();
       sourceGeneration++;
       // Detach first so the cancelled calibration does not announce itself over "Camera off".
       const active = calibration;
@@ -864,6 +897,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
   const onPageHide = () => {
+    clearCameraSilence();
     closing = true; sourceGeneration++;
     keyboard.cancel();
     const active = calibration; calibration = null; active?.cancel();
@@ -976,6 +1010,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     track,
     run: utterance => run(utterance, null),
     stop() {
+      clearCameraSilence();
       stopped = true; closing = true; assistLoad++; sourceGeneration++;
       keyboard.stop();
       controller.cancel(); spokenContext = null; promptContext = null;
