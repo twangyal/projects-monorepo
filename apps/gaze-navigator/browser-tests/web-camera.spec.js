@@ -369,3 +369,56 @@ test('late restore acknowledgement cannot revive a cancelled manual recalibratio
   const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title');
   await expect(sort).toHaveValue('Newest'); await expect(status(page)).toContainText('calibration is not ready');
 });
+
+async function resizeViewport(page) {
+  const size = page.viewportSize(); await page.setViewportSize({ ...size, height: size.height + 60 }); await page.clock.runFor(33);
+}
+
+test('a changed viewport retires successful camera calibration until explicit retraining', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await finishCalibration(page);
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  await page.evaluate(() => window.dispatchEvent(new Event('resize'))); await page.clock.runFor(33);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+  await sort.selectOption('Newest'); await resizeViewport(page); await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest');
+  await expect(status(page)).toContainText('calibration is not ready');
+  expect(await page.evaluate(() => window.webgazer.samples)).toBe(0);
+  await typeInstruction(page, 'pause'); await expect(status(page)).toContainText('Paused'); await typeInstruction(page, 'resume');
+  await typeInstruction(page, 'recalibrate'); await finishCalibration(page); await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('a changed viewport cancels partial training without silently completing it', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await page.clock.runFor(2 * 1900);
+  await resizeViewport(page); await expect(status(page)).toContainText('window size changed');
+  expect(await page.evaluate(() => window.gazeNavigator.calibrating)).toBe(false); await expect(dot(page)).toHaveClass(/hidden/);
+  await page.clock.runFor(9 * 1900); const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest');
+  await typeInstruction(page, 'use pointer'); const box = await sort.boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.clock.runFor(150);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('a changed viewport retires confirmation and speech begun before pointer recovery', async ({ page }) => {
+  await page.addInitScript(() => { window.SpeechRecognition = class { constructor() { window.__resizeSpeech = this; } start() { this.onstart?.(); } abort() { this.onend?.(); } }; });
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await finishCalibration(page);
+  const buy = page.getByRole('button', { name: 'Add to cart', exact: true }).first(); await buy.evaluate(e => { e.textContent = 'Buy the quiet river'; });
+  await gazeAt(page, page.getByRole('button', { name: 'Buy the quiet river', exact: true })); await typeInstruction(page, 'click buy the quiet river'); await expect(status(page)).toContainText('confirm');
+  await resizeViewport(page); await typeInstruction(page, 'confirm'); await expect(page.locator('#cartCount')).toHaveText('0');
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await panel(page).getByRole('button', { name: 'Start listening', exact: true }).click();
+  await page.evaluate(() => window.__resizeSpeech.onspeechstart?.()); await typeInstruction(page, 'use pointer');
+  const box = await sort.boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.clock.runFor(150);
+  await page.evaluate(() => window.__resizeSpeech.onresult({ resultIndex: 0, results: [Object.assign([{ transcript: 'choose title' }], { isFinal: true })] }));
+  await expect(sort).toHaveValue('Newest'); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('a changed viewport invalidates a delayed restoration acknowledgement', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await page.evaluate(async () => {
+    window.gazeNavigator.stop(); const { startWebNavigator } = await import('/src/web/overlay.js'); const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => {
+      const camera = createLocalCamera(options); camera.restoreCalibration = () => new Promise(resolve => { window.__resizeRestore = () => resolve({ ok: true }); }); return camera;
+    } });
+  });
+  await openSettings(page); await panel(page).getByRole('button', { name: 'Camera', exact: true }).click(); await expect.poll(() => page.evaluate(() => typeof window.__resizeRestore)).toBe('function');
+  await resizeViewport(page); await page.evaluate(() => window.__resizeRestore()); const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Newest'); await expect(status(page)).toContainText('calibration is not ready');
+});

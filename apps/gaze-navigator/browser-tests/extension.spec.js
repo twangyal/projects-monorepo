@@ -201,6 +201,14 @@ test('a calibration follows navigation in extension memory and is forgotten when
   // A different window size invalidates the mapping, so the next page calibrates again.
   const size = page.viewportSize();
   await page.setViewportSize({ width: size.width - 40, height: size.height });
+  await expect(status(page)).toContainText('The window size changed. Camera calibration is not ready.');
+  await expect.poll(() => captureFrame(page).evaluate(() => globalThis.webgazer.getRegression()[0].getData().length)).toBe(0);
+  await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/hidden/);
+  const home = await page.getByRole('link', { name: 'Home', exact: true }).boundingBox();
+  for (let i = 0; i < 15; i++) await captureFrame(page).evaluate(([x, y]) => globalThis.webgazer.emit({ x, y }), [home.x + home.width / 2, home.y + home.height / 2]);
+  await typeInstruction(page, 'open home');
+  await expect(page).toHaveURL('http://shop.example/contact');
+  await expect(status(page)).toContainText('calibration is not ready');
   await page.goto('http://shop.example/about');
   await expect(status(page)).toContainText('The window size changed, so the camera needs calibrating again.');
   await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/settling|sampling/);

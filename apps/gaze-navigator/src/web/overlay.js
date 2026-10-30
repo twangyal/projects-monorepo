@@ -236,6 +236,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let cameraUnavailable = false;
   let cameraCalibrated = false;
   let calibrationGeneration = 0;
+  let viewport = { width: window.innerWidth, height: window.innerHeight };
   let frozen = false;
   let context = { elements: [], region: null };
   // Set once speech exists: on-device recognition favours the names of the controls in and just around the circle.
@@ -579,7 +580,21 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // Scrolling moves everything under the circle; recapture through the usual interval instead of on every event.
   const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); schedulePlacement(); };
   window.addEventListener('scroll', refresh, true);
-  window.addEventListener('resize', refresh);
+  const onViewportResize = () => {
+    const next = { width: window.innerWidth, height: window.innerHeight };
+    const changed = next.width !== viewport.width || next.height !== viewport.height;
+    viewport = next;
+    if (changed && settings.source === 'camera' && camera.state === 'ready') {
+      calibrationGeneration++;
+      cameraCalibrated = false;
+      const active = calibration; calibration = null; active?.cancel();
+      camera.resetCalibration();
+      loseCameraContext(false);
+      feedback({ message: 'The window size changed. Camera calibration is not ready. Say recalibrate and finish the dots, or say use pointer.', tone: 'error' });
+    }
+    refresh();
+  };
+  window.addEventListener('resize', onViewportResize);
   document.addEventListener('focusin', onFocusIn, true);
   document.addEventListener('focusout', onFocusOut, true);
   onFocusIn();
@@ -980,7 +995,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       pageObserver.disconnect();
       document.removeEventListener('focusin', onFocusIn, true);
       document.removeEventListener('focusout', onFocusOut, true);
-      window.removeEventListener('resize', refresh);
+      window.removeEventListener('resize', onViewportResize);
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.clearTimeout(trailing);
       window.clearTimeout(placement);
