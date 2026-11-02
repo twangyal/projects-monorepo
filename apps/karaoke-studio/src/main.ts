@@ -15,6 +15,7 @@ import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replace
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedLine, reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
+import { lineList, similarLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
@@ -720,6 +721,46 @@ element('automatic-hide-checked').addEventListener('change', () => {
 function clearAutomaticCheck(index: number): void {
   automaticChecked.delete(index); filterAutomaticReview();
 }
+/** Sets a reviewed line's text as if it had been typed there. */
+function setReviewedText(index: number, value: string): void {
+  automaticReviewDraft[index]!.text = value;
+  const box = element('srt-review-list').querySelector<HTMLTextAreaElement>(`[data-srt-cue="${index}"] label textarea`);
+  if (box) box.value = value;
+  clearAutomaticCheck(index);
+}
+/**
+ * After line `index` is corrected, offers its wording to the other lines heard like it (a chorus heard differently
+ * each time it repeats), in `host`. One click applies it to all of them, and Undo puts back what they said.
+ */
+function offerRepeats(owner: SrtOwner, heard: readonly string[], index: number, host: HTMLElement): void {
+  const live = () => automaticReview && srtReview?.owner === owner && srtCurrent(owner) && srtAllowed();
+  host.replaceChildren(); host.hidden = true;
+  if (!live()) return;
+  const wording = automaticReviewDraft[index]!.text, targets = similarLines(heard, automaticReviewDraft.map(row => row.text), index, wording);
+  if (!targets.length) return;
+  const lines = lineList(targets), note = document.createElement('p'); note.className = 'fine'; note.setAttribute('role', 'status');
+  note.textContent = `Heard similarly in ${lines}.`;
+  const apply = document.createElement('button'); apply.type = 'button'; apply.textContent = `Use this wording in ${lines}`;
+  apply.addEventListener('click', () => {
+    if (!live()) return;
+    // A line edited since the offer keeps its edit.
+    for (let k = targets.length - 1; k >= 0; k--) if (automaticReviewDraft[targets[k]!]!.text !== heard[targets[k]!]) targets.splice(k, 1);
+    if (!targets.length) { note.textContent = 'Those lines were changed since, so they were left as they are.'; apply.remove(); return; }
+    const lines = lineList(targets), before = targets.map(target => automaticReviewDraft[target]!.text);
+    for (const target of targets) setReviewedText(target, wording);
+    srtControls();
+    note.textContent = `${lines[0]!.toUpperCase()}${lines.slice(1)} now ${targets.length > 1 ? 'read' : 'reads'} “${wording}”.`;
+    const undo = document.createElement('button'); undo.type = 'button'; undo.className = 'quiet'; undo.textContent = `Undo wording in ${lines}`;
+    undo.addEventListener('click', () => {
+      if (!live()) return;
+      // Lines changed again since are left as they are.
+      for (const [k, target] of targets.entries()) if (automaticReviewDraft[target]!.text === wording) setReviewedText(target, before[k]!);
+      srtControls(); note.textContent = `${lines[0]!.toUpperCase()}${lines.slice(1)} restored.`; undo.remove();
+    });
+    apply.replaceWith(undo);
+  });
+  host.append(note, apply); host.hidden = false;
+}
 function filterAutomaticReview(): void {
   const only = element<HTMLInputElement>('automatic-unsure-only').checked;
   const rows = [...element('srt-review-list').querySelectorAll<HTMLLIElement>('li')];
@@ -846,9 +887,12 @@ element('auto-review').addEventListener('click', () => {
       automaticReviewDraft[index].text = text.value; clearAutomaticCheck(index); srtControls();
     });
     label.append(text);
+    const repeats = document.createElement('div'); repeats.className = 'repeat-offer'; repeats.hidden = true;
+    repeats.setAttribute('role', 'group'); repeats.setAttribute('aria-label', `Repeats of line ${index + 1}`);
+    text.addEventListener('change', () => offerRepeats(owner, current.cues.map(line => line.text), index, repeats));
     const original = document.createElement('details'), summary = document.createElement('summary'), words = document.createElement('pre');
     summary.textContent = 'Originally recognized words'; words.textContent = cue.text; original.append(summary, words);
-    row.append(time, label);
+    row.append(time, label, repeats);
     // Words recognition was unsure of, each a click from being heard on its own. They are listed only when they stand
     // out from the rest of the line: a line heard without word-level confidence (a forced-language pass marks every
     // word alike) or heard badly throughout is already flagged as a whole.
