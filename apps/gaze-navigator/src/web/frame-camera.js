@@ -68,7 +68,7 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
         return;
       }
       if (message?.type === 'lost') {
-        if (current === session && state === 'ready') onLost();
+        if (current === session && state === 'ready') onLost(message.reason === 'frozen' ? 'frozen' : undefined);
         return;
       }
       const pending = waiting.get(message?.id);
