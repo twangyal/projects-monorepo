@@ -45,7 +45,7 @@ test('the worker drapes a banded skirt and exports its settled waistband',async(
   await editor.getByLabel('Skirt waistband height (cm)',{exact:true}).fill('4');await editor.locator('#apply-measurements').click();
   await editor.getByRole('combobox',{name:'Wear with',exact:true}).selectOption('t:blank');
   await editor.locator('#garment-drape-on').click();await expect(editor.locator('#garment-drape-status')).toContainText('held at the waistline',{timeout:60000});
-  await editor.getByRole('checkbox',{name:'Include worn garment in PNG and GLB',exact:true}).check();
+  await editor.getByRole('checkbox',{name:'Include worn garment in PNG, GLB and video',exact:true}).check();
   const glb=await download(page,'#product-glb');expect(glb.subarray(0,4).toString()).toBe('glTF');
   const actual=await page.evaluate(()=>(window as unknown as {bandResult:{part:string;positions:number[]}[]}).bandResult.find(p=>p.part==='waistband')!.positions);expect(positions(glb,'Waistband')).toEqual(actual);
 });
