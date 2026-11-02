@@ -4,6 +4,7 @@
 // the whole garment. Each change is reported with its scope, and words that were not understood are listed. Style
 // words are read by the part-level interpreter in style-prompt.ts. No network and no model.
 import { readStylePrompt } from './style-prompt.ts';
+import { GATHER, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, LIMITS, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withOptions, type Base, type PartId, type Product,
@@ -143,6 +144,17 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (leg !== null) { next.legOpening = Math.min(widest, Math.max(LIMITS.legOpening[0], leg)); garment.push(`leg opening: ${next.legOpening} cm`); }
     if (take(/\bcropped\b/)) { next.inseam = 58; garment.push('cropped: 58 cm inseam'); }
     product.measurements = next;
+  } else if (product.base === 'skirt') {
+    // Gathering keeps the panels flaring: the cut waist edge stays 10 cm shorter than the hem.
+    const gathered = take(/\b(?:gathered|dirndl)(?: waist)?\b/), smooth = !gathered && take(/\b(?:smooth|flat|ungathered)(?: waist)?\b/);
+    const m = product.measurements as SkirtMeasures;
+    if (gathered) {
+      const most = Math.floor((m.hem - 10) / m.waist * 20) / 20, gather = Math.min(1.5, most);
+      if (gather >= GATHER[0]) { product.measurements = { ...m, gather }; garment.push(`gathered waist: ${gather} times the waist`); }
+      else notApplied.push('gathered waist (the hem is too narrow to gather this waist)');
+    } else if (smooth && m.gather) {
+      const rest = { ...m }; delete rest.gather; product.measurements = rest; garment.push('smooth waist: no gathers');
+    }
   }
 
   // Clauses: a clause that names parts styles them; the others are read together as the whole garment's style.

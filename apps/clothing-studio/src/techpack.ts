@@ -1,5 +1,5 @@
 import { DEFAULT_GRADING } from './grading.ts';
-import { skirtBandHeight, skirtDraft, skirtPieces } from './product-skirt.ts';
+import { skirtBandHeight, skirtDraft, skirtGather, skirtPanelDraft, skirtPieces } from './product-skirt.ts';
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
@@ -329,7 +329,7 @@ ${arrow(bx + d.backHip + d.backCrotch + 2.5, 0, bx + d.backHip + d.backCrotch + 
 
 /** Relative skirt grades; the closure still needs a separate production decision. */
 function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: string): Omit<TechPack, 'bom'> {
-  const d = skirtDraft(product), band=skirtBandHeight(product);
+  const d = skirtDraft(product), band=skirtBandHeight(product), gather=skirtGather(product), cutWaist=skirtPanelDraft(product).waist;
   // Preserve admitted decimals for the sample and fixed dimensions; changed girths use the grade's precision.
   const base = SIZES.indexOf(spec.sampleSize);
   const pom = (code:string,name:string,howToMeasure:string,value:number,grade:number,tolerance:number):Pom => ({code,name,howToMeasure,tolerance,
@@ -337,6 +337,7 @@ function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: s
   return {name:product.name,...spec,base:BASE_NAMES.skirt,neckline:band ? 'Folded waistband; closure not modelled' : 'No waistband or closure',date,
     poms:[pom('A','Waist circumference','Around the waist seam',d.waist,DEFAULT_GRADING.waistStep,1),pom('B','Hem circumference','Around the hem seam',d.hem,DEFAULT_GRADING.hemStep,1),pom('C','Side seam slant','Waist seam to hem along a side seam, excluding the band',d.slant,DEFAULT_GRADING.slantStep,1),...(band ? [pom('D','Waistband height','Finished height above the waist seam; cut twice this height',band,0,1)] : [])],
     construction:[{area:'Panels',operation:'Cut one front and one back',detail:'Matching annular sectors; grain along each panel centre'},
+      ...(gather > 1 ? [{area:'Waist gathers',operation:'Run two rows of gathering stitches along the waist edge and draw it up evenly',detail:`Gather the ${cutWaist} cm cut waist edge (${gather} times) to the ${d.waist} cm finished waist before joining it`}] : []),
       {area:'Side seams',operation:'Join matching side edges',detail:'Choose a suitable closure and finish; the closure is not modelled'},
       ...(band ? [{area:'Waistband',operation:'Fold in half and sew to the waist seam',detail:`Cut one ${d.waist} × ${band*2} cm strip before seam allowances; finished height ${band} cm. Choose a closure and any extension separately.`}] : [])],
     notes:['Rigid styling shell, not a cloth drape or verified fit. Validate with a physical sample.',
