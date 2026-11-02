@@ -258,7 +258,8 @@ function controls() {
   if (practice.active && timingBusy()) retirePractice('Other studio work stopped practice.');
   if (timingOwner && timingBusy()) retireTiming('Other studio work cancelled the timing session. Staged times were not applied.');
   const busy = currentJob !== null || loading || requestingJob || archiveChecking, invalid = validateWorking();
-  element<HTMLInputElement>('audio-file').disabled = !session?.modelReady || busy || saving;
+  // Songs chosen while the studio is busy join the waiting list, so choosing stays available.
+  element<HTMLInputElement>('audio-file').disabled = !session?.modelReady;
   element<HTMLSelectElement>('upload-recognition').disabled = !session?.modelReady || !session?.lyricsModelReady || busy || saving;
   element<HTMLSelectElement>('projects').disabled = busy || saving;
   element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
@@ -1619,8 +1620,18 @@ setInterval(() => void pumpUploads(), 2000);
 element('upload-queue-clear').addEventListener('click', () => { const count = uploadQueue.length; uploadQueue = []; queueStatus(); if (count) message(`${count} waiting ${count === 1 ? 'song was' : 'songs were'} removed. Songs already prepared stay in Saved clips.`); });
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, files = [...input.files ?? []], file = files[0]; input.value = '';
-  if (file) retireTiming('Choosing audio cancelled the timing session. Staged times were not applied.');
-  if (!file || currentJob || requestingJob || loading || saving || archiveChecking || !mayLeave()) return;
+  if (!file) return;
+  // While the studio is busy (preparing another song, saving, loading), the songs wait their turn instead of being
+  // dropped; they do not replace the clip being edited.
+  if (currentJob || requestingJob || loading || saving || archiveChecking) {
+    const model = element<HTMLSelectElement>('upload-recognition').value;
+    uploadQueue.push(...files.map(waiting => ({ file: waiting, model })));
+    queueStatus();
+    message(`${files.length === 1 ? `“${file.name}” is` : `${files.length} songs are`} waiting until the studio is free. ${files.length === 1 ? 'It lands' : 'They land'} in Saved clips.`);
+    return;
+  }
+  retireTiming('Choosing audio cancelled the timing session. Staged times were not applied.');
+  if (!mayLeave()) return;
   retireSrt('Importing audio cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const model = element<HTMLSelectElement>('upload-recognition').value;
