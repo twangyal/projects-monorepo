@@ -98,9 +98,20 @@ export function parseLyricsRecord(value:unknown,input:LyricsQuery):LyricsRecord 
   const timingNotice=!cues&&typeof r.syncedLyrics==='string'&&r.syncedLyrics.trim()?'Published timing could not be used. Plain words can still be aligned locally.':'';
   return {id:Number(r.id),title,artist,album,duration:r.duration,text:lines.join('\n'),source:`https://lrclib.net/api/get/${r.id}`,...(cues?{cues}:{}),timingNotice};
 }
+/** LRCLIB asks every client to name itself (app, version and a project link); browsers send it as Lrclib-Client. */
+export const LRCLIB_CLIENT='Karaoke Studio 0.7.0 (https://github.com/twangyal/projects-monorepo)';
+// When LRCLIB answers 429 it says how long to wait (Retry-After); no request is sent before then.
+let waitUntil=0;
+const waitMessage=(until:number)=>`The lyrics provider asked to wait ${Math.max(1,Math.ceil((until-Date.now())/1000))} seconds before the next lookup. Try again then; your lyrics are unchanged.`;
+/** Seconds to wait from a Retry-After header (seconds or an HTTP date), at least 1 and at most an hour; 60 if absent. */
+export function retryAfterSeconds(value:string|null,now=Date.now()):number {
+  const seconds=value===null?60:/^\d+$/.test(value.trim())?Number(value.trim()):(Date.parse(value)-now)/1000;
+  return Math.min(3600,Math.max(1,Number.isFinite(seconds)?Math.ceil(seconds):60));
+}
 /** A deliberate metadata-only browser request. No audio, credentials, redirects or referrer. */
 export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:typeof fetch=fetch,timeoutMs=8000):Promise<LyricsRecord> {
   const query=lookupQuery(input),controller=new AbortController();
+  if(Date.now()<waitUntil)throw new Error(waitMessage(waitUntil));
   const url=new URL('https://lrclib.net/api/get');url.search=new URLSearchParams({track_name:query.title,artist_name:query.artist,duration:String(query.duration)}).toString();
   let timedOut=false,reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
   let rejectAbort:(error:Error)=>void=()=>undefined;
@@ -112,9 +123,10 @@ export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:
   try {
     if(signal.aborted){controller.abort();return await aborted;}
     const getJson=async(url:URL,limit:number):Promise<unknown>=>{
-      const response=await fetcher(url,{method:'GET',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+      const response=await fetcher(url,{method:'GET',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json','Lrclib-Client':LRCLIB_CLIENT}});
       if(controller.signal.aborted)throw new Error('Lyrics lookup cancelled.');
-      if(!response.ok)throw new Error(response.status===404?'No matching lyrics found. Check title, artist and full-song duration.':response.status===429?'The lyrics provider is busy. Try again later.':'Lyrics lookup is unavailable. Your current lyrics are unchanged.');
+      if(response.status===429){waitUntil=Date.now()+retryAfterSeconds(response.headers.get('retry-after'))*1000;throw new Error(waitMessage(waitUntil));}
+      if(!response.ok)throw new Error(response.status===404?'No matching lyrics found. Check title, artist and full-song duration.':'Lyrics lookup is unavailable. Your current lyrics are unchanged.');
       const declared=response.headers.get('content-length');
       if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>limit))throw new Error('Lyrics response is too large.');
       if(!response.body)throw new Error('The lyrics provider returned an empty response.');
