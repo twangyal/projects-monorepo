@@ -5,7 +5,7 @@
 // words are read by the part-level interpreter in style-prompt.ts. No network and no model.
 import { readStylePrompt } from './style-prompt.ts';
 import {
-  BASE_NAMES, LIMITS, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_LENGTH, LIMITS, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withOptions, type Base, type PartId, type Product,
 } from './product.ts';
 
@@ -14,6 +14,11 @@ export interface DesignReading { product: Product; scopes: DesignScope[]; ignore
 
 /** The template a garment word starts from, and its base. */
 const GARMENTS: [RegExp, string, Base][] = [
+  // Dresses are long tops; a plain "dress" keeps the current top's base.
+  [/\b(?:hoodie|hooded) dress(?:es)?\b/, 'hoodie', 'hoodie'],
+  [/\b(?:sweatshirt|sweat|jumper|sweater) dress(?:es)?\b/, 'sweat-dress', 'sweatshirt'],
+  [/\b(?:t-?shirt|tee) dress(?:es)?\b/, 'tee-dress', 'tee'],
+  [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
   [/\b(t-?shirts?|tees?)\b/, 'blank', 'tee'],
@@ -62,9 +67,22 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
 
   // The garment: a different base starts from that base's template; shorts and trousers switch leg length.
   let product = structuredClone(current);
-  for (const [pattern, id, base] of GARMENTS) {
+  for (const [pattern, id, chosen] of GARMENTS) {
     const match = take(pattern);
     if (!match) continue;
+    const dress = /dress/.test(match[0]);
+    const base = dress && match[0].startsWith('dress') && !isBottoms(current) ? current.base : chosen;
+    if (dress) {
+      if (base !== product.base) product = { ...template(id), ...(current.spec ? { spec: current.spec } : {}), ...(current.motifs ? { motifs: current.motifs } : {}) };
+      // Shoulder-to-hem lengths for a mid-height body: a mini ends at mid-thigh, a midi below the knee.
+      const length = take(/\bmini\b/) ? DRESS_LENGTH : take(/\b(?:midi|mid[- ]calf|calf[- ]length)\b/) ? 115 : take(/\bknee[- ]length\b/) ? 100
+        : Math.max(topMeasurements(product).length, base === 'tee' ? 100 : 92);
+      const flared = template(base === 'tee' ? 'tee-dress' : 'sweat-dress').fit!.hemWidth!;
+      product.measurements = { ...topMeasurements(product), length };
+      if (product.fit?.hemWidth === undefined) product.fit = { ...product.fit, hemWidth: flared };
+      garment.push(`garment: ${garmentName(product)}${base !== current.base ? ', started from its template' : ''}, ${length} cm long`);
+      break;
+    }
     if (base === 'trousers' && product.base === 'trousers') {
       const inseam = id === 'shorts' ? 18 : 78;
       product.measurements = { ...legMeasurements(product), inseam };

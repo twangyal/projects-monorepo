@@ -3,7 +3,7 @@ import { skirtBandHeight, skirtDraft, skirtPieces } from './product-skirt.ts';
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, NECK_RIB_RATIO, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, NECK_RIB_RATIO, garmentName, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -134,7 +134,7 @@ function samplePack(product: Product, date: string): TechPack {
     ...product.artwork.map(art => ({ area: `${art.part === 'front' ? 'Front' : 'Back'} artwork`, operation: 'Screen print or DTG after sewing', detail: `${cm(art.widthCm)} wide, ${cm(art.yCm)} below shoulder` })),
   ];
   return {
-    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: BASE_NAMES[product.base], neckline: product.base === 'hoodie' ? 'Hood' : product.neckline === 'v' ? 'V-neck' : 'Crew neck', date,
+    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: garmentName(product), neckline: product.base === 'hoodie' ? 'Hood' : product.neckline === 'v' ? 'V-neck' : 'Crew neck', date,
     bom, poms, construction,
     notes: [
       `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,
@@ -187,7 +187,7 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
     { area: 'Leg hems', operation: shorts ? 'Double-turn 1.5 cm and edgestitch' : 'Double-turn 2 cm and edgestitch', detail: `Leg opening ${cm(d.legOpening)} around` },
   ];
   return {
-    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: shorts ? 'Pull-on shorts' : BASE_NAMES[product.base],
+    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: garmentName(product),
     neckline: 'Elasticated waistband', date, poms, construction,
     notes: [
       `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,
