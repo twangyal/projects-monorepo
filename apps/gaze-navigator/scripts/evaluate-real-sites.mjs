@@ -102,9 +102,11 @@ export const TASKS = [
   { site: 'GOV.UK', goal: 'Show the search filters', start: 'https://www.gov.uk/search/all?keywords=passport', steps: [
     { look: button('Filter and sort'), say: 'open filter and sort', target: 'Filter and sort', done: expanded(button('Filter and sort'), 'true') },
   ] },
-  { site: 'Wikipedia', goal: 'Tick and untick "Keep me logged in" without logging in', start: 'https://en.wikipedia.org/wiki/Special:UserLogin', steps: [
-    { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'tick keep me logged in', done: async page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked() },
-    { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'untick it', done: async page => !(await page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked()) },
+  // Wikipedia's log-in page (now on auth.wikimedia.org) refuses automated browsers with HTTP 429, so native checkboxes
+  // are ticked on the WAI-ARIA Authoring Practices example, whose condiments are ordinary HTML checkboxes.
+  { site: 'WAI-ARIA APG', goal: 'Tick and untick a native checkbox', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/examples/checkbox-mixed/', steps: [
+    { look: page => page.getByRole('checkbox', { name: 'Lettuce', exact: true }).first(), say: 'tick lettuce', done: async page => page.getByRole('checkbox', { name: 'Lettuce', exact: true }).first().isChecked() },
+    { look: page => page.getByRole('checkbox', { name: 'Lettuce', exact: true }).first(), say: 'untick it', done: async page => !(await page.getByRole('checkbox', { name: 'Lettuce', exact: true }).first().isChecked()) },
   ] },
   { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
