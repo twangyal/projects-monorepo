@@ -39,7 +39,9 @@ const STYLE = `
 .badge { position: absolute; left: -2px; top: -22px; min-width: 22px; padding: 1px 6px; border-radius: 10px; background: #75e5b4; color: #07110e; font: 700 13px/18px system-ui, sans-serif; text-align: center; }
 .outline.question .badge { background: #f5c76b; }
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
-.panel.collapsed .body { display: none; }
+/* Hidden, the panel keeps its answers and any question, so instructions still get feedback. */
+.panel.collapsed { width: min(300px, calc(100vw - 24px)); }
+.panel.collapsed .body > :not(.status):not(.prompt) { display: none; }
 .panel.left { right: auto; left: 12px; }
 .panel.top { bottom: auto; top: 12px; }
 @media (max-height: 700px) { .panel { max-height: 45vh; padding: 10px; } }
@@ -180,6 +182,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "add option Jazz to Genres", "remove option Jazz from Genres", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
         <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit. After looking away, say "continue typing" and more words to append in the focused regular field; "undo typing" can recover it when no text field is in the circle.</p>
         <p class="hint">Selected text: say "delete selected text" or "remove highlighted text" to remove only a native selected range. Say "undo" to restore it. Select words first; changed or unavailable selections refuse.</p>
+        <p class="hint">This panel: say "hide the navigator" to keep only its answers, "show the navigator" to bring it back, or "move the navigator to the top left" (any corner, or up and down). "Place the navigator automatically" lets it move out of the way of website controls again.</p>
         <p class="hint">Panels: "expand FAQ" or "collapse that panel" requests that state. Repeating it keeps the state. Native details and binary ARIA buttons use the website’s click behavior; unsupported state is refused.</p>
         <p class="hint">Radio choices: "select Express radio button" or "select that radio button" selects and checks the requested choice. Repeating it keeps it selected. Native and binary ARIA radios use the website’s click behavior; mixed or missing custom state is refused.</p>
         <p class="hint">Checkboxes: "check Newsletter" or "uncheck that checkbox" sets the requested state; repeating it keeps that state. Binary ARIA checkboxes and switches use one website click and verify its state. Missing or mixed state is refused. "Click" and "toggle" keep ordinary website activation.</p>
@@ -229,7 +232,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
@@ -381,7 +384,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   };
   function placePanel() {
     placement = 0;
-    if (stopped || shadow.activeElement) return;
+    // A corner the person chose stays until they let the panel place itself again.
+    if (stopped || shadow.activeElement || settings.corner) return;
     const { width, height } = ui.panel.getBoundingClientRect(), margin = 12;
     const at = ([left, top]) => [left ? margin : window.innerWidth - margin - width, top ? margin : window.innerHeight - margin - height];
     const here = at([ui.panel.classList.contains('left'), ui.panel.classList.contains('top')]), r = radius();
@@ -653,7 +657,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function show(result, used) {
     if (calibration && (result.cancelled || result.paused)) calibration.cancel();
-    promptContext = result.pending ? used : null;
+    promptContext = result.pending ? (result.keepPrompt && promptContext ? promptContext : used) : null;
     ui.pause.setAttribute('aria-pressed', String(controller.paused));
     ui.pause.textContent = controller.paused ? 'Resume' : 'Pause';
     feedback(result);
@@ -979,11 +983,42 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     settings.speak = ui.speak.checked;
     store.save(settings);
   });
-  ui.collapse.addEventListener('click', () => {
-    const collapsed = ui.panel.classList.toggle('collapsed');
+  // The panel can be hidden to its status line and moved to any corner by voice, since the people it is for may not
+  // be able to reach its buttons. Both choices are kept with the other settings.
+  function setCollapsed(collapsed) {
+    ui.panel.classList.toggle('collapsed', collapsed);
     ui.collapse.setAttribute('aria-expanded', String(!collapsed));
     ui.collapse.textContent = collapsed ? 'Show' : 'Hide';
-  });
+    settings.collapsed = collapsed;
+    store.save(settings);
+    schedulePlacement();
+  }
+  const cornerName = ([left, top]) => `${top ? 'top' : 'bottom'} ${left ? 'left' : 'right'}`;
+  function changePanel({ change, left = null, top = null }) {
+    if (change === 'collapse') {
+      setCollapsed(true);
+      return { ok: true, message: 'Navigator panel hidden. Answers still show here; say "show the navigator" to bring it back.' };
+    }
+    if (change === 'expand') { setCollapsed(false); return { ok: true, message: 'Navigator panel shown.' }; }
+    if (change === 'auto') {
+      delete settings.corner;
+      store.save(settings);
+      schedulePlacement();
+      return { ok: true, message: 'The navigator panel will move itself out of the way of website controls again.' };
+    }
+    const corner = [left ?? ui.panel.classList.contains('left'), top ?? ui.panel.classList.contains('top')];
+    ui.panel.classList.toggle('left', corner[0]);
+    ui.panel.classList.toggle('top', corner[1]);
+    settings.corner = corner;
+    store.save(settings);
+    return { ok: true, message: `Navigator panel moved to the ${cornerName(corner)}. It stays there until you say "place the navigator automatically".` };
+  }
+  if (Array.isArray(settings.corner) && settings.corner.length === 2 && settings.corner.every(value => typeof value === 'boolean')) {
+    ui.panel.classList.toggle('left', settings.corner[0]);
+    ui.panel.classList.toggle('top', settings.corner[1]);
+  } else delete settings.corner;
+  if (settings.collapsed === true) setCollapsed(true);
+  ui.collapse.addEventListener('click', () => setCollapsed(!ui.panel.classList.contains('collapsed')));
 
   const recent = settings.announce && Date.now() - (settings.announcedAt ?? 0) < 10000;
   const arrival = recent ? `Done: ${settings.announce} Now on "${document.title}".` : `Ready on "${document.title}". Move your gaze over the page, then speak or type an instruction.`;

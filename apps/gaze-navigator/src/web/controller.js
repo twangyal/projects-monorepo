@@ -288,6 +288,12 @@ export function createController({ window, actions = pageActions, interpret = in
       return reply('Resumed. Look at something and say what to do.', 'info', { paused: false });
     }
     // Navigator settings stay available while paused; changing scope retires old targets.
+    if (action.type === 'panel') {
+      // Moving or hiding the panel keeps any question open: it is still answered the same way.
+      if (!commands.panel) return reply('The navigator panel cannot be changed here.', 'error');
+      const result = commands.panel(action);
+      return reply(result.message, result.ok ? 'success' : 'error', { keepPrompt: true });
+    }
     if (['tracking', 'calibrate', 'circle-size'].includes(action.type)) {
       pending = null;
       const handler = action.type === 'circle-size' ? commands.circleSize : action.type === 'tracking' ? commands.tracking : commands.calibrate;
