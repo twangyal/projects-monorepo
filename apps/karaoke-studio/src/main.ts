@@ -32,7 +32,8 @@ app.innerHTML = `
     <div class="workspace-grid">
       <aside class="song-panel panel"><div class="panel-title"><span class="step">01</span><h3>Your song clip</h3></div>
         <div class="field"><label for="upload-recognition">Lyrics for new uploads</label><select id="upload-recognition" aria-describedby="upload-recognition-help" disabled>${recognitionOptions}</select></div><p id="upload-recognition-help" class="fine">Automatic unless you know the song's language. The selected local model must be installed; failed recognition keeps the separated audio for retry. Explicit East Asian language choices apply to the whole song, so mixed-language passages may fare worse.</p>
-        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–600 seconds · up to 128 MiB</span></span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
+        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–600 seconds · up to 128 MiB</span></span><input id="audio-file" type="file" multiple accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
+        <p class="fine">Choose several songs to prepare them one after another.</p><div id="upload-queue" class="fine" role="status" hidden><span id="upload-queue-text"></span> <button id="upload-queue-clear" class="text-button">Clear waiting songs</button></div>
         <p id="model-help" class="model-help" hidden>Install the local separation model first. From the app directory, run <code>python scripts/setup_model.py --help</code> and follow the README setup steps, then refresh.</p>
         <p class="fine">The model estimates vocals and backing locally. Listen for remaining vocals or altered instruments before exporting.</p>
         <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
@@ -1498,6 +1499,10 @@ async function pollJob(id: string, epoch = pollEpoch) {
             : working?.cues.length
             ? `Your stems and ${working.cues.length} automatically timed lyric lines are ready. Play the preview, correct any words or timing, then save and export.`
             : 'Your stems are ready. No lyrics were recognized automatically; paste your lyrics or transcribe again, then time them.');
+        } else if (queuedJobs.delete(job.id)) {
+          const title = projects.find(project => project.id === job.projectId)?.title ?? 'The song';
+          const waiting = uploadQueue.length ? ` ${uploadQueue.length} more waiting.` : '';
+          message(job.recognitionFailed ? `“${title}” is in Saved clips, but its automatic lyrics failed; open it and use Transcribe lyrics.${waiting}` : `“${title}” is ready in Saved clips.${waiting}`);
         } else message(job.retainedOnCancel
           ? 'Recognition cancelled. Your stems were saved in Saved clips. Your current lyric edits are still here.'
           : job.recognitionFailed
@@ -1527,20 +1532,56 @@ function startPolling(job: Job, follow = true, owned = true, savedRevision: numb
   pollEpoch++; followJobProject = follow; ownedJob = owned; archiveJobRevision = savedRevision;
   clearTimeout(pollTimer); showJob(job); void pollJob(job.id, pollEpoch);
 }
+// Songs chosen together: the first is prepared at once, the rest wait here (in this tab only) and each is uploaded when
+// the studio is free, without interrupting a review, timing session or rehearsal, and without opening it over the
+// clip being edited. Each keeps the lyric choice made when it was added.
+let uploadQueue: { file: File; model: string }[] = [];
+const queuedJobs = new Set<string>();
+const uploadLimit = () => Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
+function queueStatus() {
+  const box = element('upload-queue'), count = uploadQueue.length;
+  box.hidden = !count;
+  element('upload-queue-text').textContent = count ? `${count} ${count === 1 ? 'song is' : 'songs are'} waiting: ${uploadQueue.map(item => item.file.name).join(', ')}. ${count === 1 ? 'It starts' : 'They start one at a time'} when the studio is free.` : '';
+}
+/** Starts preparing one song; false when it was not accepted. `busy` is true when another job held the studio. */
+async function upload(file: File, model: string, follow: boolean): Promise<{ started: boolean; busy?: boolean }> {
+  if (file.size < 1 || file.size > uploadLimit()) { message(`“${file.name}” was skipped: choose nonempty song clips no larger than ${uploadLimit() / 1024 / 1024} MiB.`, true); return { started: false }; }
+  requestingJob = true; controls();
+  try {
+    const result = await request<{ job: Job }>('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Name': encodeURIComponent(file.name), ...(model === 'auto' ? {} : { 'X-Lyrics-Model': model }) }, body: file });
+    message(''); if (!follow) queuedJobs.add(result.job.id); startPolling(result.job, follow); return { started: true };
+  } catch (error) {
+    const text = error instanceof Error ? error.message : 'Could not import this clip.';
+    if (!follow && /already running/i.test(text)) return { started: false, busy: true };
+    message(follow ? text : `“${file.name}” could not be added: ${text}`, true); return { started: false };
+  }
+  finally { requestingJob = false; controls(); queueStatus(); }
+}
+let pumping = false;
+async function pumpUploads() {
+  if (pumping || !uploadQueue.length || currentJob || requestingJob || loading || saving || archiveChecking || timingOwner || srtOwner || practice.active || !session?.modelReady) return;
+  pumping = true;
+  try {
+    const next = uploadQueue.shift()!;
+    queueStatus();
+    const outcome = await upload(next.file, next.model, false);
+    // Another tab's job holds the studio: the song waits its turn again.
+    if (outcome.busy) { uploadQueue.unshift(next); queueStatus(); }
+  } finally { pumping = false; }
+}
+setInterval(() => void pumpUploads(), 2000);
+element('upload-queue-clear').addEventListener('click', () => { const count = uploadQueue.length; uploadQueue = []; queueStatus(); if (count) message(`${count} waiting ${count === 1 ? 'song was' : 'songs were'} removed. Songs already prepared stay in Saved clips.`); });
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
-  const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
+  const input = event.target as HTMLInputElement, files = [...input.files ?? []], file = files[0]; input.value = '';
   if (file) retireTiming('Choosing audio cancelled the timing session. Staged times were not applied.');
   if (!file || currentJob || requestingJob || loading || saving || archiveChecking || !mayLeave()) return;
   retireSrt('Importing audio cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-  const maxBytes = Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
-  if (file.size < 1 || file.size > maxBytes) { message(`Choose a nonempty song clip no larger than ${maxBytes / 1024 / 1024} MiB.`, true); return; }
-  requestingJob = true; controls();
-  try {
-    const result = await request<{ job: Job }>('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Name': encodeURIComponent(file.name), ...(element<HTMLSelectElement>('upload-recognition').value === 'auto' ? {} : { 'X-Lyrics-Model': element<HTMLSelectElement>('upload-recognition').value }) }, body: file });
-    message(''); startPolling(result.job);
-  } catch (error) { message(error instanceof Error ? error.message : 'Could not import this clip.', true); controls(); }
-  finally { requestingJob = false; controls(); }
+  const model = element<HTMLSelectElement>('upload-recognition').value;
+  uploadQueue.push(...files.slice(1).map(waiting => ({ file: waiting, model })));
+  queueStatus();
+  if (file.size < 1 || file.size > uploadLimit()) { message(`Choose a nonempty song clip no larger than ${uploadLimit() / 1024 / 1024} MiB.`, true); return; }
+  await upload(file, model, true);
 });
 element('cancel-job').addEventListener('click', async () => {
   if (!currentJob || !ownedJob) return;
