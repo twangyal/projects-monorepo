@@ -146,6 +146,13 @@ function clarify(elements, act) {
   );
 }
 
+// "It" refers back to the control just used ("tick lettuce", then "untick it"), while "this" and "that" point where the
+// person is looking. The controller supplies that control as `context.previous` while it is recent and on the page.
+function previous(context, subject, roles = null) {
+  const prior = context.previous;
+  return subject === 'it' && prior && (!roles || roles.includes(prior.role)) ? prior : null;
+}
+
 function deictic(elements, act, noun = 'control') {
   if (!elements.length) return { type: 'unknown', message: `No ${noun} is inside the gaze circle.` };
   const touching = elements.filter(element => element.distance === 0);
@@ -431,6 +438,8 @@ function interpretInCircle(utterance, context) {
     const candidates = context.elements.filter(element => ['checkbox', 'switch'].includes(element.role));
     const subject = checkboxState[2]?.replace(/^the\s+/, '');
     const act = element => ({ type: 'check', targetId: element.id, checked: ['check', 'tick'].includes(checkboxState[1]) });
+    const prior = previous(context, subject, ['checkbox', 'switch']);
+    if (prior) return act(prior);
     const counted = subject && ORDINAL.exec(subject);
     if (counted) return ordinal(counted[1], counted[2], candidates, act);
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
@@ -581,6 +590,8 @@ function interpretInCircle(utterance, context) {
     const candidates = context.disclosureElements ?? context.elements;
     const subject = disclosure[2]?.replace(/^the\s+/, '');
     const act = element => ({ type: 'disclosure', targetId: element.id, expanded: disclosure[1] === 'expand' });
+    const prior = previous(context, subject);
+    if (prior?.disclosureSnapshot) return act(prior);
     const counted = subject && ORDINAL.exec(subject);
     if (counted) return ordinal(counted[1], /^(panel|section|disclosure|summary)$/.test(counted[2]) ? 'control' : counted[2], candidates, act);
     return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:panel|section|disclosure|summary|menu)$/.test(subject)
@@ -613,6 +624,8 @@ function interpretInCircle(utterance, context) {
   const hint = /\s(link|button|tab|checkbox|box|field|menu|option)$/.exec(verbless)?.[1];
   const query = verbless.replace(/^the\s+/, '').trim();
   const act = element => ({ type: 'activate', targetId: element.id });
+  const prior = previous(context, query);
+  if (prior) return act(prior);
   if (DEICTIC.test(query)) return deictic(context.elements, act);
   if (!query) return { type: 'unknown', message: 'Say what to open or select.' };
   const counted = ORDINAL.exec(query);

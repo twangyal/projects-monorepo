@@ -5,6 +5,9 @@ import * as pageActions from './page-actions.js';
 import { composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
 
 const CONFIRM_MS = 15000;
+// "It" can refer back to the control last used for this long, while it is still on the page.
+const PREVIOUS_MS = 30000;
+const PREVIOUS_ID = 199;
 const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
 
@@ -14,7 +17,7 @@ const POINTING = new Set(['activate', 'submit', 'check', 'select-radio', 'select
 function targetOf(context, id) {
   return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ??
     context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null) ??
-    (context.focusedField?.id === id ? context.focusedField : null) ?? (id > 200 ? context.onScreen?.().find(element => element.id === id) ?? null : null);
+    (context.focusedField?.id === id ? context.focusedField : null) ?? (context.previous?.id === id ? context.previous : null) ?? (id > 200 ? context.onScreen?.().find(element => element.id === id) ?? null : null);
 }
 
 // `commands` handles navigator-level actions (tracking source, calibration) outside the page.
@@ -24,6 +27,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let paused = false;
   let pending = null;
   let turn = 0;
+  // The control the last page action used, which "it" can refer back to.
+  let previous = null;
   const history = new WeakMap();
   const rangeHistory = new WeakMap();
   const numberHistory = new WeakMap();
@@ -224,6 +229,7 @@ export function createController({ window, actions = pageActions, interpret = in
           ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
       return reply(result.message, 'info', { performed: null, followUp });
     }
+    if (result.ok && target) previous = { target, at: now() };
     // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
     const aimed = result.ok && POINTING.has(action.type) && context.elements.includes(target) ? target : null;
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null, aimed });
@@ -264,6 +270,8 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function handle(utterance, context) {
     const current = ++turn;
+    const recent = previous && now() - previous.at <= PREVIOUS_MS && previous.target.element?.isConnected !== false ? { ...previous.target, id: PREVIOUS_ID } : null;
+    if (recent) context = { ...context, previous: recent };
     const action = interpret(utterance, context);
     if (action.type === 'cancel') {
       const had = pending;

@@ -446,3 +446,33 @@ test('unready calibration explains how to recover without changing the page', ()
   assert.equal(result.performed, undefined); assert.deepEqual(page.log, []);
   assert.match(result.message, /calibration.*not ready/i); assert.match(result.message, /recalibrate.*use pointer/i);
 });
+
+test('"it" refers back to the control just used, while "this" stays with the gaze', () => {
+  const page = fakePage();
+  page.actions.setChecked = (element, checked) => { page.log.push(['check', element.name, checked]); return { ok: true, message: 'state set' }; };
+  let time = 0;
+  const controller = createController({ window: {}, actions: page.actions, now: () => time });
+  const lettuce = page.node('Lettuce'), all = page.node('All condiments');
+  const box = (id, element, extra = {}) => describe(id, element, { role: 'checkbox', checked: false, ...extra });
+  assert.equal(controller.handle('tick lettuce', { elements: [box(1, lettuce)] }).performed, 'check');
+  // The gaze has drifted to another checkbox: "it" is still the lettuce, "this" is the one looked at.
+  const drifted = { elements: [box(1, all, { checked: 'mixed' })] };
+  time = 5000;
+  assert.equal(controller.handle('untick it', drifted).performed, 'check');
+  assert.deepEqual(page.log.at(-1), ['check', 'Lettuce', false]);
+  controller.handle('tick this', drifted);
+  assert.deepEqual(page.log.at(-1), ['check', 'All condiments', true]);
+  // With nothing in the circle, "it" still reaches the control just used.
+  time = 10000;
+  assert.equal(controller.handle('untick it', { elements: [] }).performed, 'check');
+  assert.deepEqual(page.log.at(-1), ['check', 'All condiments', false]);
+  // After 30 seconds, or once the control has left the page, "it" means what is in the circle again.
+  time = 41000;
+  assert.match(controller.handle('tick it', { elements: [] }).message, /No checkbox is inside the gaze circle/);
+  controller.handle('tick lettuce', { elements: [box(1, lettuce)] });
+  lettuce.isConnected = false;
+  assert.match(controller.handle('untick it', { elements: [] }).message, /No checkbox is inside the gaze circle/);
+  // A control of another kind is not what "untick it" means.
+  controller.handle('click pricing', { elements: [describe(1, page.node('Pricing'), { role: 'link' })] });
+  assert.match(controller.handle('untick it', { elements: [] }).message, /No checkbox is inside the gaze circle/);
+});
