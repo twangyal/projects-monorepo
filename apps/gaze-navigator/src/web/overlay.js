@@ -237,7 +237,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
     onGaze: (x, y, time) => track(x, y, time),
-    onLost: () => loseCameraContext(),
+    onLost: reason => loseCameraContext(true, reason),
   });
   // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
@@ -474,7 +474,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
 
   // A missing estimate, silent estimator or capture disconnect cannot leave an old page target actionable.
-  function loseCameraContext(announce = true) {
+  function loseCameraContext(announce = true, reason = null) {
     clearCameraSilence();
     if (settings.source !== 'camera' || cameraUnavailable) return;
     cameraUnavailable = true;
@@ -488,7 +488,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     controller.cancel();
     ui.circle.classList.add('lost'); ui.circle.classList.remove('visible');
     contextChanged(context); renderContextList(); renderOutlines();
-    if (announce && !calibration) feedback({ message: 'Camera tracking is lost. Keep your face visible and look at the page again, or say use pointer.', tone: 'error' });
+    if (announce && !calibration) feedback({ message: reason === 'frozen'
+      ? 'The camera picture has stopped changing, so gaze cannot be trusted. Check the camera (another app may be holding it), or say use pointer.'
+      : 'Camera tracking is lost. Keep your face visible and look at the page again, or say use pointer.', tone: 'error' });
   }
 
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
