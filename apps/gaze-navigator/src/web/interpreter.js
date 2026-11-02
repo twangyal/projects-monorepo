@@ -412,7 +412,10 @@ function interpretInCircle(utterance, context) {
     return deletion[1] ? chooseField(deletion[1], fields, act) : chooseSelectionField(fields, act);
   }
   // Explicit website-tab selection never falls back to another control role.
-  const tab = /^(?:select|choose|pick) (?:the )?(?:tab(?: (.+))?|(.+?) tab)$/.exec(text);
+  // People also say "show the tab for Ida", "open the tab called Billing" or "switch to the Billing tab".
+  const tabFor = /^(?:select|choose|pick|open|show(?: me)?|go to|switch to|view) (?:the )?tab (?:for|called|named|labell?ed|of|with) (.+)$/.exec(text)
+    ?? /^switch to (?:the )?(.+?) tab$/.exec(text);
+  const tab = tabFor ? [text, tabFor[1]] : /^(?:select|choose|pick) (?:the )?(?:tab(?: (.+))?|(.+?) tab)$/.exec(text);
   if (tab) {
     const subject = tab[1] ?? tab[2];
     const candidates = context.elements.filter(element => element.role === 'tab');
@@ -620,9 +623,12 @@ function interpretInCircle(utterance, context) {
     }
   }
 
-  const verbless = text.replace(ACTIVATE_VERB, '');
+  let verbless = text.replace(ACTIVATE_VERB, '');
+  // "The link to pricing", "the button for checkout": the kind of control comes first and names a role hint.
+  const prefixed = /^(?:the\s+)?(link|button|checkbox|box|field|menu|option)\s+(?:for|to|called|named|labell?ed)\s+(.+)$/.exec(verbless);
+  if (prefixed && verbless !== text) verbless = `${prefixed[2]} ${prefixed[1]}`;
   const hint = /\s(link|button|tab|checkbox|box|field|menu|option)$/.exec(verbless)?.[1];
-  const query = verbless.replace(/^the\s+/, '').trim();
+  const query = verbless.replace(/^the\s+/, '').replace(/\s(link|button|checkbox|box|field|menu|option)$/, hint && prefixed ? '' : '$&').trim();
   const act = element => ({ type: 'activate', targetId: element.id });
   const prior = previous(context, query);
   if (prior) return act(prior);
