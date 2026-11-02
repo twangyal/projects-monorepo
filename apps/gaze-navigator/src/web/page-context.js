@@ -63,6 +63,26 @@ export function isEditable(element) {
   return element.isContentEditable === true || ['textbox', 'searchbox'].includes(element.getAttribute('role'));
 }
 
+// A date asked for in three boxes (Day, Month and Year, as on GOV.UK and many bank forms): the three text fields in
+// the same fieldset, told apart by their autocomplete hint, label or id. One spoken date fills all three.
+const DATE_PART_HINTS = { day: /^(?:day|dd)\b/i, month: /^(?:month|mm)\b/i, year: /^(?:year|yyyy|yy)\b/i };
+function datePartsOf(element) {
+  const box = input => input.tagName === 'INPUT' && ['text', 'number', 'tel'].includes(input.type);
+  if (!box(element)) return null;
+  const group = element.closest('fieldset');
+  const inputs = group ? [...group.querySelectorAll('input')].filter(box) : [];
+  if (inputs.length !== 3) return null;
+  const parts = {};
+  for (const input of inputs) {
+    const hint = /bday-(day|month|year)/.exec(input.getAttribute('autocomplete') ?? '')?.[1];
+    const name = accessibleName(input), id = input.id || input.name || '';
+    const kind = hint ?? Object.keys(DATE_PART_HINTS).find(part => DATE_PART_HINTS[part].test(name) || new RegExp(`[-_]${part}$`, 'i').test(id));
+    if (!kind || parts[kind]) return null;
+    parts[kind] = input;
+  }
+  return { ...parts, legend: clean(group.querySelector('legend')?.textContent ?? '') };
+}
+
 export function accessibleName(element) {
   const document = element.ownerDocument;
   const labelledBy = element.getAttribute('aria-labelledby');
@@ -398,6 +418,8 @@ function describe(element) {
     name, role, editable: isEditable(element), submits,
     consequential: submits || CONSEQUENTIAL.test(name) || element.hasAttribute?.('download'),
   };
+  const dateParts = datePartsOf(element);
+  if (dateParts) description.dateParts = dateParts;
   if (element.tagName === 'SELECT') {
     description.selectSnapshot = captureSelectSnapshot(element);
     description.options = description.selectSnapshot.options.map(option => clean(option.label));
@@ -528,8 +550,11 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   // A control inside another with the same name (a link inside a suggestion's list option) is one target, not two
   // identical choices: the inner one is kept, and a click on it reaches the outer one too.
   const names = new Map(kept.map(candidate => [candidate, accessibleName(candidate.element)]));
+  // A label beside its own control (GOV.UK's radios and checkboxes) is the same target as the control.
+  const controls = new Set(kept.map(candidate => candidate.element));
   const distinct = kept.filter(outer => !(names.get(outer) && kept.some(inner => inner !== outer &&
-    composedContains(outer.element, inner.element) && names.get(inner) === names.get(outer))));
+    composedContains(outer.element, inner.element) && names.get(inner) === names.get(outer))))
+    .filter(candidate => !(candidate.element.tagName === 'LABEL' && candidate.element.control && controls.has(candidate.element.control)));
   distinct.sort((a, b) => a.distance - b.distance);
   const elements = distinct.slice(0, limit).map((candidate, index) => ({
     id: index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,

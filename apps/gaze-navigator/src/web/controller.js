@@ -66,7 +66,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element, context);
@@ -123,6 +123,18 @@ export function createController({ window, actions = pageActions, interpret = in
         actions.writeValue(element, action.text);
         result = actions.submit(element);
         if (result.ok) result = { ok: true, message: `Searching for "${action.text}".` };
+        break;
+      }
+      case 'date-parts': {
+        const parts = target.dateParts, [year, month, day] = action.value.split('-');
+        const fields = [[parts?.day, String(Number(day))], [parts?.month, String(Number(month))], [parts?.year, year]];
+        if (fields.some(([field]) => !field?.isConnected || actions.canWrite?.(field) === false)) {
+          result = { ok: false, message: 'The date boxes changed or cannot be written. Look at them again. No date was entered.' };
+          break;
+        }
+        for (const [field, value] of fields) { remember(field); actions.writeValue(field, value); }
+        const spoken = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+        result = { ok: true, message: `${parts.legend || target.name || 'Date'}: ${spoken} (day ${Number(day)}, month ${Number(month)}, year ${year}).` };
         break;
       }
       case 'edit': {

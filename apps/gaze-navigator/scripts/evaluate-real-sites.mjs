@@ -127,6 +127,22 @@ export const TASKS = [
   { site: 'Python docs', goal: 'Search the documentation', start: 'https://docs.python.org/3/', steps: [
     { look: page => page.getByRole('searchbox', { name: 'Quick search' }).first(), say: 'search for dataclasses', done: url(/search\.html\?q=dataclasses/) },
   ] },
+  // GOV.UK Design System form patterns, as a service would ask them.
+  { site: 'GOV.UK Design System', goal: 'Say a date into Day, Month and Year boxes', start: 'https://design-system.service.gov.uk/components/date-input/default/index.html', steps: [
+    { look: field('Day'), say: 'type 12 March 2019', done: async page => [await field('Day')(page).inputValue(), await field('Month')(page).inputValue(), await field('Year')(page).inputValue()].join('/') === '12/3/2019' },
+  ] },
+  { site: 'GOV.UK Design System', goal: 'Answer a radio question and tick a checkbox', start: 'https://design-system.service.gov.uk/components/radios/default/index.html', steps: [
+    { look: page => page.getByRole('radio', { name: 'Wales', exact: true }), say: 'choose Wales', done: async page => page.getByRole('radio', { name: 'Wales', exact: true }).isChecked() },
+  ] },
+  { site: 'GOV.UK Design System', goal: 'Tick the waste types transported', start: 'https://design-system.service.gov.uk/components/checkboxes/default/index.html', steps: [
+    { look: page => page.getByRole('checkbox', { name: 'Waste from mines or quarries', exact: true }), say: 'tick mines or quarries', done: async page => page.getByRole('checkbox', { name: 'Waste from mines or quarries', exact: true }).isChecked() },
+  ] },
+  { site: 'GOV.UK Design System', goal: 'Type the name of an event', start: 'https://design-system.service.gov.uk/components/text-input/default/index.html', steps: [
+    { look: field('What is the name of the event?'), say: 'type Summer fete', done: async page => (await field('What is the name of the event?')(page).inputValue()) === 'Summer fete' },
+  ] },
+  { site: 'GOV.UK Design System', goal: 'Choose how results are sorted', start: 'https://design-system.service.gov.uk/components/select/default/index.html', steps: [
+    { look: field('Sort by'), say: 'sort by most views', done: async page => (await field('Sort by')(page).evaluate(select => select.selectedOptions[0]?.textContent.trim())) === 'Most views' },
+  ] },
   { site: 'WAI-ARIA APG', goal: 'Choose a fruit in a custom select-only combobox', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/', steps: [
     { look: select('Favorite Fruit'), say: 'set favorite fruit to banana', done: async page => (await select('Favorite Fruit')(page).textContent()).trim() === 'Banana' },
   ] },

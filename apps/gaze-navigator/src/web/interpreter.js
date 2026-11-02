@@ -182,10 +182,20 @@ function continuingIn(context) {
 }
 
 // `recover`: new text for an unnamed field may go to a field just outside the circle (see typingElsewhere).
+// A spoken date typed into one of a Day, Month and Year group of boxes fills all three; other text is typed as said.
+function intoDateBoxes(text, act, now = new Date()) {
+  const date = spokenDate(text, now), whole = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+  const into = element => (whole && element.dateParts ? { type: 'date-parts', targetId: element.id, value: whole } : act(element));
+  // Any box of one date group takes the whole date, so its boxes never need telling apart.
+  into.sameDate = whole ? fields => fields.length > 1 && fields.every(field => field.dateParts && field.dateParts.day === fields[0].dateParts.day) : null;
+  return into;
+}
+
 function chooseField(fieldName, context, act, { recover = false } = {}) {
-  const fields = context.elements.filter(textField);
+  let fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
   if (recover && !fields.length) return { type: 'unknown', message: 'No text field is inside the gaze circle.', fieldMiss: true };
+  if (act.sameDate?.(fields)) fields = [fields.reduce((a, b) => (b.distance < a.distance ? b : a))];
   const focused = fields.find(element => element.id === context.focusedId);
   if (focused) return act(focused);
   return deictic(fields, act, 'text field');
@@ -224,6 +234,16 @@ function ordinal(word, rest, elements, act) {
     return { type: 'unknown', message: `There ${ordered.length === 1 ? 'is only one' : `are only ${ordered.length}`} ${rest} in the gaze circle.` };
   }
   return act(ordered[index - 1]);
+}
+
+function namedOption(query, selects) {
+  for (const select of selects) {
+    const name = normalize(select.name ?? '').replace(/[:?]+$/, '');
+    if (!name || !query.startsWith(`${name} `)) continue;
+    const choice = selectOption(query.slice(name.length + 1).replace(/^(?:to|as|is)\s+/, ''), [select]);
+    if (choice) return choice;
+  }
+  return null;
 }
 
 // A value from a dropdown in the circle: unique strong option names act, close ones ask.
@@ -552,10 +572,10 @@ function interpretInCircle(utterance, context) {
     // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
     const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
-    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, edit('append', { text: content }), { recover: true });
+    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, edit('append', { text: content }), context.now), { recover: true });
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
-    return chooseField(null, context, edit('replace-all', { text: unquote(match[1]) }));
+    return chooseField(null, context, intoDateBoxes(unquote(match[1]), edit('replace-all', { text: unquote(match[1]) }), context.now));
   }
   if ((match = /^replace\s+(.+?)\s+with\s+(.+)$/i.exec(command))) {
     const act = edit('replace', { find: unquote(match[1]), text: unquote(match[2]) });
@@ -661,9 +681,11 @@ function interpretInCircle(utterance, context) {
   const counted = ORDINAL.exec(query);
   if (counted) return ordinal(counted[1], counted[2], context.elements, act);
   let resolved = resolve(query, context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);
-  // A bare option name ("large print") selects it when no control has that name.
+  // A bare option name ("large print") selects it when no control has that name, and so does a dropdown's own name
+  // followed by the choice, as its label reads ("sort by most views", "country to France").
   if (resolved.type === 'unknown') {
-    resolved = selectOption(query, context.elements.filter(element => element.options?.length)) ?? resolved;
+    const selects = context.elements.filter(element => element.options?.length);
+    resolved = selectOption(query, selects) ?? namedOption(query, selects) ?? resolved;
   }
   // Unknown results say why, so an assisting model can be asked only about naming a target:
   // `targetQuery` when an activation was requested but no control matched, `unparsed` otherwise.
