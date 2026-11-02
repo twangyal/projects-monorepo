@@ -69,8 +69,26 @@ class AutomaticLineTests(unittest.TestCase):
         junk = [dict(text='', start=1, end=2), dict(text='ok', start=float('nan'), end=2), dict(text='late', start=50, end=51),
                 dict(text='back', start=3, end=1), 'x', dict(text='fine', start=2, end=2.5)]
         self.assertEqual([c['text'] for c in words_to_cues(junk, 10.0)], ['fine'])
-        many = [dict(text='la', start=i * 1.5, end=i * 1.5 + 0.2) for i in range(250)]
-        self.assertEqual(len(words_to_cues(many, 300.0)), 200)
+        # Pauses longer than a breath keep each one-word line apart; the clip ends after 200 of them.
+        many = [dict(text='la', start=i * 1.8, end=i * 1.8 + 0.2) for i in range(250)]
+        self.assertEqual(len(words_to_cues(many, 360.0)), 200)
+
+    def test_one_and_two_word_fragments_join_the_line_they_are_sung_closest_to(self):
+        def sung(*phrases):
+            words, at = [], 0.0
+            for gap, text in phrases:
+                at += gap
+                for word in text.split():
+                    words.append(dict(text=word, start=at, end=at + 0.3))
+                    at += 0.35
+            return words
+        # "Now" and "I" are breaths before the line; "at all" trails it; a long pause still separates lines.
+        words = sung((0, 'Now'), (0.8, 'I'), (0.7, "know that you don't care"), (0.7, 'at all'), (3.0, 'time wasted gave all my soul'))
+        self.assertEqual([c['text'] for c in words_to_cues(words, 30.0)],
+                         ["Now I know that you don't care at all", 'time wasted gave all my soul'])
+        # A fragment that would make its neighbour too long, or that is far from both, stays on its own.
+        far = sung((0, 'Yeah'), (2.0, 'this line nearly fills a whole card'), (2.0, 'oh'))
+        self.assertEqual([c['text'] for c in words_to_cues(far, 30.0)], ['Yeah', 'this line nearly fills a whole card', 'oh'])
 
 
 class AlignmentTests(unittest.TestCase):
