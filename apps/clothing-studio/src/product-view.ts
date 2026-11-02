@@ -117,8 +117,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
     <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
     <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
-  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG and GLB</label></div><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
-  <p class="fine-print">PNG and GLB use the size shown in 3D: the styling shell, or the current settled drape. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
+  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label></div><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
+  <p class="fine-print">PNG, GLB and video use the size shown in 3D: the styling shell, or the current settled drape. The turntable video records one turn in real time, so it takes a few seconds. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
   <section class="techpack" aria-labelledby="techpack-heading">
     <div class="techpack-head"><div><p class="eyebrow">TECH PACK</p><h4 id="techpack-heading">Factory-ready tech pack</h4>
     <p class="fine-print">Generated from this design and kept in sync with every change: bill of materials with fabric consumption, graded points of measure, construction and artwork placement.</p></div>
@@ -782,7 +782,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Exports.
   const exporting = async (action: () => Promise<void>) => { try { await action(); } catch (error) { options.notice(error instanceof Error ? error.message : 'Export failed.', true); } };
-  for (const [id, kind, suffix] of [['product-png-front', 'front', '-front.png'], ['product-png-back', 'back', '-back.png'], ['product-glb', 'glb', '.glb']] as const) {
+  for (const [id, kind, suffix] of [['product-png-front', 'front', '-front.png'], ['product-png-back', 'back', '-back.png'], ['product-glb', 'glb', '.glb'], ['product-turntable', 'turntable', '-turntable.webm']] as const) {
     const button = $(id) as HTMLButtonElement;
     button.addEventListener('click', () => void exporting(async () => {
       if (button.disabled) return;
@@ -796,6 +796,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         if (!await ready) throw new Error('The 3D view is unavailable.');
         const exports = await import('./product-3d.ts');
         const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled, companion)], {type:'model/gltf-binary'})
+          : kind === 'turntable' ? await exports.productSnapshotTurntable(design, settled, companion)
           : await exports.productSnapshotPng(design, kind, settled, companion);
         options.download(blob, `${includeWorn ? '-outfit' : ''}${suffix}`, snapshot.title);
       } finally { button.disabled = false; }

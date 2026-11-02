@@ -28,7 +28,7 @@ async function capture(page: Page) {
 for (const primaryBottoms of [false, true]) test(`whole outfit exports actual settled geometry with ${primaryBottoms ? 'bottoms' : 'top'} as the design`, async ({ page }) => {
   test.setTimeout(150000); page.on('dialog', d => d.accept()); await capture(page);
   await page.setViewportSize({ width: primaryBottoms ? 390 : 1280, height: 900 }); await page.goto('/');
-  const option = page.getByRole('checkbox', { name: 'Include worn garment in PNG and GLB', exact: true });
+  const option = page.getByRole('checkbox', { name: 'Include worn garment in PNG, GLB and video', exact: true });
   await expect(option).not.toBeChecked(); await expect(option).toBeDisabled();
   const top = template('blank'), bottom = template('trousers');
   for (const style of Object.values(top.parts)) style.color = '#ff0000';
@@ -80,7 +80,7 @@ test('a held outfit render retains both garments and its title after the worn ga
   await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
   await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
   await expect(page.locator('#garment-drape-status')).toContainText('Worn over', { timeout: 120000 });
-  await page.getByRole('checkbox', { name: 'Include worn garment in PNG and GLB', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Include worn garment in PNG, GLB and video', exact: true }).check();
   const original = await download(page, '#product-png-front');
   await page.evaluate(() => { (window as unknown as { outfitGate: { armed: boolean } }).outfitGate.armed = true; });
   await page.locator('#product-png-front').click();

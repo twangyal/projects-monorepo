@@ -12,6 +12,9 @@ import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
 import { garmentHeight, isBottoms, material, partName, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
+/** A turntable export turns once in this many seconds, at this frame rate. */
+export const TURNTABLE_SECONDS = 6, TURNTABLE_FPS = 30, TURNTABLE_BACKDROP = 0xf1ebe0;
+
 export class ProductScene {
   readonly renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -220,6 +223,47 @@ export class ProductScene {
     return blob;
   }
 
+  /**
+   * A turntable video: the camera circles the garment once at the front view's height and distance, each frame drawn
+   * and handed to the recorder in real time, so a `seconds`-long turn takes that long to record.
+   */
+  async turntable(seconds = TURNTABLE_SECONDS, fps = TURNTABLE_FPS): Promise<Blob> {
+    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(candidate => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(candidate));
+    if (!type || typeof this.canvas.captureStream !== 'function') throw new Error('This browser cannot record video. Export front and back PNG renders instead.');
+    const position = this.camera.position.clone(), target = this.controls.target.clone();
+    this.setView('front');
+    const centre = this.controls.target.clone(), offset = this.camera.position.clone().sub(centre);
+    const radius = Math.hypot(offset.x, offset.z), height = offset.y;
+    const stream = this.canvas.captureStream(0), track = stream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack;
+    const recorder = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 4_000_000 }), chunks: Blob[] = [];
+    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    const stopped = new Promise<void>(resolve => { recorder.onstop = () => resolve(); });
+    // Video has no transparency: record on the studio's warm backdrop.
+    const clear = this.renderer.getClearColor(new THREE.Color()), alpha = this.renderer.getClearAlpha();
+    this.renderer.setClearColor(TURNTABLE_BACKDROP, 1);
+    recorder.start();
+    try {
+      // Each frame is drawn on time, so the turn lasts `seconds` however long drawing takes.
+      const frames = Math.round(seconds * fps), start = performance.now();
+      for (let frame = 0; frame <= frames; frame++) {
+        if (this.disposed) throw new Error('The 3D view closed while recording.');
+        const angle = 2 * Math.PI * frame / frames;
+        this.camera.position.set(centre.x + radius * Math.sin(angle), centre.y + height, centre.z + radius * Math.cos(angle));
+        this.camera.lookAt(centre); this.renderNow(); track.requestFrame();
+        await new Promise(resolve => setTimeout(resolve, Math.max(0, start + (frame + 1) * 1000 / fps - performance.now())));
+      }
+    } finally {
+      this.renderer.setClearColor(clear, alpha);
+      if (recorder.state !== 'inactive') recorder.stop();
+      await stopped;
+      for (const each of stream.getTracks()) each.stop();
+      this.camera.position.copy(position); this.controls.target.copy(target); this.controls.update(); this.renderNow();
+    }
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    if (!blob.size) throw new Error('The turntable video could not be recorded.');
+    return blob;
+  }
+
   async glb(includeWorn = false): Promise<ArrayBuffer> {
     const result = await new GLTFExporter().parseAsync(includeWorn ? [this.group, this.worn] : this.group, { binary: true, onlyVisible: true });
     if (!(result instanceof ArrayBuffer)) throw new Error('The 3D model could not be exported.');
@@ -259,6 +303,9 @@ export function productSnapshotRenders(product: Product, drape: GarmentDrapeResu
 }
 export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<Blob> {
   return withProductSnapshot(product, drape, scene => scene.png(view), companion);
+}
+export function productSnapshotTurntable(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.turntable(), companion);
 }
 export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<ArrayBuffer> {
   return withProductSnapshot(product, drape, scene => scene.glb(!!companion), companion);

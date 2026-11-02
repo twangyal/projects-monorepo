@@ -49,7 +49,7 @@ test('switching during an outfit drape uses the new sample and exports both kept
   await expect(page.getByRole('combobox', { name: 'Pattern export size', exact: true })).toHaveValue('S');
   await expect(page.locator('#garment-drape-status')).toContainText('Worn under the Blank tee', { timeout: 120000 });
   const switched = await backup(page); expect(switched.product).toEqual(design.wornWith); expect(switched.wornWith).toEqual(design.product); expect(switched.topBody).toEqual(design.topBody);
-  await page.getByLabel('Include worn garment in PNG and GLB', { exact: true }).check();
+  await page.getByLabel('Include worn garment in PNG, GLB and video', { exact: true }).check();
   const wait = page.waitForEvent('download'); await page.locator('#product-glb').click(); const result = await wait;
   expect(result.suggestedFilename()).toMatch(/-outfit\.glb$/);
   const bytes = await readFile((await result.path())!); const size = bytes.readUInt32LE(12), json = JSON.parse(bytes.subarray(20, 20 + size).toString());
