@@ -318,7 +318,12 @@ test('fit: edited points of measure drive the pattern, the 3D shell and the tech
   // The sleeve is drafted from the armhole: its cap is CAP_EASE longer than the front and back armholes together.
   const length = (points: { x: number; y: number }[]) => points.slice(1).reduce((sum, q, i) => sum + Math.hypot(q.x - points[i].x, q.y - points[i].y), 0);
   const armhole = front.outline.slice(1, front.outline.findIndex(q => q.x === 0) + 1), cap = sleeve.outline.slice(0, 13);
-  assert.ok(Math.abs(length(cap) - 2 * length(armhole) * (1 + CAP_EASE)) < 0.01, `cap ${length(cap)} for armholes ${2 * length(armhole)}`);
+  const backPiece = patternPieces(fitted).find(piece => piece.part === 'back')!, backArmhole = backPiece.outline.slice(1, backPiece.outline.findIndex(q => q.x === 0) + 1);
+  assert.ok(Math.abs(length(cap) - (length(armhole) + length(backArmhole)) * (1 + CAP_EASE)) < 0.01, `cap ${length(cap)} for armholes ${length(armhole) + length(backArmhole)}`);
+  // The front scoops deeper into the chest near the underarm than the back, between the same end points.
+  const inward = (points: typeof armhole) => Math.max(...points.filter(p => p.y > d.shoulderDrop + 24 * 0.75).map(p => p.x));
+  assert.ok(inward(armhole) > inward(backArmhole) + 0.5, `front ${inward(armhole)} against back ${inward(backArmhole)}`);
+  assert.deepEqual([armhole[0], armhole.at(-1)], [backArmhole[0], backArmhole.at(-1)]);
   assert.ok(Math.abs(armhole.at(-1)!.y - (d.shoulderDrop + 24)) < 1e-9, 'the armhole is as deep as asked');
   assert.ok(Math.abs(sleeve.outline.at(-2)!.x - sleeve.outline.at(-1)!.x - 28) < 1e-9, 'sleeve opening');
   assert.ok(vertexAt(fitted, 'front', 20, topMeasurements(fitted).length - d.shoulderDrop) && vertexAt(fitted, 'front', 23, 0), '3D shoulder and hem corners');

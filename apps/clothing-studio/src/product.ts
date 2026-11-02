@@ -381,14 +381,17 @@ export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** The sleeve cap is cut this much longer than the armhole it is sewn into: a little ease, as knits need. */
 export const CAP_EASE = 0.03;
 
+/** How much further the front armhole scoops in at its lower curve than the back, cm: the front of the arm sits forward. */
+export const FRONT_SCOOP_CM = 1.2;
 /**
  * A body piece's left armhole in pattern cm (y down from the neck points, the side seam at x = 0), from the shoulder
  * point down to the underarm: it runs a little inside the shoulder point, across the chest or back, and turns out
- * level into the side seam.
+ * level into the side seam. The front scoops FRONT_SCOOP_CM deeper into the chest near the underarm than the back; both
+ * meet the same shoulder and underarm points, so the shoulder and side seams still match.
  */
-function armholeCurve(half: number, shoulderX: number, shoulderDrop: number, armDepth: number): Pt[] {
-  const shoulder = half - shoulderX, scoop = Math.max(1.5, shoulder + 1.5), armY = shoulderDrop + armDepth;
-  const [p0, p1, p2, p3] = [{ x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.5 }, { x: scoop, y: armY }, { x: 0, y: armY }];
+function armholeCurve(half: number, shoulderX: number, shoulderDrop: number, armDepth: number, front: boolean): Pt[] {
+  const shoulder = half - shoulderX, scoop = Math.max(1.5, shoulder + 1.5), armY = shoulderDrop + armDepth, deeper = front ? FRONT_SCOOP_CM : 0;
+  const [p0, p1, p2, p3] = [{ x: shoulder, y: shoulderDrop }, { x: scoop + deeper / 3, y: shoulderDrop + armDepth * 0.5 }, { x: scoop + deeper, y: armY }, { x: 0, y: armY }];
   return Array.from({ length: 17 }, (_, i) => {
     const t = i / 16, u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
     return { x: a * p0.x + b * p1.x + c * p2.x + d * p3.x, y: a * p0.y + b * p1.y + c * p2.y + d * p3.y };
@@ -410,10 +413,10 @@ export function teeDimensions(product: Product) {
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, fit = product.fit ?? {}, shoulderDrop = fit.shoulderDrop ?? 4;
   const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2, shoulderX = (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2;
   const cuffHeight = product.base === 'tee' ? 0 : fit.cuffHeight ?? BAND_CM;
-  // The sleeve is drafted from its armhole: its cap rises capHeight above the underarm line and is as wide as makes each
-  // half of it CAP_EASE longer than the armhole it is sewn into (front or back; they match).
+  // The sleeve is drafted from its armhole: its cap rises capHeight above the underarm line and is as wide as makes it
+  // CAP_EASE longer than the front and back armholes it is sewn into together (the cap itself stays symmetrical).
   const capHeight = Math.min(14, m.chest * 0.11, (m.sleeve - cuffHeight) * 0.6);
-  const capLength = polylineLength(armholeCurve(half, shoulderX, shoulderDrop, armDepth)) * (1 + CAP_EASE) * 2;
+  const capLength = (polylineLength(armholeCurve(half, shoulderX, shoulderDrop, armDepth, true)) + polylineLength(armholeCurve(half, shoulderX, shoulderDrop, armDepth, false))) * (1 + CAP_EASE);
   let low = 0, high = capLength;
   for (let i = 0; i < 50; i++) { const width = (low + high) / 2; if (polylineLength(capCurve(width, capHeight)) < capLength) low = width; else high = width; }
   return {
@@ -644,7 +647,7 @@ function bodyOutline(product: Product, front: boolean, length: number) {
   const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product), w = panel.width, half = w / 2;
   const shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   const armY = shoulderDrop + armDepth, inset = (half - dims.hemHalf) * (length - armY) / (panel.length - armY);
-  const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, armhole = armholeCurve(half, dims.shoulderX, shoulderDrop, armDepth);
+  const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, armhole = armholeCurve(half, dims.shoulderX, shoulderDrop, armDepth, front);
   // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
   const shift = (p: Pt) => ({ x: p.x + flare(product), y: p.y });
   return {
