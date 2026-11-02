@@ -181,9 +181,11 @@ function continuingIn(context) {
   return field && textField(field) && !field.sensitive ? field : null;
 }
 
-function chooseField(fieldName, context, act) {
+// `recover`: new text for an unnamed field may go to a field just outside the circle (see typingElsewhere).
+function chooseField(fieldName, context, act, { recover = false } = {}) {
   const fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
+  if (recover && !fields.length) return { type: 'unknown', message: 'No text field is inside the gaze circle.', fieldMiss: true };
   const focused = fields.find(element => element.id === context.focusedId);
   if (focused) return act(focused);
   return deictic(fields, act, 'text field');
@@ -282,6 +284,7 @@ function typedSet(target, value, context, now) {
 const FAR_CHOICES = 3;
 export function interpret(utterance, context = { elements: [] }) {
   const action = interpretInCircle(utterance, context);
+  if (action.fieldMiss) { const { fieldMiss: _, ...missed } = action; return typingElsewhere(utterance, context) ?? missed; }
   if (!action.missing && !action.unparsed) return action;
   const elsewhere = { ...context, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null };
   const near = context.nearby?.length ? beyond(utterance, { ...elsewhere, elements: context.nearby }, 'outside', 'Not inside the gaze circle, but nearby') : null;
@@ -291,6 +294,18 @@ export function interpret(utterance, context = { elements: [] }) {
 }
 
 // The instruction tried on controls outside the circle; null when it names none of them (or too many).
+// Typing into an unnamed field when none is inside the circle, as after a large gaze miss: the nearest few text fields
+// just outside the circle, or else the only few on screen, are offered and never used without a yes.
+function typingElsewhere(utterance, context) {
+  const nearest = list => list.filter(textField).sort((a, b) => a.distance - b.distance);
+  const near = nearest(context.nearby ?? []).slice(0, FAR_CHOICES);
+  const screen = near.length ? [] : nearest(context.onScreen?.() ?? []);
+  const fields = near.length ? near : screen.length <= FAR_CHOICES ? screen : [];
+  if (!fields.length) return null;
+  const elsewhere = { ...context, elements: fields, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null };
+  return beyond(utterance, elsewhere, 'far', 'No text field is inside the gaze circle. Type into');
+}
+
 function beyond(utterance, context, flag, where, most = Infinity) {
   const result = interpretInCircle(utterance, context);
   const ids = new Set(context.elements.map(element => element.id));
@@ -521,7 +536,7 @@ function interpretInCircle(utterance, context) {
     const nearby = context.elements.filter(element => element.editable && (element.role === 'searchbox' || /search/i.test(element.name)));
     if (nearby.length) return deictic(nearby, act, 'search field');
     if (context.pageSearch) return act(context.pageSearch);
-    return chooseField(null, context, act);
+    return chooseField(null, context, act, { recover: true });
   }
   if ((match = /^(?:continue|keep)\s+(?:typing|writing|dictating)(?:\s+(.+))?$/i.exec(raw))) {
     if (!match[1]?.trim()) return { type: 'unknown', message: 'Say “continue typing” followed by the words to add to the focused field.' };
@@ -537,7 +552,7 @@ function interpretInCircle(utterance, context) {
     // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
     const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
-    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, edit('append', { text: content }));
+    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, edit('append', { text: content }), { recover: true });
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
     return chooseField(null, context, edit('replace-all', { text: unquote(match[1]) }));
