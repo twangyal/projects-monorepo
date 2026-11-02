@@ -363,6 +363,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
     product: { base: 'trousers', name: 'Pull-on shorts', measurements: { ...legFit, inseam: 18, legOpening: 58 }, neckline: 'crew', parts: allParts(style('linen-170', '#c9b48f'), {}, 'trousers'), artwork: [] } },
   { id: 'flared-skirt', name: 'Flared skirt', description: 'Two measured linen panels, with editable waist, hem and slant.',
     product: { base: 'skirt', name: 'Flared skirt', measurements: { waist: 80, hem: 140, slant: 60 }, neckline: 'crew', parts: allParts(style('linen-170', '#9fae91'), {}, 'skirt'), artwork: [] } },
+  { id: 'gathered-skirt', name: 'Gathered skirt', description: 'Floral cotton poplin gathered into a 4 cm waistband.',
+    product: { base: 'skirt', name: 'Gathered skirt', measurements: { waist: 72, hem: 150, slant: 62, waistbandHeight: 4, gather: 1.6 }, neckline: 'crew',
+      parts: { ...allParts(style('poplin-120', '#f3ead8', { motif: 'floral', color: '#b5523b', scaleCm: 5, layout: 'half-drop' }), {}, 'skirt'), waistband: style('poplin-120', '#b5523b') }, artwork: [] } },
   { id: 'trousers', name: 'Straight trousers', description: 'Indigo denim twill, straight leg, elasticated waist.',
     product: { base: 'trousers', name: 'Straight trousers', measurements: legFit, neckline: 'crew', parts: allParts(style('denim-340', '#2d3f5c'), {}, 'trousers'), artwork: [] } },
 ];
