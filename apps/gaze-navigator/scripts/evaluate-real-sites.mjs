@@ -112,6 +112,21 @@ export const TASKS = [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
   ] },
   // Custom widgets from component libraries and the WAI-ARIA Authoring Practices examples.
+  // Added after the scripted tasks all completed: radio groups, tabs and accordions as people name them.
+  { site: 'WAI-ARIA APG', goal: 'Choose a pizza crust and a delivery method in custom radio groups', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio/', steps: [
+    { look: page => page.getByRole('radio', { name: 'Thin crust', exact: true }), say: 'choose thin crust', done: async page => (await page.getByRole('radio', { name: 'Thin crust', exact: true }).getAttribute('aria-checked')) === 'true' },
+    { look: page => page.getByRole('radio', { name: 'Home Delivery', exact: true }), say: 'select home delivery', done: async page => (await page.getByRole('radio', { name: 'Home Delivery', exact: true }).getAttribute('aria-checked')) === 'true' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Switch to another tab of a tab list', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-automatic/', steps: [
+    { look: page => page.getByRole('tab', { name: 'Ida da Fonseca', exact: true }), say: 'show the tab for Ida da Fonseca', done: async page => (await page.getByRole('tab', { name: 'Ida da Fonseca', exact: true }).getAttribute('aria-selected')) === 'true' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Open one accordion section and close another', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/', steps: [
+    { look: button('Billing Address'), say: 'expand billing address', done: expanded(button('Billing Address'), 'true') },
+    { look: button('Personal Information'), say: 'collapse personal information', done: expanded(button('Personal Information'), 'false') },
+  ] },
+  { site: 'Python docs', goal: 'Search the documentation', start: 'https://docs.python.org/3/', steps: [
+    { look: page => page.getByRole('searchbox', { name: 'Quick search' }).first(), say: 'search for dataclasses', done: url(/search\.html\?q=dataclasses/) },
+  ] },
   { site: 'WAI-ARIA APG', goal: 'Choose a fruit in a custom select-only combobox', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/', steps: [
     { look: select('Favorite Fruit'), say: 'set favorite fruit to banana', done: async page => (await select('Favorite Fruit')(page).textContent()).trim() === 'Banana' },
   ] },
@@ -150,6 +165,7 @@ async function run() {
     try {
       await page.goto(task.start, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await status.waitFor({ timeout: 20000 });
+      await page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
       if (assist) {
         await panel.locator('details.settings').evaluate(details => { details.open = true; });
         const box = panel.getByLabel('Smarter target matching');
@@ -159,6 +175,7 @@ async function run() {
       }
       for (const step of task.steps) {
         const entry = { say: step.say, utterances: 0, questions: 0, outcome: 'failed', replies: [] };
+        let aim = async () => {};
         record.steps.push(entry);
         if (step.look) {
           const target = step.look(page);
@@ -168,14 +185,22 @@ async function run() {
           const viewport = page.viewportSize();
           const dx = gazeError * normal(), dy = gazeError * normal();
           entry.offset = [Math.round(dx), Math.round(dy)];
-          const x = Math.min(viewport.width - 1, Math.max(0, box.x + box.width / 2 + dx));
-          const y = Math.min(viewport.height - 1, Math.max(0, box.y + box.height / 2 + dy));
-          await page.mouse.move(x, y);
+          // A person keeps looking at the control while they speak, so the gaze follows it, scrolling it back into view
+          // if late content pushed it away.
+          aim = async () => {
+            await target.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+            const now = await target.boundingBox().catch(() => null) ?? box;
+            const x = Math.min(viewport.width - 1, Math.max(0, now.x + now.width / 2 + dx));
+            const y = Math.min(viewport.height - 1, Math.max(0, now.y + now.height / 2 + dy));
+            await page.mouse.move(x, y);
+          };
+          await aim();
           await page.waitForTimeout(250);
         }
         const before = page.url(), measured = step.measure ? await step.measure(page) : undefined;
         const say = async text => {
           entry.utterances++;
+          await aim();
           await panel.getByLabel('Typed instruction').fill(text);
           await panel.getByRole('button', { name: 'Do it' }).click();
           await page.waitForTimeout(300);
