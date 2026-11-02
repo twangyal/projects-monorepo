@@ -33,6 +33,11 @@ LYRICS_FIXTURE_SECONDS = 16.0
 FIXTURE_WORDS = [(text, start, start + 0.4) for text, start in (
     ('Hello', 1.0), ('little', 1.5), ('world', 2.0), ('This', 4.0), ('is', 4.4), ('our', 4.8), ('chorus', 5.2),
     ('Sing', 9.0), ('it', 9.5), ('back', 10.0), ('to', 10.5), ('me', 11.0))]
+# A 17-second clip whose chorus is heard three different ways.
+REPEATS_FIXTURE_SECONDS = 17.0
+REPEAT_WORDS = [(text, start, start + 0.4) for text, start in (
+    ('This', 1.0), ('is', 1.5), ('our', 2.0), ('horus', 2.5), ('Sing', 5.0), ('it', 5.5), ('back', 6.0), ('to', 6.5), ('me', 7.0),
+    ('This', 9.0), ('is', 9.5), ('a', 10.0), ('chorus', 10.5), ('This', 13.0), ('is', 13.5), ('our', 14.0), ('course', 14.5))]
 
 
 def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *, model_choice='auto'):
@@ -54,9 +59,10 @@ def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *
     for _ in range(10):
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
-    if min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - 18.0), abs(duration - 19.0)) > 1e-6:
+    if min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - REPEATS_FIXTURE_SECONDS), abs(duration - 18.0), abs(duration - 19.0)) > 1e-6:
         raise RuntimeError('No fixture lyrics for this clip.')
-    transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s > 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
+    words = REPEAT_WORDS if abs(duration - REPEATS_FIXTURE_SECONDS) < 1e-6 else FIXTURE_WORDS
+    transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s > 9 else 0.95) for t, s, e in words], seconds=0.3)
     Path(output).write_text(json.dumps(transcript))
     return transcript
 
