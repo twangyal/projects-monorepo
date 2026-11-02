@@ -76,9 +76,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build the container image
         run: docker build -t karaoke-studio:ci .
-      - name: The image carries FFmpeg with x264 and the pinned ML runtime
+      - name: The image carries FFmpeg with x264 and rubberband, and the pinned ML runtime
         run: |
           docker run --rm --entrypoint ffmpeg karaoke-studio:ci -hide_banner -encoders | grep -q libx264
+          docker run --rm --entrypoint ffmpeg karaoke-studio:ci -hide_banner -filters | grep -q rubberband
           docker run --rm karaoke-studio:ci python -c "import onnxruntime, sherpa_onnx, numpy, scipy, PIL; print('runtime ok')"
       - name: Video lyric cards draw CJK, Tibetan and Devanagari with installed fonts
         run: |

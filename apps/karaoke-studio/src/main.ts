@@ -55,7 +55,7 @@ app.innerHTML = `
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
-        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
+        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div><p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
@@ -266,6 +266,8 @@ function controls() {
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('lrc-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
   element<HTMLSelectElement>('guide-vocal').disabled = element<HTMLButtonElement>('export-video').disabled;
+  element<HTMLSelectElement>('key-change').disabled = !working || busy || saving;
+  element<HTMLButtonElement>('key-preview').disabled = !working || busy || saving || previewingKey;
   element<HTMLButtonElement>('backing-download').disabled = !working;
   element<HTMLButtonElement>('delete-project').disabled = !working || busy || saving;
   element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving || aligning;
@@ -1640,10 +1642,45 @@ element('export-video').addEventListener('click', async () => {
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   requestingJob = true; controls();
   // A guide vocal mixes the separated vocals quietly under the backing so singers can follow the melody.
-  const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value);
-  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', guideVocal ? { guideVocal } : {})); message(''); startPolling(job); }
+  const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value), semitones = Number(element<HTMLSelectElement>('key-change').value);
+  const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}) };
+  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', options)); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
+});
+// A key preview plays a few seconds from the playhead in the chosen key, rendered by the studio from the saved tracks.
+let previewingKey = false, keyAudio: HTMLAudioElement | null = null, keyUrl = '';
+const keyName = (semitones: number) => semitones === 0 ? 'the original key' : `${Math.abs(semitones)} semitone${Math.abs(semitones) === 1 ? '' : 's'} ${semitones > 0 ? 'higher' : 'lower'}`;
+function stopKeyPreview(): void {
+  keyAudio?.pause(); keyAudio = null;
+  if (keyUrl) { URL.revokeObjectURL(keyUrl); keyUrl = ''; }
+}
+audio.addEventListener('play', stopKeyPreview);
+element('key-change').addEventListener('change', () => {
+  stopKeyPreview();
+  element('key-status').textContent = `Exports will play ${keyName(Number(element<HTMLSelectElement>('key-change').value))}. Hear this key plays a few seconds from the playhead.`;
+});
+element('key-preview').addEventListener('click', async () => {
+  if (!working || previewingKey) return;
+  const project = working, semitones = Number(element<HTMLSelectElement>('key-change').value), guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value);
+  const start = Math.min(Math.max(0, audio.currentTime || 0), Math.max(0, project.duration - 0.5));
+  stopKeyPreview(); audio.pause(); retirePractice('Hearing the key stopped practice.');
+  previewingKey = true; controls(); element('key-status').textContent = `Preparing ${keyName(semitones)} from ${formatTime(start)}…`;
+  try {
+    const init = json('POST', { semitones, start, ...(guideVocal ? { guideVocal } : {}) }), headers = new Headers(init.headers);
+    if (session) headers.set('X-Karaoke-Token', session.token);
+    const response = await fetch(`/api/projects/${project.id}/key-preview`, { ...init, headers, cache: 'no-store' });
+    if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { error?: string } | null)?.error ?? 'Could not prepare the key preview.');
+    const blob = await response.blob();
+    if (working !== project) return;
+    keyUrl = URL.createObjectURL(blob); keyAudio = new Audio(keyUrl);
+    keyAudio.addEventListener('ended', () => { element('key-status').textContent = `That was ${keyName(semitones)}. Export to keep it.`; stopKeyPreview(); });
+    await keyAudio.play();
+    element('key-status').textContent = `Playing ${keyName(semitones)} from ${formatTime(start)}.`;
+  } catch (error) {
+    stopKeyPreview();
+    element('key-status').textContent = error instanceof Error ? error.message : 'Could not play the key preview.';
+  } finally { previewingKey = false; controls(); }
 });
 function archiveControls() {
   const busy = !!currentJob || requestingJob || loading || saving || archiveChecking;

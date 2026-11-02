@@ -1,4 +1,6 @@
+import io
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -79,6 +81,48 @@ class VideoTests(unittest.TestCase):
         # The backing is silent: only the guide vocal can be heard in the mixed video.
         self.assertLess(self._mean_volume(plain), -80)
         self.assertGreater(self._mean_volume(guided), -40)
+
+    def _tone(self, path, frequency, seconds=3):
+        rate = 44100
+        samples = b''.join(int(8000 * math.sin(2 * math.pi * frequency * n / rate)).to_bytes(2, 'little', signed=True) * 2
+                           for n in range(rate * seconds))
+        with wave.open(str(path), 'wb') as stream:
+            stream.setnchannels(2)
+            stream.setsampwidth(2)
+            stream.setframerate(rate)
+            stream.writeframes(samples)
+
+    @staticmethod
+    def _frequency(samples, rate=44100):
+        # Rising zero crossings per second of the left channel.
+        left = [int.from_bytes(samples[i:i + 2], 'little', signed=True) for i in range(0, len(samples), 4)]
+        rising = sum(1 for a, b in zip(left, left[1:]) if a < 0 <= b)
+        return rising * rate / len(left)
+
+    def test_key_change_moves_the_pitch_without_changing_the_length(self):
+        tone = self.root / 'tone.wav'
+        self._tone(tone, 440)
+        for semitones, expected in ((0, 440), (6, 440 * 2 ** 0.5), (-6, 440 / 2 ** 0.5), (3, 440 * 2 ** 0.25)):
+            preview = video.key_preview(tone, 3, 0.5, semitones, threading.Event())
+            with wave.open(io.BytesIO(preview)) as audio:
+                self.assertAlmostEqual(audio.getnframes() / audio.getframerate(), 2.5, delta=0.05)
+                frames = audio.readframes(audio.getnframes())
+            # The middle of the clip, away from the shifter's start-up.
+            middle = frames[len(frames) // 4:3 * len(frames) // 4]
+            self.assertAlmostEqual(self._frequency(middle), expected, delta=expected * 0.03, msg=semitones)
+        # An exported video carries the shifted backing too.
+        output = self.root / 'higher.mp4'
+        video.export_video(self.project, tone, output, self.root / 'work', FONT, threading.Event(), semitones=6)
+        audio = subprocess.run(['ffmpeg', '-v', 'error', '-i', str(output), '-ss', '1', '-t', '1', '-ac', '2', '-ar', '44100',
+                                '-f', 's16le', 'pipe:1'], capture_output=True, check=True).stdout
+        self.assertAlmostEqual(self._frequency(audio), 440 * 2 ** 0.5, delta=20)
+
+    def test_key_change_is_bounded(self):
+        for semitones in (7, -7, 1.5, True, '2'):
+            with self.assertRaises(ValidationError, msg=semitones):
+                video.validate_semitones(semitones)
+        with self.assertRaises(ValidationError):
+            video.key_preview(self.backing, 3, 3, 2, threading.Event())
 
     def test_guide_vocal_level_and_source_are_validated(self):
         for guide, vocals in [(0.6, self.backing), (-0.1, self.backing), (0.2, None)]:

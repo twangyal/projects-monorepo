@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import errno
 from types import SimpleNamespace
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -374,6 +375,35 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(calls[-1].get("guide"), guide)
             if guide:
                 self.assertEqual(Path(calls[-1]["vocals"]).name, "vocals.wav")
+
+    def test_key_change_export_option_and_preview(self):
+        calls = []
+
+        def recording_export(project, backing, output, work_dir, font_path, cancel, **options):
+            calls.append(options)
+            output.write_bytes(b"test-only MP4")
+        self.server.export = recording_export
+        project_id = self.upload()["projectId"]
+        endpoint = f"/api/projects/{project_id}"
+        changes = {"title": "Key", "revision": 0, "cues": [{"start": 0.0, "end": 1.0, "text": "Sing"}]}
+        self.assertEqual(self.request("PUT", endpoint, changes)[0], 200)
+        for body in ({"semitones": 7}, {"semitones": -7}, {"semitones": 1.5}, {"semitones": "2"}, {"start": 0}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        for body, semitones in (({}, None), ({"semitones": -2, "guideVocal": 15}, -2)):
+            status, _, response = self.request("POST", endpoint + "/export", body)
+            self.assertEqual(status, 202, response)
+            self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+            self.assertEqual(calls[-1].get("semitones"), semitones)
+        # A preview is a short WAV in the new key, from inside the clip.
+        status, headers, preview = self.request("POST", endpoint + "/key-preview", {"semitones": 3, "start": 0.5, "guideVocal": 30})
+        self.assertEqual(status, 200, preview)
+        self.assertEqual(headers["Content-Type"], "audio/wav")
+        with wave.open(io.BytesIO(preview)) as audio:
+            self.assertAlmostEqual(audio.getnframes() / audio.getframerate(), 1.5, delta=0.05)
+        for body in ({"semitones": 3, "start": 2.0}, {"semitones": 3, "start": -1}, {"semitones": 9, "start": 0},
+                     {"semitones": 3}, {"semitones": 3, "start": 0, "other": 1}):
+            self.assertEqual(self.request("POST", endpoint + "/key-preview", body)[0], 400, body)
+        self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 3, "start": 0}, {"X-Karaoke-Token": ""})[0], 403)
 
     def test_atomic_save_stale_revisions_lyrics_and_export_invalidation(self):
         project_id = self.upload()["projectId"]

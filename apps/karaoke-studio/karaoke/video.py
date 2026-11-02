@@ -430,16 +430,87 @@ def _validate_backing(backing: Path, duration: float, cancel: threading.Event,
         raise ValidationError(f'{label} audio must be a readable canonical WAV file.') from exc
 
 
+# A key change moves the backing (and any guide vocal) up or down by whole semitones, without changing its tempo.
+MAX_SEMITONES = 6
+KEY_PREVIEW_SECONDS = 12
+MAX_KEY_PREVIEW_BYTES = 8 * 1024 * 1024
+
+
+def validate_semitones(value) -> int:
+    if type(value) is not int or not -MAX_SEMITONES <= value <= MAX_SEMITONES:
+        raise ValidationError(f'Choose a key change from -{MAX_SEMITONES} to +{MAX_SEMITONES} semitones.')
+    return value
+
+
+def _audio_program(guide: float, semitones: int) -> str | None:
+    """The FFmpeg filter program for the exported audio: inputs 1 (backing) and 2 (vocals), output [mix].
+
+    Only validated numbers enter it."""
+    steps = []
+    if guide:
+        steps.append(f'[1:a][2:a]amix=inputs=2:weights=1 {guide:.2f}:normalize=0')
+    if semitones:
+        steps.append(('' if guide else '[1:a]') + f'rubberband=pitch={2 ** (semitones / 12):.6f}:pitchq=quality')
+    if not steps:
+        return None
+    # Limited so the sum, or a shifted transient, cannot clip.
+    return ','.join(steps) + ',alimiter=limit=0.97[mix]'
+
+
+def key_preview(backing: Path, duration: float, start: float, semitones: int, cancel: threading.Event,
+                vocals: Path | None = None, guide: float = 0) -> bytes:
+    """A short WAV from ``start`` with the export's key change and guide vocal, to hear before exporting."""
+    semitones = validate_semitones(semitones)
+    if not (isinstance(guide, (int, float)) and 0 <= guide <= 0.5) or (guide and vocals is None):
+        raise ValidationError('Guide vocal level must be from 0 to 50 percent of the separated vocals.')
+    if not (isinstance(start, (int, float)) and math.isfinite(start) and 0 <= start < duration):
+        raise ValidationError('Choose a preview start inside the clip.')
+    length = min(KEY_PREVIEW_SECONDS, duration - start)
+    arguments = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-nostdin',
+                 '-protocol_whitelist', 'file', '-ss', f'{start:.3f}', '-t', f'{length:.3f}', '-f', 'wav', '-i', str(backing)]
+    if guide:
+        arguments += ['-protocol_whitelist', 'file', '-ss', f'{start:.3f}', '-t', f'{length:.3f}', '-f', 'wav', '-i', str(vocals)]
+    # Input indices start at 0 here; the program is written for an input 0 that is the video.
+    program = _audio_program(guide, semitones)
+    if program:
+        arguments += ['-filter_complex', program.replace('[1:a]', '[0:a]').replace('[2:a]', '[1:a]'), '-map', '[mix]']
+    arguments += ['-ac', '2', '-ar', '44100', '-c:a', 'pcm_s16le', '-f', 'wav', 'pipe:1']
+    _cancelled(cancel)
+    try:
+        result = subprocess.run(arguments, stdin=subprocess.DEVNULL, capture_output=True, timeout=60,
+                                start_new_session=os.name == 'posix', pass_fds=media_handles())
+    except OSError as exc:
+        raise RuntimeError('Could not start FFmpeg; check that it is installed.') from exc
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError('The key preview took too long.') from exc
+    _cancelled(cancel)
+    if result.returncode or not result.stdout or len(result.stdout) > MAX_KEY_PREVIEW_BYTES:
+        detail = 'This FFmpeg cannot change the key (it lacks the rubberband filter).' if b'rubberband' in result.stderr else 'FFmpeg could not prepare the key preview.'
+        raise RuntimeError(detail)
+    return _sized_wav(result.stdout)
+
+
+def _sized_wav(data: bytes) -> bytes:
+    """FFmpeg cannot seek back in a pipe to write a WAV's sizes; fill them in from the bytes received."""
+    at = data.find(b'data', 12)
+    if data[:4] != b'RIFF' or data[8:12] != b'WAVE' or at < 0:
+        raise RuntimeError('FFmpeg did not produce a WAV preview.')
+    body = len(data) - at - 8
+    return b'RIFF' + (len(data) - 8).to_bytes(4, 'little') + data[8:at + 4] + body.to_bytes(4, 'little') + data[at + 8:]
+
+
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
-                 vocals: Path | None = None, guide: float = 0) -> None:
+                 vocals: Path | None = None, guide: float = 0, semitones: int = 0) -> None:
     """Render the karaoke video; ``words`` are recognized words that time the word highlighting.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
+    ``semitones`` moves the audio's key up or down without changing its tempo.
     """
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
     _remaining(cancel, deadline)
+    semitones = validate_semitones(semitones)
     if not (isinstance(guide, (int, float)) and 0 <= guide <= 0.5) or (guide and vocals is None):
         raise ValidationError('Guide vocal level must be from 0 to 50 percent of the separated vocals.')
     backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
@@ -494,13 +565,9 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                          '-i', str(directory / 'frame%06d.png'),
                          '-protocol_whitelist', 'file', '-f', 'wav', '-i', str(backing)]
             if guide:
-                # Only validated numbers enter the filter program: backing plus the vocals at the guide share,
-                # limited so the sum cannot clip.
-                arguments += ['-protocol_whitelist', 'file', '-f', 'wav', '-i', str(vocals),
-                              '-filter_complex', f'[1:a][2:a]amix=inputs=2:weights=1 {guide:.2f}:normalize=0,alimiter=limit=0.97[mix]',
-                              '-map', '0:v:0', '-map', '[mix]']
-            else:
-                arguments += ['-map', '0:v:0', '-map', '1:a:0']
+                arguments += ['-protocol_whitelist', 'file', '-f', 'wav', '-i', str(vocals)]
+            program = _audio_program(guide, semitones)
+            arguments += ['-filter_complex', program, '-map', '0:v:0', '-map', '[mix]'] if program else ['-map', '0:v:0', '-map', '1:a:0']
             arguments += ['-c:v', 'libx264', '-threads', '2',
                          '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
                          '-c:a', 'aac', '-b:a', '192k', '-t', f'{project["duration"]:.9f}',

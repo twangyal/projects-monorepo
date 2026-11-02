@@ -44,9 +44,11 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|archive|archive-info|transcript|transcribe|align|word-timings))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
+# Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
+MAX_SEMITONES = 6
 _TRANSCRIPT = "transcript.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
@@ -167,6 +169,7 @@ class KaraokeServer(ThreadingHTTPServer):
         self.transcribe, self.transcriber_ready = transcribe, transcriber_ready
         self.token = secrets.token_urlsafe(32)
         self.lock = threading.RLock()
+        self._preview_slot = threading.Lock()
         self.jobs = JobManager(self.lock)
         self.uploading = False
         self._closing = False
@@ -666,7 +669,29 @@ class KaraokeServer(ThreadingHTTPServer):
             self.cleanup_work(work_dir)
             raise
 
-    def start_export(self, project: dict, guide_vocal: int = 0):
+    def render_key_preview(self, sources, duration, start, semitones, guide):
+        """A few seconds of the backing (and guide vocal) in another key, one preview at a time; closes ``sources``."""
+        from .video import key_preview
+        try:
+            if not self._preview_slot.acquire(blocking=False):
+                raise RequestError(429, "A key preview is already being prepared. Try again in a moment.")
+            try:
+                handles = [source.fileno() for source in sources]
+                paths = [Path(f"/proc/self/fd/{handle}") for handle in handles]
+                with inherit_media_handles(*handles):
+                    return key_preview(paths[0], duration, start, semitones, threading.Event(),
+                                       **({"vocals": paths[1], "guide": guide / 100} if guide else {}))
+            except ValidationError as exc:
+                raise RequestError(400, str(exc)) from None
+            except RuntimeError as exc:
+                raise RequestError(503, str(exc)) from None
+            finally:
+                self._preview_slot.release()
+        finally:
+            for source in sources:
+                source.close()
+
+    def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -689,9 +714,10 @@ class KaraokeServer(ThreadingHTTPServer):
                     # A guide vocal mixes the separated vocals quietly under the backing.
                     guide = ({"vocals": owned_project / "vocals.wav", "guide": guide_vocal / 100}
                              if guide_vocal else {})
+                    key = {"semitones": semitones} if semitones else {}
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
-                                    owned_work, self.font_path, cancel, **timing, **guide)
+                                    owned_work, self.font_path, cancel, **timing, **guide, **key)
                     self.check_storage()
                     if (output.is_symlink() or not output.is_file()
                             or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES):
@@ -1031,11 +1057,16 @@ class Handler(BaseHTTPRequestHandler):
                 if (set(value) != {"revision"} or type(value["revision"]) is not int
                         or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
                     raise RequestError(400, "Provide one portable saved revision when backing up.")
-            elif self.command == "POST" and resource == "export":
+            elif self.command == "POST" and resource in ("export", "key-preview"):
                 value = self._read_json()
-                guide = value.get("guideVocal", 0)
-                if set(value) - {"guideVocal"} or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
+                guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
+                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else set())
+                if set(value) - allowed or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
                     raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
+                if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
+                    raise RequestError(400, f"Choose a key change from -{MAX_SEMITONES} to +{MAX_SEMITONES} semitones.")
+                if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):
+                    raise RequestError(400, "Choose where in the clip to preview the key.")
             elif self.command == "POST" and resource == "transcribe":
                 value = self._read_json()
                 model_choice = value.get("modelChoice", "auto")
@@ -1094,7 +1125,18 @@ class Handler(BaseHTTPRequestHandler):
                         archive_source.close()
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
-                    job = server.start_export(project, guide_vocal=guide)
+                    job = server.start_export(project, guide_vocal=guide, semitones=semitones)
+                if self.command == "POST" and resource == "key-preview":
+                    if start >= project["duration"]:
+                        raise RequestError(400, "Choose where in the clip to preview the key.")
+                    preview_sources = []
+                    try:
+                        for name in ("backing.wav", "vocals.wav") if guide else ("backing.wav",):
+                            preview_sources.append(server.project_file(project_id, name))
+                    except FileNotFoundError:
+                        for source in preview_sources:
+                            source.close()
+                        raise RequestError(409, "This clip has no separated tracks to preview.") from None
                 if self.command == "POST" and resource == "transcribe":
                     job = server.start_transcribe(project, model_choice)
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
@@ -1137,6 +1179,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.command == "POST" and resource in ("export", "transcribe"):
                 self._json({"job": job}, 202)
+                return
+            if self.command == "POST" and resource == "key-preview":
+                self._bytes(server.render_key_preview(preview_sources, project["duration"], start, semitones, guide), "audio/wav")
                 return
             if read and resource == "transcript":
                 if transcript is None:
