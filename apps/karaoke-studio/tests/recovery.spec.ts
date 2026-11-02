@@ -203,7 +203,8 @@ test('a pending project open disables editing until the replacement response arr
     await expect(page.getByLabel('Clip title', { exact: true })).toBeDisabled();
     await expect(page.getByLabel('Paste lyrics, one line per cue', { exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Create draft timings', exact: true })).toBeDisabled();
-    await expect(page.getByLabel('Upload song clip', { exact: true })).toBeDisabled();
+    // Songs chosen now wait their turn instead of replacing the clip being loaded.
+    await expect(page.getByLabel('Upload song clip', { exact: true })).toBeEnabled();
     await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(current.title);
   } finally { release(); }
   await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(next.title);

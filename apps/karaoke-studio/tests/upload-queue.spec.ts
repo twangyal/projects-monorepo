@@ -43,3 +43,19 @@ test('waiting songs can be cleared before they start', async ({ page }) => {
   await page.waitForTimeout(4500);
   await expect(page.locator('#projects option', { hasText: 'dropped' })).toHaveCount(0);
 });
+
+test('a song chosen while another is being prepared waits its turn instead of being dropped', async ({ page }) => {
+  test.setTimeout(60000);
+  await page.goto('/');
+  await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  await page.getByLabel('Upload song clip').setInputFiles(songs('busy-first'));
+  await expect(page.locator('#cancel-job')).toBeVisible();
+  // Choosing stays available while the studio works, and the new song joins the waiting list.
+  await expect(page.getByLabel('Upload song clip')).toBeEnabled();
+  await page.getByLabel('Upload song clip').setInputFiles(songs('busy-later'));
+  await expect(page.locator('#message')).toHaveText('“busy-later.wav” is waiting until the studio is free. It lands in Saved clips.');
+  await expect(page.locator('#upload-queue')).toContainText('1 song is waiting: busy-later.wav.');
+  await expect(page.getByLabel('Clip title')).toHaveValue('busy-first', { timeout: 15000 });
+  await expect(page.locator('#message')).toHaveText(ready('busy-later'), { timeout: 20000 });
+  await expect(page.getByLabel('Clip title')).toHaveValue('busy-first');
+});
