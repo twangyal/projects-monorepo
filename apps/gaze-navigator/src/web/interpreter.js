@@ -330,6 +330,15 @@ function interpretInCircle(utterance, context) {
   if (circleSize) return { type: 'circle-size', size: circleSize[1] };
   const circleStep = /^make (?:the )?(?:gaze )?circle (bigger|larger|smaller)$/.exec(text);
   if (circleStep) return { type: 'circle-size', size: circleStep[1] === 'smaller' ? 'smaller' : 'larger' };
+  // The navigator's own panel: hidden to a status line, shown again, or moved to another corner of the screen.
+  const navigator = '(?:the )?(?:gaze )?navigator(?: panel)?';
+  if (new RegExp(`^(?:hide|minimi[sz]e|shrink|collapse) ${navigator}$`).test(text)) return { type: 'panel', change: 'collapse' };
+  if (new RegExp(`^(?:show|expand|restore|maximi[sz]e) ${navigator}$`).test(text)) return { type: 'panel', change: 'expand' };
+  if (new RegExp(`^(?:place|position|move) ${navigator} automatically$|^let ${navigator} (?:move|place) itself$`).test(text)) return { type: 'panel', change: 'auto' };
+  const corner = new RegExp(`^(?:move|put|place) ${navigator} (?:to |into |in )?(?:the )?(?:(top|bottom|upper|lower)[ -]?)?(left|right)(?: corner| side)?$`).exec(text);
+  if (corner) return { type: 'panel', change: 'move', left: corner[2] === 'left', top: corner[1] ? /top|upper/.test(corner[1]) : null };
+  const nudge = new RegExp(`^move ${navigator} (up|down)$`).exec(text);
+  if (nudge) return { type: 'panel', change: 'move', left: null, top: nudge[1] === 'up' };
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
