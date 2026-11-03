@@ -11,6 +11,7 @@ export const MATERIALS: readonly Material[] = [
   { id: 'poplin-120', name: 'Cotton poplin', composition: '100% cotton, plain-weave poplin', gsm: 120, texture: 'poplin', tileCm: 2, sheen: 0.06 },
   { id: 'nylon-150', name: 'Nylon poplin', composition: '100% nylon, plain weave', gsm: 150, texture: 'poplin', tileCm: 1.5, sheen: 0.22 },
   { id: 'linen-170', name: 'Linen', composition: '100% linen, plain weave', gsm: 170, texture: 'linen', tileCm: 4, sheen: 0.08 },
+  { id: 'wool-260', name: 'Wool twill', composition: '100% wool, 2×2 twill', gsm: 260, texture: 'twill', tileCm: 1.2, sheen: 0.04 },
   { id: 'denim-340', name: 'Denim twill', composition: '100% cotton, 3×1 twill', gsm: 340, texture: 'twill', tileCm: 2, sheen: 0.07 },
 ];
 

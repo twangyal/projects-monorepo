@@ -44,6 +44,8 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   if (product.base !== 'skirt' && topMeasurements(product).length <= CROP_LENGTH) return zip(sleeveless(product) ? 'Cropped tank top' : CROP_NAMES[product.base]!);
   if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
   if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return zip(DRESS_NAMES[product.base]!);
+  // Pleats name a skirt: box pleats by their kind, knife pleats just pleated.
+  if (product.base === 'skirt') { const pleats = (product.measurements as SkirtMeasures).pleats; if (pleats) return pleats.style === 'box' ? 'Box-pleated skirt' : 'Pleated skirt'; }
   return zip(BASE_NAMES[product.base]);
 }
 export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket'] as const;
@@ -548,6 +550,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'gathered-skirt', name: 'Gathered skirt', description: 'Floral cotton poplin gathered into a 4 cm waistband.',
     product: { base: 'skirt', name: 'Gathered skirt', measurements: { waist: 72, hem: 150, slant: 62, waistbandHeight: 4, gather: 1.6 }, neckline: 'crew',
       parts: { ...allParts(style('poplin-120', '#f3ead8', { motif: 'floral', color: '#b5523b', scaleCm: 5, layout: 'half-drop' }), {}, 'skirt'), waistband: style('poplin-120', '#b5523b') }, artwork: [] } },
+  { id: 'pleated-skirt', name: 'Pleated skirt', description: 'Grey wool twill with 24 pressed knife pleats, sewn into a 4 cm waistband.',
+    product: { base: 'skirt', name: 'Pleated skirt', measurements: { waist: 72, hem: 120, slant: 60, waistbandHeight: 4, pleats: { style: 'knife', count: 24, depth: 1.5 } }, neckline: 'crew',
+      parts: { ...allParts(style('wool-260', '#8b8e93'), {}, 'skirt'), waistband: style('wool-260', '#8b8e93') }, artwork: [] } },
   { id: 'joggers', name: 'Joggers', description: 'Heather grey French terry, tapered leg gathered into rib ankle cuffs, elasticated waist.',
     product: { base: 'trousers', name: 'Joggers', measurements: { ...legFit, inseam: 74, legOpening: 36, cuffHeight: 8 }, neckline: 'crew',
       parts: { ...allParts(style('terry-300', '#9a9c9a'), {}, 'trousers'), cuffLeft: style('rib-220', '#9a9c9a'), cuffRight: style('rib-220', '#9a9c9a') }, artwork: [] } },
@@ -686,7 +691,9 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
   }
 }
 
-export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}] }
+export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
+  /** Pleats: each pleat's fold line and the placement line it is folded over to, waist end first. */
+  pleats?: { fold: [{ x: number; y: number }, { x: number; y: number }]; placement: [{ x: number; y: number }, { x: number; y: number }] }[] }
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {
@@ -1017,7 +1024,10 @@ function chestPocketOutline(width: number, height: number, x: number, y: number)
 // 3D mesh ---------------------------------------------------------------------------------------
 
 export interface PartMesh { part: PartId; positions: number[]; uvs: number[]; indices: number[];
-  /** Shaped in 3D rather than cut flat: the drape keeps the shape it is given (a neck rib or stand collar). */ modelled?: boolean }
+  /** Shaped in 3D rather than cut flat: the drape keeps the shape it is given (a neck rib or stand collar). */ modelled?: boolean;
+  /** Pressed folds (pleats): pairs of vertices along a fold line, whose crease the drape keeps. */ creases?: number[];
+  /** How many layers in from the outside each vertex lies (a pleat's underlays), so layers stay in order on the body. */ layers?: number[];
+  /** Pairs of vertices (inner, outer): the inner one, on an underlay, stays inside the outer one over it. */ inside?: number[] }
 type Pt = { x: number; y: number };
 function inside(p: Pt, polygon: Pt[]): boolean {
   let hit = false;

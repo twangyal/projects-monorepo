@@ -5,7 +5,7 @@
 // words are read by the part-level interpreter in style-prompt.ts. No network and no model.
 import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
-import { GATHER, type SkirtMeasures } from './product-skirt.ts';
+import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type PartId, type Product, zipAllowed } from './product.ts';
@@ -205,15 +205,26 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (take(/\bcropped\b/)) { next.inseam = 58; garment.push('cropped: 58 cm inseam'); }
     product.measurements = next;
   } else if (product.base === 'skirt') {
-    // Gathering keeps the panels flaring: the cut waist edge stays 10 cm shorter than the hem.
+    // Gathering keeps the panels flaring: the cut waist edge stays 10 cm shorter than the hem. Pleats replace gathers:
+    // knife pleats about 3 cm apart, box pleats about 6 cm wide, each folded half as deep as it can be.
     const gathered = take(/\b(?:gathered|dirndl)(?: waist)?\b/), smooth = !gathered && take(/\b(?:smooth|flat|ungathered)(?: waist)?\b/);
-    const m = product.measurements as SkirtMeasures;
+    const plain = take(/\b(?:unpleated|no pleats|without pleats)\b/), boxed = !plain && take(/\bbox[- ]?pleat(?:ed|s)?\b/);
+    const knife = !plain && !boxed && take(/\b(?:knife[- ]?)?pleat(?:ed|s)\b/);
+    const m = product.measurements as SkirtMeasures, bare: SkirtMeasures = { ...m };
+    delete bare.pleats; delete bare.gather;
     if (gathered) {
       const most = Math.floor((m.hem - 10) / m.waist * 20) / 20, gather = Math.min(1.5, most);
-      if (gather >= GATHER[0]) { product.measurements = { ...m, gather }; garment.push(`gathered waist: ${gather} times the waist`); }
+      if (gather >= GATHER[0]) { product.measurements = { ...bare, gather }; garment.push(`gathered waist: ${gather} times the waist`); }
       else notApplied.push('gathered waist (the hem is too narrow to gather this waist)');
+    } else if (boxed || knife) {
+      const style: PleatStyle = boxed ? 'box' : 'knife', count = Math.max(PLEAT_COUNT[0], Math.min(PLEAT_COUNT[1], 2 * Math.round(m.waist / (boxed ? 12 : 6))));
+      const depth = Math.max(PLEAT_DEPTH[0], Math.floor(pleatDepthLimit(style, count, m.waist) / 2 * 10) / 10);
+      try { product.measurements = validateSkirtMeasures({ ...bare, pleats: { style, count, depth } }); garment.push(`${style} pleats: ${count}, folded ${depth} cm deep at the waist`); }
+      catch { notApplied.push(`${style} pleats (this skirt flares too much to pleat)`); }
     } else if (smooth && m.gather) {
-      const rest = { ...m }; delete rest.gather; product.measurements = rest; garment.push('smooth waist: no gathers');
+      product.measurements = bare; garment.push('smooth waist: no gathers');
+    } else if (plain && m.pleats) {
+      product.measurements = { ...bare, ...(m.gather ? { gather: m.gather } : {}) }; garment.push('no pleats');
     }
   }
 

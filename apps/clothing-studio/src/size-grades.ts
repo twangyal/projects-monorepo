@@ -3,7 +3,7 @@
 // proportional values follow the graded chest and length, as they do when the measurements are edited. The tech pack
 // measures each size from the graded design, so the 3D garment, its patterns and the size chart agree.
 import { DEFAULT_GRADING } from './grading.ts';
-import { skirtDraft } from './product-skirt.ts';
+import { pleatDepthLimit, skirtDraft, skirtPleats } from './product-skirt.ts';
 import { LIMITS, SIZES, fitValues, isBottoms, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
 
 /** Fit increments per size step for tops; points not listed stay the same in every size. */
@@ -34,11 +34,10 @@ export function gradedProduct(product: Product, size: Size): Product {
   // The graded design is its own sample, so its size chart is centred on it.
   graded.spec = { styleNumber: product.spec?.styleNumber ?? '', season: product.spec?.season ?? '', sampleSize: size };
   if (product.base === 'skirt') {
-    const m = skirtDraft(product);
-    graded.measurements = { ...product.measurements,
-      waist: round(m.waist + steps * DEFAULT_GRADING.waistStep),
-      hem: round(m.hem + steps * DEFAULT_GRADING.hemStep),
-      slant: m.slant };
+    const m = skirtDraft(product), pleats = skirtPleats(product), waist = round(m.waist + steps * DEFAULT_GRADING.waistStep);
+    // Pleats keep their number and depth, a smaller size folding them only as deep as its waist allows.
+    graded.measurements = { ...product.measurements, waist, hem: round(m.hem + steps * DEFAULT_GRADING.hemStep), slant: m.slant,
+      ...(pleats ? { pleats: { ...pleats, depth: Math.min(pleats.depth, Math.floor(pleatDepthLimit(pleats.style, pleats.count, waist) * 100) / 100) } } : {}) };
   } else if (isBottoms(product)) {
     const m = legMeasurements(product), next = { ...m };
     for (const [key, grade] of Object.entries(LEG_GRADES) as [keyof typeof LEG_GRADES, number][]) next[key] = round(m[key] + steps * grade);

@@ -139,6 +139,10 @@ const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 // body instead, lying over the back rather than through it.
 const HOOD_OFFSET = 1.1;
 const LAYER_GAP = 0.3;   // kept between a garment and the one under it, cm
+const PLEAT_LAYER = 0.1; // each pleat underlay keeps this much less from the body than the layer over it, cm
+/** How much more firmly a pressed fold holds its crease than the fabric resists bending, and the angle a worn pressed
+ * fold opens to (radians; a fold pressed flat is 0); see buildCloth. */
+const CREASE_HOLD = 1.6, CREASE_OPEN = 25 * Math.PI / 180;
 // A tucked top: below the bottoms' waistline, and this far above it, its fabric is pressed to within TUCK_GAP of the
 // body (as a waistband holds it), easing in from TUCK_EASE farther out once the body has grown. The bottoms are worn
 // over its fabric from a centimetre lower, where only held fabric lies.
@@ -430,6 +434,8 @@ export interface Cloth {
   /** Isometric bending stencils: per stencil four particles (an edge, then its two opposite corners), four weights
    * (whose weighted position sum is zero on the flat rest shape) and a stiffness; see bendingStencil. */
   bendParticles: Int32Array; bendWeights: Float32Array; bendStiffness: Float32Array;
+  /** Pleat layers kept in order: each `inner` particle stays `gap` cm nearer the body's axis than its `outer` one. */
+  layered: { inner: Int32Array; outer: Int32Array; gap: Float32Array };
 }
 
 /**
@@ -497,6 +503,12 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
     along = Math.min(along, total - along);
     return Math.hypot(along, ribEdge.has(i) === ribEdge.has(j) ? 0 : ribWidth);
   };
+  // Pressed folds keep their crease (see PartMesh.creases).
+  const creases = new Set<string>();
+  for (const mesh of simulated) {
+    const ids = vertices.get(mesh.part)!, pairs = mesh.creases ?? [];
+    for (let k = 0; k + 1 < pairs.length; k += 2) { const i = ids[pairs[k]!]!, j = ids[pairs[k + 1]!]!; creases.add(i < j ? `${i},${j}` : `${j},${i}`); }
+  }
   const mass = new Float64Array(position.length / 3);
   // Flat fabric coordinates of a mesh vertex on its own pattern piece.
   const flatCorner = (mesh: PartMesh, v: number): [number, number] => [mesh.uvs[v * 2]!, mesh.uvs[v * 2 + 1]!];
@@ -543,6 +555,20 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
       add(o1.vertex, o2.vertex, spatial(o1.vertex, o2.vertex), 1 / (bend * 0.16), false);
       continue;
     }
+    if (creases.has(`${edge.i},${edge.j}`)) {
+      // A pressed fold holds its two sides at the angle it was pressed to, opened a little as it is worn (CREASE_OPEN),
+      // more firmly than the fabric bends elsewhere: the corners' distance at that angle, from their distances to the
+      // fold and along it.
+      const ex = p(edge.j, 0) - p(edge.i, 0), ey = p(edge.j, 1) - p(edge.i, 1), ez = p(edge.j, 2) - p(edge.i, 2), length = Math.hypot(ex, ey, ez) || 1;
+      const side = (o: number) => {
+        const dx = p(o, 0) - p(edge.i, 0), dy = p(o, 1) - p(edge.i, 1), dz = p(o, 2) - p(edge.i, 2), along = (dx * ex + dy * ey + dz * ez) / length;
+        return { along, across: Math.sqrt(Math.max(0, dx * dx + dy * dy + dz * dz - along * along)) };
+      };
+      const one = side(o1.vertex), two = side(o2.vertex);
+      const open = Math.sqrt(one.across ** 2 + two.across ** 2 - 2 * one.across * two.across * Math.cos(CREASE_OPEN) + (one.along - two.along) ** 2);
+      add(o1.vertex, o2.vertex, open, 1 / (bend * CREASE_HOLD), false);
+      continue;
+    }
     // The edge laid flat along x, with each opposite corner placed from its own triangle's flat pattern piece, the two
     // triangles unfolded on either side of the edge: across a seam they lie flat too, so a seam holds no crease.
     const place = (o: Opposite) => {
@@ -584,8 +610,19 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   for (const [part, ids] of vertices) if (part !== 'hood' && part !== 'collar') for (const id of ids) sewn.add(id);
   // A hood worn down, and a polo collar folded down, lie over the garment: they keep a layer's distance more.
   for (const id of [...vertices.get('hood') ?? [], ...vertices.get('collar') ?? []]) if (!sewn.has(id)) offset[id] = HOOD_OFFSET;
+  // A pleat's underlays lie inside the fabric over them, each layer in a little closer to the body, and stay inside it.
+  const inner: number[] = [], outer: number[] = [], gap: number[] = [];
+  for (const mesh of simulated) {
+    const ids = vertices.get(mesh.part)!, layers = mesh.layers ?? [], pairs = mesh.inside ?? [];
+    layers.forEach((level, v) => { if (level > 0) offset[ids[v]!] = Math.min(offset[ids[v]!]!, OFFSET - level * PLEAT_LAYER); });
+    for (let k = 0; k + 1 < pairs.length; k += 2) {
+      const i = pairs[k]!, o = pairs[k + 1]!;
+      if (ids[i] !== ids[o]) { inner.push(ids[i]!); outer.push(ids[o]!); gap.push(((layers[i] ?? 0) - (layers[o] ?? 0)) * PLEAT_LAYER); }
+    }
+  }
   return { offset, positions: Float32Array.from(position), inverseMass, a: Int32Array.from(a), b: Int32Array.from(b), rest: Float32Array.from(rest), compliance: Float32Array.from(compliance), structural: Uint8Array.from(structural), vertices, carried,
-    bendParticles: Int32Array.from(bendParticles), bendWeights: Float32Array.from(bendWeights), bendStiffness: Float32Array.from(bendStiffness) };
+    bendParticles: Int32Array.from(bendParticles), bendWeights: Float32Array.from(bendWeights), bendStiffness: Float32Array.from(bendStiffness),
+    layered: { inner: Int32Array.from(inner), outer: Int32Array.from(outer), gap: Float32Array.from(gap) } };
 }
 
 export interface GarmentDrapeMetrics {
@@ -921,6 +958,16 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
           if (!growing) for (let axis = 0; axis < 3; axis++) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
           const again = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
           if (again < keep) for (let axis = 0; axis < 3; axis++) positions[k + axis] += normal[axis]! * (keep - again);
+        }
+        // Pleat underlays stay inside the fabric over them, measured from the body's axis: the two share the correction.
+        const { layered } = cloth;
+        for (let n = 0; n < layered.inner.length; n++) {
+          const ki = layered.inner[n]! * 3, ko = layered.outer[n]! * 3, wi = inverseMass[layered.inner[n]!]!, wo = inverseMass[layered.outer[n]!]!;
+          const ri = Math.hypot(positions[ki]!, positions[ki + 2]!), ro = Math.hypot(positions[ko]!, positions[ko + 2]!), over = ri - (ro - layered.gap[n]!);
+          if (over <= 0 || wi + wo === 0 || ri < 1e-6 || ro < 1e-6) continue;
+          const inward = over * wi / (wi + wo), outward = over * wo / (wi + wo);
+          positions[ki] *= (ri - inward) / ri; positions[ki + 2] *= (ri - inward) / ri;
+          positions[ko] *= (ro + outward) / ro; positions[ko + 2] *= (ro + outward) / ro;
         }
         // A tucked top: below the waistline, fabric farther from the body than a waistband allows is pressed in, until
         // the band holds it.
