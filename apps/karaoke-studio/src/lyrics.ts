@@ -1,5 +1,5 @@
 export interface Cue { start: number; end: number; text: string }
-export interface Project { schemaVersion: 1; id: string; title: string; duration: number; revision: number; cues: Cue[] }
+export interface Project { schemaVersion: 1; id: string; title: string; duration: number; revision: number; cues: Cue[]; /** The song file's cover picture (JPEG data URL). */ cover?: string }
 
 export const MAX_DURATION = 600;
 export const MAX_CUES = 200;

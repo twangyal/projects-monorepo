@@ -55,7 +55,7 @@ app.innerHTML = `
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
-        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p>
+        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div><p id="video-background-note" class="fine">With a song file that carries cover art, the video shows it softly behind the lyrics; choose Plain colour for the lyric style's own background.</p><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
@@ -267,6 +267,9 @@ function controls() {
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('lrc-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
   element<HTMLSelectElement>('guide-vocal').disabled = element<HTMLButtonElement>('export-video').disabled;
+  // Only a clip whose song file carried a picture can show it.
+  const background = element<HTMLSelectElement>('video-background');
+  background.disabled = !working?.cover; if (!working?.cover) background.value = 'cover';
   element<HTMLSelectElement>('key-change').disabled = !working || busy || saving;
   element<HTMLButtonElement>('key-preview').disabled = !working || busy || saving || previewingKey;
   element<HTMLButtonElement>('backing-download').disabled = !working;
@@ -413,12 +416,33 @@ const LYRIC_STYLES = {
   light: { background: '#f7f3ea', muted: '#5e6b73', main: '#17242d', accent: '#9a4a12', scale: 1 },
 } as const;
 type LyricStyle = keyof typeof LYRIC_STYLES;
+// The working clip's cover picture, decoded once for the preview; null until it has loaded or without one.
+let coverImage: { source: string; image: HTMLImageElement | null } | null = null;
+function previewCover(): HTMLImageElement | null {
+  const source = working?.cover;
+  if (!source || element<HTMLSelectElement>('video-background').value !== 'cover') return null;
+  if (coverImage?.source !== source) {
+    const image = new Image(), entry: { source: string; image: HTMLImageElement | null } = { source, image: null };
+    coverImage = entry;
+    image.onload = () => { if (coverImage === entry) { entry.image = image; draw(); } };
+    image.src = source;
+  }
+  return coverImage.image;
+}
 const lyricStyle = (): LyricStyle => { const value = element<HTMLSelectElement>('lyric-style').value; return value in LYRIC_STYLES ? value as LyricStyle : 'classic'; };
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
   const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
   stage.dataset.lyricStyle = lyricStyle();
   context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720);
+  // As the video draws it: the cover filling the frame, softened, under a veil of the style's background colour.
+  const cover = previewCover();
+  stage.dataset.background = cover ? 'cover' : 'plain';
+  if (cover) {
+    const fill = Math.max(1280 / cover.naturalWidth, 720 / cover.naturalHeight), width = cover.naturalWidth * fill, height = cover.naturalHeight * fill;
+    context.save(); context.filter = 'blur(6px)'; context.drawImage(cover, (1280 - width) / 2, (720 - height) / 2, width, height); context.restore();
+    context.globalAlpha = 0.62; context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720); context.globalAlpha = 1;
+  }
   context.textAlign = 'center'; context.textBaseline = 'middle';
   const invalid = validateWorking();
   element('bidi-status').hidden = !!invalid || !working?.cues.some(cue => textLayout(cue.text).wholeLine);
@@ -1692,8 +1716,8 @@ element('export-video').addEventListener('click', async () => {
   requestingJob = true; controls();
   // A guide vocal mixes the separated vocals quietly under the backing so singers can follow the melody.
   const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value), semitones = Number(element<HTMLSelectElement>('key-change').value);
-  const style = lyricStyle();
-  const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}) };
+  const style = lyricStyle(), background = working.cover && element<HTMLSelectElement>('video-background').value === 'plain' ? 'plain' : null;
+  const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}), ...(background ? { background } : {}) };
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', options)); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
@@ -1707,6 +1731,7 @@ function stopKeyPreview(): void {
 }
 audio.addEventListener('play', stopKeyPreview);
 element('lyric-style').addEventListener('change', () => draw());
+element('video-background').addEventListener('change', () => draw());
 element('key-change').addEventListener('change', () => {
   stopKeyPreview();
   element('key-status').textContent = `Exports will play ${keyName(Number(element<HTMLSelectElement>('key-change').value))}. Hear this key plays a few seconds from the playhead.`;

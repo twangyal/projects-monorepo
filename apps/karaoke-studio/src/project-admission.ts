@@ -11,7 +11,8 @@ export function validateProject(value:unknown):Project{
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Invalid clip response.');
   const p=value as Record<string,unknown>;
   if(p.schemaVersion!==1||typeof p.id!=='string'||! /^[a-f0-9]{32}$/.test(p.id)||typeof p.duration!=='number'||!Number.isSafeInteger(p.revision)||Number(p.revision)<0)throw new Error('Invalid clip metadata.');
-  return {schemaVersion:1,id:p.id,title:validateTitle(p.title),duration:p.duration,revision:p.revision as number,cues:validateCues(p.cues as Project['cues'],p.duration)};
+  const cover=typeof p.cover==='string'&&p.cover.startsWith('data:image/jpeg;base64,')&&p.cover.length<=140000?p.cover:undefined;
+  return {schemaVersion:1,id:p.id,title:validateTitle(p.title),duration:p.duration,revision:p.revision as number,cues:validateCues(p.cues as Project['cues'],p.duration),...(cover?{cover}:{})};
 }
 export function validateSaveReply(value:unknown,sent:Project):Project{
   try{

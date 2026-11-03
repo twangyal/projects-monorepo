@@ -1,4 +1,6 @@
 """Validated local karaoke projects and explicitly draft lyric timings."""
+import base64
+import binascii
 import html
 import math
 import re
@@ -44,6 +46,23 @@ def create_project(project_id: str, title: str, duration: float) -> dict:
                                  duration=duration, revision=0, cues=[]))
 
 
+# A song's cover picture, kept with its clip as a small JPEG data URL (the exported video can show it behind the lyrics).
+MAX_COVER_CHARS = 140_000
+_COVER_PREFIX = 'data:image/jpeg;base64,'
+
+
+def validate_cover(value: object) -> str:
+    if not isinstance(value, str) or not value.startswith(_COVER_PREFIX) or len(value) > MAX_COVER_CHARS:
+        raise ValidationError('Cover art must be a JPEG picture of at most about 100 KB.')
+    try:
+        data = base64.b64decode(value[len(_COVER_PREFIX):], validate=True)
+    except (binascii.Error, ValueError):
+        raise ValidationError('Cover art must be a JPEG picture of at most about 100 KB.') from None
+    if not data.startswith(b'\xff\xd8\xff') or not data.rstrip(b'\x00').endswith(b'\xff\xd9'):
+        raise ValidationError('Cover art must be a JPEG picture of at most about 100 KB.')
+    return value
+
+
 def validate_project(value: object) -> dict:
     if not isinstance(value, dict):
         raise ValidationError('Project must be an object.')
@@ -76,8 +95,9 @@ def validate_project(value: object) -> dict:
             raise ValidationError(f'Lyrics must contain at most {MAX_LYRIC_CHARS} characters.')
         cues.append(dict(start=start, end=end, text=text))
         previous_end = end
+    cover = validate_cover(value['cover']) if value.get('cover') is not None else None
     return dict(schemaVersion=1, id=project_id, title=title, duration=duration,
-                revision=revision, cues=cues)
+                revision=revision, cues=cues, **({'cover': cover} if cover else {}))
 
 
 def update_project(project: dict, title: str, cues: list, expected_revision: int) -> dict:

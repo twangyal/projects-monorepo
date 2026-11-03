@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import array
+import base64
 from collections.abc import Callable
 import hashlib
 import json
@@ -248,6 +249,39 @@ def read_song_tags(source: Path, cancel: threading.Event) -> dict:
             if name and text and name not in tags and '\x00' not in text:
                 tags[name] = text[:100].strip()
     return tags
+
+
+def read_cover(source: Path, work: Path, cancel: threading.Event) -> str | None:
+    """The song file's own cover picture (an attached picture in its tags), as a small JPEG data URL, when present.
+
+    Best effort, like the tags: a clip without a picture, or one ffmpeg cannot read, has none. The picture is
+    re-encoded at most 640 px across, smaller until it fits the project's limit."""
+    from .model import MAX_COVER_CHARS, ValidationError, validate_cover
+    try:
+        _input_format(source)
+    except (OSError, ValueError, RuntimeError):
+        return None
+    for edge, quality in ((640, 4), (480, 6), (320, 8)):
+        output = work / f'cover-{edge}.jpg'
+        try:
+            _run(['ffmpeg', '-nostdin', '-v', 'error', '-protocol_whitelist', 'file', '-format_whitelist', 'wav,mp3,flac,ogg',
+                  '-i', str(source), '-map', '0:v:0', '-frames:v', '1', '-vf',
+                  f'scale=w={edge}:h={edge}:force_original_aspect_ratio=decrease', '-q:v', str(quality), '-y', str(output)],
+                 cancel, timeout=20)
+            data = output.read_bytes() if output.is_file() and not output.is_symlink() else b''
+        except (OSError, ValueError, RuntimeError):
+            return None
+        finally:
+            output.unlink(missing_ok=True)
+        if not data:
+            return None
+        url = 'data:image/jpeg;base64,' + base64.b64encode(data).decode('ascii')
+        if len(url) <= MAX_COVER_CHARS:
+            try:
+                return validate_cover(url)
+            except ValidationError:
+                return None
+    return None
 
 
 def _write_source(samples: array.array, output: Path, cancel: threading.Event | None = None) -> dict:
