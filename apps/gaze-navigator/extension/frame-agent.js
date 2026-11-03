@@ -27,7 +27,7 @@ if (window !== window.top && !globalThis.__gazeFrameAgent) {
   });
   // Only what is needed to interpret and confirm: no element references, snapshots or sensitive values.
   const FIELDS = ['id', 'name', 'role', 'editable', 'submits', 'consequential', 'value', 'options', 'consequentialOptions', 'checked', 'expanded',
-    'sensitive', 'hasValue', 'nativeNumber', 'nativeDate', 'nativeTime', 'nativeMonth', 'nativeWeek', 'customRange', 'customList', 'distance'];
+    'sensitive', 'hasValue', 'nativeNumber', 'nativeDate', 'nativeTime', 'nativeMonth', 'nativeWeek', 'customRange', 'customList', 'holds', 'distance'];
   const describe = element => {
     const plain = Object.fromEntries(FIELDS.filter(key => element[key] !== undefined).map(key => [key, element[key]]));
     const { left, top, width, height } = element.rect;

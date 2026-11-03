@@ -63,6 +63,24 @@ export function isEditable(element) {
   return element.isContentEditable === true || ['textbox', 'searchbox'].includes(element.getAttribute('role'));
 }
 
+// What a text field asks for, from its type, autocomplete hint, label and id: an email address, a phone number, a
+// postcode or a street address, or free text (a box of several lines). Dictated text of a kind finds its field.
+function fieldKind(element, name) {
+  if (element.tagName === 'TEXTAREA' || element.isContentEditable || element.getAttribute('aria-multiline') === 'true') return 'text';
+  if (element.tagName !== 'INPUT') return null;
+  const type = element.getAttribute('type')?.toLowerCase() ?? '', hint = (element.getAttribute('autocomplete') ?? '').toLowerCase();
+  if (type === 'search' || element.getAttribute('role') === 'searchbox') return null;
+  const label = (name ?? '').toLowerCase(), id = `${element.id ?? ''} ${element.getAttribute('name') ?? ''}`.toLowerCase();
+  const says = pattern => pattern.test(label) || pattern.test(id);
+  if (type === 'email' || /\bemail\b/.test(hint) || says(/e-?mail/)) return 'email';
+  if (type === 'tel' || /\btel\b/.test(hint) || says(/phone|\bmobile\b|\btel\b/)) return 'tel';
+  if (/postal-code/.test(hint) || says(/post ?code|postal|\bzip(?: ?code)?\b/)) return 'postal-code';
+  // The first line of an address holds the street; a second line holds a flat or building.
+  const line = (hint.match(/address-line(\d)/) ?? label.match(/\bline ?(\d)\b/) ?? id.match(/(?:line|address)[-_ ]?(\d)\b/))?.[1];
+  if (/street-address/.test(hint) || says(/\bstreet\b/) || (says(/^address\b/) && (!line || line === '1'))) return line && line !== '1' ? null : 'street';
+  return null;
+}
+
 // A date asked for in three boxes (Day, Month and Year, as on GOV.UK and many bank forms): the three text fields in
 // the same fieldset, told apart by their autocomplete hint, label or id. One spoken date fills all three.
 const DATE_PART_HINTS = { day: /^(?:day|dd)\b/i, month: /^(?:month|mm)\b/i, year: /^(?:year|yyyy|yy)\b/i };
@@ -420,6 +438,8 @@ function describe(element) {
   };
   const dateParts = datePartsOf(element);
   if (dateParts) description.dateParts = dateParts;
+  const holds = description.editable ? fieldKind(element, name) : null;
+  if (holds) description.holds = holds;
   if (element.tagName === 'SELECT') {
     description.selectSnapshot = captureSelectSnapshot(element);
     description.options = description.selectSnapshot.options.map(option => clean(option.label));

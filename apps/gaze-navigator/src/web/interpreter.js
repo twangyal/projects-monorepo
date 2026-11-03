@@ -184,6 +184,29 @@ function continuingIn(context) {
 }
 
 // `recover`: new text for an unnamed field may go to a field just outside the circle (see typingElsewhere).
+// Dictated text that is clearly an email address, a phone number, a postcode or a street address. Speech often
+// spells an address out ("jo at example dot com"); an email field takes it as written.
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const asEmail = text => text.trim().replace(/\s+at\s+/gi, '@').replace(/\s+dot\s+/gi, '.').replace(/\s+/g, '');
+function textKind(text) {
+  const said = text.trim();
+  if (EMAIL.test(said) || (/\sat\s/i.test(said) && EMAIL.test(asEmail(said)))) return 'email';
+  // A phone number has 10 to 13 digits (fewer is likely a code or an amount, more a card number), and is not a date.
+  const digits = (said.match(/\d/g) ?? []).length;
+  if (/^\+?[\d\s().-]+$/.test(said) && digits >= 10 && digits <= 13 && !/^\d{1,4}[-./]\d{1,2}[-./]\d{1,4}$/.test(said)) return 'tel';
+  // A UK postcode, or a ZIP+4 code; five digits alone could be any number.
+  if (/^[a-z]{1,2}\d[a-z\d]? ?\d[a-z]{2}$/i.test(said) || /^\d{5}-\d{4}$/.test(said)) return 'postal-code';
+  // A house number, a name of up to four words, and a street word: "12 High Street", "221B Baker St", but not
+  // "5 apples on the way".
+  const street = said.match(STREET)?.[1].toLowerCase().split(/\s+/);
+  if (street && street.length <= 4 && !street.some(word => NOT_STREET_NAMES.has(word))) return 'street';
+  return null;
+}
+const STREET = /^\d+[a-z]?,?\s+(.+?)\s+(?:street|st|road|rd|avenue|ave|lane|ln|drive|dr|way|close|court|ct|place|pl|boulevard|blvd|terrace|crescent|grove|square|row|hill|parade|gardens|mews)\.?$/i;
+const NOT_STREET_NAMES = new Set(['the', 'a', 'an', 'on', 'in', 'of', 'to', 'up', 'at', 'for', 'with', 'by', 'from', 'my', 'our', 'your', 'his', 'her', 'their', 'times', 'and', 'or', 'is', 'was']);
+// Text written into a field: an email field takes a spelled-out address as an address.
+const writing = (kind, text) => element => edit(kind, { text: element.holds === 'email' && EMAIL.test(asEmail(text)) && !EMAIL.test(text.trim()) ? asEmail(text) : text })(element);
+
 // A spoken date typed into one of a Day, Month and Year group of boxes fills all three; other text is typed as said.
 function intoDateBoxes(text, act, now = new Date()) {
   const date = spokenDate(text, now), whole = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
@@ -193,12 +216,22 @@ function intoDateBoxes(text, act, now = new Date()) {
   return into;
 }
 
-function chooseField(fieldName, context, act, { recover = false } = {}) {
+function chooseField(fieldName, context, act, { recover = false, kind = null } = {}) {
   let fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
   if (recover && !fields.length) return { type: 'unknown', message: 'No text field is inside the gaze circle.', fieldMiss: true };
   if (act.sameDate?.(fields)) fields = [fields.reduce((a, b) => (b.distance < a.distance ? b : a))];
+  // Text of a clear kind (an email address, "12 High Street") goes to the one field asking for it among several, and
+  // a field just outside the circle that asks for it is offered when the gaze rests on a field asking for another.
+  // The field being typed in keeps text of its own kind, and a box for free text keeps everything said into it; a
+  // one-line field just filled (a city) gives way to the field asking for the next thing said (the street).
   const focused = fields.find(element => element.id === context.focusedId);
+  if (kind && (!focused || (focused.holds !== kind && focused.holds !== 'text'))) {
+    const fitting = fields.filter(element => element.holds === kind);
+    if (fields.length > 1 && fitting.length === 1) return act(fitting[0]);
+    const near = (context.nearby ?? []).filter(element => textField(element) && element.holds === kind);
+    if (fields.length && fields.every(element => element.holds && element.holds !== kind) && near.length === 1) return { ...act(near[0]), far: true };
+  }
   if (focused) return act(focused);
   return deictic(fields, act, 'text field');
 }
@@ -603,10 +636,10 @@ function interpretInCircle(utterance, context) {
     // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
     const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
-    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, edit('append', { text: content }), context.now), { recover: true });
+    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, writing('append', content), context.now), { recover: true, kind: textKind(content) });
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
-    return chooseField(null, context, intoDateBoxes(unquote(match[1]), edit('replace-all', { text: unquote(match[1]) }), context.now));
+    return chooseField(null, context, intoDateBoxes(unquote(match[1]), writing('replace-all', unquote(match[1])), context.now), { kind: textKind(unquote(match[1])) });
   }
   if ((match = /^replace\s+(.+?)\s+with\s+(.+)$/i.exec(command))) {
     const act = edit('replace', { find: unquote(match[1]), text: unquote(match[2]) });
