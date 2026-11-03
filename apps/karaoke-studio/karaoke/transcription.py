@@ -21,6 +21,7 @@ import sys
 import threading
 import unicodedata
 
+from .alignment import ALIGNMENT_FILE, aligner_ready
 from .limits import MAX_DURATION, MAX_WORKER_RSS_KIB, WORKER_TIMEOUT
 from .pipeline import _run
 
@@ -250,8 +251,48 @@ def transcribe_vocals(vocals: Path, output: Path, model_root: Path, duration: fl
             transcript = validate_transcript(json.loads(output.read_bytes()), duration)
         except (ValueError, UnicodeError) as error:
             raise RuntimeError(f'Lyric recognition produced an invalid transcript. {error}') from None
+        if aligner_ready(model_root):
+            measure_letters(vocals, output.with_name(ALIGNMENT_FILE), model_root, cancel, stage)
         return transcript
     except BaseException:
         output.unlink(missing_ok=True)
         output.with_suffix('.json.part').unlink(missing_ok=True)
+        output.with_name(ALIGNMENT_FILE).unlink(missing_ok=True)
+        output.with_name(ALIGNMENT_FILE + '.part').unlink(missing_ok=True)
         raise
+
+
+def measure_letters(vocals: Path, output: Path, model_root: Path, cancel: threading.Event, stage: Callable[[str], None]) -> bool:
+    """Write how likely each letter is in every 20 ms of the vocals (for aligning supplied lyrics) to ``output``.
+
+    Alignment is an improvement, not a requirement: a failure leaves no file and supplied lyrics are then matched to
+    recognized words. Cancellation still stops the job.
+    """
+    if output.exists() or output.is_symlink():
+        return False
+    stage('Measuring where letters are sung, to place supplied lyrics')
+
+    def progress(line: bytes) -> None:
+        if cancel.is_set():
+            raise RuntimeError('Lyric recognition cancelled.')
+        record = json.loads(line)
+        if (not isinstance(record, dict) or set(record) != {'type', 'completed', 'total'} or record['type'] != 'progress'
+                or type(record['completed']) is not int or type(record['total']) is not int
+                or not 0 <= record['completed'] <= record['total'] <= 100):
+            raise ValueError('Invalid alignment progress.')
+        stage(f'Measuring where letters are sung — part {record["completed"]} of {record["total"]}')
+
+    try:
+        _run([sys.executable, str(Path(__file__).with_name('align_worker.py')), '--vocals', str(vocals),
+              '--output', str(output), '--model-root', str(Path(model_root).resolve())],
+             cancel, timeout=WORKER_TIMEOUT, stderr_limit=256 * 1024, rss_limit_kib=MAX_WORKER_RSS_KIB,
+             stdout_line_callback=progress)
+        if output.is_symlink() or not output.is_file():
+            raise RuntimeError('Lyric alignment produced no output.')
+        return True
+    except Exception:
+        output.unlink(missing_ok=True)
+        output.with_name(output.name + '.part').unlink(missing_ok=True)
+        if cancel.is_set():
+            raise
+        return False

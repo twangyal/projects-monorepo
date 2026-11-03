@@ -11,7 +11,8 @@ Reports, per song and overall:
 - word error rate (WER) of recognized words against the reference lyrics;
 - onset error of correctly recognized words against annotated word starts;
 - automatic lines: share of reference line starts with an automatic line start within 1 s;
-- supplied lyrics: start error of each aligned reference line against its annotated start.
+- supplied lyrics: start error of each aligned reference line against its annotated start, matched to the
+  recognized words and, with the lyric aligner installed, laid on the letters measured in the vocals.
 
 Usage (Python 3.11 environment with requirements-ml.lock.txt and both models installed):
     python scripts/evaluate_lyrics.py --dataset ../jamendolyrics --model-dir MODELS --work WORK
@@ -32,6 +33,7 @@ import threading
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from karaoke.limits import MAX_DURATION  # noqa: E402
 from karaoke.transcription import CHOICES  # noqa: E402
+from karaoke.alignment import ALIGNMENT_FILE, aligner_ready, alignable, force_align, read_emissions  # noqa: E402
 from karaoke.lyrics_auto import LEAD_IN, _align, _token, align_lines, words_to_cues  # noqa: E402
 
 
@@ -77,7 +79,7 @@ def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DU
         validate_transcript({key: value[key] for key in ('model', 'words', 'seconds')}, duration)
         if value['model'] not in {model.name for model in models}:
             raise ValueError('Cached evaluation transcript came from another recognizer.')
-        return value
+        return {**value, 'clipDirectory': str(work)}
     media = work / 'media'
     cancel = threading.Event()
     if separated.exists():
@@ -99,7 +101,16 @@ def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DU
     value = dict(duration=duration, audioSha256=clip['audioSha256'], maxSeconds=max_seconds,
                  modelChoice=model_choice, cacheIdentity=dict(clip=identity(clip), recognition=identity(recognition)), **transcript)
     result.write_text(json.dumps(value))
-    return value
+    return {**value, 'clipDirectory': str(work)}
+
+
+def measured_letters(clip_directory: Path, model_dir: Path, duration: float):
+    """The clip's letter probabilities, measured once per separated clip (they depend only on the vocals)."""
+    from karaoke.transcription import measure_letters
+    path = clip_directory / ALIGNMENT_FILE
+    if not path.exists():
+        measure_letters(clip_directory / 'media' / 'vocals.wav', path, model_dir, threading.Event(), lambda _s: None)
+    return read_emissions(path.read_bytes(), duration) if path.exists() else None
 
 
 def share(values: list[float], limit: float) -> float | None:
@@ -119,7 +130,8 @@ def main() -> None:
     args = parser.parse_args()
     rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == args.language][:args.limit]
     totals = dict(errors=0, reference=0)
-    onsets, line_errors, auto_hits, auto_lines, report = [], [], 0, 0, []
+    onsets, line_errors, auto_hits, auto_lines, report, forced_errors = [], [], 0, 0, [], []
+    aligner = aligner_ready(args.model_dir)
     confidence_pairs, heard_lines = [], []
     for row in rows:
         name = Path(row['Filepath']).stem
@@ -151,13 +163,19 @@ def main() -> None:
                       if len(aligned) == len(lines) else [])
         line_errors += song_lines
         heard_lines += [(cue['matched'] >= 0.5, error) for cue, error in zip(aligned, song_lines)]
+        texts = [line['lyrics_line'] for line in lines]
+        letters = measured_letters(Path(transcript['clipDirectory']), args.model_dir, duration) if aligner and alignable(texts) else None
+        forced = force_align(texts, letters, duration) if letters is not None else None
+        song_forced = ([abs(cue['start'] + LEAD_IN - float(line['start_time'])) for cue, line in zip(forced, lines)]
+                       if forced and len(forced) == len(lines) else [])
+        forced_errors += song_forced
         report.append(dict(
             song=name, model=transcript['model'], modelChoice=args.model_choice, audioSha256=transcript['audioSha256'],
             cacheIdentity=transcript['cacheIdentity'], genre=row['Genre'], polyphonic=row['Polyphonic'] == 'true', seconds=round(duration, 1),
             wer=round(errors / len(reference), 3), onsetMedian=round(statistics.median(song_onsets), 3) if song_onsets else None,
             automaticLineStartsWithin1s=round(hits / len(lines), 3) if lines else None,
             alignedLineStartMedian=round(statistics.median(song_lines), 3) if song_lines else None,
-            alignedWithin1s=share(song_lines, 1), recognitionSeconds=round(transcript['seconds'], 1)))
+            alignedWithin1s=share(song_lines, 1), forcedWithin1s=share(song_forced, 1), recognitionSeconds=round(transcript['seconds'], 1)))
         print(json.dumps(report[-1]), flush=True)
     summary = dict(
         language=args.language, maxSeconds=args.max_seconds, modelChoice=args.model_choice,
@@ -167,6 +185,8 @@ def main() -> None:
         automaticLineStartsWithin1s=round(auto_hits / auto_lines, 3),
         alignedLines=len(line_errors), alignedLineStartMedian=round(statistics.median(line_errors), 3),
         alignedWithin0_5s=share(line_errors, .5), alignedWithin1s=share(line_errors, 1), alignedWithin2s=share(line_errors, 2),
+        forcedLines=len(forced_errors), forcedLineStartMedian=round(statistics.median(forced_errors), 3) if forced_errors else None,
+        forcedWithin0_5s=share(forced_errors, .5), forcedWithin1s=share(forced_errors, 1), forcedWithin2s=share(forced_errors, 2),
         recognitionSecondsPerAudioSecond=round(sum(r['recognitionSeconds'] for r in report) / sum(r['seconds'] for r in report), 3),
         alignedHeardShare=round(sum(h for h, _ in heard_lines) / len(heard_lines), 3),
         alignedHeardWithin1s=share([e for h, e in heard_lines if h], 1), alignedUnheardWithin1s=share([e for h, e in heard_lines if not h], 1),

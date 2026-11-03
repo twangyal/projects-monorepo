@@ -17,6 +17,7 @@ import time
 import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from karaoke.alignment import ALIGNMENT_FILE, aligner_ready, force_align, read_emissions  # noqa: E402
 from karaoke.limits import MAX_WORKER_RSS_KIB, SAMPLE_RATE  # noqa: E402
 from karaoke.lyrics_auto import words_to_cues  # noqa: E402
 from karaoke.model import create_project, validate_project  # noqa: E402
@@ -64,6 +65,22 @@ def check_recognition(transcript: dict, duration: float, processing: dict) -> di
                 separationPeakRssKiB=rss, separationNetworkAttempts=attempts)
 
 
+def check_alignment(alignment: Path, transcript: dict, duration: float) -> dict:
+    """With the aligner installed: its letters were measured, and the recognized lines laid on them start where they
+    were heard (execution coverage of the real aligner, not an accuracy measurement)."""
+    if not alignment.is_file():
+        raise RuntimeError('The installed lyric aligner measured no letters.')
+    letters = read_emissions(alignment.read_bytes(), duration)
+    heard = words_to_cues(transcript['words'], duration)
+    placed = force_align([cue['text'] for cue in heard], letters, duration)
+    if not placed or len(placed) != len(heard):
+        raise RuntimeError('The recognized lines could not be laid on the measured letters.')
+    agree = sum(1 for a, b in zip(placed, heard, strict=True) if abs(a['start'] - b['start']) <= 1)
+    if agree * 2 < len(heard):
+        raise RuntimeError('Most recognized lines were placed over a second from where they were heard.')
+    return dict(alignedLines=len(placed), alignedWithin1sOfRecognition=agree, alignmentFrames=int(letters.shape[0]))
+
+
 def run(model_dir: Path, work_dir: Path, source: Path | None = None) -> dict:
     # A unique generated child keeps prior attempts and caller-owned media intact.
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -93,6 +110,8 @@ def run(model_dir: Path, work_dir: Path, source: Path | None = None) -> dict:
                                    duration, cancel, stage, model_choice='english')
     processing = json.loads((media / 'processing.json').read_text())
     result = check_recognition(transcript, duration, processing)
+    if aligner_ready(model_dir):
+        result.update(check_alignment(directory / ALIGNMENT_FILE, transcript, duration))
     report = dict(status='passed', scope='real-model execution; not recognition quality acceptance',
                   source=provenance, duration=duration, pcmPeaks=pcm,
                   separator=MODEL_NAME, separatorSha256=MODEL_SHA256,

@@ -6,9 +6,11 @@
 - SenseVoice Small (Chinese, Cantonese, Japanese, Korean and English), int8, installed to
   ``MODEL_DIR/lyrics-asr-sensevoice``. Model license: the FunASR model license (FunAudioLLM).
 - Silero VAD (MIT), the copy published by the sherpa-onnx project, alongside each.
+- The lyric aligner: Meta's wav2vec 2.0 base fine-tuned on 960 h of LibriSpeech (Apache-2.0), as the int8 ONNX export
+  published for transformers.js, installed to ``MODEL_DIR/lyrics-aligner``. It places supplied lyrics on the singing.
 
-All three are installed by default; the studio then chooses one for each song from its first words.
-``--only`` installs one. The studio never downloads models at startup.
+All are installed by default; the studio then chooses a recognizer for each song from its first words.
+``--only`` installs one (``--only aligner`` the aligner). The studio never downloads models at startup.
 """
 from __future__ import annotations
 
@@ -22,6 +24,7 @@ import tempfile
 import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from karaoke.alignment import ALIGNER, ALIGNER_SOURCE, aligner_ready  # noqa: E402
 from karaoke.transcription import ASR_MODELS, ASR_RELEASE, VAD_FILE, AsrModel, archive_model, model_ready  # noqa: E402
 
 VAD_BYTES = 643854
@@ -87,10 +90,33 @@ def setup(model_root: Path, model: AsrModel, archive: Path | None = None, vad: P
     return destination
 
 
+def setup_aligner(model_root: Path) -> Path:
+    """Download the aligner's pinned files into ``MODEL_DIR/lyrics-aligner`` and verify them."""
+    model_root = model_root.expanduser().resolve()
+    model_root.mkdir(parents=True, exist_ok=True)
+    destination = model_root / ALIGNER.directory
+    if destination.exists():
+        if aligner_ready(model_root):
+            return destination
+        raise RuntimeError(f'The existing {ALIGNER.directory} directory is incomplete or corrupt. Rename or remove it and run setup again.')
+    with tempfile.TemporaryDirectory(prefix='.aligner-setup-', dir=model_root) as temporary:
+        staging = Path(temporary)
+        directory = staging / ALIGNER.directory
+        directory.mkdir()
+        for published, (name, size, sha256) in ALIGNER.files.items():
+            download(ALIGNER_SOURCE + published, directory / name, size)
+            if (directory / name).stat().st_size != size or checksum(directory / name) != sha256:
+                raise RuntimeError(f'The lyric aligner file {name} does not match its pinned size and SHA256.')
+        if not aligner_ready(staging):
+            raise RuntimeError('The lyric aligner files failed their pinned checksums.')
+        directory.rename(destination)
+    return destination
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--model-dir', type=Path, required=True, help='The same model directory passed to the studio')
-    parser.add_argument('--only', choices=[model.key for model in ASR_MODELS], help='Install one recognizer instead of all')
+    parser.add_argument('--only', choices=[*(model.key for model in ASR_MODELS), 'aligner'], help='Install one model instead of all')
     parser.add_argument('--archive', type=Path, action='append', default=[],
                         help='Optional existing official archive, repeatable (matched by size, verified before extraction)')
     parser.add_argument('--vad', type=Path, help='Optional existing silero_vad.onnx (verified before use)')
@@ -107,6 +133,9 @@ def main() -> None:
         destination = setup(args.model_dir, model, archives.get(model.key), args.vad)
         print(f'{model.key.capitalize()} lyric recognition model verified at {destination}')
         print(f'Archive SHA256: {model.archive_sha256}\nProvenance: {ASR_RELEASE}{model.archive} and {ASR_RELEASE}{VAD_FILE}')
+    if not args.only or args.only == 'aligner':
+        destination = setup_aligner(args.model_dir)
+        print(f'Lyric aligner verified at {destination}\nProvenance: {ALIGNER_SOURCE} ({", ".join(ALIGNER.files)})')
 
 
 if __name__ == '__main__':

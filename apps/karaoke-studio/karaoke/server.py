@@ -30,6 +30,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager, JobPublication
+from .alignment import ALIGNMENT_FILE, alignable, force_align, max_bytes, read_emissions
 from .lyrics_auto import align_lines, word_timings, words_to_cues
 from .lrc import render_lrc
 from .transcription import CHOICES
@@ -351,6 +352,23 @@ class KaraokeServer(ThreadingHTTPServer):
         except (ValueError, UnicodeError):
             raise RequestError(409, "The stored lyric transcript is invalid. Transcribe the clip again.") from None
 
+    def read_alignment(self, project):
+        """How likely each letter is in every 20 ms of the clip's vocals, measured when it was transcribed; None when
+        it was not measured (the aligner was not installed, or the clip was transcribed or restored without it)."""
+        try:
+            source = self.project_file(project["id"], ALIGNMENT_FILE)
+        except (FileNotFoundError, RequestError):
+            return None
+        limit = max_bytes(project["duration"])
+        with source:
+            raw = source.read(limit + 1)
+        try:
+            if len(raw) > limit:
+                raise ValueError("Oversized alignment data.")
+            return read_emissions(raw, project["duration"])
+        except (ValueError, ImportError):
+            return None
+
     def optional_transcript(self, project):
         """Recognized words when available and valid; word highlighting falls back to estimates."""
         try:
@@ -457,6 +475,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     except Exception:
                         recognition_failed = True
                         (complete / _TRANSCRIPT).unlink(missing_ok=True)
+                        (complete / ALIGNMENT_FILE).unlink(missing_ok=True)
                 _atomic_json(complete / "project.json", project)
             finally:
                 os.close(work_fd)
@@ -475,6 +494,7 @@ class KaraokeServer(ThreadingHTTPServer):
                         complete = self._descriptor_path(parent_fd) / "completed"
                         project = create_project(project_id, song.get("title", title), duration)
                         (complete / _TRANSCRIPT).unlink(missing_ok=True)
+                        (complete / ALIGNMENT_FILE).unlink(missing_ok=True)
                         _atomic_json(complete / "project.json", project)
                     os.replace("completed", project_id, src_dir_fd=parent_fd,
                                dst_dir_fd=self._directory_fds[self.projects_dir])
@@ -661,6 +681,11 @@ class KaraokeServer(ThreadingHTTPServer):
                         except FileNotFoundError:
                             pass
                         os.replace(_TRANSCRIPT, _TRANSCRIPT, src_dir_fd=work_fd, dst_dir_fd=fd)
+                        # The letters measured from the same vocals stay valid when a new pass measured none.
+                        try:
+                            os.replace(ALIGNMENT_FILE, ALIGNMENT_FILE, src_dir_fd=work_fd, dst_dir_fd=fd)
+                        except FileNotFoundError:
+                            pass
                     finally:
                         os.close(work_fd)
                 finally:
@@ -1061,6 +1086,7 @@ class Handler(BaseHTTPRequestHandler):
             # Read request bodies before acquiring the publication lock. A slow
             # client must not stop polling, cancellation or completed playback.
             value = None
+            letters = None
             if self.command == "PUT" and resource is None:
                 value = self._read_json()
             elif self.command == "PUT" and resource == "cover":
@@ -1178,6 +1204,8 @@ class Handler(BaseHTTPRequestHandler):
                     job = server.start_transcribe(project, model_choice)
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
+                if self.command == "POST" and resource == "align" and alignable(value["lines"]):
+                    letters = server.read_alignment(project)
                 if read and resource == "lrc":
                     transcript = server.optional_transcript(project)
                 if self.command == "POST" and resource == "word-timings":
@@ -1235,7 +1263,10 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "align":
                 if transcript is None:
                     raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
-                self._json({"cues": align_lines(value["lines"], transcript["words"], project["duration"])})
+                # Lyrics in Latin letters are laid on the letters measured in the singing; others, or a clip measured
+                # without the aligner, are matched to the recognized words.
+                cues = force_align(value["lines"], letters, project["duration"]) if letters is not None else None
+                self._json({"cues": cues if cues is not None else align_lines(value["lines"], transcript["words"], project["duration"])})
                 return
             if read and stem:
                 self._file(directory / _AUDIO_FILES[stem], "audio/wav")

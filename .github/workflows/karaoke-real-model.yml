@@ -13,6 +13,8 @@ on:
       - 'apps/karaoke-studio/karaoke/transcription.py'
       - 'apps/karaoke-studio/karaoke/transcribe_worker.py'
       - 'apps/karaoke-studio/karaoke/lyrics_auto.py'
+      - 'apps/karaoke-studio/karaoke/alignment.py'
+      - 'apps/karaoke-studio/karaoke/align_worker.py'
       - 'apps/karaoke-studio/scripts/setup_model.py'
       - 'apps/karaoke-studio/scripts/setup_lyrics_model.py'
       - 'apps/karaoke-studio/scripts/smoke_song.py'
@@ -52,6 +54,7 @@ jobs:
         run: |
           python scripts/setup_model.py --model-dir "$RUNNER_TEMP/karaoke-models"
           python scripts/setup_lyrics_model.py --model-dir "$RUNNER_TEMP/karaoke-models" --only english
+          python scripts/setup_lyrics_model.py --model-dir "$RUNNER_TEMP/karaoke-models" --only aligner
       - name: Verify real singing through separation and automatic lyrics
         run: python scripts/smoke_song.py --model-dir "$RUNNER_TEMP/karaoke-models" --work-dir "$RUNNER_TEMP/karaoke-real-song"
       # Models, source audio, stems and transcripts stay in runner scratch, never in artifacts or caches.
