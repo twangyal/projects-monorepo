@@ -130,6 +130,16 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (!top || !hemAllowed(product.base, hem)) notApplied.push(`${hem} hem (a ${BASE_NAMES[product.base].toLowerCase()} keeps its own hem)`);
     else { product = withOptions(product, { ...optionsOf(product), hem }); garment.push(`hem: ${hem === 'curved' ? 'curved shirttail' : 'straight'}`); }
   }
+  // A front zip ("zip hoodie", "zip-up", "full-zip"), or none ("pullover").
+  const zipped = take(/\b(?:full[- ]?)?zip(?:ped|[- ]?(?:up|through))?\b/) ? true : take(/\bpull[- ]?over\b/) ? false : null;
+  if (zipped !== null && product.base === 'hoodie') {
+    const had = !!optionsOf(product).zip, others = { ...optionsOf(product) };
+    delete others.zip;
+    product = withOptions(product, zipped ? { ...others, zip: true } : others);
+    // The garment as now named ("Zip hoodie, started from its template").
+    for (let i = 0; i < garment.length; i++) garment[i] = garment[i]!.replace(BASE_NAMES.hoodie, garmentName(product));
+    if (zipped !== had) garment.push(zipped ? 'front zip added' : 'front zip removed');
+  } else if (zipped) notApplied.push(`front zip (only a hoodie has one, not a ${garmentName(product).toLowerCase()})`);
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
   const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /\bpockets?\b/.test(text) && top) ? true : null;
   if (pocket !== null) {

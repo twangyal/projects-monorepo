@@ -9,7 +9,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { garmentHeight, isBottoms, material, partName, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
+import { garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
+/** A zip's width on the garment, tape included, cm. */
+const ZIP_WIDTH = 1.4;
 
 export type View = 'front' | 'back' | 'left' | 'right';
 /** A turntable export turns once in this many seconds, at this frame rate. */
@@ -132,7 +134,44 @@ export class ProductScene {
       if (target) this.addArtwork(companion!, art, wornRest.find(part => part.part === art.part)!, target, this.worn);
     }
     for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
+    if (worn) this.addZip(companion!, wornRest, wornParts, this.worn);
+    this.addZip(product, drape ? restParts : null, this.parts, this.group);
     this.requestRender();
+  }
+
+  /** A zip hoodie's zip, down the centre front from the neck and on through the hem band. */
+  private addZip(product: Product, rest: PartMesh[] | null, parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
+    if (product.base !== 'hoodie' || !optionsOf(product).zip) return;
+    const d = teeDimensions(product), top = d.length - d.neckDepthFront, band = d.band;
+    for (const [part, low, high] of [['front', band, top], ['hemBand', 0, band]] as const) {
+      const target = parts.get(part);
+      if (!target || high - low < 0.5) continue;
+      const texture = this.zipTexture(product.parts.front.color, high - low, part === 'front');
+      this.addDecal(texture, { front: true, x: 0, y: (low + high) / 2, width: ZIP_WIDTH, height: high - low }, rest?.find(mesh => mesh.part === part) ?? null, target, holder,
+        holder === this.worn ? `${product.name}: Zip` : 'Zip');
+    }
+  }
+
+  /** Zip tape a little darker than the garment, light teeth every half centimetre and, at the top, the slider. */
+  private zipTexture(colour: string, heightCm: number, slider: boolean): THREE.Texture {
+    const key = `zip:${colour}:${heightCm.toFixed(1)}:${slider}`;
+    const cached = this.artworkTextures.get(key);
+    if (cached) return cached;
+    const scale = 20, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
+    canvas.width = Math.round(ZIP_WIDTH * scale); canvas.height = Math.max(8, Math.min(4096, Math.round(heightCm * scale)));
+    const tape = new THREE.Color(colour).multiplyScalar(0.72);
+    context.fillStyle = `#${tape.getHexString()}`; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#d6d6d2';
+    const tooth = scale * 0.5, middle = canvas.width / 2;
+    for (let y = 0, side = 0; y < canvas.height; y += tooth / 2, side ^= 1) context.fillRect(side ? middle : middle - scale * 0.22, y, scale * 0.22, tooth / 2 - 1);
+    if (slider) {
+      context.fillStyle = '#b9b9b4'; context.fillRect(canvas.width * 0.12, 0, canvas.width * 0.76, scale * 1.4);
+      context.fillStyle = '#8f8f8a'; context.fillRect(canvas.width * 0.38, scale * 1.4, canvas.width * 0.24, scale * 1.6);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.artworkTextures.set(key, texture);
+    return texture;
   }
 
   /** One part's surface in its fabric, at `positions`. */
@@ -169,23 +208,28 @@ export class ProductScene {
       image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
+    const top = topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET; // the shoulder line, where artwork positions are measured from
+    const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
+    const name = `${front ? 'Front' : 'Back'} artwork`;
+    this.addDecal(texture, { front, x: front ? art.xCm : -art.xCm, y: top - art.yCm - heightCm / 2, width: art.widthCm, height: heightCm, rotation: art.rotation ?? 0 }, rest, target, holder,
+      holder === this.worn ? `${product.name}: ${name}` : name, art.part);
+  }
+
+  /** An image projected straight onto a part from outside, centred at (x, y) in cm; draped parts carry it along. */
+  private addDecal(texture: THREE.Texture, at: { front: boolean; x: number; y: number; width: number; height: number; rotation?: number }, rest: PartMesh | null,
+    target: THREE.Mesh, holder: THREE.Object3D, name: string, part: PartId | null = null) {
     let supporting = target;
     let restGeometry: THREE.BufferGeometry | null = null;
     if (rest) { restGeometry = new THREE.BufferGeometry(); restGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rest.positions,3)); restGeometry.setIndex(rest.indices); restGeometry.computeVertexNormals(); supporting = new THREE.Mesh(restGeometry,target.material); supporting.updateMatrixWorld(true); }
-    const top = topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET; // the shoulder line, where artwork positions are measured from
-    const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
-    // Project straight onto the panel from outside, centred where the artwork's centre should sit.
-    const x = front ? art.xCm : -art.xCm, y = top - art.yCm - heightCm / 2;
-    const ray = new THREE.Raycaster(new THREE.Vector3(x, y, front ? 200 : -200), new THREE.Vector3(0, 0, front ? -1 : 1));
+    const ray = new THREE.Raycaster(new THREE.Vector3(at.x, at.y, at.front ? 200 : -200), new THREE.Vector3(0, 0, at.front ? -1 : 1));
     const hit = ray.intersectObject(supporting)[0];
     if (!hit) { restGeometry?.dispose(); return; }
-    const orientation = new THREE.Euler(0, front ? 0 : Math.PI, -(art.rotation ?? 0) * Math.PI / 180);
+    const orientation = new THREE.Euler(0, at.front ? 0 : Math.PI, -(at.rotation ?? 0) * Math.PI / 180);
     let geometry: THREE.BufferGeometry;
-    try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
+    try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(at.width, at.height, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
     finally { restGeometry?.dispose(); }
     const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
-    decal.name = `${front ? 'Front' : 'Back'} artwork`; decal.userData.part = art.part;
-    if (holder === this.worn) decal.name = `${product.name}: ${decal.name}`;
+    decal.name = name; if (part) decal.userData.part = part;
     holder.add(decal);
   }
 
@@ -210,7 +254,8 @@ export class ProductScene {
   }
 
   async prepareArtwork() {
-    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image as HTMLImageElement).decode()));
+    // Uploaded artwork decodes from its file; drawn textures (a zip) are ready already.
+    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image instanceof HTMLImageElement ? texture.image.decode() : undefined)));
     for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
   }
 
