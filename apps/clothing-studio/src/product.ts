@@ -12,15 +12,20 @@ export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'C
 export const DRESS_LENGTH = 85;
 /** A top at most this long ends above the waist: a crop top. */
 export const CROP_LENGTH = 52;
+/** Half the gap a zip hoodie's pocket halves leave for the zip, cm. */
+export const ZIP_CLEAR = 1.2;
 const CROP_NAMES: Partial<Record<Base, string>> = { tee: 'Crop top', sweatshirt: 'Cropped sweatshirt', hoodie: 'Cropped hoodie' };
 const DRESS_NAMES: Partial<Record<Base, string>> = { tee: 'T-shirt dress', sweatshirt: 'Sweatshirt dress', hoodie: 'Hoodie dress' };
 /** What the garment is, as a buyer or factory would call it: a long top is a dress and short trousers are shorts. */
-export function garmentName(product: Pick<Product, 'base' | 'measurements'>): string {
+export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { options?: Options }): string {
   if (product.base === 'trousers') return legMeasurements(product).inseam < 35 ? 'Pull-on shorts' : BASE_NAMES.trousers;
-  if (product.base !== 'skirt' && topMeasurements(product).length <= CROP_LENGTH) return sleeveless(product) ? 'Cropped tank top' : CROP_NAMES[product.base]!;
+  // A hoodie with a front zip is a zip hoodie, cropped or as a dress too.
+  const zip = (name: string) => (product.base !== 'hoodie' || !product.options?.zip ? name
+    : name === BASE_NAMES.hoodie ? 'Zip hoodie' : name.replace(/hoodie/i, match => `${match[0] === 'H' ? 'Zip' : 'zip'} ${match.toLowerCase()}`));
+  if (product.base !== 'skirt' && topMeasurements(product).length <= CROP_LENGTH) return zip(sleeveless(product) ? 'Cropped tank top' : CROP_NAMES[product.base]!);
   if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
-  if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return DRESS_NAMES[product.base]!;
-  return BASE_NAMES[product.base];
+  if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return zip(DRESS_NAMES[product.base]!);
+  return zip(BASE_NAMES[product.base]);
 }
 export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband'] as const;
 export type PartId = typeof PART_IDS[number];
@@ -89,11 +94,14 @@ export function withSkirtWaistband(product: Product, height: number): Product {
 export const HEMS = ['straight', 'curved'] as const;
 export type Hem = typeof HEMS[number];
 export const HEM_NAMES: Record<Hem, string> = { straight: 'Straight', curved: 'Curved shirttail' };
-export interface Options { hem: Hem; chestPocket: boolean }
+export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zip (hoodies): the front is cut as two halves. */ zip?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
 export function chestPocketAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
+export function zipAllowed(base: Base): boolean { return base === 'hoodie'; }
+/** A front zip's length: from the centre-front neck down through the hem band. */
+export function zipLength(product: Product): number { const d = teeDimensions(product); return Math.round((d.length - d.neckDepthFront) * 2) / 2; }
 /** Sleeve-length presets in cm; the measurement stays editable. */
 export const SLEEVE_PRESETS = [{ id: 'short', name: 'Short', cm: 21 }, { id: 'elbow', name: 'Elbow', cm: 35 }, { id: 'long', name: 'Long', cm: 60 }, { id: 'sleeveless', name: 'Sleeveless', cm: 0 }] as const;
 /** A tee with a sleeve length of 0 has no sleeves: a tank top, its armholes left open (finished with binding). */
@@ -318,12 +326,14 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket'], 'Modules');
+    const o = plain(p.options, Object.hasOwn(p.options as object, 'zip') ? ['hem', 'chestPocket', 'zip'] : ['hem', 'chestPocket'], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
+    if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
     if (!hemAllowed(base, o.hem as Hem)) fail('Only a tee can have a curved hem; banded hems stay straight.');
     if (o.chestPocket && !chestPocketAllowed(base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
-    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean };
+    if (o.zip && !zipAllowed(base)) fail('Only a hoodie can have a front zip.');
+    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -393,6 +403,8 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
     product: { base: 'sweatshirt', name: 'Sweatshirt dress', measurements: { ...fleece, length: 92 }, neckline: 'crew', fit: { hemWidth: 60 }, parts: allParts(style('terry-300', '#d8cbb3'), {}, 'sweatshirt'), artwork: [] } },
   { id: 'hoodie', name: 'Pullover hoodie', description: 'Navy French terry with a hood, kangaroo pocket and rib trims.',
     product: { base: 'hoodie', name: 'Pullover hoodie', measurements: { ...fleece, length: 72 }, neckline: 'crew', parts: allParts(style('terry-300', '#1f2a4f'), {}, 'hoodie'), artwork: [] } },
+  { id: 'zip-hoodie', name: 'Zip hoodie', description: 'Heather grey French terry with a centre-front zip, split kangaroo pocket and rib trims.',
+    product: { base: 'hoodie', name: 'Zip hoodie', measurements: { ...fleece, length: 72 }, neckline: 'crew', options: { hem: 'straight', chestPocket: false, zip: true }, parts: allParts(style('terry-300', '#9a9c9a'), {}, 'hoodie'), artwork: [] } },
   { id: 'shorts', name: 'Pull-on shorts', description: 'Washed linen shorts with an elasticated waistband.',
     product: { base: 'trousers', name: 'Pull-on shorts', measurements: { ...legFit, inseam: 18, legOpening: 58 }, neckline: 'crew', parts: allParts(style('linen-170', '#c9b48f'), {}, 'trousers'), artwork: [] } },
   { id: 'flared-skirt', name: 'Flared skirt', description: 'Two measured linen panels, with editable waist, hem and slant.',
@@ -795,20 +807,34 @@ export function patternPieces(product: Product): PatternPiece[] {
     return [make('front', body(true), 1), make('back', body(false), 1), ...sleeves, make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
-  const band = dims.band;
-  const pieces = [make('front', body(true, panel.length - band), 1), make('back', body(false, panel.length - band), 1)];
+  const band = dims.band, zip = product.base === 'hoodie' && !!optionsOf(product).zip;
+  // A zip hoodie's front is cut as a mirrored pair of halves, which the zip joins at the centre front.
+  const pieces = [zip ? make('front', leftOf(body(true, panel.length - band), panel.width / 2), 2) : make('front', body(true, panel.length - band), 1), make('back', body(false, panel.length - band), 1)];
   pieces.push(make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1));
   if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1));
   // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, dims.cuffHeight * 2), 1),
-    make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
+    zip ? make('hemBand', rect(dims.hemHalf * 2 * 0.85, band * 2), 2) : make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
   if (product.base === 'hoodie') {
     const hood = hoodOutline(product);
     pieces.push(make('hood', [hood.neck[0]!, ...hood.crown, ...[...hood.neck].reverse().slice(0, -1)], 2));
     const top = dims.pocketHalfTop, bottom = dims.pocketHalfBottom, h = 22;
-    pieces.push(make('pocket', [{ x: bottom - top + 5, y: 0 }, { x: bottom + top - 5, y: 0 }, { x: bottom * 2, y: h }, { x: 0, y: h }], 1));
+    const pouch = [{ x: bottom - top + 5, y: 0 }, { x: bottom + top - 5, y: 0 }, { x: bottom * 2, y: h }, { x: 0, y: h }];
+    // Split by the zip, the kangaroo pocket becomes a pair of halves.
+    pieces.push(zip ? make('pocket', leftOf(pouch, bottom), 2) : make('pocket', pouch, 1));
   }
   return [...pieces, ...modules];
+}
+
+/** The part of a pattern outline left of x = `cut` (one half of a symmetrical piece), clipped along that line. */
+function leftOf(outline: { x: number; y: number }[], cut: number): { x: number; y: number }[] {
+  const kept: { x: number; y: number }[] = [];
+  outline.forEach((point, i) => {
+    const next = outline[(i + 1) % outline.length]!, inside = point.x <= cut + 1e-9, nextInside = next.x <= cut + 1e-9;
+    if (inside) kept.push(point);
+    if (inside !== nextInside) { const t = (cut - point.x) / (next.x - point.x); kept.push({ x: cut, y: point.y + (next.y - point.y) * t }); }
+  });
+  return kept;
 }
 
 /** The hem from the left side seam to the right one: straight, or a shirttail curve `curve` cm higher at the sides. */
@@ -898,7 +924,11 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   if (product.base === 'hoodie') {
     // The kangaroo pocket sits just above the hem band, slightly proud of the front body.
     const y0 = dims.pocketTop, y1 = m.length - dims.band - 0.01;
-    fillRegion(groups.get('pocket')!, [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }],
+    if (optionsOf(product).zip) {
+      // Each half of a zip hoodie's pocket stops short of the zip.
+      for (const side of [1, -1]) fillRegion(groups.get('pocket')!, [{ x: side * ZIP_CLEAR, y: y0 }, { x: side * dims.pocketHalfTop, y: y0 }, { x: side * dims.pocketHalfBottom, y: y1 }, { x: side * ZIP_CLEAR, y: y1 }],
+        Delaunator, p => rise(p) + 0.5, top, 'front');
+    } else fillRegion(groups.get('pocket')!, [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }],
       Delaunator, p => rise(p) + 0.5, top, 'front');
   }
   if (optionsOf(product).chestPocket) {
