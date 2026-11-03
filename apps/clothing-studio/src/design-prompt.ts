@@ -4,6 +4,7 @@
 // the whole garment. Each change is reported with its scope, and words that were not understood are listed. Style
 // words are read by the part-level interpreter in style-prompt.ts. No network and no model.
 import { readStylePrompt } from './style-prompt.ts';
+import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
@@ -11,7 +12,7 @@ import {
 } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
-export interface DesignReading { product: Product; scopes: DesignScope[]; ignored: string[] }
+export interface DesignReading { product: Product; scopes: DesignScope[]; ignored: string[]; /** Words in quotes, to print on the garment. */ text?: TextRequest }
 
 /** The template a garment word starts from, and its base. */
 const GARMENTS: [RegExp, string, Base][] = [
@@ -59,8 +60,10 @@ const clampTo = ([low, high]: readonly [number, number], value: number) => Math.
  * changes the design.
  */
 export function readDesignPrompt(prompt: string, current: Product): DesignReading {
-  let text = fold(prompt).slice(0, 200);
-  if (!text) throw new Error('Describe the garment, for example "oversized navy hoodie with a cream hood and white cuffs".');
+  // Words in quotes are printed on the garment, not read as garment words ("tee with "Stay Wild" on the back").
+  const slogan = readSlogan(prompt.slice(0, 260));
+  let text = fold(slogan ? slogan.rest : prompt).slice(0, 200);
+  if (!text.trim() && !slogan) throw new Error('Describe the garment, for example "oversized navy hoodie with a cream hood and white cuffs".');
   const garment: string[] = [], notApplied: string[] = [];
   // Garment words are blanked out once read, keeping positions, so they are not read again as style or part words.
   const take = (pattern: RegExp): RegExpExecArray | null => {
@@ -225,9 +228,15 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     ignored.push(...reading.ignored);
     if (understood.length) scopes.push({ label: clause.parts.map(id => partName(product, id)).join(', '), understood });
   }
+  let printed: TextRequest | undefined;
+  if (slogan && isBottoms(product)) notApplied.push(`text “${slogan.request.text}” (goes on a top)`);
+  else if (slogan) {
+    printed = { ...slogan.request, color: slogan.request.color ?? contrastingInk(product.parts.front.color) };
+    scopes.push({ label: 'Artwork', understood: [`text “${printed.text}” on the ${printed.side}`] });
+  }
   for (const item of notApplied) ignored.push(item);
   if (!scopes.length) {
     throw new Error(`Nothing in “${prompt.trim().slice(0, 60)}” could be applied. Try a garment, part, fabric, colour or print, for example "white tee with navy sleeves".`);
   }
-  return { product: validateProduct(product), scopes, ignored: [...new Set(ignored)] };
+  return { product: validateProduct(product), scopes, ignored: [...new Set(ignored)], ...(printed ? { text: printed } : {}) };
 }

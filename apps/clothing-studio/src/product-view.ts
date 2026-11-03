@@ -21,6 +21,7 @@ import { patternDxf, patternSvg } from './pattern-export.ts';
 import { readStylePrompt } from './style-prompt.ts';
 import { paletteColorway, photoColours } from './photo-colours.ts';
 import { readDesignPrompt } from './design-prompt.ts';
+import { MAX_TEXT, TEXT_FONTS, renderText, textArtwork, type TextFont } from './text-artwork.ts';
 import { drapeTestMarkup, mountDrapeTest } from './drape-test-view.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
@@ -107,6 +108,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div id="artwork-controls" class="artwork-controls">
       <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option></select></label>
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <div class="measure-grid"><label class="field">Text to print<input id="artwork-text" maxlength="${MAX_TEXT}" autocomplete="off"></label><label class="field">Text font<select id="artwork-font">${Object.entries(TEXT_FONTS).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label></div>
+      <div class="inline-actions"><label class="color-row">Text colour<input id="artwork-text-colour" type="color" value="#1b1c1b"></label><button id="add-text-artwork" class="quiet">Print this text</button></div><p class="fine-print">Text replaces the artwork on the chosen side, as an image you can resize and move like uploaded artwork. Long text wraps at about 20 characters a line.</p>
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
         <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
         <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
@@ -659,6 +662,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         const reading = readDesignPrompt(prompt, draft);
         for (const key of Object.keys(draft) as (keyof Product)[]) delete draft[key];
         Object.assign(draft, reading.product);
+        // Words in quotes are printed on their side of the garment, replacing that side's artwork.
+        if (reading.text) {
+          draft.artwork = draft.artwork.filter(art => art.part !== reading.text!.side);
+          draft.artwork.push(textArtwork(reading.text, renderText(reading.text), topMeasurements(draft).chest));
+        }
         summary = `${reading.scopes.map(scope => `${scope.label}: ${scope.understood.join('; ')}`).join('. ')}.${reading.ignored.length ? ` Not applied: ${reading.ignored.join(', ')}.` : ''}`;
         return;
       }
@@ -726,6 +734,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }, `${button.getAttribute('aria-label')}: the legs, pattern and tech pack follow it.`));
 
   // Artwork: transparent PNG kept, scaled to at most 1024 px.
+  $('add-text-artwork').addEventListener('click', () => {
+    const text = ($('artwork-text') as HTMLInputElement).value.trim().replace(/\s+/g, ' '), side = ($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
+    if (!text) { options.notice('Type the text to print first.', true); return; }
+    update(draft => {
+      if ([...text].length > MAX_TEXT) throw new Error(`Text on a garment can be up to ${MAX_TEXT} characters.`);
+      const request = { text, side, color: ($('artwork-text-colour') as HTMLInputElement).value, font: ($('artwork-font') as HTMLSelectElement).value as TextFont };
+      draft.artwork = draft.artwork.filter(art => art.part !== side);
+      draft.artwork.push(textArtwork(request, renderText(request), topMeasurements(draft).chest));
+    }, `“${text}” printed on the ${side}. Adjust its width and position below.`);
+  });
   $('artwork-file').addEventListener('change', async () => {
     const input = $('artwork-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
     if (!file) return;
