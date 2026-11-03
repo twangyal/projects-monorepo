@@ -863,3 +863,10 @@ button {
   #srt-review-list li > .timing-actions { margin: .3rem 0 0; }
   #srt-review-list textarea { min-height: 44px; }
 }
+
+/* Correction report: one row per saved clip, small enough for the side column. */
+.correction-report { margin: 14px 0; }
+.correction-report summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.correction-report table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+.correction-report th, .correction-report td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line, #dcded8); vertical-align: top; overflow-wrap: anywhere; }
+.correction-report th { font-weight: 600; }

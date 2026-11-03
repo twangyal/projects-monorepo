@@ -3,6 +3,7 @@ import {songFromFileName} from './lyrics-lookup.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
+import { correctionReport, reportCsv, reportSummary, type CorrectionReport, type ReportClip } from './correction-report.ts';
 import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
@@ -38,6 +39,7 @@ app.innerHTML = `
         <p id="model-help" class="model-help" hidden>Install the local separation model first. From the app directory, run <code>python scripts/setup_model.py --help</code> and follow the README setup steps, then refresh.</p>
         <p class="fine">The model estimates vocals and backing locally. Listen for remaining vocals or altered instruments before exporting.</p>
         <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
+        <details class="correction-report"><summary>Correction report</summary><p class="fine">How much the automatic lyrics of each saved clip were corrected: words changed, added or removed, and line starts moved by over half a second. Clips you have not corrected count as unchanged. The download holds titles and numbers, no lyrics.</p><button id="correction-measure" class="quiet">Measure saved clips</button><p id="correction-status" class="fine" role="status" aria-live="polite"></p><table id="correction-table" aria-label="Correction of automatic lyrics per saved clip" hidden><thead><tr><th scope="col">Clip</th><th scope="col">Recognizer</th><th scope="col">Words changed</th><th scope="col">Line starts moved</th></tr></thead><tbody></tbody></table><button id="correction-download" class="quiet" hidden>Download report (CSV)</button></details>
         <div id="clip-details" hidden><label class="field">Clip title<input id="title" type="text"></label><div class="clip-meta"><span id="duration">0:00</span><span>44.1 kHz · stereo</span></div><button id="backing-download" class="full">Download backing WAV <span aria-hidden="true">↓</span></button></div>
         <section class="archive-panel" aria-labelledby="archive-heading"><h4 id="archive-heading">Take your saved clip with you</h4>
         <p id="archive-status" class="fine" role="status">Choose a saved clip to back it up. Unsaved lyric edits are not included.</p>
@@ -1532,6 +1534,38 @@ element('save').addEventListener('click', async () => {
       : 'Lyrics and timing saved locally.');
   } catch (error) { message(error instanceof TypeError ? new UnconfirmedReplyError().message : error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
   finally { saving = false; controls(); }
+});
+
+// How much each saved clip's automatic lyrics were corrected, measured from the saved lyrics and recognized lines.
+let correctionResult: CorrectionReport | null = null;
+element('correction-measure').addEventListener('click', async () => {
+  const button = element<HTMLButtonElement>('correction-measure'), status = element('correction-status');
+  button.disabled = true; status.textContent = 'Measuring saved clips…';
+  try {
+    await refreshProjects();
+    const clips: ReportClip[] = [];
+    for (const project of projects) {
+      let transcript: Transcript = { available: false };
+      // A clip whose recognized lyrics cannot be read is left out, like one without them.
+      try { transcript = parseTranscript(await request<unknown>(`/api/projects/${project.id}/transcript`), project.duration); } catch { /* not counted */ }
+      clips.push({ title: project.title, duration: project.duration, cues: project.cues, transcript });
+    }
+    const report = correctionReport(clips), share = (part: number, whole: number) => (whole ? Math.round(100 * part / whole) : 0);
+    correctionResult = report; status.textContent = reportSummary(report);
+    element('correction-table').querySelector('tbody')!.replaceChildren(...report.rows.map(({ title, recognizer, correction: c }) => {
+      const row = document.createElement('tr');
+      for (const text of [title, recognizer, `${c.changed} of ${c.words} (${share(c.changed, c.words)}%)`, `${c.moved} of ${c.lines}`]) row.append(Object.assign(document.createElement('td'), { textContent: text }));
+      return row;
+    }));
+    element('correction-table').hidden = element('correction-download').hidden = !report.rows.length;
+  } catch (error) { status.textContent = `The saved clips could not be measured: ${error instanceof Error ? error.message : 'Connection lost.'}`; }
+  finally { button.disabled = false; }
+});
+element('correction-download').addEventListener('click', () => {
+  if (!correctionResult) return;
+  const url = URL.createObjectURL(new Blob([reportCsv(correctionResult)], { type: 'text/csv' })), anchor = document.createElement('a');
+  anchor.href = url; anchor.download = 'karaoke-correction-report.csv'; anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 function download(url: string, suffix: string) {
