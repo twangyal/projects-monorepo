@@ -14,6 +14,7 @@ const DRESS_NAMES: Partial<Record<Base, string>> = { tee: 'T-shirt dress', sweat
 /** What the garment is, as a buyer or factory would call it: a long top is a dress and short trousers are shorts. */
 export function garmentName(product: Pick<Product, 'base' | 'measurements'>): string {
   if (product.base === 'trousers') return legMeasurements(product).inseam < 35 ? 'Pull-on shorts' : BASE_NAMES.trousers;
+  if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
   if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return DRESS_NAMES[product.base]!;
   return BASE_NAMES[product.base];
 }
@@ -42,7 +43,25 @@ export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', '
 export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pick<Product, 'measurements'>>): readonly PartId[] {
   const parts = product.base === 'skirt' && (product.measurements as SkirtMeasures | undefined)?.waistbandHeight
     ? [...BASE_PARTS.skirt, 'waistband' as const] : BASE_PARTS[product.base];
-  return optionsOf(product).chestPocket ? [...parts, 'chestPocket'] : parts;
+  const kept = sleeveless(product) ? parts.filter(part => part !== 'sleeveLeft' && part !== 'sleeveRight') : parts;
+  return optionsOf(product).chestPocket ? [...kept, 'chestPocket'] : kept;
+}
+
+/**
+ * The design with a new sleeve length, in place. Going sleeveless (a tee at 0) removes the sleeves' styles from the
+ * design and every colourway; sleeves coming back start in the front body's style.
+ */
+export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements' | 'parts' | 'options'> & { colorways?: Product['colorways'] }>(product: T, sleeve: number): T {
+  (product.measurements as Measurements).sleeve = sleeve;
+  const ids = new Set(partsOf(product));
+  const fix = (parts: Product['parts']) => {
+    for (const id of ['sleeveLeft', 'sleeveRight'] as const) {
+      if (ids.has(id)) parts[id] ??= structuredClone(parts.front);
+      else delete (parts as Partial<Product['parts']>)[id];
+    }
+  };
+  fix(product.parts); for (const colourway of product.colorways ?? []) fix(colourway.parts);
+  return product;
 }
 
 /** Add, resize or remove the skirt band without losing independently styled colourways. */
@@ -72,7 +91,11 @@ export function optionsOf(product: Pick<Product, 'options'>): Options { return p
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
 export function chestPocketAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 /** Sleeve-length presets in cm; the measurement stays editable. */
-export const SLEEVE_PRESETS = [{ id: 'short', name: 'Short', cm: 21 }, { id: 'elbow', name: 'Elbow', cm: 35 }, { id: 'long', name: 'Long', cm: 60 }] as const;
+export const SLEEVE_PRESETS = [{ id: 'short', name: 'Short', cm: 21 }, { id: 'elbow', name: 'Elbow', cm: 35 }, { id: 'long', name: 'Long', cm: 60 }, { id: 'sleeveless', name: 'Sleeveless', cm: 0 }] as const;
+/** A tee with a sleeve length of 0 has no sleeves: a tank top, its armholes left open (finished with binding). */
+export function sleeveless(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
+  return product.base === 'tee' && (product.measurements as Measurements | undefined)?.sleeve === 0;
+}
 
 /** The design with new module options: a new chest pocket starts in the front body's style, here and in every colorway. */
 export function withOptions(product: Product, next: Options): Product {
@@ -282,7 +305,9 @@ export function validateProduct(value: unknown): Product {
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
     const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
-    measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
+    // A tee's sleeve length of 0 makes it sleeveless.
+    const sleeve = base === 'tee' && m.sleeve === 0 ? 0 : finite(m.sleeve, LIMITS.sleeve, base === 'tee' ? 'Sleeve length (cm; 0 for sleeveless)' : 'Sleeve length (cm)');
+    measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve };
   }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
@@ -350,6 +375,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'garden', name: 'Garden print', description: 'A half-drop ditsy floral on sage cotton.',
     product: { base: 'tee', name: 'Garden print tee', measurements, neckline: 'v',
       parts: allParts(style('jersey-180', '#9fae91', { motif: 'floral', color: '#f4efe3', scaleCm: 7, layout: 'half-drop' }), { neckband: style('rib-220', '#9fae91') }), artwork: [] } },
+  { id: 'tank-top', name: 'Tank top', description: 'Black cotton jersey, sleeveless, with narrow shoulders and a low front neck.',
+    product: { base: 'tee', name: 'Tank top', measurements: { chest: 96, length: 68, sleeve: 0 }, neckline: 'crew', fit: { shoulderWidth: 34, neckWidth: 18, armholeDepth: 24, frontNeckDrop: 12 },
+      parts: Object.fromEntries(Object.entries(allParts(style('jersey-180', '#1d1f1e'))).filter(([id]) => !id.startsWith('sleeve'))) as Record<PartId, PartStyle>, artwork: [] } },
   { id: 'tee-dress', name: 'T-shirt dress', description: 'A knee-length jersey dress that flares gently from the hips.',
     product: { base: 'tee', name: 'T-shirt dress', measurements: { ...measurements, length: 100 }, neckline: 'crew', fit: { hemWidth: 64 },
       parts: allParts(style('jersey-240', '#2f3b33'), { neckband: style('rib-220', '#2f3b33') }), artwork: [] } },
@@ -461,17 +489,19 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (product.base !== 'hoodie' && (product.fit?.hoodHeight !== undefined || product.fit?.hoodWidth !== undefined)) fail('Hood side dimensions apply only to hoodies.');
   if (product.base === 'hoodie' && product.fit?.neckRibHeight !== undefined) fail('A hoodie has a hood instead of a neck rib.');
   if (product.base === 'tee' && (product.fit?.cuffHeight !== undefined || product.fit?.hemBandHeight !== undefined)) fail('Cuff and hem band heights apply only to sweatshirts and hoodies.');
-  const d = teeDimensions(product as Product);
-  if (d.cuffHeight && d.sleeveLength - d.cuffHeight < 2) fail('The cuff must leave at least 2 cm of measured sleeve fabric.');
+  const d = teeDimensions(product as Product), sleeves = !sleeveless(product);
+  if (sleeves && d.cuffHeight && d.sleeveLength - d.cuffHeight < 2) fail('The cuff must leave at least 2 cm of measured sleeve fabric.');
   // The sleeve's underarm seams run from the cap to the opening above the cuff.
-  const sleeve = sleeveOutline(product as Product);
-  if (d.cuffHeight && sleeve.opening[0].y - sleeve.cap[0].y < 2) fail('The cuff must leave at least 2 cm along the sleeve\'s underarm seams.');
+  if (sleeves && d.cuffHeight) {
+    const sleeve = sleeveOutline(product as Product);
+    if (sleeve.opening[0].y - sleeve.cap[0].y < 2) fail('The cuff must leave at least 2 cm along the sleeve\'s underarm seams.');
+  }
   if (d.neckHalf + 4 > d.shoulderX) fail('The neck must be at least 8 cm narrower than the shoulders.');
   if (d.shoulderX > d.half + 8) fail('The shoulders can drop at most 8 cm past the chest on each side.');
   if (d.neckDepthFront + 4 > d.shoulderDrop + d.armDepth) fail('The front neck must end above the underarm.');
   if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
   if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
-  if (d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
+  if (sleeves && d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
 }
 
 /** Keep an enabled finished pocket's bounding rectangle at least 0.5 cm inside the actual front sewing outline. */
@@ -755,7 +785,8 @@ export function patternPieces(product: Product): PatternPiece[] {
   });
   const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
   if (product.base === 'tee') {
-    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
+    const sleeves = sleeveless(product) ? [] : [make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1)];
+    return [make('front', body(true), 1), make('back', body(false), 1), ...sleeves, make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band;
@@ -868,10 +899,11 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     fillRegion(groups.get('chestPocket')!, chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY),
       Delaunator, p => rise(p) + 0.35, top, 'front');
   }
-  // Sleeves, posed along the sleeve angle like the body's arms; flat directions have y down.
+  // Sleeves, posed along the sleeve angle like the body's arms; flat directions have y down. A sleeveless top's
+  // armholes stay open.
   const sleeve = sleeveOutline(product), angle = dims.sleeveAngle * Math.PI / 180, along = { x: Math.cos(angle), y: Math.sin(angle) }, across = { x: -Math.sin(angle), y: Math.cos(angle) };
   const length = sleeve.opening[0].y, opening = sleeve.opening[1].x - sleeve.opening[0].x, radius = opening / (2 * Math.PI);
-  for (const [part, cuff, x, frontArmhole, backArmhole] of [
+  for (const [part, cuff, x, frontArmhole, backArmhole] of sleeveless(product) ? [] : [
     ['sleeveLeft', 'cuffLeft', 1, front.armholeRight, back.armholeRight],
     ['sleeveRight', 'cuffRight', -1, [...front.armholeLeft].reverse(), [...back.armholeLeft].reverse()],
   ] as const) {

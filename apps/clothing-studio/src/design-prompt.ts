@@ -6,7 +6,7 @@
 import { readStylePrompt } from './style-prompt.ts';
 import { GATHER, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_LENGTH, LIMITS, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withOptions, type Base, type PartId, type Product,
 } from './product.ts';
 
@@ -15,6 +15,8 @@ export interface DesignReading { product: Product; scopes: DesignScope[]; ignore
 
 /** The template a garment word starts from, and its base. */
 const GARMENTS: [RegExp, string, Base][] = [
+  // A tank top is a sleeveless tee.
+  [/\b(?:tank|vest|sleeveless) tops?\b|\btanks?\b|\bsinglets?\b/, 'blank', 'tee'],
   // Dresses are long tops; a plain "dress" keeps the current top's base.
   [/\b(?:hoodie|hooded) dress(?:es)?\b/, 'hoodie', 'hoodie'],
   [/\b(?:sweatshirt|sweat|jumper|sweater) dress(?:es)?\b/, 'sweat-dress', 'sweatshirt'],
@@ -68,9 +70,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
 
   // The garment: a different base starts from that base's template; shorts and trousers switch leg length.
   let product = structuredClone(current);
+  let tank = false;
   for (const [pattern, id, chosen] of GARMENTS) {
     const match = take(pattern);
     if (!match) continue;
+    tank = id === 'blank' && /tank|vest|sleeveless|singlet/.test(match[0]);
     const dress = /dress/.test(match[0]);
     const base = dress && match[0].startsWith('dress') && !isBottoms(current) ? current.base : chosen;
     if (dress) {
@@ -105,10 +109,12 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (!top || (neckline === 'v' && product.base === 'hoodie')) notApplied.push(`${neckline === 'v' ? 'V-neck' : 'crew neck'} (not available on a ${BASE_NAMES[product.base].toLowerCase()})`);
     else { product.neckline = neckline; garment.push(`neckline: ${neckline === 'v' ? 'V-neck' : 'crew neck'}`); }
   }
-  const sleeve = take(/\blong[- ]sleeved?s?\b/) ? SLEEVE_PRESETS[2] : take(/\bshort[- ]sleeved?s?\b/) ? SLEEVE_PRESETS[0] : take(/\belbow[- ](?:length )?sleeved?s?\b/) ? SLEEVE_PRESETS[1] : null;
+  const sleeve = take(/\blong[- ]sleeved?s?\b/) ? SLEEVE_PRESETS[2] : take(/\bshort[- ]sleeved?s?\b/) ? SLEEVE_PRESETS[0] : take(/\belbow[- ](?:length )?sleeved?s?\b/) ? SLEEVE_PRESETS[1]
+    : take(/\bsleeveless\b|\bno sleeves\b/) || tank ? SLEEVE_PRESETS[3] : null;
   if (sleeve) {
     if (!top) notApplied.push(`${sleeve.name.toLowerCase()} sleeves (no sleeves on ${BASE_NAMES[product.base].toLowerCase()})`);
-    else { product.measurements = { ...topMeasurements(product), sleeve: sleeve.cm }; garment.push(`sleeves: ${sleeve.name.toLowerCase()} (${sleeve.cm} cm)`); }
+    else if (sleeve.cm === 0 && product.base !== 'tee') notApplied.push(`sleeveless (only a T-shirt can be made sleeveless, not a ${BASE_NAMES[product.base].toLowerCase()})`);
+    else { product = withSleeveLength(product, sleeve.cm); garment.push(sleeve.cm ? `sleeves: ${sleeve.name.toLowerCase()} (${sleeve.cm} cm)` : 'sleeveless'); }
   }
   const hem = take(/\b(curved|shirttail|shirt-tail) hem\b/) ? 'curved' : take(/\bstraight hem\b/) ? 'straight' : null;
   if (hem) {

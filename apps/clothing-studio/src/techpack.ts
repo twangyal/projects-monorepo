@@ -3,7 +3,7 @@ import { skirtBandHeight, skirtDraft, skirtGather, skirtPanelDraft, skirtPieces 
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, NECK_RIB_RATIO, garmentName, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, NECK_RIB_RATIO, garmentName, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -80,7 +80,7 @@ function samplePack(product: Product, date: string): TechPack {
       quantity: `${cm(art.widthCm)} × ${cm(height)}` });
   }
   // Points of measure for the sample size, graded by fixed increments per size step.
-  const long = topMeasurements(product).sleeve > 40, pom = pomMaker(spec.sampleSize), chest = chestLine(product);
+  const long = topMeasurements(product).sleeve > 40, pom = pomMaker(spec.sampleSize), chest = chestLine(product), armholesOnly = sleeveless(product);
   const poms = [
     pom('A', 'Chest width (½)', '2.5 cm below armhole, side seam to side seam', chest.right - chest.left, 2.5, 1),
     pom('B', 'Body length', 'High point shoulder to hem', dims.length, 1.5, 1),
@@ -113,17 +113,18 @@ function samplePack(product: Product, date: string): TechPack {
       pom('R', 'Chest pocket placement', 'High point shoulder line straight down to the pocket top', dims.chestPocketY, 0.5, 0.5),
       pom('V', 'Chest pocket centre offset', 'Horizontal from centre front; positive toward wearer’s left, negative toward right', dims.chestPocketX, 0, 0.5),
     ] : []),
-  ];
+  ].filter(row => !(armholesOnly && (row.code === 'C' || row.code === 'J')));
   const construction: ConstructionRow[] = [
     { area: 'Shoulder seams', operation: '4-thread overlock', detail: 'Back neck to shoulder point; stabilise with 6 mm clear tape' },
     ...(product.base === 'hoodie' ? [
       { area: 'Hood', operation: '4-thread overlock centre seam, then attach to neckline', detail: `Hood sides cut 2; ${cm(dims.hoodHeight)} high × ${cm(dims.hoodWidth)} wide; face edge turned 2 cm and coverstitched` },
       { area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` },
     ] : [{ area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long (${Math.round((1 - NECK_RIB_RATIO) * 100)}% shorter than the flat neckline sewing path; confirm for the chosen rib), ${cm(dims.ribHeight)} finished` }]),
-    { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
-    { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? 'Underarm to hem in one pass; insert care label at left side' : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
+    armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
+      : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
+    { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
-      { area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' },
+      ...(armholesOnly ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
     ] : [
       { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.cuffHeight)} finished; cut about 15% shorter than the sleeve opening` },
@@ -282,7 +283,8 @@ ${techPackSections(pack, images.diagram, 2)}
 export function measurementDiagram(product: Product): string {
   if (product.base === 'skirt') return skirtDiagram(product);
   if (isBottoms(product)) return trouserDiagram(product);
-  const pieces = patternPieces(product), front = pieces.find(p => p.part === 'front')!, sleeve = pieces.find(p => p.part === 'sleeveLeft')!;
+  // A sleeveless top's drawing is its front alone.
+  const pieces = patternPieces(product), front = pieces.find(p => p.part === 'front')!, sleeve = pieces.find(p => p.part === 'sleeveLeft') ?? { width: -14, height: 0, outline: [] };
   const d = teeDimensions(product), w = front.width, gap = 14, sx = w + gap;
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
@@ -297,14 +299,14 @@ export function measurementDiagram(product: Product): string {
   const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
   const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${sx + sleeve.width + 12} ${Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
-${outline(front, 0)}${outline(sleeve, sx)}<g transform="translate(${flare(product)} 0)">
+${outline(front, 0)}${sleeve.outline.length ? outline(sleeve as typeof front, sx) : ''}<g transform="translate(${flare(product)} 0)">
 ${arrow(chest.left - flare(product), armY, chest.right - flare(product), armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
 ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulderDrop + 0.8, 'E', half + d.shoulderX - 7, d.shoulderDrop + 4.5)}${arrow(half - d.neckHalf, -2, half + d.neckHalf, -2, 'F', half - 1.5, -3)}
 ${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(half - d.hemHalf, d.length - d.hemCurve - 1.5, half + d.hemHalf, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
 ${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D', body + 4, d.shoulderDrop + d.armDepth / 2)}
 ${arrow(body + 2.5, 0, body + 2.5, d.shoulderDrop, 'U', body + 4, d.shoulderDrop / 2)}
 ${pocketMarks}${hemMarks}</g>
-${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}
+${sleeve.outline.length ? `${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}` : ''}
 </svg>`;
 }
 

@@ -11,7 +11,7 @@ import { decodeProductFile } from './media.ts';
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
-  WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
+  WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
   chestPocketAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
@@ -85,7 +85,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <p class="eyebrow">MEASUREMENTS</p>
       <div class="measure-grid" id="top-measures"><label class="field">Chest (cm)<input id="product-chest" type="number" min="${LIMITS.chest[0]}" max="${LIMITS.chest[1]}" step="1"></label>
         <label class="field">Body length (cm)<input id="product-length" type="number" min="${LIMITS.length[0]}" max="${LIMITS.length[1]}" step="1"></label>
-        <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="${LIMITS.sleeve[0]}" max="${LIMITS.sleeve[1]}" step="1"></label>
+        <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="0" max="${LIMITS.sleeve[1]}" step="1" title="0 makes a T-shirt sleeveless (a tank top)" aria-description="0 makes a T-shirt sleeveless (a tank top)"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="${key === 'waistbandHeight' ? '0.1' : '1'}"></label>`).join('')}</div>
       <div class="measure-grid" id="skirt-measures" hidden>${SKIRT_FIELDS.map(([id,label,,min,max])=>`<label class="field">${label} (cm)<input id="${id}" type="number" min="${min}" max="${max}" step="0.5"></label>`).join('')}<label class="field">Skirt waistband height (cm)<input id="product-skirt-band" type="number" min="0" max="10" step="0.5" aria-describedby="skirt-band-note"></label><label class="field">Waist gathering (× waist)<input id="product-skirt-gather" type="number" min="1" max="${GATHER[1]}" step="0.05" aria-describedby="skirt-gather-note"></label><p class="fine-print" id="skirt-gather-note">1 means a smooth waist. ${GATHER[0]}–${GATHER[1]} cuts the panels' waist edge that many times the waist and gathers it in; the drape forms the gathers. It must stay at least 10 cm shorter than the hem.</p><p class="fine-print" id="skirt-band-note">0 means no waistband; 2–10 cm adds a folded band above the waist seam, styled as its own part. The strip cuts twice that height. Panels keep their side seam slant. The drape holds the upper edge and simulates only the outer surface; the inner facing and closure are not modelled. Fit is not verified. Existing skirt construction remains available separately.</p></div>
@@ -674,8 +674,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         .filter(([key, value]) => key !== 'waistbandHeight' || value !== WAISTBAND_CM)) as unknown as Product['measurements'];
       return;
     }
-    const m = { chest: value('product-chest'), length: value('product-length'), sleeve: value('product-sleeve') };
+    const m = { chest: value('product-chest'), length: value('product-length'), sleeve: topMeasurements(draft).sleeve };
     draft.measurements = m;
+    withSleeveLength(draft, value('product-sleeve'));
     draft.neckline = ($('product-neckline') as HTMLSelectElement).value as Product['neckline'];
     // Artwork that no longer fits the panel is pulled back inside rather than rejected.
     for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
@@ -771,7 +772,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     setModules(current => ({ ...current, chestPocket: on }), on ? 'Chest pocket added in the front body’s style. Style it like any other part.' : 'Chest pocket removed. You can undo this.');
   });
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset]')) button.addEventListener('click', () => update(draft => {
-    topMeasurements(draft).sleeve = Number(button.dataset.sleevePreset);
+    if (Number(button.dataset.sleevePreset) === 0 && draft.base !== 'tee') throw new Error('Only a T-shirt can be made sleeveless.');
+    withSleeveLength(draft, Number(button.dataset.sleevePreset));
   }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.`));
 
   function captureDrape(design: Product): GarmentDrapeResult | null {
@@ -1075,6 +1077,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.checked = radio.value === selected;
     // A hoodie has a hood instead of a V-neck.
     ($('product-neckline') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=v]')!.disabled = design.base === 'hoodie';
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset="0"]')) button.hidden = design.base !== 'tee';
     const modules = optionsOf(design), pocket = $('product-chest-pocket') as HTMLInputElement;
     ($('product-hem') as HTMLSelectElement).value = modules.hem;
     ($('product-hem') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=curved]')!.disabled = !hemAllowed(design.base, 'curved');

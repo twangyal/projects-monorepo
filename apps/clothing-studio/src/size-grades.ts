@@ -45,7 +45,7 @@ export function gradedProduct(product: Product, size: Size): Product {
     graded.measurements = next;
   } else {
     const m = topMeasurements(product);
-    graded.measurements = { chest: round(m.chest + steps * TOP_GRADES.chest), length: round(m.length + steps * TOP_GRADES.length), sleeve: round(m.sleeve + steps * TOP_GRADES.sleeve(m.sleeve)) };
+    graded.measurements = { chest: round(m.chest + steps * TOP_GRADES.chest), length: round(m.length + steps * TOP_GRADES.length), sleeve: m.sleeve === 0 ? 0 : round(m.sleeve + steps * TOP_GRADES.sleeve(m.sleeve)) };
     const fit: NonNullable<Product['fit']> = Object.fromEntries(Object.entries(product.fit ?? {}).map(([key, value]) => [key, round(value + steps * (FIT_GRADES[key as FitKey] ?? 0))]));
     // A point left at a fixed default (a hood's height, a crew neck's drop) would not change with the chest, so it takes
     // its own increment, while it stays within what can be edited.
