@@ -150,7 +150,9 @@ export function pageBrowser(window) {
 }
 
 export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null, browser = pageBrowser(window) } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
+  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', cameraMode: 'eyes', assist: false, ...store.load() };
+  // The camera follows the eyes (WebGazer's gaze estimate) or the head (head-pointer.js).
+  const following = () => (settings.cameraMode === 'head' ? 'head' : 'eyes');
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
   const shadow = host.attachShadow({ mode: 'open' });
@@ -181,6 +183,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <div class="row" role="group" aria-label="Tracking">
           <button class="use-pointer" aria-pressed="true">Pointer</button>
           <button class="use-camera" aria-pressed="false">Camera</button>
+          <button class="use-head" aria-pressed="false">Head</button>
           <button class="recalibrate" disabled>Recalibrate</button>
         </div>
         <div class="row">
@@ -210,6 +213,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">Dates, times and numbers: "set departure to November first", "set appointment time to 2:30 pm", "set guests to four", "set volume to forty percent", "set reporting month to next month". Spoken words and digits both work. "Undo departure date field" restores the earlier value. The website's own min, max and step rules still apply.</p>
         <p class="hint">Custom lists and sliders: "set size to large" or "choose Finland from country" opens a website's own list, types to search it when it is a search box, and picks the named choice. Custom sliders move by their arrow keys and stop if they cannot reach the exact value.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
+        <p class="hint">"Use head pointer" makes the circle follow where your nose points instead of your eyes: the webcam sees how your head is turned. Turning your head is more work but steadier than webcam eye tracking. Its calibration asks you to point your nose at each dot.</p>
         <p class="hint">Say "make the circle bigger" or "make the circle smaller", or "use a small circle", "use a medium circle" or "use a large circle". This changes the visible area without acting on a page control. Give the page instruction again; previous questions are cancelled.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
       </details>
@@ -220,7 +224,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), transcript: $('.transcript'),
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
-    collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
+    collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
     recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
     speechMode: $('.speech-mode'), speechInstall: $('.speech-install'),
   };
@@ -855,7 +859,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function renderSource() {
     ui.usePointer.setAttribute('aria-pressed', String(settings.source === 'pointer'));
-    ui.useCamera.setAttribute('aria-pressed', String(settings.source === 'camera'));
+    ui.useCamera.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'eyes'));
+    ui.useHead.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'head'));
     ui.recalibrate.disabled = settings.source !== 'camera' || camera.state === 'off';
   }
 
@@ -878,7 +883,25 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       renderSource();
       return { ok: true, message: wasOn ? 'Camera off. The circle follows the pointer.' : 'The circle follows the pointer.' };
     }
-    if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    const mode = source === 'head' ? 'head' : 'eyes';
+    if (camera.state !== 'off' && following() === mode) return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    settings.cameraMode = mode;
+    camera.setMode(mode);
+    if (camera.state !== 'off') {
+      // Switching between the eyes and the head while the camera is on: each needs its own calibration, and one
+      // under way for the other is dropped.
+      const generation = ++sourceGeneration, active = calibration;
+      calibration = null;
+      active?.cancel();
+      cameraCalibrated = false;
+      loseCameraContext(false);
+      filter.reset();
+      settings.source = 'camera';
+      store.save(settings);
+      renderSource();
+      if (camera.state === 'ready') restoreOrCalibrate(generation).then(result => { if (generation === sourceGeneration && result && !stopped && !closing) feedback(result); });
+      return { ok: true, message: mode === 'head' ? 'The circle now follows your head.' : 'The circle now follows your eyes.' };
+    }
     const generation = ++sourceGeneration;
     settings.source = 'camera';
     cameraCalibrated = false;
@@ -936,9 +959,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const run = runCalibration({
       record: (x, y) => camera.session === session && camera.recordSample(x, y), window, dot: ui.dot,
       onProgress({ point: number, total, phase, attempt }) {
+        const head = following() === 'head';
         instruction = phase === 'retry' || attempt > 1
-          ? `Dot ${number} of ${total} needs another look. Keep your face visible and look at the dot.`
-          : `Look at dot ${number} of ${total} until it turns green.`;
+          ? `Dot ${number} of ${total} needs another look. Keep your face visible and ${head ? 'point your nose at' : 'look at'} the dot.`
+          : `${head ? 'Point your nose at' : 'Look at'} dot ${number} of ${total} until it turns green.`;
         ui.status.textContent = instruction;
         ui.status.className = 'status question';
       },
@@ -967,7 +991,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const check = runAccuracyCheck({
       window, dot: ui.dot,
       onProgress({ point: number, total }) {
-        ui.status.textContent = `${calibrated} Checking accuracy: look at dot ${number} of ${total}.`;
+        ui.status.textContent = `${calibrated} Checking accuracy: ${following() === 'head' ? 'point your nose at' : 'look at'} dot ${number} of ${total}.`;
         ui.status.className = 'status question';
       },
     });
@@ -975,14 +999,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     check.done.then(report => {
       if (calibration !== check) return;
       calibration = null;
-      const current = () => `${settings.size} (${radius()} px)`;
+      const current = () => `${settings.size} (${radius()} px)`, head = following() === 'head';
+      const follows = head ? 'The circle now follows your head.' : 'The circle now follows your gaze.';
       if (report.cancelled) {
-        feedback({ message: `${calibrated} Accuracy check stopped, so the circle stays ${current()}. The circle now follows your gaze.`, tone: 'info' });
+        feedback({ message: `${calibrated} Accuracy check stopped, so the circle stays ${current()}. ${follows}`, tone: 'info' });
         return;
       }
       const recommended = recommendedSize(report, RADII);
       if (!recommended) {
-        feedback({ message: `${calibrated} The accuracy check saw too little gaze to measure, so the circle stays ${current()}. The circle now follows your gaze.`, tone: 'info' });
+        feedback({ message: `${calibrated} The accuracy check saw too little ${head ? 'pointing' : 'gaze'} to measure, so the circle stays ${current()}. ${follows}`, tone: 'info' });
         return;
       }
       settings.size = recommended.size;
@@ -990,8 +1015,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       store.save(settings);
       schedule();
       feedback(recommended.low
-        ? { message: `${calibrated} Your gaze lands up to about ${report.p90Px} px from where you look, more than the large circle (${radius()} px) covers. Check lighting and keep your head still, then say recalibrate, or use pointer.`, tone: 'error' }
-        : { message: `${calibrated} Your gaze lands within about ${report.p90Px} px of where you look, so the circle is ${current()}. The circle now follows your gaze.`, tone: 'success' });
+        ? { message: head
+          ? `${calibrated} The head pointer lands up to about ${report.p90Px} px from where you point, more than the large circle (${radius()} px) covers. Check lighting and that your whole face is visible, then say recalibrate, or use pointer.`
+          : `${calibrated} Your gaze lands up to about ${report.p90Px} px from where you look, more than the large circle (${radius()} px) covers. Check lighting and keep your head still, then say recalibrate, or use pointer.`, tone: 'error' }
+        : { message: `${calibrated} ${head ? 'The head pointer lands' : 'Your gaze lands'} within about ${report.p90Px} px of where you ${head ? 'point' : 'look'}, so the circle is ${current()}. ${follows}`, tone: 'success' });
     });
   }
 
@@ -1011,6 +1038,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.listen.addEventListener('click', () => setListening(!settings.listening));
   ui.usePointer.addEventListener('click', () => run('use pointer', { elements: [] }));
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
+  ui.useHead.addEventListener('click', () => run('use head pointer', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
   const onPageHide = () => {
     clearCameraSilence();
@@ -1032,7 +1060,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     // leaving camera mode selected with nothing moving the circle.
     if (settings.source === 'camera') {
       settings.source = 'pointer';
-      feedback({ message: `${returned} ${setSource('camera').message}` });
+      feedback({ message: `${returned} ${setSource(following() === 'head' ? 'head' : 'camera').message}` });
       return;
     }
     feedback({ message: returned });
@@ -1225,7 +1253,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // Camera mode continues across pages; a recent calibration is reused while the window size is unchanged.
   if (settings.source === 'camera') {
     settings.source = 'pointer';
-    feedback({ message: `${arrival} ${setSource('camera').message}` });
+    feedback({ message: `${arrival} ${setSource(following() === 'head' ? 'head' : 'camera').message}` });
   }
 
   return {

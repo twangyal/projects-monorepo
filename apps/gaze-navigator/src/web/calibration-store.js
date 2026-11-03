@@ -37,13 +37,25 @@ export function encodeCalibration(samples, { width, height, now }) {
   return { version: CALIBRATION_VERSION, width, height, savedAt: now, samples: encoded };
 }
 
-// Returns samples in the shape WebGazer's setData() expects, or a reason the calibration cannot be reused.
-export function decodeCalibration(stored, { width, height, now }) {
+/** A head pointer's calibration (head-pointer.js samples: pose and screen point), stored like an eye calibration. */
+export function encodeHeadCalibration(samples, { width, height, now }) {
+  const valid = (samples ?? []).filter(s => Array.isArray(s?.features) && s.features.every(Number.isFinite) && Number.isFinite(s.x) && Number.isFinite(s.y));
+  return { version: CALIBRATION_VERSION, mode: 'head', width, height, savedAt: now, samples: valid.map(({ features, x, y }) => ({ features: [...features], x, y })) };
+}
+
+// Returns samples in the shape WebGazer's setData() expects (or, for `mode` 'head', head pointer samples), or a reason
+// the calibration cannot be reused. A calibration made for the other mode is not reused.
+export function decodeCalibration(stored, { width, height, now, mode = 'eyes' }) {
   if (!stored || stored.version !== CALIBRATION_VERSION || !Array.isArray(stored.samples) || !stored.samples.length) {
     return { ok: false, reason: 'none' };
   }
+  if ((stored.mode ?? 'eyes') !== mode) return { ok: false, reason: 'mode' };
   if (stored.width !== width || stored.height !== height) return { ok: false, reason: 'resized' };
   if (!(now - stored.savedAt >= 0 && now - stored.savedAt <= MAX_AGE_MS)) return { ok: false, reason: 'expired' };
+  if (mode === 'head') {
+    const samples = stored.samples.filter(s => Array.isArray(s?.features) && s.features.length === 4 && s.features.every(Number.isFinite) && Number.isFinite(s.x) && Number.isFinite(s.y));
+    return samples.length === stored.samples.length ? { ok: true, samples: samples.map(({ features, x, y }) => ({ features: [...features], x, y })) } : { ok: false, reason: 'invalid' };
+  }
   try {
     const samples = stored.samples.map(sample => ({
       eyes: {

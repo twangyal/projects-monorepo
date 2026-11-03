@@ -715,6 +715,9 @@ function interpretInCircle(utterance, context) {
   const browser = browserCommand(command, context);
   if (browser) return browser;
   if (/^(?:again|(?:do|try) (?:that|it|this) again|(?:do (?:that|it) )?once more|one more time|same again|repeat(?: that| it| the last (?:one|action))?)$/.test(text)) return { type: 'again' };
+  if (/^(?:use|start|switch to|turn on) (?:the |a |my )?head(?: ?(?:pointer|pointing|tracking|mouse))?(?: mode)?$|^head (?:pointer )?mode$|^point with my head$/.test(text)) {
+    return { type: 'tracking', source: 'head' };
+  }
   if (/^(?:use|start|switch to|turn on) (?:the )?(?:camera|webcam|eye tracking|gaze tracking|my eyes)(?: mode| tracking)?$|^camera mode$/.test(text)) {
     return { type: 'tracking', source: 'camera' };
   }

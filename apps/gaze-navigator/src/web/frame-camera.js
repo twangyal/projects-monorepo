@@ -10,6 +10,7 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
   let frame = null;
   let port = null;
   let nextId = 0;
+  let mode = 'eyes';
   const waiting = new Map();
 
   function teardown() {
@@ -93,6 +94,7 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
       state = 'starting';
       try {
         await open(current);
+        await request('mode', mode);
         const result = await request('start');
         if (current !== session) return { ok: false, message: 'Camera start was cancelled.' };
         if (result?.ok) {
@@ -123,6 +125,7 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
     },
     get state() { return state; },
     get session() { return session; },
+    setMode(next) { mode = next; if (port) request('mode', next).catch(() => {}); },
     resetCalibration() { request('reset').catch(() => {}); },
     recordSample: (x, y) => request('sample', x, y).catch(() => false),
     restoreCalibration: size => request('restore', size).catch(() => ({ ok: false, reason: 'stopped' })),

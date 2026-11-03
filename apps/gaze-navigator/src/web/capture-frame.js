@@ -45,6 +45,7 @@ const operations = {
   'speech-start': () => speech.start(),
   'speech-phrases': list => { speech.setPhrases(Array.isArray(list) ? list.slice(0, 200) : []); return true; },
   'speech-install': () => speech.installLocal(),
+  mode: mode => { camera.setMode(mode === 'head' ? 'head' : 'eyes'); return true; },
   start: () => camera.start(),
   stop: () => camera.stop(),
   reset: () => { camera.resetCalibration(); return true; },

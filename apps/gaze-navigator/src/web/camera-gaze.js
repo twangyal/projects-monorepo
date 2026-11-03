@@ -4,6 +4,7 @@ import { createCameraLoader } from '../camera-loader.js';
 import { resetCameraCalibration } from '../camera-calibration.js';
 import { releaseCamera } from '../camera-cleanup.js';
 import { identifyCamera, retireCamera, retireCameraModel } from '../camera-retirement.js';
+import { createHeadModel, headFeatures } from './head-pointer.js';
 
 // A live camera's picture always changes a little (sensor noise). One that stays exactly the same for FROZEN_MS has
 // frozen (a stalled driver, a virtual camera showing a still), and the estimates WebGazer keeps making from it would
@@ -11,6 +12,8 @@ import { identifyCamera, retireCamera, retireCameraModel } from '../camera-retir
 // The picture is compared at SAMPLE_SIZE, large enough that averaging cannot hide the noise.
 export const FROZEN_MS = 3000;
 const SAMPLE_MS = 500, SAMPLE_SIZE = [64, 48];
+// A head pose older than this is not paired with a calibration point: the face was lost since.
+const POSE_MS = 500;
 
 export function createCameraGaze({ document, window, load = createCameraLoader(document, window), onGaze, onLost }) {
   let session = 0;
@@ -20,6 +23,19 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
   let startup = null;
   let frozen = false;
   let unwatch = null;
+  // 'eyes': WebGazer's gaze estimate; 'head': where the head points (head-pointer.js), from the same face landmarks.
+  let mode = 'eyes';
+  const head = createHeadModel();
+  let pose = null, poseAt = -Infinity, lastPositions = null;
+
+  // The face model replaces its landmark list whenever it finds a face, so the same list means no face this frame.
+  function readPose() {
+    const positions = api?.getTracker?.()?.getPositions?.();
+    if (!positions || positions === lastPositions) return null;
+    lastPositions = positions;
+    const video = document.getElementById?.(api?.params?.videoElementId ?? 'webgazerVideoFeed');
+    return headFeatures(positions, video?.videoWidth || 640, video?.videoHeight || 480);
+  }
 
   function watchPicture(current) {
     const canvas = document.createElement?.('canvas'), context = canvas?.getContext?.('2d', { willReadFrequently: true });
@@ -63,6 +79,15 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
       api.showPredictionPoints(false);
       api.setGazeListener(data => {
         if (current !== session || state !== 'ready' || frozen) return;
+        if (mode === 'head') {
+          // WebGazer calls this once a frame; its own gaze estimate is not used.
+          const now = window.performance.now(), next = readPose();
+          if (!next) { if (now - poseAt > POSE_MS) onLost(); return; }
+          pose = next; poseAt = now;
+          const point = head.predict(pose);
+          if (point) onGaze(point.x, point.y, now);
+          return;
+        }
         if (data && Number.isFinite(data.x) && Number.isFinite(data.y)) onGaze(data.x, data.y, window.performance.now());
         else onLost();
       });
@@ -79,6 +104,7 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
       if (began === cancelled || current !== session) return { ok: false, message: 'Camera start was cancelled.' };
       api.removeMouseEventListeners();
       resetCameraCalibration(api);
+      head.clear(); pose = null; poseAt = -Infinity; lastPositions = null;
       state = 'ready';
       frozen = false;
       unwatch = watchPicture(current);
@@ -114,6 +140,13 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
     stop,
     get api() { return state === 'ready' ? api : null; },
     get state() { return state; },
-    resetCalibration() { if (api) resetCameraCalibration(api); },
+    get mode() { return mode; },
+    /** Switches between following the eyes and following the head; each needs its own calibration. */
+    setMode(next) { if (next === 'eyes' || next === 'head') mode = next; },
+    resetCalibration() { if (api) resetCameraCalibration(api); head.clear(); },
+    /** Pairs the latest head pose with a screen point; false without a recent pose. */
+    recordHeadSample(x, y) { return state === 'ready' && pose !== null && window.performance.now() - poseAt <= POSE_MS && head.add(pose, x, y); },
+    get headSamples() { return head.samples; },
+    setHeadSamples: samples => head.setSamples(samples),
   };
 }
