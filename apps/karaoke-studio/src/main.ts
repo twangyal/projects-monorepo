@@ -948,7 +948,6 @@ element('auto-review').addEventListener('click', () => {
       });
       const group = document.createElement('div'); group.append(timingLabel, mark); timings.append(group);
     }
-    row.append(timings);
     const checkedLabel = document.createElement('label'); checkedLabel.className = 'automatic-line-exclusion';
     const checked = document.createElement('input'); checked.type = 'checkbox'; checked.dataset.automaticChecked = String(index);
     checkedLabel.append(checked, `Checked automatic line ${index + 1}`);
@@ -959,7 +958,8 @@ element('auto-review').addEventListener('click', () => {
       if (checked.checked) automaticChecked.add(index); else automaticChecked.delete(index);
       filterAutomaticReview(); srtControls();
     });
-    row.append(checkedLabel);
+    // Exclude and Checked sit together before the times, as wide screens show them.
+    row.append(checkedLabel, timings);
     const actions = document.createElement('div'); actions.className = 'timing-actions';
     for (const [mode, verb] of [['once', 'Listen to'], ['repeat', 'Repeat']] as const) {
       const button = document.createElement('button'); button.textContent = `${verb} automatic line ${index + 1}`;

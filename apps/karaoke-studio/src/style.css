@@ -794,7 +794,7 @@ button {
 .srt-import input { max-width: 100%; min-height: 44px; font: inherit; font-size: .8rem; }
 #srt-status,#srt-summary { overflow-wrap: anywhere; }
 #srt-review h4 { margin: .8rem 0 .5rem; }
-#srt-review-list { max-height: 360px; overflow: auto; padding: 0; margin: .8rem 0; list-style: none; border: 1px solid #d8dfd1; border-radius: 5px; }
+#srt-review-list { max-height: min(70vh, 720px); overflow: auto; padding: 0; margin: .8rem 0; list-style: none; border: 1px solid #d8dfd1; border-radius: 5px; }
 #srt-review-list li { padding: .8rem; border-bottom: 1px solid #d8dfd1; overflow-wrap: anywhere; }
 #srt-review-list li:last-child { border-bottom: 0; }
 #srt-review-list strong { font-size: .75rem; font-variant-numeric: tabular-nums; }
@@ -849,3 +849,17 @@ button {
 .automatic-line-exclusion input { width: 1.25rem; min-height: 1.25rem; margin: 0; flex: 0 0 auto; }
 
 .lyric-replace li p { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Wide screens fit a reviewed line in fewer rows, so several lines show at once: the original words, Exclude and
+   Checked share a row, and each time sits beside its Mark button. Phones keep one control per row. */
+@media (min-width: 700px) {
+  #srt-review-list li { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.2rem; row-gap: .25rem; }
+  #srt-review-list li > * { flex: 1 1 100%; }
+  #srt-review-list li > details, #srt-review-list li > .automatic-line-exclusion { flex: 0 1 auto; margin: 0; }
+  #srt-review-list li > .automatic-review-timing { margin-top: .2rem; }
+  #srt-review-list .automatic-review-timing > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: .5rem; }
+  #srt-review-list .automatic-review-timing .field { margin: 0; }
+  #srt-review-list .automatic-review-timing button { max-width: 11rem; white-space: normal; min-height: 44px; }
+  #srt-review-list li > .timing-actions { margin: .3rem 0 0; }
+  #srt-review-list textarea { min-height: 44px; }
+}
