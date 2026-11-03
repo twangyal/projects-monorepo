@@ -1038,6 +1038,18 @@ function interpretInCircle(utterance, context) {
     if (lists.length) return resolve(choose[2], lists, null, chooseFrom(choose[1]), 'list');
   }
 
+  // Menus that open while the pointer is over them: "show the Shop menu", "hover over Shop", "point at Shop". The control
+  // is pointed at rather than clicked, so its link is not followed. A control with an open/closed state is expanded.
+  if (context.hovering && /^(?:(?:close|hide|dismiss|shut)(?: (?:the|that|this))?(?: (?:menu|submenu|sub menu|dropdown|drop down))?|stop (?:hovering|pointing)|move away)$/.test(text)) {
+    return { type: 'unhover' };
+  }
+  const pointing = /^(?:hover|mouse|move the mouse|put the mouse|point) (?:over|on|at|to) (?:the )?(.+)$|^hover (?:the )?(.+)$/.exec(text);
+  const menu = !pointing && /^(?:show|open|reveal|display|expand|drop down|pull down) (?:the )?(.+?) (?:menu|submenu|sub menu|dropdown|drop down|options)$/.exec(text);
+  const pointedAt = (pointing?.[1] ?? pointing?.[2] ?? (menu ? menu[1] : null))?.replace(/^(?:the|a)\s+/, '');
+  if (pointedAt && !DEICTIC.test(pointedAt) && !/^(?:the|a|this|that)$/.test(pointedAt)) {
+    return resolve(pointedAt, context.elements, null, element => (menu && typeof element.expanded === 'boolean'
+      ? { type: 'disclosure', targetId: element.id, expanded: true } : { type: 'hover', targetId: element.id }));
+  }
   // Resolve before eligibility; unsupported intent must refuse, never redirect.
   const disclosure = /^(expand|collapse)(?:\s+(.+))?$/.exec(text);
   if (disclosure) {

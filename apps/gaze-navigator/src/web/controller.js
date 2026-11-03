@@ -38,6 +38,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
+  // The control last pointed at to open its menu ("show the Shop menu"), left again by "close the menu".
+  let hovered = null;
   // The last scroll, back or forward, zoom step or press of an ordinary control, which "again" repeats in the same place.
   let last = null;
   // The fields a fill of saved details just wrote, which "undo" straight afterwards empties again.
@@ -150,7 +152,12 @@ export function createController({ window, actions = pageActions, interpret = in
         .then(later => executionTurn === turn && !paused ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
       return reply('Working in the embedded page…', 'info', { performed: null, followUp });
     }
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (action.type === 'unhover') {
+      const result = hovered ? actions.unhover(hovered) : { ok: false, message: 'No menu was opened by pointing.' };
+      hovered = null;
+      return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? 'unhover' : null });
+    }
+    if (['activate', 'hover', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -164,6 +171,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'select-tab': result = actions.selectTab(element, target.tabSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'check': result = actions.setChecked(element, action.checked); break;
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
+      case 'hover': result = actions.hover(element, target.name, hovered?.isConnected ? hovered : null); hovered = element; break;
       case 'submit': result = actions.submit(element); break;
       case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
@@ -337,6 +345,7 @@ export function createController({ window, actions = pageActions, interpret = in
     const current = ++turn;
     const recent = previous && now() - previous.at <= PREVIOUS_MS && previous.target.element?.isConnected !== false ? { ...previous.target, id: PREVIOUS_ID } : null;
     if (recent) context = { ...context, previous: recent };
+    if (hovered?.isConnected) context = { ...context, hovering: true };
     let action = interpret(utterance, context), heardAs = null;
     // The recogniser's other readings of the same speech ("click sign in" behind "click signing"): when the first is
     // not understood, the first that is, or else the first that names something which can be offered by sound.

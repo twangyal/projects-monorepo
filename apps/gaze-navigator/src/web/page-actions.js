@@ -731,6 +731,65 @@ export function activate(element, name, { preserveFocus = false } = {}) {
   return { ok: true, message: `${name || 'Control'} activated.` };
 }
 
+// Menus that open while the pointer is over them. A hover sends the events a mouse sends on its way in, at the control's
+// centre, from its outermost ancestor inward, and focuses it for menus that also open on keyboard focus. A page's own
+// CSS :hover style cannot be set this way, so whether anything appeared is checked and said.
+const HOVER_SETTLE_MS = 400;
+const POINTED = 'a[href], button, [role="menuitem"], [role="link"], [role="button"], [role="tab"], input:not([type=hidden]), select, textarea';
+function pointerChain(element) {
+  const chain = [];
+  for (let node = element; node && node.nodeType === 1 && node !== node.ownerDocument.body && node !== node.ownerDocument.documentElement; node = node.parentElement) chain.unshift(node);
+  return chain;
+}
+function pointerAt(element) {
+  const view = element.ownerDocument.defaultView, rect = element.getBoundingClientRect();
+  return { view, init: { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, bubbles: true, cancelable: true, view, pointerType: 'mouse', isPrimary: true } };
+}
+function pointerEvent(view, type, init) {
+  return typeof view.PointerEvent === 'function' ? new view.PointerEvent(type, init) : new view.MouseEvent(type, init);
+}
+/** How many controls on the page a person could see and use now. */
+export function visibleControls(document) {
+  let count = 0;
+  for (const element of document.querySelectorAll(POINTED)) {
+    const shown = typeof element.checkVisibility === 'function' ? element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) : element.getClientRects().length > 0;
+    if (shown) count++;
+  }
+  return count;
+}
+export function hover(element, name, previous = null, { wait = ms => new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, ms)) } = {}) {
+  if (previous && previous !== element && !previous.contains(element) && !element.contains(previous)) unhover(previous);
+  const document = element.ownerDocument, before = visibleControls(document), { view, init } = pointerAt(element), label = name || 'that control';
+  for (const node of pointerChain(element)) {
+    node.dispatchEvent(pointerEvent(view, 'pointerenter', { ...init, bubbles: false }));
+    node.dispatchEvent(new view.MouseEvent('mouseenter', { ...init, bubbles: false }));
+  }
+  element.dispatchEvent(pointerEvent(view, 'pointerover', init));
+  element.dispatchEvent(new view.MouseEvent('mouseover', init));
+  element.dispatchEvent(pointerEvent(view, 'pointermove', init));
+  element.dispatchEvent(new view.MouseEvent('mousemove', init));
+  element.focus?.({ preventScroll: true });
+  const followUp = wait(HOVER_SETTLE_MS).then(() => {
+    const shown = visibleControls(document) - before;
+    return shown > 0
+      ? { ok: true, message: `Showing what is under ${label}: ${shown} more ${shown === 1 ? 'control' : 'controls'} to choose from. Say "close the menu" to leave it.` }
+      : { ok: false, message: `Nothing new appeared when pointing at ${label}. Its menu may open only under a real mouse: say "click ${label}" or use the pointer.` };
+  });
+  return { ok: true, message: `Pointing at ${label}…`, followUp };
+}
+export function unhover(element) {
+  if (!element.isConnected) return { ok: true, message: 'The menu is already gone.' };
+  const { view, init } = pointerAt(element);
+  element.dispatchEvent(pointerEvent(view, 'pointerout', init));
+  element.dispatchEvent(new view.MouseEvent('mouseout', init));
+  for (const node of pointerChain(element).reverse()) {
+    node.dispatchEvent(pointerEvent(view, 'pointerleave', { ...init, bubbles: false }));
+    node.dispatchEvent(new view.MouseEvent('mouseleave', { ...init, bubbles: false }));
+  }
+  if (element.ownerDocument.activeElement === element) element.blur();
+  return { ok: true, message: 'Left the menu.' };
+}
+
 export function selectOption(element, optionIndex, snapshot) {
   const available = () => element.tagName === 'SELECT' && element.isConnected &&
     !element.multiple && !element.readOnly && unlocked(element);
