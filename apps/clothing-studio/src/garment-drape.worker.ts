@@ -1,11 +1,17 @@
 import Delaunator from 'delaunator';
 import { simulateGarment, simulateOutfit, type TopBodyShape } from './garment-drape.ts';
-import { teeMesh, validateProduct, type Product } from './product.ts';
+import { layerOrder, sleeveAngleOf, teeMesh, validateProduct, withSleeveAngle, type Product } from './product.ts';
 
 /** One garment drape per worker; the owner terminates it to cancel or when the design changes. */
 self.onmessage = (event: MessageEvent<{ product: Product; companion?: Product; tucked?: boolean; bodyChest: number; bodyShape?:TopBodyShape }>) => {
   try {
-    const product = validateProduct(event.data.product), companion = event.data.companion ? validateProduct(event.data.companion) : null;
+    let product = validateProduct(event.data.product), companion = event.data.companion ? validateProduct(event.data.companion) : null;
+    // A top worn under another is made for the outer one's arm pose.
+    const layers = companion && layerOrder(product, companion);
+    if (layers) {
+      const posed = withSleeveAngle(layers.inner, sleeveAngleOf(layers.outer));
+      if (layers.inner === product) product = posed; else companion = posed;
+    }
     const options = {
       bodyShape:event.data.bodyShape,
       progress: (frame: number, frames: number) => { if (frame % 15 === 0) self.postMessage({ kind: 'progress', frame, frames }); },

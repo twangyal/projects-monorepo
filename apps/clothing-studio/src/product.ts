@@ -49,6 +49,23 @@ export function partName(product: Pick<Product, 'base'>, part: PartId): string {
 }
 /** Bottoms use their own measured panels instead of top measurements or the top drape. */
 export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers' || product.base === 'skirt'; }
+/** A top worn over another: one made on the T-shirt base (a tee, tank, crop top or T-shirt dress) under a sweatshirt
+ * or hoodie. Null for any other pair. */
+export function layerOrder<T extends Pick<Product, 'base'>>(a: T, b: T): { inner: T; outer: T } | null {
+  const outer = (product: T) => product.base === 'sweatshirt' || product.base === 'hoodie';
+  if (a.base === 'tee' && outer(b)) return { inner: a, outer: b };
+  if (b.base === 'tee' && outer(a)) return { inner: b, outer: a };
+  return null;
+}
+/** Whether two designs make an outfit: a top with bottoms, or a top over another (see layerOrder). */
+export function canWearTogether(a: Pick<Product, 'base'>, b: Pick<Product, 'base'>): boolean { return isBottoms(a) !== isBottoms(b) || layerOrder(a, b) !== null; }
+// A top worn under another is made for the outer one's arm pose, so its sleeves lie round the same arms. The pose is
+// kept beside the copy made for the drape, never in the saved design.
+const SLEEVE_POSE = new WeakMap<object, number>();
+/** How far the arms are lowered from the horizontal for this top's 3D shell and drape, degrees. */
+export function sleeveAngleOf(product: Product): number { return SLEEVE_POSE.get(product) ?? (product.base === 'tee' ? 38 : 58); }
+/** A copy of `product` made and draped with its arms at `angle` degrees below the horizontal. */
+export function withSleeveAngle(product: Product, angle: number): Product { const copy = { ...product }; SLEEVE_POSE.set(copy, angle); return copy; }
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
@@ -522,7 +539,7 @@ export function teeDimensions(product: Product) {
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: low, capHeight,
     neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: fit.backNeckDrop ?? 2, ribHeight: neckSize(m, product.neckline, fit).width, ribLength: neckSize(m, product.neckline, fit).length,
-    band: product.base === 'tee' ? 0 : fit.hemBandHeight ?? BAND_CM, cuffHeight, sleeveAngle: product.base === 'tee' ? 38 : 58,
+    band: product.base === 'tee' ? 0 : fit.hemBandHeight ?? BAND_CM, cuffHeight, sleeveAngle: sleeveAngleOf(product),
     hoodHeight: fit.hoodHeight ?? 32, hoodWidth: fit.hoodWidth ?? 26, hoodHalf: 13, pocketTop: m.length - (fit.hemBandHeight ?? BAND_CM) - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
     hemCurve: optionsOf(product).hem === 'curved' ? HEM_CURVE_CM : 0,

@@ -12,7 +12,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -191,12 +191,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (!shownSize || shownSize === sampleOf(design)) return design;
     try { return gradedProduct(design, shownSize); } catch { return design; }
   };
-  // An outfit: the garment worn with the design, when one is a top and the other bottoms.
-  const companionOf = (design: Product) => { const worn = options.current().wornWith; return worn && isBottoms(worn) !== isBottoms(design) ? worn : null; };
+  // An outfit: the garment worn with the design, when one is a top and the other bottoms, or a T-shirt under a
+  // sweatshirt or hoodie (layers).
+  const companionOf = (design: Product) => { const worn = options.current().wornWith; return worn && canWearTogether(worn, design) ? worn : null; };
+  const layersOf = (design: Product) => { const companion = companionOf(design); return companion ? layerOrder(design, companion) : null; };
   const outfitTop = (design: Product) => isBottoms(design) ? companionOf(design) : design;
-  // A top worn with bottoms can be tucked in; a dress cannot.
-  const tuckedFor = (design: Product) => { const top = outfitTop(design); return !!options.current().tucked && !!companionOf(design) && !!top && canTuck(top); };
-  const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(outfitTop(design) ?? design);
+  // A top worn with bottoms can be tucked in; a dress, or a top worn over another, cannot.
+  const tuckedFor = (design: Product) => { const top = outfitTop(design); return !!options.current().tucked && !!companionOf(design) && !layersOf(design) && !!top && canTuck(top); };
+  // Layers are draped on a body for the top underneath, nearest the body.
+  const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(layersOf(design)?.inner ?? outfitTop(design) ?? design);
   const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,underbust:bodyUnderbust??undefined});
   // Trousers default to the waist and hip they were drafted for, rather than proportions of a chest.
   // An outfit's automatic girths are ones both garments can be worn on.
@@ -204,7 +207,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const companion = companionOf(design);
     const entered = {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,underbust:bodyUnderbust??undefined};
     // Girths the bottoms cannot be worn on are left for the drape to explain.
-    if (companion) try { return outfitShape(isBottoms(design) ? design : companion, chestFor(design), entered); } catch { return entered; }
+    if (companion && !layersOf(design)) try { return outfitShape(isBottoms(design) ? design : companion, chestFor(design), entered); } catch { return entered; }
     if (design.base === 'trousers') {
       const drafted = legMeasurements(design);
       return {waist:bodyWaist??drafted.waist,hip:bodyHip??drafted.hip,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined};
@@ -259,8 +262,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     return parts.length ? ` On this ${height ? `${height} cm ` : ''}body ${parts.join(', ')}.` : '';
   }
   function drapeSummary(design: Product, result: GarmentDrapeResult): string {
-    const companion = result.companion && companionOf(design), tucked = !!companion && tuckedFor(design);
-    const worn = !companion ? '' : tucked ? (isBottoms(design) ? ` Worn with the ${companion.name} tucked in: the top drapes first, held close to the body below the waistband, and these bottoms drape over it.`
+    const companion = result.companion && companionOf(design), tucked = !!companion && tuckedFor(design), layers = layersOf(design);
+    const worn = !companion ? '' : layers ? (layers.inner === design ? ` Worn under the ${companion.name}: this top drapes first, on a body posed for the ${companion.name}, and the ${companion.name} rests on it.`
+        : ` Worn over the ${companion.name}: the ${companion.name} drapes first on the same body, and this top rests on it.`)
+      : tucked ? (isBottoms(design) ? ` Worn with the ${companion.name} tucked in: the top drapes first, held close to the body below the waistband, and these bottoms drape over it.`
         : ` Tucked into the ${companion.name}: this top drapes first, held close to the body below the waistband, and the bottoms drape over it.`)
       : isBottoms(design) ? ` Worn under the ${companion.name}: the top drapes over these bottoms on the same body.`
       : ` Worn over the ${companion.name}: the bottoms drape first on the same body and do not carry this garment's weight.`;
@@ -337,7 +342,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const wearWith = $('garment-wear-with') as HTMLSelectElement;
   let savedOutfits = new Map<string, Product>(), loadingSaved = false;
   function renderWearWith(design: Product) {
-    const kept = options.current().wornWith, companion = companionOf(design), other = (item: Product) => isBottoms(item) !== isBottoms(design);
+    const kept = options.current().wornWith, companion = companionOf(design), other = (item: Product) => canWearTogether(item, design);
     const option = (value: string, text: string) => `<option value="${value}">${escapeHtml(text)}</option>`;
     const html = option('', 'Nothing else') + (companion ? option('kept', `${kept!.name} (kept with this design)`) : '')
       + `<optgroup label="Templates">${TEMPLATES.filter(item => other(item.product)).map(item => option(`t:${item.id}`, item.name)).join('')}</optgroup>`
@@ -1174,9 +1179,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const companion = companionOf(design), onTop = !bottoms || !!companion;
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
     ($('edit-worn-garment') as HTMLButtonElement).disabled = !project.product || !companion;
-    const tuckBox = $('garment-tuck') as HTMLInputElement, top = outfitTop(design), tuckable = !!project.product && !!companion && !!top && canTuck(top);
+    const tuckBox = $('garment-tuck') as HTMLInputElement, top = outfitTop(design), layered = !!layersOf(design), tuckable = !!project.product && !!companion && !layered && !!top && canTuck(top);
     tuckBox.disabled = !tuckable; tuckBox.checked = tuckable && tuckedFor(design);
-    $('garment-tuck-help').textContent = !companion ? 'Choose bottoms with Wear with to tuck a top in.' : !tuckable ? 'A dress cannot be tucked in; shorten it to a top to tuck it.'
+    $('garment-tuck-help').textContent = !companion ? 'Choose bottoms with Wear with to tuck a top in.' : layered ? 'A top worn over another is not tucked in.' : !tuckable ? 'A dress cannot be tucked in; shorten it to a top to tuck it.'
       : 'The top drapes first, held close to the body below the waistband, and the bottoms drape over it. You can undo this.';
     const outfitExport = $('export-outfit') as HTMLInputElement;
     outfitExport.disabled = !companion; if (!companion) outfitExport.checked = false;
