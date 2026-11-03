@@ -312,14 +312,18 @@ MAX_STEPS = 16
 NEARBY = 0.25
 
 
-def word_timings(cues: list[dict], words: list, duration: float) -> list[list[dict]]:
+def word_timings(cues: list[dict], words: list, duration: float, letters=None) -> list[list[dict]]:
     """For each cue, its words with the time each starts being sung and whether it was heard.
 
     Words are matched to recognized words sung during the cue (spelling-tolerant global alignment).
     Unheard words are placed between their heard neighbours in proportion to their length, and a
     line with no recognized words is spread across its interval, so corrected and supplied lyrics
-    highlight too. Starts never decrease within a line and stay inside the cue.
+    highlight too. With ``letters`` (how likely each letter is in every 20 ms of the vocals, see
+    ``alignment``), a line in Latin letters is laid on them instead: each word, heard or not, starts
+    where its letters were sung, which on the developer benchmark is closer to the annotated starts
+    than the recognizers' own word times. Starts never decrease within a line and stay inside the cue.
     """
+    from .alignment import alignable, force_words
     words = clean_words(words, duration)
     result = []
     budget = AlignmentBudget()
@@ -365,6 +369,12 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
             for k in range(index, run_end):
                 starts[k] = left + (right - left) * sum(weights[first:k]) / total
             index = run_end
+        forced = force_words(cue['text'], letters, start, end) if letters is not None and alignable([cue['text']]) else None
+        if forced is not None and len(forced) == len(tokens):
+            for k in range(len(tokens)):
+                starts[k] = min(max(forced[k], start), sing_end)
+            for k in range(1, len(tokens)):
+                starts[k] = max(starts[k], starts[k - 1])
         if len(tokens) > MAX_STEPS:
             # Group words into at most MAX_STEPS highlight steps; each group starts with its first word.
             group = [k * len(tokens) // MAX_STEPS for k in range(MAX_STEPS)]

@@ -2,10 +2,13 @@
 
 Uses the same JamendoLyrics checkout, production path and cached work directory as
 ``evaluate_lyrics.py`` (separation + recognition run once per song). For every reference word of
-the English songs, it compares the time ``word_timings`` lights the word up with its annotated start,
-in three situations:
+the songs in ``--language``, it compares the time ``word_timings`` lights the word up with its
+annotated start, in these situations:
 
-- ``timedLines``: reference lines with their annotated start/end times (lines a person timed well);
+- ``timedLines``: reference lines with their annotated start/end times (lines a person timed well),
+  word times from recognition (``timedLinesHeard`` and ``timedLinesUnheard`` split them);
+- ``timedLinesForced``: the same lines laid on the letters measured in the vocals, as the studio does
+  with the lyric aligner installed; ``timedLinesHybrid`` keeps recognized times for heard words;
 - ``alignedLines``: the reference lyrics pasted and aligned automatically with ``align_lines``;
 - ``estimatedOnly``: the timed lines without recognized words (the fallback, as a baseline).
 
@@ -23,7 +26,9 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from evaluate_lyrics import process, share  # noqa: E402
+from evaluate_lyrics import measured_letters, process, share  # noqa: E402
+from karaoke.alignment import aligner_ready, force_words  # noqa: E402
+from karaoke.limits import MAX_DURATION  # noqa: E402
 from karaoke.lyrics_auto import align_lines, word_timings  # noqa: E402
 
 
@@ -38,13 +43,18 @@ def main() -> None:
     parser.add_argument('--model-dir', type=Path, required=True)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--language', default='English')
+    parser.add_argument('--max-seconds', type=float, default=MAX_DURATION)
+    parser.add_argument('--limit', type=int)
     args = parser.parse_args()
-    rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == 'English']
-    totals = {key: [] for key in ('timedLines', 'alignedLines', 'estimatedOnly', 'timedLinesHeard', 'timedLinesUnheard')}
+    rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == args.language][:args.limit]
+    totals = {key: [] for key in ('timedLines', 'alignedLines', 'estimatedOnly', 'timedLinesHeard', 'timedLinesUnheard',
+                                  'timedLinesForced', 'timedLinesHybrid', 'timedLinesForcedUnheard')}
+    aligner = aligner_ready(args.model_dir)
     songs, skipped = [], []
     for row in rows:
         name = Path(row['Filepath']).stem
-        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir)
+        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir, args.max_seconds)
         duration, words = transcript['duration'], transcript['words']
         starts = [float(w['word_start']) for w in csv.DictReader((args.dataset / 'annotations' / 'words' / f'{name}.csv').open())]
         lines = list(csv.DictReader((args.dataset / 'annotations' / 'lines' / f'{name}.csv').open()))
@@ -76,6 +86,17 @@ def main() -> None:
         for line, truths in zip(timed, reference):
             for word, truth in zip(line, truths):
                 totals['timedLinesHeard' if word['heard'] else 'timedLinesUnheard'].append(abs(word['start'] - truth))
+        # Laid on the letters measured in the vocals, within each timed line; and with heard words kept as recognized.
+        letters = measured_letters(Path(transcript['clipDirectory']), args.model_dir, duration) if aligner else None
+        if letters is not None:
+            for cue, line, truths in zip(cues, timed, reference):
+                forced = force_words(cue['text'], letters, cue['start'], cue['end'])
+                for k, (word, truth) in enumerate(zip(line, truths)):
+                    at = min(max(forced[k], cue['start']), cue['end']) if forced and len(forced) == len(line) else word['start']
+                    totals['timedLinesForced'].append(abs(at - truth))
+                    totals['timedLinesHybrid'].append(abs((word['start'] if word['heard'] else at) - truth))
+                    if not word['heard']:
+                        totals['timedLinesForcedUnheard'].append(abs(at - truth))
         aligned = align_lines([cue['text'] for cue in cues], words, duration)
         if len(aligned) == len(cues):
             errors = [abs(word['start'] - truth) for line, truths in zip(word_timings(aligned, words, duration), reference)

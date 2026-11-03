@@ -26,11 +26,12 @@ def _plain(text: str) -> str:
     return re.sub(r'\s+', ' ', text.translate(_TAG_CHARACTERS)).strip()
 
 
-def render_lrc(project: dict, words: list | None = None) -> str:
-    """The project's saved lyrics as enhanced LRC; ``words`` are recognized words (may be empty)."""
+def render_lrc(project: dict, words: list | None = None, letters=None) -> str:
+    """The project's saved lyrics as enhanced LRC; ``words`` are recognized words (may be empty) and ``letters`` the
+    letters measured in the vocals, when there are any (see ``alignment``)."""
     project = validate_project(project)
     cues = project['cues']
-    timings = word_timings(cues, words or [], project['duration'])
+    timings = word_timings(cues, words or [], project['duration'], letters)
     lines = [f'[ti:{_plain(project["title"])}]', f'[length:{_stamp(project["duration"])[:5]}]', '[re:Karaoke Studio]']
     for index, cue in enumerate(cues):
         sung, previous = '', ''

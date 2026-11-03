@@ -731,6 +731,9 @@ class KaraokeServer(ThreadingHTTPServer):
             raise RequestError(400, "Add and timestamp lyric lines, then save before exporting a video.")
         transcript = self.optional_transcript(project)
         timing = {"words": transcript["words"]} if transcript else {}
+        letters = self.read_alignment(project) if transcript else None
+        if letters is not None:
+            timing["letters"] = letters
         work_dir = self.new_work()
         project_dir = self.projects_dir / project["id"]
 
@@ -1208,10 +1211,12 @@ class Handler(BaseHTTPRequestHandler):
                     letters = server.read_alignment(project)
                 if read and resource == "lrc":
                     transcript = server.optional_transcript(project)
+                    letters = server.read_alignment(project) if transcript else None
                 if self.command == "POST" and resource == "word-timings":
                     # The same rules as saving, so unsaved but valid drafts can be previewed.
                     timed = validate_project({**project, "cues": value["cues"]})
                     transcript = server.optional_transcript(project)
+                    letters = server.read_alignment(project) if transcript else None
                 if read and resource == "video":
                     marker = directory / "video-revision.json"
                     if not (directory / "video.mp4").is_file() or not marker.is_file():
@@ -1258,7 +1263,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "word-timings":
                 words = transcript["words"] if transcript else []
                 self._json({"recognized": transcript is not None,
-                            "lines": word_timings(timed["cues"], words, project["duration"])})
+                            "lines": word_timings(timed["cues"], words, project["duration"], letters)})
                 return
             if self.command == "POST" and resource == "align":
                 if transcript is None:
@@ -1276,7 +1281,7 @@ class Handler(BaseHTTPRequestHandler):
                             disposition=self._attachment(project["title"], ".srt"))
                 return
             if read and resource == "lrc":
-                self._bytes(render_lrc(project, transcript["words"] if transcript else []).encode("utf-8"),
+                self._bytes(render_lrc(project, transcript["words"] if transcript else [], letters).encode("utf-8"),
                             "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".lrc"))
                 return
             if read and resource == "video":
