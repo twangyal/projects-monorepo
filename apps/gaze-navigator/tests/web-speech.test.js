@@ -54,6 +54,11 @@ test('an interim cancel acts immediately and its final transcript is not handled
   emit(recognition, 1, result('cancel', true), result('scroll down', true));
   assert.deepEqual(immediate, ['cancel']);
   assert.deepEqual(finals, ['scroll down']);
+  // Everyday words for pausing act as soon as they are heard too; a longer instruction waits to be final.
+  const before = [result('cancel', true), result('scroll down', true)];
+  emit(recognition, 2, ...before, result('hang on', false));
+  emit(recognition, 3, ...before, result('hang on', true), result('hold on to the', false));
+  assert.deepEqual(immediate, ['cancel', 'hang on']);
 });
 
 test('permission errors stop listening; transient errors stop after repeated failures', () => {

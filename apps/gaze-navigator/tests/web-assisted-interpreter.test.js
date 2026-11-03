@@ -21,7 +21,7 @@ function scripted(byName = {}, intent = 0) {
 test('a named target the rules could not match is picked by the model only when it is confident', async () => {
   const model = scripted({ Reviews: 9 });
   const interpret = createAssistedInterpreter({ model });
-  const action = await interpret('open the customer reviews', CONTEXTS.product);
+  const action = await interpret('open the opinions', CONTEXTS.product);
   assert.deepEqual({ ...action, assisted: undefined }, { type: 'activate', targetId: 4, assisted: undefined });
   assert.equal(action.assisted.by, 'watersheep');
   assert.equal(model.calls[0].question, TARGET_QUESTION);
@@ -38,14 +38,14 @@ test('a named target the rules could not match is picked by the model only when 
 
 test('unparsed phrases need a confident "uses a control" answer first, so safety-like phrases never press anything', async () => {
   const cautious = scripted({ 'Place order': 9 }, 0.2);
-  assert.equal((await createAssistedInterpreter({ model: cautious })('hang on', CONTEXTS.product)).type, 'unknown');
+  assert.equal((await createAssistedInterpreter({ model: cautious })('hmm let me think about it', CONTEXTS.product)).type, 'unknown');
   assert.deepEqual(cautious.calls.map(call => call.kind), ['yes'], 'no pick is requested');
   assert.equal(cautious.calls[0].question, INTENT_QUESTION);
   const willing = scripted({ 'Place order': 9 }, 0.95);
   const bought = await createAssistedInterpreter({ model: willing })('buy it now', CONTEXTS.product);
   assert.equal(bought.type, 'activate'); assert.equal(bought.targetId, 3);
   // Rule-handled instructions never reach the model.
-  for (const say of ['cancel', 'pause', 'confirm', 'two', 'type hello', 'scroll down', 'go back', 'open pricing']) {
+  for (const say of ['cancel', 'pause', 'hang on', 'yep', 'confirm', 'two', 'type hello', 'scroll down', 'down a bit', 'go back', 'open pricing']) {
     const model = scripted({ Home: 9 }, 1);
     await createAssistedInterpreter({ model })(say, CONTEXTS.navigation);
     assert.equal(model.calls.length, 0, say);
@@ -70,9 +70,14 @@ test('the model only breaks ties between the controls the rules proposed, keepin
 test('a role word without an activation verb is not a request to name a control', async () => {
   // Measured: "put Ada in the name field" focused the field instead of typing. Without a verb it must pass the intent gate.
   const model = scripted({ 'Your name': 9 }, 0.1);
-  const action = await createAssistedInterpreter({ model })('put Ada in the name field', CONTEXTS.form);
+  const action = await createAssistedInterpreter({ model })('stick Ada in the name field', CONTEXTS.form);
   assert.equal(action.type, 'unknown');
   assert.deepEqual(model.calls.map(call => call.kind), ['yes']);
+  // The rules now type it themselves, without asking the model.
+  const typing = scripted({ 'Your name': 9 }, 0.1);
+  const typed = await createAssistedInterpreter({ model: typing })('put Ada in the name field', CONTEXTS.form);
+  assert.deepEqual({ type: typed.type, targetId: typed.targetId, text: typed.edit?.text }, { type: 'edit', targetId: 1, text: 'Ada' });
+  assert.equal(typing.calls.length, 0);
 });
 
 test('only roles, names, checked state and choices are sent, and model failures keep the rule answer', async () => {
@@ -81,9 +86,9 @@ test('only roles, names, checked state and choices are sent, and model failures 
   assert.ok(model.calls.every(call => !JSON.stringify(call).includes('Tuesday')), 'field values stay on the page');
   assert.equal(describeElement(CONTEXTS.form.elements[3]), 'checkbox "Send me a copy", not checked');
   const broken = { decide: async () => { throw new Error('model missing'); }, yes: async () => 1 };
-  assert.equal((await createAssistedInterpreter({ model: broken })('open the customer reviews', CONTEXTS.product)).type, 'unknown');
+  assert.equal((await createAssistedInterpreter({ model: broken })('open the opinions', CONTEXTS.product)).type, 'unknown');
   const malformed = { decide: async () => ({ probs: [2, -1] }), yes: async () => 1 };
-  assert.equal((await createAssistedInterpreter({ model: malformed })('open the customer reviews', CONTEXTS.product)).type, 'unknown');
+  assert.equal((await createAssistedInterpreter({ model: malformed })('open the opinions', CONTEXTS.product)).type, 'unknown');
 });
 
 test('a request to choose never just opens a dropdown, and word corrections need a focused field', async () => {

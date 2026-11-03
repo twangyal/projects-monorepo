@@ -177,21 +177,21 @@ test('a model-assisted answer follows only while it is still the latest instruct
   };
   const controller = createController({ window: {}, actions: page.actions, assistant });
   const context = { elements: [describe(1, page.node('Reviews'), { role: 'link' }), describe(2, page.node('Place order'), { consequential: true })] };
-  // The rules alone cannot name "the ratings": the controller says so and waits for the assistant.
-  const first = controller.handle('show the ratings', context);
+  // The rules alone cannot name "what people wrote": the controller says so and waits for the assistant.
+  const first = controller.handle('show what people wrote', context);
   assert.equal(first.assisting, true);
   assert.equal(page.log.length, 0);
   release();
   assert.equal((await first.followUp).performed, 'activate');
   assert.deepEqual(page.log.at(-1), ['activate', 'Reviews']);
   // A newer instruction (here cancel) makes the pending answer stale: nothing runs.
-  const stale = controller.handle('show the ratings', context);
+  const stale = controller.handle('show what people wrote', context);
   controller.handle('cancel', { elements: [] });
   release();
   assert.equal(await stale.followUp, null);
   assert.equal(page.log.length, 1);
   // Pausing drops it as well.
-  const paused = controller.handle('show the ratings', context);
+  const paused = controller.handle('show what people wrote', context);
   controller.handle('pause', { elements: [] });
   release();
   assert.equal(await paused.followUp, null);
@@ -206,7 +206,7 @@ test('a model-assisted answer follows only while it is still the latest instruct
   assert.equal(page.log.length, 1, 'nothing ran before confirmation');
   // A failing assistant keeps the rule answer.
   const failing = createController({ window: {}, actions: page.actions, assistant: { needs: () => true, improve: () => Promise.reject(new Error('down')) } });
-  assert.equal((await failing.handle('show the ratings', context).followUp).tone, 'error');
+  assert.equal((await failing.handle('show what people wrote', context).followUp).tone, 'error');
 });
 
 test('search in a non-search field requires confirmation before writing or submitting', () => {

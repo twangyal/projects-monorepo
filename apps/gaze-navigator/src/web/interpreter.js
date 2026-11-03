@@ -2,6 +2,7 @@
 // Deterministic rules form the baseline; a model interpreter can implement the same contract.
 import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
 import { relatedWords } from './topics.js';
+import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -12,7 +13,7 @@ const MARGIN = 0.05;
 // A match below this shares only some of the words said; a control named this well just outside the circle wins.
 const STRONG = 0.8;
 const DEICTIC = /^(this|that|it|here|there|this one|that one)$/;
-const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
+const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|jump to|skip to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
 // Politeness and lead-ins that carry no instruction; dictated text keeps everything after its verb.
 const LEADING_FILLER = /^(?:(?:please|ok|okay|now|hey|so|um|uh)\s+|(?:can|could|would|will) you(?: please)?\s+|(?:i(?:'d| would) like to|i want to|i need to|let's|let me|go ahead and)\s+)+/i;
 // "Thanks" is not stripped: it is often the content ("change it to Thanks").
@@ -25,7 +26,9 @@ const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign 
   ['past versions', 'history'], ['previous versions', 'history'], ['old versions', 'history'], ['revisions', 'history'], ['revision history', 'history'],
   ['version history', 'history'], ['edit history', 'history'],
   ['preferences', 'settings'], ['options', 'settings'], ['frequently asked questions', 'faq'],
-  ['get in touch', 'contact'], ['contact us', 'contact'], ['my account', 'account'], ['profile', 'account'],
+  ['get in touch', 'contact'], ['contact us', 'contact'], ['customer service', 'contact'], ['customer support', 'contact'], ['support', 'contact'],
+  ['help desk', 'contact'], ['helpdesk', 'contact'], ['my account', 'account'], ['profile', 'account'],
+  ['ratings', 'reviews'], ['rating', 'reviews'], ['customer ratings', 'reviews'], ['customer reviews', 'reviews'], ['comments', 'reviews'], ['testimonials', 'reviews'],
   ['navigation', 'menu'], ['nav', 'menu'], ['dark theme', 'dark mode'], ['alerts', 'notifications'], ['inbox', 'messages']];
 // "The stuff about cars", "information on visas": the topic is what names the control, not the lead-in.
 const TOPIC_LEAD = /^(?:(?:the|some|any|more|all the)\s+)?(?:stuff|things?|bits?|parts?|sections?|pages?|areas?|info|information|details|something|anything|everything|articles?|guidance|advice)\s+(?:about|on|for|regarding|related to|to do with|around|concerning)\s+(.+)$/;
@@ -211,6 +214,20 @@ function textField(element) {
 
 // The field being typed in when the gaze has drifted off it: a correction of words it contains is about that field.
 // A password field's text is never read, so it is never chosen this way.
+// A text field in the circle called `name` ("the message", "my email box").
+function fieldCalled(name, context) {
+  const bare = name.replace(/\s+(?:field|box|input)$/i, '');
+  return context.elements.some(element => textField(element) && matchScore(bare, element.name ?? '') >= STRONG);
+}
+
+// "Put Ada in the name field", "fill in the email with ada@example.com": typing into a field named in the circle.
+function intoNamedField(raw, context) {
+  const put = /^put\s+(.+?)\s+in(?:to)?\s+(?:the\s+|my\s+)?(.+?)\p{P}*$/iu.exec(raw);
+  const fill = /^fill\s+(?:in\s+|out\s+)?(?:the\s+|my\s+)?(.+?)\s+with\s+(.+?)\p{P}*$/iu.exec(raw);
+  const [text, name] = put ? [put[1], put[2]] : fill ? [fill[2], fill[1]] : [];
+  return name && fieldCalled(name, context) ? `type ${text} into ${name}` : null;
+}
+
 function typingIn(context, find) {
   const field = context.focusedField;
   return field && textField(field) && !field.sensitive && find && normalize(field.value ?? '').includes(normalize(find)) ? field : null;
@@ -294,7 +311,7 @@ function readingOrder(elements) {
 
 // "The second link", "the last Remove": counts in reading order among a role or a repeated name.
 function ordinal(word, rest, elements, act) {
-  const roles = ROLE_HINTS[rest] ?? (rest === 'item' || rest === 'control' ? null : undefined);
+  const roles = ROLE_HINTS[rest] ?? (LINK_NOUNS.has(rest) ? ['link'] : rest === 'item' || rest === 'control' || rest === 'one' ? null : undefined);
   let pool;
   if (roles !== undefined) pool = roles ? elements.filter(element => roles.includes(element.role)) : elements;
   else {
@@ -685,7 +702,8 @@ function interpretInCircle(utterance, context) {
   const heard = (utterance ?? '').trim();
   // Dictation keeps its own words; commands also drop trailing politeness.
   const raw = heard.replace(LEADING_FILLER, '') || heard;
-  const command = raw.replace(TRAILING_FILLER, '') || raw;
+  // Everyday ways of saying the navigator's own commands ("hang on", "yep", "down a bit") read as those commands.
+  const command = everydayCommand(raw.replace(TRAILING_FILLER, '') || raw, normalize);
   const text = normalize(command);
   if (!text) return { type: 'unknown', message: 'No instruction was heard.' };
 
@@ -919,7 +937,8 @@ function interpretInCircle(utterance, context) {
     return name ? resolve(name, sliders, null, act, 'slider') : deictic(sliders, act, 'slider');
   }
   if ((match = /^(?:search(?: for)?|look up|look for|find)\s+(.+)$/i.exec(command))) {
-    const query = unquote(match[1]);
+    // "Find me some poetry books" searches for poetry books.
+    const query = unquote(match[1].replace(/^(?:me\s+)?(?:(?:some|a few|any)\s+)?(?=\S)/i, '')) || unquote(match[1]);
     const act = element => ({ type: 'search', targetId: element.id, text: query });
     const nearby = context.elements.filter(element => element.editable && (element.role === 'searchbox' || /search/i.test(element.name)));
     if (nearby.length) return deictic(nearby, act, 'search field');
@@ -932,16 +951,19 @@ function interpretInCircle(utterance, context) {
     return field ? { ...edit('append', { text: dictated(match[1]) })(field), requireFocus: true }
       : { type: 'unknown', message: 'First focus a regular text field, then say “continue typing” and the words. No field was changed.' };
   }
-  if ((match = /^(?:type|write|enter|dictate|insert)\s+(.+)$/i.exec(raw))) {
+  if ((match = /^(?:type|write|enter|dictate|insert)\s+(.+)$/i.exec(intoNamedField(raw, context) ?? raw))) {
     // Ordinary "in" stays literal ("meet in the park"); "into", a quoted phrase or an explicit field suffix names a target.
     const quoted = /^["“](.*?)["”](?:\s+(?:into|in)\s+(?:the\s+)?(.+))?$/i.exec(match[1]);
     const into = /^(.+)\s+into\s+(?:the\s+)?(.+)$/i.exec(match[1]);
     // An explicit field/box/input suffix names a target even when gaze misses it. A missing target must not
     // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
-    const [said, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
+    // "In the message" also names a target when a text field in the circle is called that.
+    const inField = !quoted && !into && !named ? /^(.+)\s+in\s+(?:the\s+|my\s+)?(.+?)\p{P}*$/iu.exec(match[1]) : null;
+    const field = inField && fieldCalled(inField[2], context) ? inField : null;
+    const [said, fieldName] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : field ? [field[1], field[2]] : [match[1], null];
     const content = quoted ? said : punctuate(said);
-    return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, writing('append', content), context.now), { recover: true, kind: textKind(content) });
+    return chooseField(fieldName?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, writing('append', content), context.now), { recover: true, kind: textKind(content) });
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
     const content = dictated(match[1]);
@@ -998,6 +1020,13 @@ function interpretInCircle(utterance, context) {
     return { type: 'key', ...keys };
   }
 
+  // A choice said another way ("make it hardcover", "switch to the audiobook", "make the topic order problem").
+  const options = context.elements.filter(element => element.options?.length);
+  const wanted = choiceSaid(text), making = /^make (?:the )?(.+)$/.exec(text);
+  const madeIn = making && options.find(element => normalize(element.name ?? '') && making[1].startsWith(`${normalize(element.name)} `));
+  const madeChoice = (wanted && selectOption(wanted, options)) ??
+    (madeIn && selectOption(making[1].slice(normalize(madeIn.name).length + 1).replace(/^(?:be|to|into) /, ''), [madeIn]));
+  if (madeChoice) return madeChoice;
   // Choosing a value from a dropdown inside the circle.
   const choose = /^(?:choose|select|pick|set)\s+(.+?)(?:\s+(?:from|in|for)\s+(?:the\s+)?(.+))?$/.exec(text);
   if (choose) {
@@ -1045,6 +1074,13 @@ function interpretInCircle(utterance, context) {
     }
   }
 
+  // "Delete the first one", "read the second one": counted among the controls named for what was said.
+  const counting = countedSaid(text);
+  if (counting) {
+    const named = context.elements.filter(element => counting.named.test((element.name ?? '').trim()) && (!counting.role || element.role === counting.role));
+    const pool = named.length ? named : counting.role ? context.elements.filter(element => element.role === counting.role) : [];
+    if (pool.length) return ordinal(counting.word, 'item', pool, element => ({ type: 'activate', targetId: element.id }));
+  }
   let verbless = text.replace(ACTIVATE_VERB, '');
   // "The link to pricing", "the button for checkout": the kind of control comes first and names a role hint.
   const prefixed = /^(?:the\s+)?(link|button|checkbox|box|field|menu|option)\s+(?:for|to|called|named|labell?ed)\s+(.+)$/.exec(verbless);

@@ -11,10 +11,10 @@
 import { readFile } from 'node:fs/promises';
 import { interpret } from '../src/web/interpreter.js';
 import { createAssistedInterpreter } from '../src/web/assisted-interpreter.js';
-import { HELD_OUT_2_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
+import { HELD_OUT_2_SUITE, HELD_OUT_3_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
 
 const runs = [evaluateInterpreter(interpret), evaluateInterpreter(interpret, HELD_OUT_SUITE, `${SUITE_VERSION}-held-out`),
-  evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`)];
+  evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`), evaluateInterpreter(interpret, HELD_OUT_3_SUITE, `${SUITE_VERSION}-held-out-3`)];
 // A misheard command word in place of each instruction's own, where one is common.
 const MISHEARINGS = [[/^click\b/, 'quick'], [/^scroll\b/, 'school'], [/^type\b/, 'tight'], [/^press\b/, 'dress'], [/^choose\b/, 'chews'],
   [/^go back$/, 'go bag'], [/^close\b/, 'clothes'], [/^uncheck\b/, 'and check']];
