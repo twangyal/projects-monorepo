@@ -340,6 +340,14 @@ test('archive completion respects a newer user focus choice instead of stealing 
 test('observing another page video export never downloads or replaces the current raw editor', async ({ page, request }) => {
   const saved = await seed(request); await open(page, saved); await rawDraft(page);
   const downloads: string[] = []; page.on('download', download => downloads.push(download.suggestedFilename()));
+  // A short real export can finish while the page is still refreshing its library, so the progress panel may be on
+  // screen for only one poll: record each time it appears, with whether this page could cancel the job then.
+  await page.evaluate(() => {
+    const panel = document.getElementById('job-panel')!, cancel = document.getElementById('cancel-job') as HTMLButtonElement;
+    const seen: boolean[] = (window as unknown as { panelSeen: boolean[] }).panelSeen = [];
+    new MutationObserver(() => { if (!panel.hidden) seen.push(cancel.disabled); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+  });
+  const panelSeen = () => page.evaluate(() => (window as unknown as { panelSeen: boolean[] }).panelSeen);
   let job!: Job;
   // Start the genuine export from another client just as this page checks
   // status, so the observed session comes from the real active-job registry.
@@ -349,7 +357,9 @@ test('observing another page video export never downloads or replaces the curren
     await route.fulfill({ response: await route.fetch() });
   }, { times: 1 });
   await page.getByRole('button', { name: 'Check restore status', exact: true }).click();
-  await expect(page.locator('#job-panel')).toBeVisible(); await expect(page.getByRole('button', { name: 'Cancel job', exact: true })).toBeDisabled();
+  // The observed export is shown, and only its starting client can cancel it.
+  await expect.poll(async () => (await panelSeen()).length).toBeGreaterThan(0);
+  expect((await panelSeen()).every(Boolean)).toBe(true);
   await waitJob(request, job.id); await expect(page.locator('#job-panel')).toBeHidden({ timeout: 12000 });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   expect(downloads).toEqual([]); await expectDraft(page);
