@@ -249,3 +249,40 @@ def force_align(lines: list[str], log_probs, duration: float) -> list[dict] | No
             spans[index] = (before, max(before, min(after, before + 1.0)))
     groups = [[dict(text=line, start=start, end=max(end - HOLD, start))] for line, (start, end) in zip(lines, spans, strict=True)]
     return _finish(groups, duration, scores)
+
+
+def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25) -> list[float] | None:
+    """When each lyric word of a line sung from ``start`` to ``end`` starts, from the letters measured there.
+
+    Words without letters the aligner knows (numbers, symbols) start between their neighbours. Returns None when the
+    line cannot be laid on these frames: no letters it knows, or too few frames for its letters.
+    """
+    from .lyrics_auto import lyric_words
+    tokens: list[int] = []
+    firsts: list[int | None] = []
+    for word in lyric_words(text):
+        letters = fold(word)
+        if not letters:
+            firsts.append(None)
+            continue
+        if tokens:
+            tokens.append(SPACE)
+        firsts.append(len(tokens))
+        tokens += [LETTERS[ch] for ch in letters]
+    if not tokens or log_probs is None:
+        return None
+    low, high = max(0, int((start - margin) / FRAME)), min(len(log_probs), math.ceil((end + margin) / FRAME))
+    if high - low < len(tokens) + 10:
+        return None
+    found = _path(log_probs[low:high], tokens)
+    if found is None:
+        return None
+    first = found[0]
+    times: list[float | None] = [None if at is None else (low + int(first[at])) * FRAME for at in firsts]
+    known = [k for k, value in enumerate(times) if value is not None]
+    for k, value in enumerate(times):
+        if value is None:
+            before = max((j for j in known if j < k), default=None)
+            after = min((j for j in known if j > k), default=None)
+            times[k] = times[before] if before is not None else times[after] if after is not None else start
+    return [float(value) for value in times]

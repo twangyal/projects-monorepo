@@ -550,8 +550,9 @@ def _sized_wav(data: bytes) -> bytes:
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
                  vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic',
-                 background: str = 'cover') -> None:
-    """Render the karaoke video; ``words`` are recognized words that time the word highlighting.
+                 background: str = 'cover', letters=None) -> None:
+    """Render the karaoke video; ``words`` are recognized words that, with ``letters`` measured in the vocals when
+    there are any, time the word highlighting.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
     ``semitones`` moves the audio's key up or down without changing its tempo.
@@ -583,7 +584,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                 backdrop = directory / 'backdrop.png'
                 _cover_backdrop(project['cover'], STYLES[style]['background']).save(backdrop, format='PNG')
             cues = project['cues']
-            timings = word_timings(cues, words or [], project['duration'])
+            timings = word_timings(cues, words or [], project['duration'], letters)
             whole_lines = [text_layout(cue['text'])[1] for cue in cues]
             for frame in range(frame_count):
                 _remaining(cancel, deadline)

@@ -194,7 +194,7 @@ class ServerAlignmentTests(unittest.TestCase):
             Path(output).write_text(json.dumps(transcript))
             if self.measure:
                 # The singing is a second and a half earlier than the recognized words say.
-                write_emissions(Path(output).with_name('alignment.bin'), sung([('Lay awake at night', 17.0), ('through all the pain', 28.6)], duration))
+                write_emissions(Path(output).with_name('alignment.bin'), sung([('Lay awake at night', 17.0), ('through all the pain', 28.6), ('tonight we sing', 35.0)], duration))
             return transcript
 
         self.helper = ServerTests('run')
@@ -241,3 +241,64 @@ class ServerAlignmentTests(unittest.TestCase):
             self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
             self.assertEqual((folder / 'alignment.bin').read_bytes(), good)
             self.assertEqual(self.align(base, lines), [16.85, 28.45])
+
+
+    def test_word_highlighting_lrc_and_video_take_word_times_from_the_letters(self):
+        self.assertEqual(self.helper.upload()['status'], 'complete')
+        project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        status, _, timed = self.helper.request('POST', base + '/word-timings', {'cues': [{'start': 34.8, 'end': 38.5, 'text': 'tonight we sing'}]})
+        self.assertEqual(status, 200, timed)
+        words = timed['lines'][0]
+        self.assertEqual([word['heard'] for word in words], [False, False, False])
+        self.assertAlmostEqual(words[0]['start'], 35.0, delta=0.05)
+        self.assertAlmostEqual(words[1]['start'], 35.0 + 7 * 4 * FRAME + 4 * FRAME, delta=0.05)
+        # Saved, the same times reach the word-timed LRC, and the video export is given the letters.
+        status, _, saved = self.helper.request('PUT', base, {'title': 'Song', 'revision': project['revision'],
+                                                            'cues': [{'start': 34.8, 'end': 38.5, 'text': 'tonight we sing'}]})
+        self.assertEqual(status, 200, saved)
+        status, _, lrc = self.helper.request('GET', base + '/lrc')
+        self.assertIn('<00:35.00>tonight', lrc if isinstance(lrc, str) else lrc.decode())
+        exported = []
+        self.server.export = lambda *args, **options: (exported.append(options), Path(args[2]).write_bytes(b'video'))
+        status, _, started = self.helper.request('POST', base + '/export', {})
+        self.assertEqual(status, 202, started)
+        self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
+        self.assertEqual(exported[0]['letters'].shape[1], CLASSES)
+
+
+class WordHighlightTests(unittest.TestCase):
+    """Words start where their letters were sung."""
+
+    def test_words_start_where_their_letters_are_sung_within_a_line(self):
+        from karaoke.alignment import force_words
+        log_probs = sung([('so many words to sing', 4.0)], 12)
+        starts = force_words('so many words to sing', log_probs, 3.9, 9.0)
+        # Each letter lasts 3 frames plus a gap, each word a further 4 frames.
+        expected, t = [], 4.0
+        for word in 'so many words to sing'.split():
+            expected.append(t)
+            t += len(word) * 4 * FRAME + 4 * FRAME
+        for got, want in zip(starts, expected, strict=True):
+            self.assertAlmostEqual(got, want, delta=0.03)
+        self.assertIsNone(force_words('東京', log_probs, 3.9, 9.0))
+        # Numbers start between their neighbours.
+        self.assertEqual(len(force_words('so 2 many', sung([('so many', 1.0)], 4), 0.9, 3.0)), 3)
+
+    def test_highlighting_lays_every_word_on_the_letters(self):
+        from karaoke.lyrics_auto import word_timings
+        log_probs = sung([('lay awake at night', 18.0)], 40)
+        cue = dict(start=17.8, end=21.5, text='lay awake at night')
+        heard = [dict(text='Lay', start=18.15, end=18.4, confidence=0.9)]
+        timings = word_timings([cue], heard, 40, log_probs)[0]
+        # A heard word, too, starts where its letters were sung rather than where recognition placed it.
+        self.assertAlmostEqual(timings[0]['start'], 18.0, delta=0.03)
+        self.assertTrue(timings[0]['heard'])
+        self.assertAlmostEqual(timings[1]['start'], 18.0 + 3 * 4 * FRAME + 4 * FRAME, delta=0.05)
+        self.assertEqual([word['start'] for word in timings], sorted(word['start'] for word in timings))
+        # Without letters, unheard words are spread by length as before.
+        before = word_timings([cue], heard, 40)[0]
+        self.assertNotAlmostEqual(before[1]['start'], timings[1]['start'], delta=0.05)
+        # A line in another script keeps the spread.
+        other = dict(start=17.8, end=21.5, text='夜 に 目覚めて')
+        self.assertEqual(word_timings([other], [], 40, log_probs), word_timings([other], [], 40))
