@@ -434,6 +434,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
         self.assertEqual(calls[-1].get("background"), "plain")
         self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "background": "plain"})[0], 400)
+        # HD unless Full HD is asked for.
+        for body in ({"size": "4k"}, {"size": 1080}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        status, _, response = self.request("POST", endpoint + "/export", {"size": "1080p"})
+        self.assertEqual(status, 202, response)
+        self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+        self.assertEqual(calls[-1].get("size"), "1080p")
+        self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "size": "1080p"})[0], 400)
         for body, semitones in (({}, None), ({"semitones": -2, "guideVocal": 15}, -2)):
             status, _, response = self.request("POST", endpoint + "/export", body)
             self.assertEqual(status, 202, response)
