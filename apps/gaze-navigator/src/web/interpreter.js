@@ -343,6 +343,31 @@ function unquote(text) {
   return match ? match[1] : text.trim();
 }
 
+// Spoken punctuation in dictation, as dictation software takes it: "hello comma how are you question mark" is
+// typed as "hello, how are you?", and the word after a full stop, question mark or exclamation mark, or a new line,
+// starts with a capital. A quoted phrase keeps its words ("type “a comma splice”").
+const SPOKEN_MARKS = [
+  [/\bnew paragraph\b/gi, '\u0000P'], [/\b(?:new line|next line|line break)\b/gi, '\u0000L'],
+  [/\b(?:full stop|period)\b/gi, '.'], [/\bquestion mark\b/gi, '?'], [/\bexclamation (?:mark|point)\b/gi, '!'],
+  [/\bcomma\b/gi, ','], [/\bsemicolon\b/gi, ';'], [/\bcolon\b/gi, ':'], [/\b(?:ellipsis|dot dot dot)\b/gi, '…'],
+  [/\bopen (?:bracket|parenthesis|paren)\b/gi, '\u0000('], [/\bclose (?:bracket|parenthesis|paren)\b/gi, ')'],
+  [/\bopen quote\b/gi, '\u0000“'], [/\b(?:close quote|end quote|unquote)\b/gi, '”'],
+];
+export function punctuate(text) {
+  let said = text;
+  for (const [words, mark] of SPOKEN_MARKS) said = said.replace(words, mark);
+  if (said === text) return text;
+  return said
+    .replace(/\s+([.,;:?!…)”])/g, '$1') // marks join the word before them
+    .replace(/\u0000([(“])\s*/g, ' $1') // opening marks join the word after them
+    .replace(/\s*\u0000P\s*/g, '\n\n').replace(/\s*\u0000L\s*/g, '\n')
+    .replace(/([.,;:?!…])(?=[^\s.,;:?!…)”\n])/g, '$1 ') // and are followed by a space
+    .replace(/(^|[.?!]\s+|\n)(\p{Ll})/gu, (whole, before, letter) => (before ? before + letter.toUpperCase() : whole))
+    .replace(/ {2,}/g, ' ').replace(/^ +| +$/g, '');
+}
+// The words of a dictation as typed: quoted words exactly, others with their spoken punctuation.
+const dictated = text => (/^["“](.*)["”]$/.test(text.trim()) ? unquote(text) : punctuate(text.trim()));
+
 // Native value fields that "set <name> to <value>" can reach by name or kind, with what to say.
 const TYPED_FIELDS = [
   { matches: element => element.nativeDate === true, type: 'date', noun: 'date', parse: spokenDate, example: '“November first”, “tomorrow” or 2026-11-01' },
@@ -701,7 +726,7 @@ function interpretInCircle(utterance, context) {
   if ((match = /^(?:continue|keep)\s+(?:typing|writing|dictating)(?:\s+(.+))?$/i.exec(raw))) {
     if (!match[1]?.trim()) return { type: 'unknown', message: 'Say “continue typing” followed by the words to add to the focused field.' };
     const field = continuingIn(context);
-    return field ? { ...edit('append', { text: unquote(match[1]) })(field), requireFocus: true }
+    return field ? { ...edit('append', { text: dictated(match[1]) })(field), requireFocus: true }
       : { type: 'unknown', message: 'First focus a regular text field, then say “continue typing” and the words. No field was changed.' };
   }
   if ((match = /^(?:type|write|enter|dictate|insert)\s+(.+)$/i.exec(raw))) {
@@ -711,11 +736,13 @@ function interpretInCircle(utterance, context) {
     // An explicit field/box/input suffix names a target even when gaze misses it. A missing target must not
     // turn the instruction into literal text in a neighbour. Quote the whole phrase to dictate such words.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box|input)\p{P}*(?:\s+(?:please|for me)\p{P}*)*$/iu.exec(match[1]);
-    const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
+    const [said, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : named ? [named[1], named[2]] : [match[1], null];
+    const content = quoted ? said : punctuate(said);
     return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, intoDateBoxes(content, writing('append', content), context.now), { recover: true, kind: textKind(content) });
   }
   if ((match = /^(?:set|change|replace)(?: (?:it|that|the text|everything|all))? (?:to|with)\s+(.+)$/i.exec(command))) {
-    return chooseField(null, context, intoDateBoxes(unquote(match[1]), writing('replace-all', unquote(match[1])), context.now), { kind: textKind(unquote(match[1])) });
+    const content = dictated(match[1]);
+    return chooseField(null, context, intoDateBoxes(content, writing('replace-all', content), context.now), { kind: textKind(content) });
   }
   if ((match = /^replace\s+(.+?)\s+with\s+(.+)$/i.exec(command))) {
     const act = edit('replace', { find: unquote(match[1]), text: unquote(match[2]) });
