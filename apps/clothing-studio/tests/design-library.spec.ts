@@ -16,9 +16,10 @@ test('concurrent additions retain every distinct copy and enforce name and capac
  await harness(page);const other=await context.newPage();await harness(other);
  const results=await Promise.all([page,other].map((p,i)=>p.evaluate(async i=>{try{return{ok:true,row:await window.clothingDesignLibrary.saveDesign(i?'same NAME':'Same name',window.clothingStorage.createProject())};}catch(error){return{ok:false,message:String(error)};}},i)));
  expect(results.filter(r=>r.ok)).toHaveLength(1);
- await page.evaluate(async()=>{await Promise.all(Array.from({length:10},(_,i)=>window.clothingDesignLibrary.saveDesign(`Copy ${i}`,window.clothingStorage.createProject())));});
+ // Fill the library to one below its capacity; of two concurrent last copies, only one fits.
+ const capacity=await page.evaluate(async()=>{const {CAP}=window.clothingDesignLibrary;await Promise.all(Array.from({length:CAP-2},(_,i)=>window.clothingDesignLibrary.saveDesign(`Copy ${i}`,window.clothingStorage.createProject())));return CAP;});
  const cap=await Promise.all([page,other].map((p,i)=>p.evaluate(async i=>{try{await window.clothingDesignLibrary.saveDesign(`Last ${i}`,window.clothingStorage.createProject());return true;}catch{return false;}},i)));
- expect(cap.filter(Boolean)).toHaveLength(1);expect(await page.evaluate(async()=>(await window.clothingDesignLibrary.listDesigns()).length)).toBe(12);
+ expect(cap.filter(Boolean)).toHaveLength(1);expect(await page.evaluate(async()=>(await window.clothingDesignLibrary.listDesigns()).length)).toBe(capacity);
 });
 test('stale receipts and corrupt payloads refuse without deleting or overwriting other records',async({page})=>{
  await harness(page);const receipt=await page.evaluate(()=>window.clothingDesignLibrary.saveDesign('Keep',window.clothingStorage.createProject()));

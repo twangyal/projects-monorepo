@@ -22,6 +22,8 @@ const COLORS: Record<string, string> = {
 // The fashion names above, then names from a colour survey; longer names are matched before shorter ones ("navy blue"
 // before "navy", "heather grey" before "grey").
 const NAMED: Record<string, string> = { ...SURVEY_COLORS, ...COLORS };
+/** Every colour name the descriptions read, with its colour. */
+export const NAMED_COLOURS: Readonly<Record<string, string>> = NAMED;
 
 const MATERIAL_WORDS: [RegExp, string][] = [
   [/\b(heavy ?weight|heavy|thick|boxy)\b[^,;]*\bjersey\b|\bheavyweight\b/, 'jersey-240'],
