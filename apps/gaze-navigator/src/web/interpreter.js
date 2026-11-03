@@ -1038,6 +1038,17 @@ function interpretInCircle(utterance, context) {
     if (lists.length) return resolve(choose[2], lists, null, chooseFrom(choose[1]), 'list');
   }
 
+  // Double-clicking and right-clicking, as web apps use them: "double-click Report.pdf", "right-click this", "open the menu
+  // for Report.pdf". A right-click opens a page's own menu; the browser's own menu cannot be opened for it.
+  const clicking = /^(?:double[- ]?click|double[- ]?tap)(?: on)? (.+)$/.exec(text) ?? /^(?:right[- ]?click|secondary click|context click)(?: on)? (.+)$/.exec(text)
+    ?? /^(?:open|show|bring up) (?:the )?(?:context menu|right[- ]?click menu|menu|options) (?:for|of|on) (.+)$/.exec(text);
+  if (clicking) {
+    const kind = /^double/.test(text) ? 'double-click' : 'context-menu', subject = clicking[1].replace(/^the\s+/, '');
+    const act = element => ({ type: kind, targetId: element.id });
+    const prior = previous(context, subject);
+    if (prior) return act(prior);
+    return DEICTIC.test(subject) ? deictic(context.elements, act) : resolve(subject, context.elements, null, act);
+  }
   // Menus that open while the pointer is over them: "show the Shop menu", "hover over Shop", "point at Shop". The control
   // is pointed at rather than clicked, so its link is not followed. A control with an open/closed state is expanded.
   if (context.hovering && /^(?:(?:close|hide|dismiss|shut)(?: (?:the|that|this))?(?: (?:menu|submenu|sub menu|dropdown|drop down))?|stop (?:hovering|pointing)|move away)$/.test(text)) {

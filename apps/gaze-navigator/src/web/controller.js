@@ -66,7 +66,7 @@ export function createController({ window, actions = pageActions, interpret = in
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
 
   function confirmable(action, element) {
-    if (['activate', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
+    if (['activate', 'double-click', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
     if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
     if (action.type === 'choose-option') return element.consequential || isConsequentialName(action.optionName);
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
@@ -87,7 +87,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element, context);
@@ -163,7 +163,7 @@ export function createController({ window, actions = pageActions, interpret = in
       hovered = null;
       return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? 'unhover' : null });
     }
-    if (['activate', 'hover', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -180,6 +180,8 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'check': result = actions.setChecked(element, action.checked); break;
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'hover': result = actions.hover(element, target.name, hovered?.isConnected ? hovered : null); hovered = element; break;
+      case 'double-click': result = actions.doubleClick(element, target.name); break;
+      case 'context-menu': result = actions.contextMenu(element, target.name); break;
       case 'submit': result = actions.submit(element); break;
       case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;

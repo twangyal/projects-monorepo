@@ -777,6 +777,33 @@ export function hover(element, name, previous = null, { wait = ms => new Promise
   });
   return { ok: true, message: `Pointing at ${label}…`, followUp };
 }
+// A double-click: the presses, releases and clicks a mouse makes, then dblclick, at the control's centre.
+export function doubleClick(element, name) {
+  const problem = linkProblem(element);
+  if (problem) return { ok: false, message: problem };
+  const { view, init } = pointerAt(element);
+  for (const detail of [1, 2]) {
+    element.dispatchEvent(pointerEvent(view, 'pointerdown', { ...init, detail, button: 0, buttons: 1 }));
+    element.dispatchEvent(new view.MouseEvent('mousedown', { ...init, detail, button: 0, buttons: 1 }));
+    element.dispatchEvent(pointerEvent(view, 'pointerup', { ...init, detail, button: 0 }));
+    element.dispatchEvent(new view.MouseEvent('mouseup', { ...init, detail, button: 0 }));
+    element.dispatchEvent(new view.MouseEvent('click', { ...init, detail, button: 0 }));
+  }
+  element.dispatchEvent(new view.MouseEvent('dblclick', { ...init, detail: 2, button: 0 }));
+  return { ok: true, message: `Double-clicked ${name || 'the control'}.` };
+}
+// A right-click. A page that shows its own menu cancels the event; otherwise only the browser's own menu, which a script
+// cannot open, would have appeared, and the reply says so.
+export function contextMenu(element, name) {
+  const { view, init } = pointerAt(element), label = name || 'that control';
+  element.dispatchEvent(pointerEvent(view, 'pointerdown', { ...init, button: 2, buttons: 2 }));
+  element.dispatchEvent(new view.MouseEvent('mousedown', { ...init, button: 2, buttons: 2 }));
+  element.dispatchEvent(pointerEvent(view, 'pointerup', { ...init, button: 2 }));
+  element.dispatchEvent(new view.MouseEvent('mouseup', { ...init, button: 2 }));
+  const opened = !element.dispatchEvent(new view.MouseEvent('contextmenu', { ...init, button: 2 }));
+  return opened ? { ok: true, message: `Opened the page's menu for ${label}. Say one of its items, or "cancel".` }
+    : { ok: false, message: `${label} has no menu of its own on this page, and the browser's right-click menu cannot be opened by voice.` };
+}
 export function unhover(element) {
   if (!element.isConnected) return { ok: true, message: 'The menu is already gone.' };
   const { view, init } = pointerAt(element);
