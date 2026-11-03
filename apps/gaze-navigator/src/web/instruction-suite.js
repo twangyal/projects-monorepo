@@ -345,6 +345,51 @@ const HELD_OUT_3 = [
 
 export const HELD_OUT_3_SUITE = HELD_OUT_3.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Held-out set 4 (2026-11-03): tasks said the way people say them, naming what they want done rather than the control
+// ("pop this in the cart", "how much does it cost", "it's about an order problem"). Written before the rules for task
+// phrasing, by the same developer, so it is held out from those rules but not independent of their author; the earlier
+// sets check nothing else regressed. Four instructions that turned out to repeat earlier sets were dropped, not replaced.
+const HELD_OUT_4 = [
+  ['activate', 'product', 'pop this in the cart', act(2)],
+  ['activate', 'product', 'add this book to my bag', act(2)],
+  ['activate', 'product', 'complete the purchase', act(3)],
+  ['activate', 'product', 'go ahead and order it', act(3)],
+  ['activate', 'product', 'finish my order', act(3)],
+  ['activate', 'product', 'what do other readers think', act(4)],
+  ['activate', 'product', 'read what people wrote about it', act(4)],
+  ['activate', 'product', 'any reviews', act(4)],
+  ['select', 'product', "I'd like the hardcover", option(1, 1)],
+  ['select', 'product', 'get me the audiobook version', option(1, 3)],
+  ['select', 'product', 'large print please', option(1, 2)],
+  ['select', 'product', 'the paperback is fine', option(1, 0)],
+  ['select', 'product', 'can I have it in large print', option(1, 2)],
+  ['activate', 'form', "I'm done, send it off", act(6)],
+  ['select', 'form', "it's about an order problem", option(5, 1)],
+  ['select', 'form', 'my question is about a book suggestion', option(5, 2)],
+  ['activate', 'form', 'I want a copy too', { type: 'check', targetId: 4, checked: true }],
+  ['dictate', 'form', 'my name is Ada Lovelace', edit(1, 'append', { text: 'Ada Lovelace' })],
+  ['dictate', 'form', 'my email is ada@example.com', edit(2, 'append', { text: 'ada@example.com' })],
+  ['activate', 'navigation', 'how much does it cost', act(2)],
+  ['activate', 'navigation', 'what are your prices', act(2)],
+  ['activate', 'navigation', 'I need to get in touch', act(3)],
+  ['activate', 'navigation', 'how do I reach you', act(3)],
+  ['activate', 'navigation', 'let me log in', act(4)],
+  ['activate', 'navigation', 'I want to sign into my account', act(4)],
+  ['activate', 'navigation', 'back to the start page', act(1)],
+  ['search', 'navigation', 'do you have anything about gardening', { type: 'search', targetId: 5, text: 'gardening' }],
+  ['search', 'navigation', "I'm looking for cookbooks", { type: 'search', targetId: 5, text: 'cookbooks' }],
+  ['activate', 'list', 'get rid of the second one', act(5)],
+  ['activate', 'list', 'take the first one out', act(4)],
+  ['activate', 'list', 'tell me more about the third one', act(3)],
+  ['clarify', 'list', 'get rid of it', clarify(4, 5)],
+  ['refuse', 'product', 'gift wrap it', plain('unknown')],
+  ['refuse', 'product', 'compare prices', plain('unknown')],
+  ['refuse', 'navigation', 'open the forum', plain('unknown')],
+  ['refuse', 'list', 'save it for later', plain('unknown')],
+];
+
+export const HELD_OUT_4_SUITE = HELD_OUT_4.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 

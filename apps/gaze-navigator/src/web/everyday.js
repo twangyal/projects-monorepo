@@ -43,6 +43,18 @@ const RULES = [
   [/^(?:log|sign) me (?:in|on)$/, 'sign in'],
   [/^(?:log|sign) me (?:out|off)$/, 'sign out'],
   [/^(?:contact|call|email|ring|phone|message|reach|get hold of|get in touch with) (?:the )?(?:customer (?:service|services|support|care)|support(?: team)?|help ?desk|the team|someone|somebody|you|them|us)$/, 'open contact'],
+  // Tasks said as what is wanted rather than which control does it.
+  [/^(?:i (?:need|want|would like|'d like) to |how (?:do|can) i |let me )?(?:get in touch(?: with (?:you|someone|somebody|the team))?|reach you|contact you|talk to (?:someone|somebody|a person|a human))$/, 'open contact'],
+  [/^(?:i (?:need|want|would like|'d like) to |let me |please )?(?:log|sign) (?:in|into|on|onto|on to)(?: (?:my|your|the) account)?$/, 'sign in'],
+  [/^(?:(?:go |take me |bring me )?back to |go to |take me to )?the (?:start|front|main|home|landing) page$/, 'go home'],
+  [/^(?:please )?(?:put|pop|add|place|stick|throw|chuck|drop) (?:it|this|that|this one|that one|(?:this|the|that) (?:book|item|product|one)) (?:in|into|to|in to) (?:my|the|your) (?:shopping )?(cart|basket|bag|trolley)$/,
+    () => 'add to cart'],
+  [/^(?:(?:go ahead and |please )?(?:complete|finish|finalise|finalize|confirm|place|submit) (?:my|the|this|your) (?:order|purchase)|(?:go ahead and )?(?:order|purchase) (?:it|this|that|this one|it now|this now)|proceed to (?:the )?checkout)$/, 'place order'],
+  [/^(?:what do (?:other )?(?:people|readers|customers|buyers|users|others) (?:think|say)(?: about (?:it|this|that))?|(?:read|see|show me) what (?:other )?(?:people|readers|customers|buyers|others) (?:wrote|said|think|say)(?: about (?:it|this|that))?|(?:are there )?any reviews)$/, 'open reviews'],
+  [/^(?:how much (?:does (?:it|this|that) cost|is (?:it|this|that)|do you charge|will (?:it|this) cost)|what (?:are|is) (?:your|the) (?:prices?|costs?|fees?|rates?)|what does (?:it|this) cost)$/, 'open pricing'],
+  [/^(?:do you have|have you got|is there|are there|got) (?:anything|something|any(?: books?)?) (?:about|on|for|with) (.+)$|^(?:i'?m|i am) looking for (?!.*\b(?:page|link|button|form|section|tab)$)(.+)$/,
+    match => `search for ${match[1] ?? match[2]}`],
+  [/^(?:remove|delete|get rid of|bin|discard|take out) (?:it|this|that)$/, 'remove'],
 ];
 
 /** The command reworded for the interpreter when it is an everyday way of saying one of the navigator's own. */
@@ -64,15 +76,18 @@ export function everydayCommand(command, normalize) {
  * "go with the paperback". The interpreter tries it as an option, then as a control.
  */
 export function choiceSaid(text) {
-  const said = /^(?:make it|make that|switch to|change to|go with|give me|i want|i'd like|i would like|i'll take|i'll have|i prefer|let's go with|let's have)(?: the)? (.+?)(?: one| version| edition| option| format)?$/.exec(text);
-  return said && !/^(?:it|that|this|one)$/.test(said[1]) ? said[1] : null;
+  const said = /^(?:make it|make that|switch to|change to|go with|give me|get me|i want|i'd like|i would like|i'll take|i'll have|i prefer|let's go with|let's have|(?:can|could|may) i (?:have|get)(?: it| one)?(?: in)?|it's about|it is about|this is about|my (?:question|message|enquiry|inquiry|problem|request) is (?:about|regarding))(?: the| an| a)? (.+?)(?: one| version| edition| option| format)?(?: please)?$/.exec(text)
+    // "Large print please", "the paperback is fine": the choice named and agreed to.
+    ?? /^(?:the )?(.+?)(?: one| version| edition)?(?: please| is fine| will do| works| is good| is great)$/.exec(text);
+  return said && !/^(?:it|that|this|one|yes|ok|okay|sure|thanks|thank you)$/.test(said[1]) ? said[1] : null;
 }
 
 /** "Delete the second one", "read the first one", "open the third article": counted among controls of that kind. */
 export function countedSaid(text) {
-  const remove = new RegExp(`^(?:delete|remove|get rid of) (?:the )?${ORDINAL_WORD} (?:one|item|entry|row|line)$`).exec(text);
+  const remove = new RegExp(`^(?:delete|remove|get rid of|bin|discard|take out) (?:the )?${ORDINAL_WORD} (?:one|item|entry|row|line)$`).exec(text)
+    ?? new RegExp(`^take (?:the )?${ORDINAL_WORD} (?:one|item|entry|row|line) out$`).exec(text);
   if (remove) return { word: remove[1], named: /^(?:remove|delete)\b/i };
-  const read = new RegExp(`^read (?:the )?${ORDINAL_WORD} (?:one|article|story|post)$`).exec(text);
+  const read = new RegExp(`^(?:read|tell me (?:more )?about|(?:show me )?more about) (?:the )?${ORDINAL_WORD} (?:one|article|story|post)$`).exec(text);
   if (read) return { word: read[1], named: /^read\b/i, role: 'link' };
   return null;
 }
