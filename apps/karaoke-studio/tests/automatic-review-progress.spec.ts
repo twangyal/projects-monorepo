@@ -89,3 +89,36 @@ test('checked progress is locked during Save and remains with the live review af
   await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); await expect(page.locator('#srt-review')).toBeHidden();
   await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click(); await expect(checked).not.toBeChecked();
 }));
+
+test('automatic lines can be reviewed from the keyboard: move, listen, and check and move on', async ({ page }) => withClip(page, async () => {
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const line = (n: number) => page.getByLabel(`Reviewed lyric line ${n}`, { exact: true });
+  const checked = (n: number) => page.getByLabel(`Checked automatic line ${n}`, { exact: true });
+  await expect(page.locator('#automatic-review-keys')).toContainText('Alt+↓');
+  await line(1).focus();
+  await page.keyboard.press('Alt+ArrowDown'); await expect(line(2)).toBeFocused();
+  await page.keyboard.press('Alt+ArrowDown'); await expect(line(3)).toBeFocused();
+  await page.keyboard.press('Alt+ArrowDown'); await expect(line(3)).toBeFocused();
+  await page.keyboard.press('Alt+ArrowUp'); await expect(line(2)).toBeFocused();
+  // From a line's start time too; a hidden line is skipped.
+  await page.getByLabel('Reviewed start line 1 (seconds)', { exact: true }).focus();
+  await page.keyboard.press('Alt+ArrowDown'); await expect(line(2)).toBeFocused();
+  // Listening to the focused line.
+  await page.keyboard.press('Alt+Enter');
+  await expect(page.locator('#automatic-listen-status')).not.toContainText('Choose Listen or Repeat');
+  await page.getByRole('button', { name: 'Stop reviewed passage', exact: true }).click();
+  // Ctrl+Enter checks the line and moves to the next unchecked line, skipping one checked already.
+  await checked(3).check();
+  await line(1).focus(); await page.keyboard.press('Control+Enter');
+  await expect(checked(1)).toBeChecked(); await expect(line(2)).toBeFocused();
+  await page.keyboard.press('Control+Enter');
+  await expect(checked(2)).toBeChecked(); await expect(line(2)).toBeFocused();
+  await expect(page.locator('#automatic-review-count')).toContainText('3 of 3 checked');
+  // With checked lines hidden, moving skips them.
+  await checked(2).uncheck();
+  await page.getByLabel('Hide checked automatic lines', { exact: true }).check();
+  await expect(line(1)).toBeHidden(); await expect(line(3)).toBeHidden();
+  await line(2).focus();
+  await page.keyboard.press('Alt+ArrowDown'); await expect(line(2)).toBeFocused();
+  await page.keyboard.press('Alt+ArrowUp'); await expect(line(2)).toBeFocused();
+}));
