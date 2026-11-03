@@ -73,8 +73,12 @@ export const BODY_CHEST_DEPTH = [10, 44] as const;
 export const BODY_HEIGHT = [140, 210] as const;
 export const BODY_HIP_DEPTH = [5, 40] as const;
 export const BODY_UPPER_ARM_GIRTH = [15, 65] as const;
-/** Optional body measurements beyond the chest; omitted ones follow automatic proportions. */
-export interface TopBodyShape { waist?: number; hip?: number; chestDepth?: number; height?: number; hipDepth?: number; upperArmGirth?: number }
+export const BODY_UNDERBUST = [50, 138] as const;
+/** The difference between the chest (full bust) and the underbust a body with a bust can have, cm. */
+export const BUST_DIFFERENCE = [2, 40] as const;
+/** Optional body measurements beyond the chest; omitted ones follow automatic proportions. With `underbust`, the chest
+ * is the full bust, measured over the bust. */
+export interface TopBodyShape { waist?: number; hip?: number; chestDepth?: number; height?: number; hipDepth?: number; upperArmGirth?: number; underbust?: number }
 /** Body height, if given, sets the body's lengths (arm, torso landmarks, legs) as typical fractions of it. */
 export function validateBodyHeight(height: unknown): number | undefined {
   if (height === undefined) return undefined;
@@ -97,14 +101,27 @@ export function validateBodyUpperArmGirth(value: unknown): number | undefined {
   }
   return value;
 }
+/** Girth just under the bust, for a body with a bust; absent, the body has none. */
+export function validateBodyUnderbust(value: unknown, chest: number): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < BODY_UNDERBUST[0] || value > BODY_UNDERBUST[1]) {
+    throw new Error(`Underbust must be from ${BODY_UNDERBUST[0]} to ${BODY_UNDERBUST[1]} cm, or blank for a body without a bust.`);
+  }
+  if (chest - value < BUST_DIFFERENCE[0]) throw new Error(`Underbust must be at least ${BUST_DIFFERENCE[0]} cm smaller than the chest, which is measured over the bust.`);
+  if (chest - value > BUST_DIFFERENCE[1]) throw new Error(`The chest can be at most ${BUST_DIFFERENCE[1]} cm larger than the underbust.`);
+  return value;
+}
 export function validateTopBodyShape(chest:number, shape:TopBodyShape = {}):TopBodyShape & {waist:number;hip:number}{
   validateBodyChest(chest);
   if(!shape||typeof shape!=='object'||Array.isArray(shape))throw new Error('Enter optional body waist, hip and chest depth measurements.');
-  const waist=shape.waist===undefined?chest*.86:shape.waist,hip=shape.hip===undefined?chest*1.02:shape.hip;
+  const underbust = validateBodyUnderbust(shape.underbust, chest);
+  if (underbust !== undefined && shape.chestDepth !== undefined) throw new Error('Leave chest depth blank for a body with a bust: the bust sets its depth.');
+  // With a bust, the automatic waist follows the ribcage under it rather than the full bust.
+  const waist=shape.waist===undefined?(underbust===undefined?chest*.86:Math.min(chest*.86,underbust*.95)):shape.waist,hip=shape.hip===undefined?chest*1.02:shape.hip;
   if(typeof waist!=='number'||!Number.isFinite(waist)||waist<BODY_WAIST[0]||waist>BODY_WAIST[1])throw new Error('Body waist must be from 50 to 180 cm, or blank for automatic proportions.');
   if(typeof hip!=='number'||!Number.isFinite(hip)||hip<BODY_HIP[0]||hip>BODY_HIP[1])throw new Error('Body hip must be from 50 to 220 cm, or blank for automatic proportions.');
   const height = validateBodyHeight(shape.height), hipDepth = validateBodyHipDepth(shape.hipDepth), upperArmGirth = validateBodyUpperArmGirth(shape.upperArmGirth);
-  const tall = { ...(height === undefined ? {} : { height }), ...(hipDepth === undefined ? {} : { hipDepth }), ...(upperArmGirth === undefined ? {} : { upperArmGirth }) };
+  const tall = { ...(height === undefined ? {} : { height }), ...(hipDepth === undefined ? {} : { hipDepth }), ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(underbust === undefined ? {} : { underbust }) };
   if (shape.chestDepth !== undefined) {
     const depth = shape.chestDepth;
     if (typeof depth !== 'number' || !Number.isFinite(depth) || depth < BODY_CHEST_DEPTH[0] || depth > BODY_CHEST_DEPTH[1]) {
@@ -235,27 +252,67 @@ export interface Capsule { a: Vec; b: Vec; radius: number; end: number; limb?: b
 export interface TorsoSection { y: number; halfWidth: number; halfDepth: number }
 /** `bottom`, when set, is the height below which the torso ends (the crotch, between the legs). */
 /** Heights of body landmarks (y, cm) and, for a top on a body of given height, how far its sleeves reach past the wrists. */
-export interface BodyLandmarks { waist?: number; hip?: number; floor?: number; height?: number; sleeveBeyondWrist?: number }
-export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; upperArmGirth?: number; torso: TorsoSection[]; capsules: Capsule[]; bottom?: number; landmarks?: BodyLandmarks }
+export interface BodyLandmarks { waist?: number; hip?: number; floor?: number; height?: number; sleeveBeyondWrist?: number; bust?: number }
+export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; upperArmGirth?: number; underbust?: number; torso: TorsoSection[]; capsules: Capsule[]; bottom?: number; landmarks?: BodyLandmarks }
 
 /** Half-width of a stadium section of circumference c whose depth is `ratio` of its width. */
 const stadiumHalfWidth = (c: number, ratio: number) => c / (4 + ratio * (2 * Math.PI - 4));
 
+/** Perimeter of the convex hull of points [x, z] (what a tape measure round them follows). */
+function hullPerimeter(points: [number, number][]): number {
+  points.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cross = (o: [number, number], p: [number, number], q: [number, number]) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
+  const chain = (list: [number, number][]) => {
+    const kept: [number, number][] = [];
+    for (const point of list) { while (kept.length >= 2 && cross(kept.at(-2)!, kept.at(-1)!, point) <= 0) kept.pop(); kept.push(point); }
+    return kept.slice(0, -1);
+  };
+  const hull = [...chain(points), ...chain([...points].reverse())];
+  return hull.reduce((sum, point, i) => { const next = hull[(i + 1) % hull.length]!; return sum + Math.hypot(next[0] - point[0], next[1] - point[1]); }, 0);
+}
+
+/**
+ * The bust of a body whose ribcage at bust height is a stadium of this half-width and half-depth: two spheres in front
+ * of it, the bust points `x` either side of the centre front, sized and set into the chest so that a tape round the
+ * bust (the convex hull of the section and both spheres) measures `chest`. Each sphere's outer edge reaches the side
+ * of the ribcage; only a large difference makes it wider.
+ */
+export function bustSpheres(halfWidth: number, halfDepth: number, chest: number): { x: number; z: number; radius: number } {
+  const x = Math.min(0.09 * chest, halfWidth * 0.62), flat = halfWidth - halfDepth;
+  const wall = Math.sqrt(Math.max(0, halfDepth ** 2 - Math.max(x - flat, 0) ** 2));
+  const section: [number, number][] = [];
+  for (let i = 0; i < 360; i++) { const t = i / 360 * 2 * Math.PI, c = Math.cos(t); section.push([Math.sign(c) * flat + halfDepth * c, halfDepth * Math.sin(t)]); }
+  const girth = (radius: number, z: number) => {
+    const points = section.slice();
+    for (const side of [1, -1]) for (let i = 0; i < 180; i++) { const t = i / 180 * 2 * Math.PI; points.push([side * x + radius * Math.cos(t), z + radius * Math.sin(t)]); }
+    return hullPerimeter(points);
+  };
+  let radius = Math.max(2, halfWidth + 0.5 - x);
+  while (girth(radius, wall) < chest && radius < 3 * halfDepth) radius += 0.25;
+  // How far the sphere's centre sits behind the chest wall.
+  let low = 0, high = radius;
+  for (let k = 0; k < 30; k++) { const mid = (low + high) / 2; if (girth(radius, wall - mid) > chest) low = mid; else high = mid; }
+  return { x, z: wall - low, radius };
+}
+
 /** The body proxy for a top, standing so that its shoulders carry the garment's shoulder line. */
 export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = {}): BodyProxy {
-  const {waist,hip,chestDepth,height,hipDepth,upperArmGirth}=validateTopBodyShape(chest,shape);
+  const {waist,hip,chestDepth,height,hipDepth,upperArmGirth,underbust}=validateTopBodyShape(chest,shape);
   const d = teeDimensions(product), top = d.length, shoulderLine = top - d.shoulderDrop;
+  // With a bust, the chest is measured over it: the body's frame (the chest under the arms, shoulders, neck, arms and,
+  // without a height, its lengths) follows a girth between the underbust and the bust instead.
+  const frame = underbust === undefined ? chest : underbust + 0.4 * (chest - underbust);
   // Keep the original arithmetic exactly when omitted. Entered depth solves
   // c = 4(w-d) + 2πd for half-width w, where d is the half-depth.
-  const chestHalf = chestDepth === undefined ? stadiumHalfWidth(chest, .7) : Math.max(chestDepth / 2, (chest - (Math.PI - 2) * chestDepth) / 4);
+  const chestHalf = chestDepth === undefined ? stadiumHalfWidth(frame, .7) : Math.max(chestDepth / 2, (chest - (Math.PI - 2) * chestDepth) / 4);
   const depth = chestDepth === undefined ? .7 : chestDepth / (2 * chestHalf);
   const waistHalf = stadiumHalfWidth(waist, depth), hipHalf = stadiumHalfWidth(hip, 0.74);
-  const shoulderHalf = chest * 0.235, shoulderRadius = chestHalf * depth * 0.8;
+  const shoulderHalf = frame * 0.235, shoulderRadius = chestHalf * depth * 0.8;
   // The shoulder tops sit just under the garment's shoulder points; the torso section there is the shoulder capsule's.
   // Torso depths below the shoulder: typical fractions of the body's height when it is given, else of its chest.
   const torsoTop = top - d.shoulderDrop - OFFSET - shoulderRadius;
-  const armpit = height ? shoulderLine - 0.11 * height : top - d.shoulderDrop - chest * 0.21;
-  const waistY = height ? shoulderLine - 0.235 * height : top - chest * 0.44, hipY = hipDepth === undefined ? (height ? shoulderLine - 0.335 * height : top - chest * 0.64) : waistY - hipDepth;
+  const armpit = height ? shoulderLine - 0.11 * height : top - d.shoulderDrop - frame * 0.21;
+  const waistY = height ? shoulderLine - 0.235 * height : top - frame * 0.44, hipY = hipDepth === undefined ? (height ? shoulderLine - 0.335 * height : top - frame * 0.64) : waistY - hipDepth;
   const torso: TorsoSection[] = [
     { y: torsoTop, halfWidth: shoulderHalf, halfDepth: shoulderRadius },
     { y: armpit, halfWidth: chestHalf, halfDepth: chestHalf * depth },
@@ -267,9 +324,19 @@ export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = 
   const capsules: Capsule[] = [
     { a: neckBase, b: [shoulderHalf - shoulderRadius, torsoTop, 0], radius: shoulderRadius, end: shoulderRadius },
     { a: neckBase, b: [-(shoulderHalf - shoulderRadius), torsoTop, 0], radius: shoulderRadius, end: shoulderRadius },
-    { a: [0, torsoTop, -1.5], b: [0, top + 9, -1.5], radius: chest * 0.4 / (2 * Math.PI), end: chest * 0.4 / (2 * Math.PI), limb: true },
+    { a: [0, torsoTop, -1.5], b: [0, top + 9, -1.5], radius: frame * 0.4 / (2 * Math.PI), end: frame * 0.4 / (2 * Math.PI), limb: true },
     { a: [0, top + 17.5, -0.5], b: [0, top + 17.5, -0.5], radius: 9.5, end: 9.5, limb: true },
   ];
+  // The bust: the ribcage under it is the underbust's girth, at the bust points' height (about 6 cm below the armpit),
+  // and two spheres in front of it make up the bust.
+  let bust: number | undefined, bustDepth: number | undefined;
+  if (underbust !== undefined) {
+    bust = armpit - Math.min(height ? 0.035 * height : frame * 0.07, (armpit - waistY) / 2);
+    const halfWidth = stadiumHalfWidth(underbust, 0.7), halfDepth = halfWidth * 0.7, sphere = bustSpheres(halfWidth, halfDepth, chest);
+    torso.splice(2, 0, { y: bust, halfWidth, halfDepth });
+    for (const side of [1, -1]) capsules.push({ a: [side * sphere.x, bust, sphere.z], b: [side * sphere.x, bust, sphere.z], radius: sphere.radius, end: sphere.radius });
+    bustDepth = halfDepth + sphere.z + sphere.radius;
+  }
   // Arms are posed along the sleeves (as a fitting mannequin is posed), slightly above their centre lines, from inside
   // the shoulder to the wrist: a third of the body's height when it is given, else past the sleeve opening. They taper to fit inside the sleeves' flat width (front plus back) at the
   // armhole and at the opening in automatic mode. An entered upper-arm girth overrides the shoulder-end radius
@@ -278,8 +345,8 @@ export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = 
   const middle = { x: (shoulderPoint.x + underarm.x) / 2, y: (shoulderPoint.y + underarm.y) / 2 + 1 };
   const direction = { x: Math.cos(angle), y: -Math.sin(angle) };
   const armholeWidth = Math.abs((underarm.x - shoulderPoint.x) * direction.y - (underarm.y - shoulderPoint.y) * direction.x);
-  const upper = upperArmGirth === undefined ? Math.min(chest * 0.058, 0.85 * armholeWidth / Math.PI) : upperArmGirth / (2 * Math.PI), opening = Math.min(chest * 0.05, upper, 0.85 * d.cuffHalf / Math.PI);
-  const wrist = Math.min(chest * 0.03, opening), inside = 3, reach = inside + d.sleeveLength;
+  const upper = upperArmGirth === undefined ? Math.min(frame * 0.058, 0.85 * armholeWidth / Math.PI) : upperArmGirth / (2 * Math.PI), opening = Math.min(frame * 0.05, upper, 0.85 * d.cuffHalf / Math.PI);
+  const wrist = Math.min(frame * 0.03, opening), inside = 3, reach = inside + d.sleeveLength;
   const armEnd = height ? inside + 0.33 * height : Math.max(reach, 62) + 4;
   for (const side of [1, -1]) {
     const at = (distance: number): Vec => [side * (middle.x + direction.x * (distance - inside)), middle.y + direction.y * (distance - inside), 0];
@@ -287,8 +354,8 @@ export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = 
     capsules.push({ a: at(0), b: at(Math.min(reach, armEnd)), radius: upper, end: armEnd < reach ? wrist : opening, limb: true });
     if (armEnd > reach) capsules.push({ a: at(reach), b: at(armEnd), radius: opening, end: wrist, limb: true });
   }
-  return { chest, waist, hip, chestDepth: chestDepth ?? 2 * chestHalf * depth, ...(upperArmGirth === undefined ? {} : { upperArmGirth }), torso, capsules,
-    landmarks: { waist: waistY, hip: hipY, ...(height ? { height, sleeveBeyondWrist: reach - armEnd } : {}) } };
+  return { chest, waist, hip, chestDepth: chestDepth ?? bustDepth ?? 2 * chestHalf * depth, ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(underbust === undefined ? {} : { underbust }), torso, capsules,
+    landmarks: { waist: waistY, hip: hipY, ...(height ? { height, sleeveBeyondWrist: reach - armEnd } : {}), ...(bust === undefined ? {} : { bust }) } };
 }
 
 /**
@@ -903,8 +970,8 @@ export function layerField(surfaces: { positions: Float32Array; indices: ArrayLi
  * smaller than it). */
 export function outfitShape(bottoms: Product, chest: number, shape: TopBodyShape = {}) {
   validateBodyChest(chest);
-  const own = garmentBody(bottoms, chest, {});
-  return validateTopBodyShape(chest, { ...shape, waist: shape.waist ?? Math.min(chest * 0.86, own.waist), hip: shape.hip ?? Math.min(chest * 1.02, own.hip) });
+  const own = garmentBody(bottoms, chest, {}), automatic = validateTopBodyShape(chest, { underbust: shape.underbust });
+  return validateTopBodyShape(chest, { ...shape, waist: shape.waist ?? Math.min(automatic.waist, own.waist), hip: shape.hip ?? Math.min(automatic.hip, own.hip) });
 }
 
 /** The body in an outfit with these girths and height: the top's body down to its waist, the bottoms' below it. */
