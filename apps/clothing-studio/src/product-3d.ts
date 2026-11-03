@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
+import { OPEN_ZIP_GAP, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -104,7 +104,8 @@ export class ProductScene {
     const previous = [this.height, this.low];
     // A draped top is framed with the body's head in view.
     this.height = Math.max(garmentHeight(product), drape && showBody && !isBottoms(product) ? topMeasurements(product).length + 32 : 0) + 6;
-    this.low = 0;
+    // Joggers' cuffs hang below their leg panels' hems.
+    this.low = product.base === 'trousers' ? -trouserDimensions(product).cuffHeight : 0;
     const worn = companion && drape?.companion ? drape.companion.parts : null;
     if (worn) {
       // An outfit spans both garments, with the head above the top's collar.

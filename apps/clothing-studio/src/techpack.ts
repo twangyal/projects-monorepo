@@ -180,17 +180,21 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
     pom('D', 'Front rise', 'Waist seam to the inseam, along the centre front seam', seam('front'), 0.5, 0.5),
     pom('E', 'Back rise', 'Waist seam to the inseam, along the centre back seam', seam('back'), 0.75, 0.5),
     pom('F', 'Thigh (½)', '2.5 cm below the crotch, across the leg', d.thighHalf, 1, 0.5),
-    pom('G', 'Inseam', 'Crotch seam to hem along the inside leg', d.inseam, 0, 1),
+    pom('G', 'Inseam', d.cuffHeight ? 'Crotch seam to the cuff edge along the inside leg' : 'Crotch seam to hem along the inside leg', d.finishedInseam, 0, 1),
     pom('H', 'Outseam', 'Top of the waistband to hem along the side seam', d.outseam, 0.5, 1),
     pom('I', 'Leg opening (½)', 'Along the hem edge', d.legOpening / 2, 0.5, 0.5),
     pom('J', 'Waistband height', 'Finished', d.waistbandHeight, 0, 0.25),
+    ...(d.cuffHeight ? [pom('K', 'Cuff opening (½)', 'Along the cuff edge, relaxed', d.cuffLength / 2, 0.5, 0.5), pom('L', 'Cuff height', 'Finished rib cuff', d.cuffHeight, 0, 0.25)] : []),
   ];
   const construction: ConstructionRow[] = [
     { area: 'Inseams', operation: '4-thread overlock, then topstitch', detail: 'Join each front leg to its back leg from hem to crotch' },
     { area: 'Side seams', operation: '4-thread overlock', detail: 'Waist to hem; insert the care label at the left side' },
     { area: 'Crotch seam', operation: 'Overlock, then double-stitch through the crotch', detail: 'Join the two legs from centre front waist through the crotch to centre back waist' },
     { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(d.waistbandHeight)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
-    { area: 'Leg hems', operation: shorts ? 'Double-turn 1.5 cm and edgestitch' : 'Double-turn 2 cm and edgestitch', detail: `Leg opening ${cm(d.legOpening)} around` },
+    d.cuffHeight
+      ? { area: 'Ankle cuffs', operation: 'Close into a loop, fold, then overlock to the leg opening, stretching the cuff to fit',
+        detail: `${cm(d.cuffHeight)} finished; cut ${cm(d.cuffLength)} around, about a third shorter than the ${cm(d.legOpening)} leg opening it gathers` }
+      : { area: 'Leg hems', operation: shorts ? 'Double-turn 1.5 cm and edgestitch' : 'Double-turn 2 cm and edgestitch', detail: `Leg opening ${cm(d.legOpening)} around` },
   ];
   return {
     name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: garmentName(product),

@@ -20,7 +20,7 @@ const CROP_NAMES: Partial<Record<Base, string>> = { tee: 'Crop top', sweatshirt:
 const DRESS_NAMES: Partial<Record<Base, string>> = { tee: 'T-shirt dress', sweatshirt: 'Sweatshirt dress', hoodie: 'Hoodie dress' };
 /** What the garment is, as a buyer or factory would call it: a long top is a dress and short trousers are shorts. */
 export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { options?: Options }): string {
-  if (product.base === 'trousers') return legMeasurements(product).inseam < 35 ? 'Pull-on shorts' : BASE_NAMES.trousers;
+  if (product.base === 'trousers') return legMeasurements(product).inseam < 35 ? 'Pull-on shorts' : legMeasurements(product).cuffHeight ? 'Joggers' : BASE_NAMES.trousers;
   // A hoodie with a front zip is a zip hoodie, cropped or as a dress too.
   const zip = (name: string) => (product.base !== 'hoodie' || !product.options?.zip ? name
     : name === BASE_NAMES.hoodie ? 'Zip hoodie' : name.replace(/hoodie/i, match => `${match[0] === 'H' ? 'Zip' : 'zip'} ${match.toLowerCase()}`));
@@ -44,6 +44,7 @@ export const BASE_PARTS: Record<Base, readonly PartId[]> = {
 /** A part's display name on this design: the front and back of shorts and trousers are leg panels. */
 export function partName(product: Pick<Product, 'base'>, part: PartId): string {
   if (product.base === 'trousers' && (part === 'front' || part === 'back')) return part === 'front' ? 'Front legs' : 'Back legs';
+  if (product.base === 'trousers' && (part === 'cuffLeft' || part === 'cuffRight')) return part === 'cuffLeft' ? 'Left ankle cuff' : 'Right ankle cuff';
   return PART_NAMES[part];
 }
 /** Bottoms use their own measured panels instead of top measurements or the top drape. */
@@ -53,7 +54,9 @@ export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', '
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
 export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pick<Product, 'measurements'>>): readonly PartId[] {
   const parts = product.base === 'skirt' && (product.measurements as SkirtMeasures | undefined)?.waistbandHeight
-    ? [...BASE_PARTS.skirt, 'waistband' as const] : BASE_PARTS[product.base];
+    ? [...BASE_PARTS.skirt, 'waistband' as const]
+    : product.base === 'trousers' && (product.measurements as LegMeasurements | undefined)?.cuffHeight
+      ? [...BASE_PARTS.trousers, 'cuffLeft' as const, 'cuffRight' as const] : BASE_PARTS[product.base];
   const kept = sleeveless(product) ? parts.filter(part => part !== 'sleeveLeft' && part !== 'sleeveRight') : parts;
   return optionsOf(product).chestPocket ? [...kept, 'chestPocket'] : kept;
 }
@@ -73,6 +76,23 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
   };
   fix(product.parts); for (const colourway of product.colorways ?? []) fix(colourway.parts);
   return product;
+}
+
+/** Add, resize or remove ankle cuffs on trousers (making them joggers), without losing independently styled
+ * colourways: new cuffs take the legs' colour in rib. */
+export function withLegCuffs(product: Product, height: number): Product {
+  if (product.base !== 'trousers') fail('Choose trousers to give them ankle cuffs.');
+  const draft = structuredClone(product), m = draft.measurements as LegMeasurements;
+  if (height === 0) delete m.cuffHeight;
+  else m.cuffHeight = height;
+  const update = (parts: Product['parts']) => {
+    for (const id of ['cuffLeft', 'cuffRight'] as const) {
+      if (height === 0) delete (parts as Partial<Product['parts']>)[id];
+      else parts[id] ??= { ...structuredClone(parts.front), material: 'rib-220', print: null };
+    }
+  };
+  update(draft.parts); for (const colourway of draft.colorways ?? []) update(colourway.parts);
+  return validateProduct(draft);
 }
 
 /** Add, resize or remove the skirt band without losing independently styled colourways. */
@@ -158,7 +178,8 @@ export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder widt
   chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
-export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number; waistbandHeight?: number }
+export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number; waistbandHeight?: number;
+  /** Rib cuffs at the leg openings, which gather them (joggers), cm high; absent without cuffs. */ cuffHeight?: number }
 export interface Spec { styleNumber: string; season: string; sampleSize: Size }
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 export type Size = typeof SIZES[number];
@@ -190,7 +211,7 @@ export interface Product {
 }
 
 export const LIMITS = {
-  chest: [80, 150], length: [40, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  chest: [80, 150], length: [40, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], legCuffHeight: [4, 12], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
   fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
@@ -311,11 +332,14 @@ export function validateProduct(value: unknown): Product {
   if (base === 'skirt') {
     measurements = validateSkirtMeasures(p.measurements);
   } else if (base === 'trousers') {
-    const band = !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, 'waistbandHeight');
-    const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening', ...(band ? ['waistbandHeight'] : [])], 'Leg measurements');
+    const has = (key: string) => !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, key);
+    const band = has('waistbandHeight'), cuffs = has('cuffHeight');
+    const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening', ...(band ? ['waistbandHeight'] : []), ...(cuffs ? ['cuffHeight'] : [])], 'Leg measurements');
     measurements = { waist: finite(m.waist, LIMITS.waist, 'Waist (cm)'), hip: finite(m.hip, LIMITS.hip, 'Hip (cm)'), rise: finite(m.rise, LIMITS.rise, 'Front rise (cm)'),
       inseam: finite(m.inseam, LIMITS.inseam, 'Inseam (cm)'), legOpening: finite(m.legOpening, LIMITS.legOpening, 'Leg opening (cm)'),
-      ...(band ? { waistbandHeight: finite(m.waistbandHeight, LIMITS.waistbandHeight, 'Waistband height (cm)') } : {}) };
+      ...(band ? { waistbandHeight: finite(m.waistbandHeight, LIMITS.waistbandHeight, 'Waistband height (cm)') } : {}),
+      ...(cuffs ? { cuffHeight: finite(m.cuffHeight, LIMITS.legCuffHeight, 'Cuff height (cm)') } : {}) };
+    if (cuffs && measurements.inseam < 35) fail('Shorts have no ankle cuffs: lengthen the inseam to make joggers.');
     if (measurements.hip < measurements.waist) fail('Hip must be at least the waist: the waistband has to pull on over the hips.');
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
@@ -417,6 +441,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'gathered-skirt', name: 'Gathered skirt', description: 'Floral cotton poplin gathered into a 4 cm waistband.',
     product: { base: 'skirt', name: 'Gathered skirt', measurements: { waist: 72, hem: 150, slant: 62, waistbandHeight: 4, gather: 1.6 }, neckline: 'crew',
       parts: { ...allParts(style('poplin-120', '#f3ead8', { motif: 'floral', color: '#b5523b', scaleCm: 5, layout: 'half-drop' }), {}, 'skirt'), waistband: style('poplin-120', '#b5523b') }, artwork: [] } },
+  { id: 'joggers', name: 'Joggers', description: 'Heather grey French terry, tapered leg gathered into rib ankle cuffs, elasticated waist.',
+    product: { base: 'trousers', name: 'Joggers', measurements: { ...legFit, inseam: 74, legOpening: 36, cuffHeight: 8 }, neckline: 'crew',
+      parts: { ...allParts(style('terry-300', '#9a9c9a'), {}, 'trousers'), cuffLeft: style('rib-220', '#9a9c9a'), cuffRight: style('rib-220', '#9a9c9a') }, artwork: [] } },
   { id: 'trousers', name: 'Straight trousers', description: 'Indigo denim twill, straight leg, elasticated waist.',
     product: { base: 'trousers', name: 'Straight trousers', measurements: legFit, neckline: 'crew', parts: allParts(style('denim-340', '#2d3f5c'), {}, 'trousers'), artwork: [] } },
 ];
@@ -568,14 +595,17 @@ export const LEG_PRESETS = [{ id: 'shorts', name: 'Shorts', inseam: 18 }, { id: 
  * waist wide enough to pass the hips, and an elastic in the waistband gathers them to the waist.
  */
 export function trouserDimensions(product: Product) {
-  const m = legMeasurements(product), waistbandHeight = m.waistbandHeight ?? WAISTBAND_CM;
+  // The inseam is measured to the bottom edge: with ankle cuffs, the leg panels stop the cuff's height short of it.
+  const measured = legMeasurements(product), m = { ...measured, inseam: measured.inseam - (measured.cuffHeight ?? 0) }, waistbandHeight = m.waistbandHeight ?? WAISTBAND_CM;
   const frontHip = m.hip / 4 + 1, backHip = m.hip / 4 + 2, frontCrotch = m.hip * 0.05, backCrotch = m.hip * 0.1;
   return {
     ...m, waistbandHeight, frontHip, backHip, frontCrotch, backCrotch, hipDepth: m.rise * 0.7, backRaise: 3, length: m.rise + m.inseam,
-    outseam: m.rise + m.inseam + waistbandHeight, frontHem: m.legOpening / 2 - 1, backHem: m.legOpening / 2 + 1,
+    outseam: m.rise + measured.inseam + waistbandHeight, frontHem: m.legOpening / 2 - 1, backHem: m.legOpening / 2 + 1,
     // A leg is one front and one back panel; measured 2.5 cm below the crotch, after the crotch curve.
     thighHalf: (frontHip + frontCrotch + backHip + backCrotch) / 2 - 1,
     elastic: m.waist - 4, waistbandLength: m.hip + 6,
+    // Ankle cuffs (joggers): rib cut a third shorter than the leg opening, which it gathers.
+    cuffHeight: m.cuffHeight ?? 0, cuffLength: m.legOpening * 0.66, finishedInseam: measured.inseam,
     // The 3D view: gathered waist, hip and the leg's centre and half-width at the hem.
     waistHalf: m.waist / 4 + 1.5, hipHalf: m.hip / 4 + 1.5,
   };
@@ -599,7 +629,9 @@ function trouserPieces(product: Product): PatternPiece[] {
     return pts;
   };
   const band = [{ x: 0, y: 0 }, { x: d.waistbandLength, y: 0 }, { x: d.waistbandLength, y: d.waistbandHeight * 2 }, { x: 0, y: d.waistbandHeight * 2 }];
-  return [makePiece('front', panel(true), 2), makePiece('back', panel(false), 2), makePiece('waistband', band, 1)];
+  const cuff = [{ x: 0, y: 0 }, { x: d.cuffLength, y: 0 }, { x: d.cuffLength, y: d.cuffHeight * 2 }, { x: 0, y: d.cuffHeight * 2 }];
+  const cuffs = d.cuffHeight ? [makePiece('cuffLeft', cuff, 1), makePiece('cuffRight', cuff.map(p => ({ ...p })), 1)] : [];
+  return [makePiece('front', panel(true), 2), makePiece('back', panel(false), 2), makePiece('waistband', band, 1), ...cuffs];
 }
 
 /** Columns across each trouser leg panel, and its rows from the waist to the hip line, the crotch and the hem. */
@@ -704,6 +736,17 @@ function trouserMesh(product: Product): PartMesh[] {
   const band: PartMesh = { part: 'waistband', positions: [], uvs: [], indices: [] };
   neckRib(band, ring, d.waistbandHeight);
   meshes.set('waistband', band);
+  if (d.cuffHeight) {
+    // Joggers: a rib cuff below each leg opening, round from the side seam over the front to the inseam and back over
+    // the back; cut a third shorter than the opening, it is drawn gathered round the leg's centre.
+    for (const [part, leg] of [['cuffLeft', 1], ['cuffRight', -1]] as const) {
+      const hem = [...Array.from({ length: columns + 1 }, (_, c) => point(rows, c / columns, 1, leg)), ...Array.from({ length: columns }, (_, c) => point(rows, (columns - 1 - c) / columns, -1, leg))];
+      const centre = leg * shape[rows].centre, gather = d.cuffLength / d.legOpening, cuff: PartMesh = { part, positions: [], uvs: [], indices: [] };
+      tube(cuff, Math.max(2, Math.ceil(d.cuffHeight / MESH_STEP)), hem.length - 1,
+        k => [hem[k]!, { x: centre + (hem[k]!.x - centre) * gather, y: -d.cuffHeight, z: hem[k]!.z * gather }], (k, v) => ({ x: d.cuffLength * k / (hem.length - 1), y: d.cuffHeight * v }));
+      meshes.set(part, cuff);
+    }
+  }
   return partsOf(product).map(id => meshes.get(id)!).filter(group => group.indices.length);
 }
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }

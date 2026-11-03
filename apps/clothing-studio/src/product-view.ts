@@ -12,7 +12,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -88,7 +88,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Body length (cm)<input id="product-length" type="number" min="${LIMITS.length[0]}" max="${LIMITS.length[1]}" step="1"></label>
         <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="0" max="${LIMITS.sleeve[1]}" step="1" title="0 makes a T-shirt sleeveless (a tank top)" aria-description="0 makes a T-shirt sleeveless (a tank top)"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
-      <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="${key === 'waistbandHeight' ? '0.1' : '1'}"></label>`).join('')}</div>
+      <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="${key === 'waistbandHeight' ? '0.1' : '1'}"></label>`).join('')}<label class="field">Ankle cuff height (cm, 0 for none)<input id="product-leg-cuff" type="number" min="0" max="${LIMITS.legCuffHeight[1]}" step="0.5" aria-describedby="leg-cuff-help"></label><p id="leg-cuff-help" class="fine-print">Rib cuffs gather the leg openings, making joggers. The inseam is measured to the cuff edge.</p></div>
       <div class="measure-grid" id="skirt-measures" hidden>${SKIRT_FIELDS.map(([id,label,,min,max])=>`<label class="field">${label} (cm)<input id="${id}" type="number" min="${min}" max="${max}" step="0.5"></label>`).join('')}<label class="field">Skirt waistband height (cm)<input id="product-skirt-band" type="number" min="0" max="10" step="0.5" aria-describedby="skirt-band-note"></label><label class="field">Waist gathering (× waist)<input id="product-skirt-gather" type="number" min="1" max="${GATHER[1]}" step="0.05" aria-describedby="skirt-gather-note"></label><p class="fine-print" id="skirt-gather-note">1 means a smooth waist. ${GATHER[0]}–${GATHER[1]} cuts the panels' waist edge that many times the waist and gathers it in; the drape forms the gathers. It must stay at least 10 cm shorter than the hem.</p><p class="fine-print" id="skirt-band-note">0 means no waistband; 2–10 cm adds a folded band above the waist seam, styled as its own part. The strip cuts twice that height. Panels keep their side seam slant. The drape holds the upper edge and simulates only the outer surface; the inner facing and closure are not modelled. Fit is not verified. Existing skirt construction remains available separately.</p></div>
       <button id="apply-measurements">Apply measurements</button>
       <details class="fit-panel" id="fit-panel"><summary>Fit: shoulders, neck/hood, sleeves, hem & pocket</summary>
@@ -391,7 +391,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const commit = (next: Project) => options.commit(validateProject(next));
   type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body' | 'colorways';
   const drafts = new Map<string, string>();
-  const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', 'product-skirt-band', 'product-skirt-gather', ...LEG_FIELDS.map(([id]) => id), ...SKIRT_FIELDS.map(([id])=>id)]);
+  const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', 'product-skirt-band', 'product-skirt-gather', 'product-leg-cuff', ...LEG_FIELDS.map(([id]) => id), ...SKIRT_FIELDS.map(([id])=>id)]);
   const groupOf = (id: string): DraftGroup | null => ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth','garment-drape-height','garment-drape-hip-depth','garment-drape-arm-girth','garment-drape-underbust'].includes(id) ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
     : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : /^range-(name|units)-/.test(id) ? 'colorways' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
@@ -692,8 +692,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       return;
     }
     if (isBottoms(draft)) {
+      const cuff = ($('product-leg-cuff') as HTMLInputElement).value.trim();
+      if (cuff && (!Number.isFinite(Number(cuff)) || (Number(cuff) !== 0 && (Number(cuff) < LIMITS.legCuffHeight[0] || Number(cuff) > LIMITS.legCuffHeight[1])))) {
+        throw new Error(`Ankle cuff height must be from ${LIMITS.legCuffHeight[0]} to ${LIMITS.legCuffHeight[1]} cm, or 0 for none.`);
+      }
       draft.measurements = Object.fromEntries(LEG_FIELDS.map(([id, , key]) => [key, value(id)])
         .filter(([key, value]) => key !== 'waistbandHeight' || value !== WAISTBAND_CM)) as unknown as Product['measurements'];
+      Object.assign(draft, withLegCuffs(draft, cuff ? Number(cuff) : 0));
       return;
     }
     const m = { chest: value('product-chest'), length: value('product-length'), sleeve: topMeasurements(draft).sleeve };
@@ -1150,7 +1155,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', design.base !== 'trousers'], ['skirt-measures', design.base !== 'skirt'], ['top-modules', bottoms], ['leg-modules', design.base !== 'trousers'],
       ['artwork-controls', bottoms], ['artwork-note', !bottoms], ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
     if (design.base === 'skirt') { const m=skirtDraft(design); for(const [id,,key] of SKIRT_FIELDS) ($(id) as HTMLInputElement).value=String(m[key]); ($('product-skirt-band') as HTMLInputElement).value=String(skirtBandHeight(design)); ($('product-skirt-gather') as HTMLInputElement).value=String(skirtGather(design)); }
-    else if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key] ?? WAISTBAND_CM); }
+    else if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key] ?? WAISTBAND_CM); ($('product-leg-cuff') as HTMLInputElement).value = String(m.cuffHeight ?? 0); }
     else {
       const m = topMeasurements(design);
       ($('product-chest') as HTMLInputElement).value = String(m.chest); ($('product-length') as HTMLInputElement).value = String(m.length); ($('product-sleeve') as HTMLInputElement).value = String(m.sleeve);

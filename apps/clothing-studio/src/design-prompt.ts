@@ -8,7 +8,7 @@ import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts'
 import { GATHER, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
-  template, topMeasurements, validateProduct, withOptions, type Base, type PartId, type Product,
+  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type PartId, type Product,
 } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -28,7 +28,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
   [/\b(t-?shirts?|tees?)\b/, 'blank', 'tee'],
   [/\bshorts\b/, 'shorts', 'trousers'],
-  [/\b(trousers|pants|joggers|chinos|jeans)\b/, 'trousers', 'trousers'],
+  [/\b(joggers|sweat ?pants|track ?pants|jogging bottoms|track ?suit bottoms)\b/, 'joggers', 'trousers'],
+  [/\b(trousers|pants|chinos|jeans)\b/, 'trousers', 'trousers'],
   [/\bskirts?\b/, 'flared-skirt', 'skirt'],
 ];
 
@@ -93,9 +94,15 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       break;
     }
     if (base === 'trousers' && product.base === 'trousers') {
-      const inseam = id === 'shorts' ? 18 : 78;
+      const inseam = id === 'shorts' ? 18 : 78, cuffs = legMeasurements(product).cuffHeight;
+      // Shorts lose ankle cuffs; joggers gain them.
+      if (id === 'shorts' && cuffs) product = withLegCuffs(product, 0);
       product.measurements = { ...legMeasurements(product), inseam };
       garment.push(`${id === 'shorts' ? 'shorts' : 'full-length legs'}: ${inseam} cm inseam`);
+      if (id === 'joggers' && !cuffs) {
+        product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
+        garment.push('ankle cuffs: joggers');
+      }
     } else if (base === product.base && id === 'crop-top') {
       // A tee described as a crop top keeps its styling and is shortened to end above the waist.
       const length = Math.min(topMeasurements(product).length, topMeasurements(template('crop-top')).length);
