@@ -208,6 +208,9 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     // Gathering keeps the panels flaring: the cut waist edge stays 10 cm shorter than the hem. Pleats replace gathers:
     // knife pleats about 3 cm apart, box pleats about 6 cm wide, each folded half as deep as it can be.
     const gathered = take(/\b(?:gathered|dirndl)(?: waist)?\b/), smooth = !gathered && take(/\b(?:smooth|flat|ungathered)(?: waist)?\b/);
+    // A pencil, straight or fitted skirt follows the hip (about a third more than the waist), a pencil skirt narrowing
+    // to its hem.
+    const pencil = take(/\b(?:pencil|wiggle|hobble)\b/), straight = !pencil && take(/\b(?:straight|fitted|tailored|tight)\b/), flowing = !pencil && !straight && take(/\b(?:flared|flowing|a-?line|circle)\b/);
     const plain = take(/\b(?:unpleated|no pleats|without pleats)\b/), boxed = !plain && take(/\bbox[- ]?pleat(?:ed|s)?\b/);
     const knife = !plain && !boxed && take(/\b(?:knife[- ]?)?pleat(?:ed|s)\b/);
     const m = product.measurements as SkirtMeasures, bare: SkirtMeasures = { ...m };
@@ -225,6 +228,16 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       product.measurements = bare; garment.push('smooth waist: no gathers');
     } else if (plain && m.pleats) {
       product.measurements = { ...bare, ...(m.gather ? { gather: m.gather } : {}) }; garment.push('no pleats');
+    }
+    if (pencil || straight) {
+      const now = product.measurements as SkirtMeasures, fitted: SkirtMeasures = { ...now };
+      delete fitted.gather; delete fitted.pleats;
+      const hip = now.hip ?? Math.round(now.waist * 1.36), hem = pencil ? hip - 6 : hip;
+      try { product.measurements = validateSkirtMeasures({ ...fitted, hip, hem, slant: Math.max(now.slant, 40) }); garment.push(`${pencil ? 'pencil' : 'straight'} skirt: fitted to a ${hip} cm hip with darts, ${hem} cm hem`); }
+      catch { notApplied.push(`${pencil ? 'pencil' : 'straight'} skirt (this waist cannot be fitted)`); }
+    } else if (flowing && (product.measurements as SkirtMeasures).hip !== undefined) {
+      const flared: SkirtMeasures = { ...(product.measurements as SkirtMeasures) }; delete flared.hip;
+      product.measurements = flared; garment.push('flared skirt: no longer fitted');
     }
   }
 

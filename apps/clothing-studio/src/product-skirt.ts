@@ -6,7 +6,16 @@ import type { Product, PatternPiece, PartMesh } from './product.ts';
  * finished waist. With `gather`, the panels' waist edge is cut that many times longer and gathered into it. With
  * `pleats`, the panels are cut wider by the pleats' underlays, which are folded under and pressed.
  */
-export interface SkirtMeasures { waist: number; hem: number; slant: number; waistbandHeight?: number; gather?: number; pleats?: Pleats }
+export interface SkirtMeasures { waist: number; hem: number; slant: number; waistbandHeight?: number; gather?: number; pleats?: Pleats;
+  /** A fitted (straight or pencil) skirt's hip, FITTED_HIP_DEPTH below the waist: the panels follow the hip and darts shape
+   * the waist. `slant` is then its length down the side. */ hip?: number }
+/** Where a fitted skirt's hip line is, cm below the waist (as on the body it drapes on). */
+export const FITTED_HIP_DEPTH = 20;
+/** A fitted skirt's hip range, cm; its hem can narrow to this far below the hip (a pencil skirt). */
+export const FITTED_HIP: readonly [number, number] = [70, 200];
+const PENCIL_TAPER_CM = 16;
+/** A fitted skirt's 3D start is this much wider and less deep than round (the body's hips are about 3/4 as deep as wide). */
+const FITTED_OVAL = 1.12;
 /**
  * Pressed pleats all round the skirt: `count` knife pleats all folded the same way, or `count` box pleats (each box a
  * pair of knife pleats folded away from each other). Each fold is `depth` cm deep at the waist and, as the skirt flares,
@@ -24,8 +33,8 @@ const GATHER_FLARE_CM = 10;
 const cm = (value: number) => Math.round(value * 10) / 10;
 export function validateSkirtMeasures(value: unknown): SkirtMeasures {
   const has = (key: string) => !!value && typeof value === 'object' && Object.hasOwn(value, key);
-  const band = has('waistbandHeight'), gathered = has('gather'), pleated = has('pleats');
-  const keys = ['waist','hem','slant', ...(band ? ['waistbandHeight'] : []), ...(gathered ? ['gather'] : []), ...(pleated ? ['pleats'] : [])];
+  const band = has('waistbandHeight'), gathered = has('gather'), pleated = has('pleats'), fitted = has('hip');
+  const keys = ['waist','hem','slant', ...(band ? ['waistbandHeight'] : []), ...(gathered ? ['gather'] : []), ...(pleated ? ['pleats'] : []), ...(fitted ? ['hip'] : [])];
   if (!value || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype
     || Reflect.ownKeys(value).length !== keys.length || !keys.every(key => Object.hasOwn(value,key)
       && Object.hasOwn(Object.getOwnPropertyDescriptor(value,key)!, 'value'))) throw new Error('Skirt measurements require waist, hem, slant and optionally waistband height, gathering or pleats.');
@@ -38,7 +47,14 @@ export function validateSkirtMeasures(value: unknown): SkirtMeasures {
   }
   if (pleated && gathered) throw new Error('A skirt waist is either gathered or pleated, not both.');
   const pleats = pleated ? validatePleats(m.pleats, waist, hem, slant) : undefined;
-  return {waist,hem,slant,...(band ? {waistbandHeight:m.waistbandHeight} : {}),...(gathered ? {gather:m.gather} : {}),...(pleats ? {pleats} : {})};
+  if (fitted) {
+    if (gathered || pleated) throw new Error('A fitted skirt is shaped by darts, not gathered or pleated.');
+    if (typeof m.hip !== 'number' || !Number.isFinite(m.hip) || m.hip < FITTED_HIP[0] || m.hip > FITTED_HIP[1]) throw new Error(`Skirt hip must be from ${FITTED_HIP[0]} to ${FITTED_HIP[1]} cm.`);
+    if (m.hip < waist + 6) throw new Error(`A fitted skirt's hip must be at least 6 cm more than its ${waist} cm waist.`);
+    if (hem < m.hip - PENCIL_TAPER_CM) throw new Error(`A fitted skirt's hem must be at least ${m.hip - PENCIL_TAPER_CM} cm (${PENCIL_TAPER_CM} cm less than the hip), to walk in.`);
+    if (slant < FITTED_HIP_DEPTH + 10) throw new Error(`A fitted skirt must reach at least ${FITTED_HIP_DEPTH + 10} cm below the waist, past the hip.`);
+  }
+  return {waist,hem,slant,...(band ? {waistbandHeight:m.waistbandHeight} : {}),...(gathered ? {gather:m.gather} : {}),...(pleats ? {pleats} : {}),...(fitted ? {hip:m.hip} : {})};
 }
 function validatePleats(value: unknown, waist: number, hem: number, slant: number): Pleats {
   if (!value || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype || Reflect.ownKeys(value).length !== 3
@@ -72,7 +88,28 @@ export function skirtDraft(product: Product): SkirtDraft {
   return {kind:'flared-skirt',waist,hem,slant};
 }
 export function skirtBandHeight(product: Product): number { return (product.measurements as SkirtMeasures).waistbandHeight ?? 0; }
-export function skirtHeight(product: Product): number { return patternGeometry(skirtPanelDraft(product)).height + skirtBandHeight(product); }
+export function skirtHeight(product: Product): number {
+  return (skirtFit(product) ? skirtDraft(product).slant : patternGeometry(skirtPanelDraft(product)).height) + skirtBandHeight(product);
+}
+
+/**
+ * A fitted skirt's shape, per panel (front or back, each half the skirt): the flat half-width from the centre at a depth
+ * below the waist, and its darts. Half the waist-to-hip difference is shaped by the side seams curving in above the
+ * hip, half by darts from the waist: two per panel, four when two would each be wider than 3 cm. Null for a flared skirt.
+ */
+export function skirtFit(product: Product): { waist: number; hip: number; hem: number; length: number; halfWidth: (depth: number) => number;
+  darts: { at: number; width: number; length: number }[] } | null {
+  const m = product.measurements as SkirtMeasures;
+  if (m.hip === undefined) return null;
+  const { waist, hip, hem, slant: length } = { ...m, hip: m.hip }, shaping = (hip - waist) / 4, count = shaping / 2 > 3 ? 4 : 2, width = shaping / count;
+  const halfWidth = (depth: number) => depth >= FITTED_HIP_DEPTH ? hip / 4 + (hem - hip) / 4 * (depth - FITTED_HIP_DEPTH) / (length - FITTED_HIP_DEPTH)
+    : hip / 4 - shaping / 2 * (1 - depth / FITTED_HIP_DEPTH) ** 2;
+  const atWaist = halfWidth(0), places = count === 2 ? [0.45] : [0.3, 0.65];
+  const darts = places.flatMap(share => [-share, share]).sort((a, b) => a - b).map(share => ({ at: share * atWaist, width, length: count === 2 ? 12 : 11 }));
+  return { waist, hip, hem, length, halfWidth, darts };
+}
+/** A dart's width at a depth below the waist: its full width at the waist, narrowing to nothing at its point. */
+const dartWidth = (dart: { width: number; length: number }, depth: number) => dart.width * Math.max(0, 1 - depth / dart.length);
 
 /** The flat panel as cut, an annular sector: pleats widen its angle by their underlays. */
 export function skirtCutGeometry(product: Product): ReturnType<typeof patternGeometry> {
@@ -100,8 +137,72 @@ export function pleatLines(product: Product): { fold: number; placement: number 
   return lines;
 }
 
+type Pt = { x: number; y: number };
+/** A fitted skirt's widest flat half-panel and where its side seam runs, sampled from the waist to the hem. */
+function fittedSide(product: Product): { widest: number; side: Pt[] } {
+  const { length, halfWidth } = skirtFit(product)!, steps = 48;
+  const side = Array.from({ length: steps + 1 }, (_, i) => { const y = length * i / steps; return { x: halfWidth(y), y }; });
+  return { widest: Math.max(...side.map(p => p.x)), side };
+}
+
+/**
+ * A fitted skirt's front and back: each half the skirt, cut flat and symmetric about its centre, the side seams curving
+ * in above the hip; each dart is marked by its two legs from the waist to its point (the waist edge is cut across it).
+ */
+function fittedPieces(product: Product): PatternPiece[] {
+  const { darts } = skirtFit(product)!, { widest, side } = fittedSide(product), shift = (p: Pt) => ({ x: widest + p.x, y: p.y });
+  const right = side.map(shift), left = side.map(p => shift({ x: -p.x, y: p.y })).reverse();
+  const outline = [...right, ...left];
+  let area = 0;
+  for (let i = 0; i < outline.length; i++) { const a = outline[i]!, b = outline[(i + 1) % outline.length]!; area += a.x * b.y - b.x * a.y; }
+  const marks = darts.map(d => [shift({ x: d.at - d.width / 2, y: 0 }), shift({ x: d.at, y: d.length }), shift({ x: d.at + d.width / 2, y: 0 })] as [Pt, Pt, Pt]);
+  const height = Math.max(...outline.map(p => p.y));
+  const pieces: PatternPiece[] = (['front', 'back'] as const).map(part => ({ part, outline: outline.map(p => ({ ...p })), width: 2 * widest, height, areaCm2: Math.abs(area) / 2, cutCount: 1,
+    darts: marks.map(mark => mark.map(p => ({ ...p })) as [Pt, Pt, Pt]) }));
+  const band = skirtBandHeight(product) * 2, waist = skirtDraft(product).waist;
+  if (band) pieces.push({ part: 'waistband', outline: [{ x: 0, y: 0 }, { x: waist, y: 0 }, { x: waist, y: band }, { x: 0, y: band }], width: waist, height: band, areaCm2: waist * band, cutCount: 1, foldLine: [{ x: 0, y: band / 2 }, { x: waist, y: band / 2 }] });
+  return pieces;
+}
+
+/**
+ * A fitted skirt in 3D: each panel's columns run between its side seams and its darts' legs. A dart's two legs share
+ * their place round the skirt, so the drape sews them together, closing the dart; below its point they are one line.
+ * Each row is a circle as long as the panels' flat width without the darts.
+ */
+function fittedMesh(product: Product): PartMesh[] {
+  const { length, halfWidth, darts } = skirtFit(product)!, { widest } = fittedSide(product), rows = Math.max(16, Math.round(length / 2));
+  // Segment edges across a panel at a depth: the side, then each dart's left and right legs, then the other side.
+  const edges = (depth: number) => [-halfWidth(depth), ...darts.flatMap(d => { const w = dartWidth(d, depth); return [d.at - w / 2, d.at + w / 2]; }), halfWidth(depth)];
+  const atHip = edges(FITTED_HIP_DEPTH), counts = Array.from({ length: darts.length + 1 }, (_, k) => Math.max(1, Math.round((atHip[2 * k + 1]! - atHip[2 * k]!) / 1.6)));
+  const width = counts.reduce((sum, n) => sum + n + 1, 0), angles: number[] = [];
+  const meshes: PartMesh[] = (['front', 'back'] as const).map((part, side) => {
+    const mesh: PartMesh = { part, positions: [], uvs: [], indices: [] };
+    for (let r = 0; r <= rows; r++) {
+      const depth = length * r / rows, e = edges(depth), spans = counts.map((_, k) => e[2 * k + 1]! - e[2 * k]!), total = spans.reduce((sum, w) => sum + w, 0);
+      let before = 0, column = 0;
+      for (const [k, count] of counts.entries()) {
+        for (let c = 0; c <= count; c++, column++) {
+          const x = e[2 * k]! + spans[k]! * c / count, arc = before + spans[k]! * c / count, theta = -Math.PI / 2 + Math.PI * (side + arc / total), radius = total / Math.PI;
+          mesh.positions.push(radius * Math.sin(theta), length - depth, radius * Math.cos(theta));
+          mesh.uvs.push(widest + x, depth);
+          if (!r) angles.push(theta);
+          if (r < rows && c < count) { const a = r * width + column, b = a + 1, e2 = a + width, f = e2 + 1; mesh.indices.push(a, e2, b, b, e2, f); }
+        }
+        before += spans[k]!;
+      }
+    }
+    return mesh;
+  });
+  const unique = [...angles].sort((a, b) => a - b).filter((angle, i, all) => !i || angle - all[i - 1]! > 1e-9);
+  const all = [...meshes, ...skirtBand(product, length, unique.map(theta => ({ theta, share: (theta - unique[0]!) / (2 * Math.PI) })))];
+  // It starts oval, wider than deep like the hips it fits, so the hips do not stretch it at the sides as it settles.
+  for (const mesh of all) for (let i = 0; i < mesh.positions.length; i += 3) { mesh.positions[i] *= FITTED_OVAL; mesh.positions[i + 2] /= FITTED_OVAL; }
+  return all;
+}
+
 /** Circular arcs sampled closely enough for the common polygon pattern/export pipeline. */
 export function skirtPieces(product: Product): PatternPiece[] {
+  if (skirtFit(product)) return fittedPieces(product);
   const g=skirtCutGeometry(product),outline:{x:number;y:number}[]=[];
   const segments=96;
   for(const [radius,reverse] of [[g.innerRadius,false],[g.outerRadius,true]] as const){
@@ -171,6 +272,7 @@ function pleatColumns(pleats: Pleats, k: number, hem: number): PleatColumn[] {
 
 /** A rigid open frustum; seams, slant and UVs follow the same two annular-sector panels. */
 export function skirtMesh(product: Product): PartMesh[] {
+  if (skirtFit(product)) return fittedMesh(product);
   if (skirtPleats(product)) return pleatedMesh(product);
   // A gathered skirt is cut from the wider panels but starts on its finished waist: the waist row is held there and
   // the extra fabric falls into gathers as it drapes.

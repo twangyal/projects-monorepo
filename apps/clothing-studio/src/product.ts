@@ -45,7 +45,12 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
   if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return zip(DRESS_NAMES[product.base]!);
   // Pleats name a skirt: box pleats by their kind, knife pleats just pleated.
-  if (product.base === 'skirt') { const pleats = (product.measurements as SkirtMeasures).pleats; if (pleats) return pleats.style === 'box' ? 'Box-pleated skirt' : 'Pleated skirt'; }
+  if (product.base === 'skirt') {
+    const m = product.measurements as SkirtMeasures;
+    // A fitted skirt narrowing to its hem is a pencil skirt; one as wide at the hem as the hip, a straight skirt.
+    if (m.hip !== undefined) return m.hem < m.hip - 2 ? 'Pencil skirt' : m.hem > m.hip + 6 ? 'Fitted A-line skirt' : 'Straight skirt';
+    if (m.pleats) return m.pleats.style === 'box' ? 'Box-pleated skirt' : 'Pleated skirt';
+  }
   return zip(BASE_NAMES[product.base]);
 }
 export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket'] as const;
@@ -553,6 +558,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'pleated-skirt', name: 'Pleated skirt', description: 'Grey wool twill with 24 pressed knife pleats, sewn into a 4 cm waistband.',
     product: { base: 'skirt', name: 'Pleated skirt', measurements: { waist: 72, hem: 120, slant: 60, waistbandHeight: 4, pleats: { style: 'knife', count: 24, depth: 1.5 } }, neckline: 'crew',
       parts: { ...allParts(style('wool-260', '#8b8e93'), {}, 'skirt'), waistband: style('wool-260', '#8b8e93') }, artwork: [] } },
+  { id: 'pencil-skirt', name: 'Pencil skirt', description: 'Charcoal wool twill, fitted to a 96 cm hip with waist darts and narrowing to the hem, on a 3 cm waistband.',
+    product: { base: 'skirt', name: 'Pencil skirt', measurements: { waist: 70, hem: 90, slant: 60, waistbandHeight: 3, hip: 96 }, neckline: 'crew',
+      parts: { ...allParts(style('wool-260', '#45484e'), {}, 'skirt'), waistband: style('wool-260', '#45484e') }, artwork: [] } },
   { id: 'joggers', name: 'Joggers', description: 'Heather grey French terry, tapered leg gathered into rib ankle cuffs, elasticated waist.',
     product: { base: 'trousers', name: 'Joggers', measurements: { ...legFit, inseam: 74, legOpening: 36, cuffHeight: 8 }, neckline: 'crew',
       parts: { ...allParts(style('terry-300', '#9a9c9a'), {}, 'trousers'), cuffLeft: style('rib-220', '#9a9c9a'), cuffRight: style('rib-220', '#9a9c9a') }, artwork: [] } },
@@ -693,7 +701,9 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
 
 export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
   /** Pleats: each pleat's fold line and the placement line it is folded over to, waist end first. */
-  pleats?: { fold: [{ x: number; y: number }, { x: number; y: number }]; placement: [{ x: number; y: number }, { x: number; y: number }] }[] }
+  pleats?: { fold: [{ x: number; y: number }, { x: number; y: number }]; placement: [{ x: number; y: number }, { x: number; y: number }] }[];
+  /** Darts: each one's left leg at the edge, its point, and its right leg at the edge. */
+  darts?: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }][] }
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {

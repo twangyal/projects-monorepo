@@ -1,5 +1,5 @@
 import { DRESS_LENGTH, RIB_PARTS, isBottoms, layerOrder, material, sleeveAngleOf, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
-import { skirtDraft, skirtHeight } from './product-skirt.ts';
+import { skirtDraft, skirtFit, skirtHeight } from './product-skirt.ts';
 
 /**
  * Drapes a top on a body: the product's own 3D parts become one cloth, sewn at the seams where they already meet,
@@ -185,7 +185,8 @@ export const SKIRT_HIP_DEPTH = 20;
  */
 export function skirtBodyProxy(product: Product, shape: { waist?: number; hip?: number; hipDepth?: number } = {}): BodyProxy {
   const draft = skirtDraft(product), top = skirtHeight(product), hipDepth = validateBodyHipDepth(shape.hipDepth);
-  const waist = shape.waist ?? Math.max(BODY_WAIST[0], draft.waist - 2), hip = shape.hip ?? Math.min(BODY_HIP[1], waist * 1.19);
+  // A fitted skirt is worn over a body with its hip, less a little ease.
+  const fit = skirtFit(product), waist = shape.waist ?? Math.max(BODY_WAIST[0], draft.waist - 2), hip = shape.hip ?? Math.min(BODY_HIP[1], fit ? Math.max(waist, fit.hip - 4) : waist * 1.19);
   if (typeof waist !== 'number' || !Number.isFinite(waist) || waist < BODY_WAIST[0] || waist > BODY_WAIST[1]) throw new Error('Body waist must be from 50 to 180 cm.');
   if (typeof hip !== 'number' || !Number.isFinite(hip) || hip < BODY_HIP[0] || hip > BODY_HIP[1]) throw new Error('Body hip must be from 50 to 220 cm.');
   if (waist > draft.waist - 1) throw new Error(`The body waist must be at least 1 cm smaller than the skirt's ${draft.waist} cm waist.`);
