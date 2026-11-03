@@ -3,7 +3,7 @@ import { skirtBandHeight, skirtDraft, skirtGather, skirtPanelDraft, skirtPieces 
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, PLACKET_CM, STAND_COLLAR_CM, garmentName, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -75,6 +75,9 @@ function samplePack(product: Product, date: string): TechPack {
   const dims = teeDimensions(product), modules = optionsOf(product);
   if (modules.zip) bom.push({ item: 'Z1 Zip', description: 'Open-end #5 coil zip with a locking slider', color: 'Match front body',
     placement: 'Centre front, neck to hem', quantity: `1 × ${cm(zipLength(product))}` });
+  const placket = placketOf(product);
+  if (product.base === 'tee' && (modules.collar || modules.buttons)) bom.push({ item: 'B1 Buttons', description: `4-hole 11 mm ${modules.buttons ? 'shirt' : 'polo'} buttons`,
+    color: 'Contrast a shade from the placket', placement: 'Centre-front placket', quantity: `${placket.buttons}` });
   for (const art of product.artwork) {
     const height = art.widthCm * art.height / art.width;
     bom.push({ item: `A${art.part === 'front' ? 1 : 2} Artwork`, description: `${art.name || 'Artwork'} — screen print or DTG`, color: 'Per artwork file',
@@ -95,8 +98,9 @@ function samplePack(product: Product, date: string): TechPack {
     pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.hemHalf * 2, 2.5, 1),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
     ...(product.base === 'hoodie' ? [pom('K', 'Hood side height', 'Side pattern base to top; no seam allowance; 3D crown is illustrative', dims.hoodHeight, 0.5, 1)]
-      : modules.collar && product.base === 'tee' ? [pom('K', 'Collar height', 'Finished, neckline seam to the folded edge at centre back', COLLAR_CM, 0, 0.25),
-        pom('W', 'Placket length', 'Neckline seam at centre front to the bottom of the placket', PLACKET_CM.length, 0, 0.5)]
+      : (modules.collar || modules.buttons) && product.base === 'tee' ? [
+        modules.collar ? pom('K', 'Collar height', 'Finished, neckline seam to the folded edge at centre back', COLLAR_CM, 0, 0.25) : pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25),
+        pom('W', 'Placket length', 'Neckline seam at centre front to the bottom of the placket', placket.length, 0, 0.5)]
       : modules.collar ? [pom('K', 'Collar height', 'Finished rib stand collar, neckline seam to top edge', STAND_COLLAR_CM, 0, 0.25)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
     ...(product.base === 'tee' ? [] : [
@@ -127,11 +131,17 @@ function samplePack(product: Product, date: string): TechPack {
         { area: 'Centre-front zip', operation: 'Set the open-end zip between the front halves through the hem band; topstitch 0.6 cm each side', detail: `Fronts cut 2 (a mirrored pair); zip ${cm(zipLength(product))}, top stop at the neckline seam` },
         { area: 'Kangaroo pocket', operation: 'Turn each pocket opening 2 cm and coverstitch; edgestitch the halves to the fronts', detail: `Halves cut 2, each ${cm(dims.pocketHalfBottom)} wide at the bottom, stopping ${cm(ZIP_CLEAR)} short of the zip; sides caught in the hem band seam` },
       ] : [{ area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` }]),
-    ] : modules.collar && product.base === 'tee' ? [
-      { area: 'Placket', operation: 'Cut the centre-front opening; attach the folded placket pieces, lap left over right and box-stitch the base',
-        detail: `${cm(PLACKET_CM.width)} wide × ${cm(PLACKET_CM.length)} long finished; ${PLACKET_CM.buttons} buttonholes on the wearer's left, buttons on the right` },
-      { area: 'Collar', operation: 'Overlock the flat-knit collar to the neckline between the placket edges, then cover the seam with back-neck tape',
-        detail: `Collar ${cm(COLLAR_CM)} finished, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` },
+    ] : (modules.collar || modules.buttons) && product.base === 'tee' ? [
+      modules.buttons
+        ? { area: 'Button front', operation: 'Fold the placket pieces onto the front halves and topstitch 0.6 cm each side; lap left over right',
+          detail: `Fronts cut 2 (a mirrored pair); placket ${cm(placket.width)} wide × ${cm(placket.length)} long finished; ${placket.buttons} buttonholes on the wearer's left, buttons on the right` }
+        : { area: 'Placket', operation: 'Cut the centre-front opening; attach the folded placket pieces, lap left over right and box-stitch the base',
+          detail: `${cm(placket.width)} wide × ${cm(placket.length)} long finished; ${placket.buttons} buttonholes on the wearer's left, buttons on the right` },
+      !modules.collar ? { area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `Its ends are caught in the placket; rib ${cm(dims.ribLength)} long, ${cm(dims.ribHeight)} finished` }
+        : modules.buttons ? { area: 'Collar', operation: 'Fuse the collar, sew and turn it, then set it to the neckline between the placket edges and topstitch',
+          detail: `Collar ${cm(COLLAR_CM)} finished, in the shirt fabric, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` }
+        : { area: 'Collar', operation: 'Overlock the flat-knit collar to the neckline between the placket edges, then cover the seam with back-neck tape',
+          detail: `Collar ${cm(COLLAR_CM)} finished, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` },
     ] : [
       ...(modules.zip ? [{ area: 'Centre-front zip', operation: 'Set the open-end zip between the front halves through the hem band; topstitch 0.6 cm each side',
         detail: `Fronts cut 2 (a mirrored pair); zip ${cm(zipLength(product))}, top stop at the ${modules.collar ? 'top of the collar' : 'neckline seam'}` }] : []),

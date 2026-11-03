@@ -18,6 +18,9 @@ const GARMENTS: [RegExp, string, Base][] = [
   // A tank top is a sleeveless tee, and a crop top a short one.
   [/\bcrop(?:ped)? tops?\b/, 'crop-top', 'tee'],
   [/\b(?:tank|vest|sleeveless) tops?\b|\btanks?\b|\bsinglets?\b/, 'blank', 'tee'],
+  // Shirts: a shirt dress is a long one; a dress shirt is not a dress.
+  [/\bshirt ?dress(?:es)?\b/, 'shirt', 'tee'],
+  [/\b(?:dress|formal|oxford|button[- ]?(?:up|down)|flannel|work) shirts?\b|\bbutton[- ]?(?:ups?|downs?)\b/, 'shirt', 'tee'],
   // Dresses are long tops; a plain "dress" keeps the current top's base.
   [/\b(?:hoodie|hooded) dress(?:es)?\b/, 'hoodie', 'hoodie'],
   [/\b(?:sweatshirt|sweat|jumper|sweater) dress(?:es)?\b/, 'sweat-dress', 'sweatshirt'],
@@ -29,6 +32,7 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
   [/\bpolo(?: shirt)?s?\b/, 'polo', 'tee'],
   [/\b(t-?shirts?|tees?)\b/, 'blank', 'tee'],
+  [/(?<!polo |t-|t )\bshirts?\b/, 'shirt', 'tee'],
   [/\bshorts\b/, 'shorts', 'trousers'],
   [/\b(joggers|sweat ?pants|track ?pants|jogging bottoms|track ?suit bottoms)\b/, 'joggers', 'trousers'],
   [/\b(trousers|pants|chinos|jeans)\b/, 'trousers', 'trousers'],
@@ -82,10 +86,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const match = take(pattern);
     if (!match) continue;
     tank = id === 'blank' && /tank|vest|sleeveless|singlet/.test(match[0]);
-    const dress = /dress/.test(match[0]);
+    const dress = /dress/.test(match[0]) && !/\bdress shirts?\b/.test(match[0]);
     const base = dress && match[0].startsWith('dress') && !isBottoms(current) ? current.base : chosen;
     if (dress) {
       if (base !== product.base) product = { ...template(id), ...(current.spec ? { spec: current.spec } : {}), ...(current.motifs ? { motifs: current.motifs } : {}) };
+      else if (id === 'shirt') product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), buttons: true, collar: true });
       // Shoulder-to-hem lengths for a mid-height body: a mini ends at mid-thigh, a midi below the knee.
       const length = take(/\bmini\b/) ? DRESS_LENGTH : take(/\b(?:midi|mid[- ]calf|calf[- ]length)\b/) ? 115 : take(/\bknee[- ]length\b/) ? 100
         : Math.max(topMeasurements(product).length, base === 'tee' ? 100 : 92);
@@ -108,6 +113,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     } else if (base === product.base && id === 'polo') {
       // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
+      garment.push(`garment: ${garmentName(product)}`);
+    } else if (base === product.base && id === 'shirt') {
+      // A tee described as a shirt keeps its styling and gains the button front and collar, on a round neck.
+      product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), buttons: true, collar: true });
       garment.push(`garment: ${garmentName(product)}`);
     } else if (base === product.base && id === 'bomber') {
       // A sweatshirt described as a bomber keeps its styling and gains the front zip and rib stand collar, on a round neck.

@@ -12,7 +12,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, collarAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, collarAllowed, buttonsAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -99,7 +99,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -844,9 +844,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const on = ($('product-collar') as HTMLInputElement).checked;
     if (on) selected = 'collar';
     else if (selected === 'collar' || selected === 'placket') selected = 'front';
-    const polo = (product() ?? template('blank')).base === 'tee';
+    const current = product() ?? template('blank'), polo = current.base === 'tee' && !optionsOf(current).buttons, shirt = current.base === 'tee' && !polo;
     setModules(current => { const others = { ...current }; delete others.collar; return on ? { ...others, collar: true } : others; },
-      polo ? (on ? 'Polo collar and placket added: a flat-knit collar in the neck rib’s style, and a three-button placket. You can undo this.' : 'Polo collar removed: a round neck rib again. You can undo this.')
+      shirt ? (on ? 'Shirt collar added, in the shirt’s own fabric. You can undo this.' : 'Shirt collar removed. You can undo this.')
+        : polo ? (on ? 'Polo collar and placket added: a flat-knit collar in the neck rib’s style, and a three-button placket. You can undo this.' : 'Polo collar removed: a round neck rib again. You can undo this.')
         : on ? 'Rib stand collar added in the neck rib’s style: with a front zip, a bomber jacket. You can undo this.' : 'Stand collar removed: a round neck rib again. You can undo this.');
   });
   $('product-zip').addEventListener('change', () => {
@@ -856,9 +857,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         : `Front zip removed: a pullover ${(product() ?? template('blank')).base === 'hoodie' ? 'hoodie' : 'sweatshirt'} again. You can undo this.`);
   });
   $('product-zip-open').addEventListener('change', () => {
-    const on = ($('product-zip-open') as HTMLInputElement).checked;
+    const on = ($('product-zip-open') as HTMLInputElement).checked, buttoned = !!optionsOf(product() ?? template('blank')).buttons;
     setModules(current => { const others = { ...current }; delete others.zipOpen; return on ? { ...others, zipOpen: true } : others; },
-      on ? 'Worn open: the front halves and hem band part at the zip, and hang apart when draped. You can undo this.' : 'Zipped up again. You can undo this.');
+      buttoned ? (on ? 'Worn open: the front halves part at the placket, and hang apart when draped. You can undo this.' : 'Buttoned up again. You can undo this.')
+        : on ? 'Worn open: the front halves and hem band part at the zip, and hang apart when draped. You can undo this.' : 'Zipped up again. You can undo this.');
+  });
+  $('product-buttons').addEventListener('change', () => {
+    const on = ($('product-buttons') as HTMLInputElement).checked;
+    if (on) selected = 'placket';
+    else if (selected === 'placket' && !optionsOf(product() ?? template('blank')).collar) selected = 'front';
+    setModules(current => { const others = { ...current }; delete others.buttons; delete others.zipOpen; return on ? { ...others, buttons: true } : others; },
+      on ? 'Button front added: the front is cut as halves joined by a buttoned placket; with the collar it is a shirt. You can undo this.' : 'Button front removed. You can undo this.');
   });
   $('product-chest-pocket').addEventListener('change', () => {
     const on = ($('product-chest-pocket') as HTMLInputElement).checked;
@@ -1179,11 +1188,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
     const collar = $('product-collar') as HTMLInputElement;
     collar.checked = !!modules.collar; collar.disabled = !collarAllowed(design.base) || design.neckline !== 'crew'; collar.closest('label')!.hidden = !collarAllowed(design.base);
-    $('product-collar-name').textContent = design.base === 'sweatshirt' ? 'Rib stand collar' : 'Polo collar and placket';
+    $('product-collar-name').textContent = design.base === 'sweatshirt' ? 'Rib stand collar' : modules.buttons ? 'Shirt collar' : 'Polo collar and placket';
     const zip = $('product-zip') as HTMLInputElement;
     zip.checked = !!modules.zip; zip.disabled = !zipAllowed(design.base); zip.closest('label')!.hidden = !zipAllowed(design.base);
     const open = $('product-zip-open') as HTMLInputElement;
-    open.checked = !!modules.zipOpen; open.disabled = !modules.zip; open.closest('label')!.hidden = !zipAllowed(design.base);
+    open.checked = !!modules.zipOpen; open.disabled = !modules.zip && !modules.buttons; open.closest('label')!.hidden = !zipAllowed(design.base) && !buttonsAllowed(design.base);
+    const buttons = $('product-buttons') as HTMLInputElement;
+    buttons.checked = !!modules.buttons; buttons.disabled = !buttonsAllowed(design.base); buttons.closest('label')!.hidden = !buttonsAllowed(design.base);
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;

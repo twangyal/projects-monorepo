@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, PLACKET_CM, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product, zipAllowed } from './product.ts';
+import { OPEN_ZIP_GAP, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -163,21 +163,22 @@ export class ProductScene {
     }
   }
 
-  /** A polo's buttons, down its placket from the neckline. */
+  /** A polo's or shirt's buttons, down its placket from the neckline; worn open, on the wearer's right half only. */
   private addButtons(product: Product, rest: PartMesh[] | null, parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
     const target = parts.get('placket');
-    if (!optionsOf(product).collar || !target) return;
-    const d = teeDimensions(product), top = d.length - d.neckDepthFront;
-    this.addDecal(this.buttonTexture(product.parts.placket?.color ?? product.parts.front.color), { front: true, x: 0, y: top - PLACKET_CM.length / 2, width: PLACKET_CM.width, height: PLACKET_CM.length },
+    if (!target) return;
+    const d = teeDimensions(product), top = d.length - d.neckDepthFront, placket = placketOf(product), open = !!optionsOf(product).buttons && !!optionsOf(product).zipOpen;
+    const width = open ? placket.width / 2 - OPEN_ZIP_GAP : placket.width, x = open ? -(OPEN_ZIP_GAP + width / 2) : 0, length = Math.min(placket.length, d.length - d.neckDepthFront - 0.5);
+    this.addDecal(this.buttonTexture(product.parts.placket?.color ?? product.parts.front.color, width, length, placket.buttons), { front: true, x, y: top - length / 2, width, height: length },
       rest?.find(mesh => mesh.part === 'placket') ?? null, target, holder, holder === this.worn ? `${product.name}: Buttons` : 'Buttons');
   }
 
-  /** Buttons evenly down a placket, with a stitched edge, on a transparent ground. */
-  private buttonTexture(colour: string): THREE.Texture {
-    const key = `buttons:${colour}`, cached = this.artworkTextures.get(key);
+  /** `count` buttons evenly down a placket `widthCm` by `lengthCm`, with a stitched edge, on a transparent ground. */
+  private buttonTexture(colour: string, widthCm: number, lengthCm: number, count: number): THREE.Texture {
+    const key = `buttons:${colour}:${widthCm.toFixed(2)}:${lengthCm.toFixed(1)}:${count}`, cached = this.artworkTextures.get(key);
     if (cached) return cached;
-    const scale = 24, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
-    canvas.width = Math.round(PLACKET_CM.width * scale); canvas.height = Math.round(PLACKET_CM.length * scale);
+    const scale = lengthCm > 40 ? 12 : 24, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
+    canvas.width = Math.round(widthCm * scale); canvas.height = Math.round(lengthCm * scale);
     // The placket's edge stitching, a little darker than its fabric.
     const thread = new THREE.Color(colour).multiplyScalar(0.7);
     context.strokeStyle = `#${thread.getHexString()}`; context.lineWidth = 1.5; context.setLineDash([4, 3]);
@@ -186,8 +187,8 @@ export class ProductScene {
     // Buttons a shade lighter or darker than the fabric, so they read on any colour.
     const fabric = new THREE.Color(colour), light = fabric.r * 0.2126 + fabric.g * 0.7152 + fabric.b * 0.0722 > 0.5;
     const button = light ? fabric.clone().multiplyScalar(0.82) : fabric.clone().lerp(new THREE.Color('#ffffff'), 0.55);
-    for (let n = 0; n < PLACKET_CM.buttons; n++) {
-      const x = canvas.width / 2, y = canvas.height * (n + 0.75) / (PLACKET_CM.buttons + 0.5), r = scale * 0.55;
+    for (let n = 0; n < count; n++) {
+      const x = canvas.width / 2, y = canvas.height * (n + 0.75) / (count + 0.5), r = scale * 0.55;
       context.fillStyle = `#${button.getHexString()}`; context.beginPath(); context.arc(x, y, r, 0, Math.PI * 2); context.fill();
       context.fillStyle = `#${button.clone().multiplyScalar(0.6).getHexString()}`;
       for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { context.beginPath(); context.arc(x + dx * r * 0.28, y + dy * r * 0.28, r * 0.12, 0, Math.PI * 2); context.fill(); }
