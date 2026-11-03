@@ -1041,3 +1041,45 @@ export function controlMedia(targets, action) {
     default: return { ok: false, message: 'That is not something the navigator can do to a video.' };
   }
 }
+
+// The button a cookie banner or pop-up command means, from its name: a reject button is checked before accept, since
+// "Accept only necessary" rejects; "close" is a close button (or ×) on the pop-up.
+const POPUP_REJECT = /\b(reject|decline|deny|refuse|disagree|necessary only|only necessary|essential only|only essential|necessary cookies only|use necessary|continue without|without accepting|no,? thanks)\b/i;
+const POPUP_SETTINGS = /\b(settings|preferences|manage|customi[sz]e|options|choices|configure|adjust|more info(?:rmation)?|purposes)\b/i;
+const POPUP_ACCEPT = /\b(accept|allow|agree|consent|ok|okay|got it|i understand|understood)\b/i;
+export function popupKind(name) {
+  const text = (name ?? '').trim();
+  if (/^[×✕✖xX]$/.test(text) || (/\bclose\b/i.test(text) && text.length <= 30)) return 'close';
+  if (POPUP_REJECT.test(text)) return 'reject';
+  if (POPUP_SETTINGS.test(text)) return 'settings';
+  if (POPUP_ACCEPT.test(text)) return 'accept';
+  return null;
+}
+
+/**
+ * Which control of the page's pop-up layers (from `findPopups`) "accept cookies", "reject cookies", "cookie settings"
+ * or "close the pop-up" (`want`) means: `{ control }`, or `{ message }` saying why there is none.
+ */
+export function choosePopupControl(layers, want) {
+  const consent = layers.filter(layer => layer.consent);
+  if (want === 'close') {
+    for (const layer of [...layers].sort((a, b) => Number(b.dialog) - Number(a.dialog))) {
+      const close = layer.controls.find(control => popupKind(control.name) === 'close');
+      if (close) return { control: close, consent: layer.consent };
+    }
+    return { message: consent.length ? 'The cookie banner has no close button. Say reject cookies or accept cookies.'
+      : 'No pop-up with a close button was found on this page. If one is showing, look at its close button and say click it.' };
+  }
+  if (!consent.length) return { message: 'No cookie banner was found on this page. If one is showing, look at its button and say click it.' };
+  for (const layer of consent) {
+    const matching = layer.controls.filter(control => popupKind(control.name) === want);
+    if (matching.length) return { control: matching.find(control => /\ball\b/i.test(control.name)) ?? matching[0], consent: true };
+  }
+  if (want === 'reject') {
+    const settings = consent.some(layer => layer.controls.some(control => popupKind(control.name) === 'settings'));
+    return { message: settings ? 'This cookie banner has no reject button on its first page. Say cookie settings to see its choices.'
+      : 'This cookie banner has no reject button. Say close the banner, accept cookies, or look at one of its buttons and say click it.' };
+  }
+  return { message: `This cookie banner has no ${want === 'accept' ? 'accept' : 'settings'} button. Look at one of its buttons and say click it.` };
+}
+

@@ -733,3 +733,38 @@ export function findMedia(document, { x = NaN, y = NaN, exclude = null, scopeCac
   }
   return found.sort((a, b) => a.distance - b.distance);
 }
+
+// Cookie banners and other pop-ups, named rather than looked at ("reject cookies", "close the pop-up"): each layer of
+// the page (a dialog, a fixed or sticky layer, or a container that consent tools name for consent) with its own
+// controls on screen, and whether it asks about cookies.
+const POPUP_DIALOG = '[role=dialog], [role=alertdialog], dialog[open], [aria-modal=true]';
+const CONSENT_TEXT = /\b(cookies?|consent|gdpr)\b/i;
+const CONSENT_NAMES = /cookie|consent|gdpr|onetrust|didomi|usercentrics|cookiebot|truste|qc-cmp|sp_message/i;
+const namesOf = node => `${node.id ?? ''} ${typeof node.className === 'string' ? node.className : node.getAttribute?.('class') ?? ''}`;
+function layerOf(element) {
+  const view = element.ownerDocument.defaultView;
+  for (let node = element.parentElement ?? element.getRootNode().host, depth = 0; node && depth < 40; depth++) {
+    if (['BODY', 'HTML'].includes(node.tagName)) return null;
+    if (node.matches(POPUP_DIALOG) || CONSENT_NAMES.test(namesOf(node)) || ['fixed', 'sticky'].includes(view.getComputedStyle(node).position)) return node;
+    node = node.parentElement ?? node.getRootNode().host ?? null;
+  }
+  return null;
+}
+export function findPopups(document, { exclude = null, scopeCache = null } = {}) {
+  const { scopes } = searchScopes(document, exclude, scopeCache);
+  const view = document.defaultView, layers = new Map();
+  for (const { root, frames } of scopes) for (const element of root.querySelectorAll(ACTIONABLE)) {
+    if (exclude?.contains(element) || !usable(element, exclude)) continue;
+    const rect = viewportRect(element, frames);
+    if (!(rect.width > 0 && rect.height > 0) || rect.right <= 0 || rect.bottom <= 0 || rect.left >= view.innerWidth || rect.top >= view.innerHeight) continue;
+    const layer = layerOf(element);
+    if (!layer) continue;
+    if (!layers.has(layer)) layers.set(layer, []);
+    layers.get(layer).push({ element, rect, distance: 0, frames, ...describe(element) });
+  }
+  return [...layers].map(([layer, controls]) => ({
+    consent: CONSENT_NAMES.test(namesOf(layer)) || CONSENT_TEXT.test((layer.innerText || layer.textContent || '').slice(0, 4000)),
+    dialog: layer.matches(POPUP_DIALOG), controls,
+  }));
+}
+

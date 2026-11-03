@@ -1,8 +1,8 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, findMedia, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, findMedia, findPopups, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
-import { chooseMedia, controlMedia, pressKeys } from './page-actions.js';
+import { chooseMedia, choosePopupControl, controlMedia, pressKeys } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -250,7 +250,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
@@ -1019,6 +1019,16 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function scheduleNumbers() {
     if (numbering && numbersTimer === null) numbersTimer = window.setTimeout(refreshNumbers, NUMBERS_REFRESH_MS);
   }
+  function findPopupControl({ want }) {
+    const choice = choosePopupControl(findPopups(document, { exclude: host, scopeCache }), want);
+    if (!choice.control) {
+      const embedded = [...document.querySelectorAll('iframe')].some(frame => { try { return !frame.contentDocument; } catch { return true; } });
+      return { message: `${choice.message}${embedded && /^No /.test(choice.message) ? ' Banners inside a frame from another site are not reached.' : ''}` };
+    }
+    const name = choice.control.name || 'the button';
+    return { target: { ...choice.control, id: 1 }, message: want === 'close' ? `Closed the ${choice.consent ? 'cookie banner' : 'pop-up'} with "${name}".` : `Pressed "${name}" on the cookie banner.` };
+  }
+
   function controlPageMedia(action, used) {
     const media = used.media?.() ?? findMedia(document, { exclude: host, scopeCache });
     const chosen = chooseMedia(media, { radius: used.radius ?? 0, change: action.change });
