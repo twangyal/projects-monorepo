@@ -52,6 +52,7 @@ MAX_GUIDE_VOCAL = 50
 MAX_SEMITONES = 6
 # Lyric styles for exported videos (karaoke.video.STYLES).
 VIDEO_STYLES = ("classic", "contrast", "large", "light")
+VIDEO_SIZES = ("720p", "1080p")
 _TRANSCRIPT = "transcript.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
@@ -723,7 +724,7 @@ class KaraokeServer(ThreadingHTTPServer):
                 source.close()
 
     def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
-                     background: str = "cover"):
+                     background: str = "cover", size: str = "720p"):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -752,6 +753,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     key = {"semitones": semitones} if semitones else {}
                     key.update({"style": style} if style != "classic" else {})
                     key.update({"background": background} if background != "cover" else {})
+                    key.update({"size": size} if size != "720p" else {})
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
                                     owned_work, self.font_path, cancel, **timing, **guide, **key)
@@ -1104,8 +1106,8 @@ class Handler(BaseHTTPRequestHandler):
             elif self.command == "POST" and resource in ("export", "key-preview"):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
-                style, background = value.get("style", "classic"), value.get("background", "cover")
-                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background"})
+                style, background, size = value.get("style", "classic"), value.get("background", "cover"), value.get("size", "720p")
+                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background", "size"})
                 if set(value) - allowed or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
                     raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
                 if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
@@ -1114,6 +1116,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise RequestError(400, "Choose a lyric style: classic, contrast, large or light.")
                 if background not in ("cover", "plain"):
                     raise RequestError(400, "Choose the cover art or a plain background.")
+                if size not in VIDEO_SIZES:
+                    raise RequestError(400, "Choose a video size: 720p (1280x720) or 1080p (1920x1080).")
                 if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):
                     raise RequestError(400, "Choose where in the clip to preview the key.")
             elif self.command == "POST" and resource == "transcribe":
@@ -1191,7 +1195,7 @@ class Handler(BaseHTTPRequestHandler):
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style,
-                                              background=background)
+                                              background=background, size=size)
                 if self.command == "POST" and resource == "key-preview":
                     if start >= project["duration"]:
                         raise RequestError(400, "Choose where in the clip to preview the key.")

@@ -266,6 +266,25 @@ class VideoTests(unittest.TestCase):
                 self.assertLess(errors[expected], min(error for index, error in enumerate(errors) if index != expected))
         self.assertEqual(list((self.root / 'work').iterdir()), [])
 
+    def test_full_hd_cards_are_the_hd_layout_scaled(self):
+        hd, full = self.root / 'hd.png', self.root / 'full.png'
+        video.render_card(self.project, 0, hd, FONT, sung=['FIRST'])
+        video.render_card(self.project, 0, full, FONT, sung=['FIRST'], size='1080p')
+        with Image.open(hd) as small, Image.open(full) as large:
+            self.assertEqual(large.size, (1920, 1080))
+            # The same card, half as big again: scaled down, it differs from the HD card only in anti-aliasing.
+            scaled = large.convert('RGB').resize((1280, 720), Image.Resampling.LANCZOS)
+            self.assertLess(sum(ImageStat.Stat(ImageChops.difference(scaled, small.convert('RGB'))).mean), 6)
+        with self.assertRaises(ValidationError):
+            video.render_card(self.project, 0, self.root / 'bad.png', FONT, size='4k')
+
+    def test_full_hd_export(self):
+        output = self.root / 'full.mp4'
+        video.export_video(self.project, self.backing, output, self.root / 'work', FONT, threading.Event(), size='1080p')
+        metadata = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', str(output)]))
+        streams = {item['codec_type']: item for item in metadata['streams']}
+        self.assertEqual((streams['video']['width'], streams['video']['height']), (1920, 1080))
+
     def test_cancellation_and_validation_preserve_existing_export(self):
         output = self.root / 'video.mp4'
         output.write_bytes(b'previous successful export')
@@ -417,7 +436,7 @@ class VideoTests(unittest.TestCase):
         card_count = [0]
         sung_states = []
 
-        def card(_project, active, path, _font, sung=None, count=None, style="classic", background="cover", layer=False):
+        def card(_project, active, path, _font, sung=None, count=None, style="classic", background="cover", layer=False, size="720p"):
             path.write_text(str(card_count[0]))
             sung_states.append((active, sung))
             card_count[0] += 1

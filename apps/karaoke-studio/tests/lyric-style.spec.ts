@@ -57,3 +57,18 @@ test('the lyric style shows in the preview and the exported video', async ({ pag
   const pixel = spawnSync('ffmpeg', ['-v', 'error', '-i', path, '-frames:v', '1', '-vf', 'crop=1:1:8:8', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']).stdout;
   expect(Math.max(...pixel)).toBeLessThan(12);
 }));
+
+test('Full HD is chosen for the exported video', async ({ page }, info) => withClip(page, async () => {
+  const size = page.locator('#video-size');
+  await expect(size).toHaveValue('720p');
+  await size.selectOption('1080p');
+  const exported = page.waitForRequest(request => request.url().endsWith('/export') && request.method() === 'POST');
+  const download = page.waitForEvent('download', { timeout: 90000 });
+  await page.getByRole('button', { name: 'Export karaoke MP4', exact: true }).click();
+  expect(JSON.parse((await exported).postData()!)).toEqual({ size: '1080p' });
+  const path = info.outputPath('full-hd.mp4');
+  await (await download).saveAs(path);
+  const probe = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', path]).stdout.toString().trim();
+  expect(probe).toBe('1920,1080');
+}));
+

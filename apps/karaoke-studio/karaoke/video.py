@@ -24,6 +24,8 @@ from .media_io import media_handles
 from .lyrics_auto import sung_count, word_timings
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
+# Video sizes: cards are laid out at 1280x720 and every position and size is scaled to the chosen frame.
+VIDEO_SIZES = {'720p': (1280, 720), '1080p': (1920, 1080)}
 BACKGROUND = '#14232f'
 MUTED = '#9dafbb'
 MAIN = '#f7f5ed'
@@ -36,6 +38,12 @@ STYLES = {
     'large': dict(background=BACKGROUND, muted=MUTED, main=MAIN, accent=ACCENT, scale=1.45),
     'light': dict(background='#f7f3ea', muted='#5e6b73', main='#17242d', accent='#9a4a12', scale=1.0),
 }
+
+
+def validate_size(value) -> str:
+    if value not in VIDEO_SIZES:
+        raise ValidationError('Choose a video size: 720p (1280x720) or 1080p (1920x1080).')
+    return value
 
 
 def validate_style(value) -> str:
@@ -247,10 +255,11 @@ def _font(font_path: str, index: int, size: int) -> ImageFont.FreeTypeFont:
 
 def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
                  size: int, minimum: int, max_height: int, fill: str,
-                 sung_chars: int | None = None, sung_fill: str = ACCENT) -> None:
-    """Draw a centred, wrapped text block. With ``sung_chars``, that many leading non-space
-    characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting. Sizes may be scaled (fractional)."""
-    size, minimum, max_height = int(size), int(minimum), int(max_height)
+                 sung_chars: int | None = None, sung_fill: str = ACCENT, width: int = WIDTH, wrap: int = 1000) -> None:
+    """Draw a centred, wrapped text block (lines at most ``wrap`` wide) on a frame ``width`` wide. With ``sung_chars``,
+    that many leading non-space characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting. Sizes
+    may be scaled (fractional)."""
+    size, minimum, max_height, wrap = int(size), int(minimum), int(max_height), int(wrap)
     fonts = _fonts(str(font_path))
     direction, whole_line = text_layout(text)
     face = None
@@ -264,19 +273,19 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
     for chosen in range(size, minimum - 1, -1):
         measure = (functools.partial(fonts.font(face, chosen).getlength, direction=direction) if face is not None
                    else functools.partial(fonts.length, size=chosen))
-        lines = _wrap(text, measure, 1000)
+        lines = _wrap(text, measure, wrap)
         spacing = math.ceil(chosen * 1.25)
         if len(lines) * spacing <= max_height:
             break
     # Very newline-heavy lyrics still retain all words without spilling into
     # adjacent regions: compact blank/newline separators and fit one block.
     if len(lines) * spacing > max_height:
-        lines = _wrap(' '.join(text.split()), measure, 1000)
+        lines = _wrap(' '.join(text.split()), measure, wrap)
     if len(lines) * spacing > max_height:
         # This is an upcoming-text preview: a visible ellipsis keeps it within
         # its own region. Full active lyrics fit at the main block's minimum.
         lines = lines[:max(1, max_height // spacing)]
-        while lines[-1] and measure(lines[-1] + '…') > 1000:
+        while lines[-1] and measure(lines[-1] + '…') > wrap:
             lines[-1] = lines[-1][:-1]
         lines[-1] += '…'
     total = len(lines) * spacing
@@ -288,10 +297,10 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
         baseline = y - total / 2 + (index + 0.5) * spacing + (ascent - descent) / 2
         if face is not None:
             # One native shaping call keeps joining, bidi ordering, numbers and punctuation intact.
-            draw.text((WIDTH / 2, baseline), line, font=fonts.font(face, chosen), fill=fill,
+            draw.text((width / 2, baseline), line, font=fonts.font(face, chosen), fill=fill,
                       direction=direction, anchor='ms')
             continue
-        left = WIDTH / 2 - measure(line) / 2
+        left = width / 2 - measure(line) / 2
         for run_face, run in fonts.runs(line):
             font = fonts.font(run_face, chosen)
             # The sung prefix of this run, then the rest of it after it.
@@ -337,52 +346,57 @@ def validate_background(value) -> str:
 
 
 @functools.lru_cache(maxsize=4)
-def _cover_backdrop(cover: str, colour: str) -> Image.Image:
+def _cover_backdrop(cover: str, colour: str, width: int = WIDTH, height: int = HEIGHT) -> Image.Image:
     """The cover picture filling the frame, softened and veiled with the style's background colour."""
     picture = Image.open(io.BytesIO(base64.b64decode(cover.split(',', 1)[1]))).convert('RGB')
-    scale = max(WIDTH / picture.width, HEIGHT / picture.height)
-    size = (max(WIDTH, round(picture.width * scale)), max(HEIGHT, round(picture.height * scale)))
+    scale = max(width / picture.width, height / picture.height)
+    size = (max(width, round(picture.width * scale)), max(height, round(picture.height * scale)))
     picture = picture.resize(size, Image.Resampling.LANCZOS)
-    left, top = (size[0] - WIDTH) // 2, (size[1] - HEIGHT) // 2
-    picture = picture.crop((left, top, left + WIDTH, top + HEIGHT)).filter(ImageFilter.GaussianBlur(6))
-    return Image.blend(picture, Image.new('RGB', (WIDTH, HEIGHT), colour), COVER_VEIL)
+    left, top = (size[0] - width) // 2, (size[1] - height) // 2
+    picture = picture.crop((left, top, left + width, top + height)).filter(ImageFilter.GaussianBlur(6 * height / HEIGHT))
+    return Image.blend(picture, Image.new('RGB', (width, height), colour), COVER_VEIL)
 
 
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
                 sung: list[str] | None = None, count: int | None = None, style: str = 'classic',
-                background: str = 'cover', layer: bool = False) -> None:
+                background: str = 'cover', layer: bool = False, size: str = '720p') -> None:
     """One video card. ``sung`` lists the active line's words already sung; without it the whole
     active line is highlighted. During a break, ``count`` dots count singers in to the next line. ``style`` names
     one of STYLES; with the ``cover`` background, a clip's cover picture lies behind the lyrics. A ``layer`` is the
-    card's words alone on a transparent ground, to lie over a backdrop drawn once."""
+    card's words alone on a transparent ground, to lie over a backdrop drawn once. ``size`` names one of VIDEO_SIZES:
+    the card is laid out at 1280x720 and scaled to it."""
     project = validate_project(project)
+    width, height = VIDEO_SIZES[validate_size(size)]
+    k = height / HEIGHT
     look = STYLES[validate_style(style)]
     fill, muted, main, accent, scale = look['background'], look['muted'], look['main'], look['accent'], look['scale']
     cues = project['cues']
     if active_index is not None and (type(active_index) is not int or not 0 <= active_index < len(cues)):
         raise ValidationError('Active cue index must identify a saved lyric cue.')
     cover = project.get('cover') if validate_background(background) == 'cover' else None
-    image = (Image.new('RGBA', (WIDTH, HEIGHT), (0, 0, 0, 0)) if layer
-             else _cover_backdrop(cover, fill).copy() if cover else Image.new('RGB', (WIDTH, HEIGHT), fill))
+    image = (Image.new('RGBA', (width, height), (0, 0, 0, 0)) if layer
+             else _cover_backdrop(cover, fill, width, height).copy() if cover else Image.new('RGB', (width, height), fill))
     draw = ImageDraw.Draw(image)
-    _center_text(draw, ' '.join(project['title'].split()), 80, font_path, 32, 22, 100, main)
+    text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=1000 * k)
+    text(' '.join(project['title'].split()), 80 * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
     if active_index is not None and sung is not None:
-        _center_text(draw, active, 320, font_path, 44 * scale, 24 * scale, 300, main, sum(len(word) for word in sung), accent)
+        text(active, 320 * k, size=44 * scale * k, minimum=24 * scale * k, max_height=300 * k, fill=main,
+             sung_chars=sum(len(word) for word in sung), sung_fill=accent)
     else:
-        _center_text(draw, active, 320, font_path, 44 * scale, 24 * scale, 300,
-                     accent if active_index is not None else main)
+        text(active, 320 * k, size=44 * scale * k, minimum=24 * scale * k, max_height=300 * k,
+             fill=accent if active_index is not None else main)
     if active_index is None and count:
         # Dots in a row under the break, one fewer each second, in the colour of words not yet sung.
-        radius, gap = 12, 44
-        left = WIDTH / 2 - (count - 1) * gap / 2
+        radius, gap = 12 * k, 44 * k
+        left = width / 2 - (count - 1) * gap / 2
         for dot in range(count):
             x = left + dot * gap
-            draw.ellipse((x - radius, 430 - radius, x + radius, 430 + radius), fill=main)
+            draw.ellipse((x - radius, 430 * k - radius, x + radius, 430 * k + radius), fill=main)
     next_index = active_index + 1 if active_index is not None else 0
     if next_index < len(cues):
-        _center_text(draw, 'Next: ' + cues[next_index]['text'], 540, font_path, 26 * scale, 18 * scale, 80 * min(scale, 1.2), muted)
-    _center_text(draw, 'Karaoke Studio · Backing track', 660, font_path, 20, 20, 40, muted)
+        text('Next: ' + cues[next_index]['text'], 540 * k, size=26 * scale * k, minimum=18 * scale * k, max_height=80 * min(scale, 1.2) * k, fill=muted)
+    text('Karaoke Studio · Backing track', 660 * k, size=20 * k, minimum=20 * k, max_height=40 * k, fill=muted)
     image.save(output, format='PNG')
 
 
@@ -550,9 +564,9 @@ def _sized_wav(data: bytes) -> bytes:
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
                  vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic',
-                 background: str = 'cover', letters=None) -> None:
-    """Render the karaoke video; ``words`` are recognized words that, with ``letters`` measured in the vocals when
-    there are any, time the word highlighting.
+                 background: str = 'cover', letters=None, size: str = '720p') -> None:
+    """Render the karaoke video at ``size`` (one of VIDEO_SIZES); ``words`` are recognized words that, with
+    ``letters`` measured in the vocals when there are any, time the word highlighting.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
     ``semitones`` moves the audio's key up or down without changing its tempo.
@@ -560,7 +574,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
     _remaining(cancel, deadline)
-    semitones, style, background = validate_semitones(semitones), validate_style(style), validate_background(background)
+    semitones, style, background, size = validate_semitones(semitones), validate_style(style), validate_background(background), validate_size(size)
     if not (isinstance(guide, (int, float)) and 0 <= guide <= 0.5) or (guide and vocals is None):
         raise ValidationError('Guide vocal level must be from 0 to 50 percent of the separated vocals.')
     backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
@@ -582,7 +596,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             backdrop = None
             if background == 'cover' and project.get('cover'):
                 backdrop = directory / 'backdrop.png'
-                _cover_backdrop(project['cover'], STYLES[style]['background']).save(backdrop, format='PNG')
+                _cover_backdrop(project['cover'], STYLES[style]['background'], *VIDEO_SIZES[size]).save(backdrop, format='PNG')
             cues = project['cues']
             timings = word_timings(cues, words or [], project['duration'], letters)
             whole_lines = [text_layout(cue['text'])[1] for cue in cues]
@@ -601,11 +615,11 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                     card = directory / f'card{len(states):04}.png'
                     if active is None:
                         render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path, count=count, style=style,
-                                    background=background, layer=backdrop is not None)
+                                    background=background, layer=backdrop is not None, size=size)
                     else:
                         render_card(project, active, card, font_path,
                                     sung=[word['text'] for word in timings[active][:sung]], style=style, background=background,
-                                    layer=backdrop is not None)
+                                    layer=backdrop is not None, size=size)
                     _remaining(cancel, deadline)
                     card_bytes += card.stat().st_size
                     if card_bytes > MAX_CARD_BYTES:
