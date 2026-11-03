@@ -417,7 +417,7 @@ class VideoTests(unittest.TestCase):
         card_count = [0]
         sung_states = []
 
-        def card(_project, active, path, _font, sung=None, count=None, style="classic"):
+        def card(_project, active, path, _font, sung=None, count=None, style="classic", background="cover", layer=False):
             path.write_text(str(card_count[0]))
             sung_states.append((active, sung))
             card_count[0] += 1
@@ -558,3 +558,77 @@ class ScriptFallbackTests(unittest.TestCase):
                 with patch.object(video, '_system_font', return_value=None):
                     boxes = self.card(f'{language}-boxes', project)
                 self.assertIsNotNone(ImageChops.difference(found, boxes).getbbox())
+
+
+def _cover(left=(200, 30, 30), right=(30, 30, 200), size=(320, 320)) -> str:
+    """A JPEG data URL, one colour on the left half and another on the right."""
+    import base64
+    picture = Image.new('RGB', size, left)
+    picture.paste(Image.new('RGB', (size[0] // 2, size[1]), right), (size[0] // 2, 0))
+    buffer = io.BytesIO()
+    picture.save(buffer, format='JPEG', quality=90)
+    return 'data:image/jpeg;base64,' + base64.b64encode(buffer.getvalue()).decode('ascii')
+
+
+class CoverArtTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        project = update_project(create_project('c' * 32, 'Cover', 3), 'Cover', [dict(start=0.5, end=2.5, text='UNDER THE COVER')], 0)
+        self.project = {**project, 'cover': _cover()}
+
+    def test_projects_keep_a_valid_cover_and_refuse_anything_else(self):
+        from karaoke.model import validate_project
+        kept = update_project(validate_project(self.project), 'Cover', self.project['cues'], 1)
+        self.assertEqual(kept['cover'], self.project['cover'])
+        self.assertNotIn('cover', validate_project({**self.project, 'cover': None}))
+        for bad in ('data:image/png;base64,iVBORw0KGgo=', 'data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,' + 'A' * 200_000, 7):
+            with self.subTest(bad=str(bad)[:30]), self.assertRaises(ValidationError):
+                validate_project({**self.project, 'cover': bad})
+
+    def test_cover_art_lies_veiled_behind_the_lyrics_of_an_exported_video(self):
+        backing = self.root / 'backing.wav'
+        with wave.open(str(backing), 'wb') as stream:
+            stream.setnchannels(2)
+            stream.setsampwidth(2)
+            stream.setframerate(44100)
+            stream.writeframes(b'\0' * 44100 * 3 * 4)
+        for background in ('cover', 'plain'):
+            output = self.root / f'{background}.mp4'
+            video.export_video(self.project, backing, output, self.root / 'work', FONT, threading.Event(), background=background)
+            decoded = self.root / f'{background}.png'
+            subprocess.run(['ffmpeg', '-v', 'error', '-i', str(output), '-vf', 'select=eq(n\\,30)', '-frames:v', '1', '-y', str(decoded)], check=True)
+            with Image.open(decoded) as image:
+                left, right = image.convert('RGB').getpixel((60, 360)), image.convert('RGB').getpixel((1220, 360))
+                lyrics = sum(ImageStat.Stat(image.convert('RGB').crop((300, 280, 980, 360))).var)
+            with self.subTest(background=background):
+                self.assertGreater(lyrics, 100, 'the lyrics are drawn')
+                if background == 'cover':
+                    # Red on the left and blue on the right show through the classic style's dark veil.
+                    self.assertGreater(left[0] - right[0], 25)
+                    self.assertGreater(right[2] - left[2], 25)
+                else:
+                    self.assertLess(max(abs(a - b) for a, b in zip(left, right)), 6)
+
+    def test_a_card_layer_is_transparent_around_its_words(self):
+        output = self.root / 'layer.png'
+        video.render_card(self.project, 0, output, FONT, layer=True)
+        with Image.open(output) as image:
+            self.assertEqual(image.mode, 'RGBA')
+            self.assertEqual(image.getpixel((5, 5))[3], 0)
+            self.assertGreater(max(alpha for *_, alpha in image.crop((300, 280, 980, 360)).getdata()), 200)
+
+    def test_a_song_files_attached_picture_becomes_its_cover(self):
+        from karaoke.pipeline import read_cover
+        picture, song, bare = self.root / 'art.png', self.root / 'tagged.mp3', self.root / 'bare.mp3'
+        Image.new('RGB', (900, 600), (10, 120, 200)).save(picture)
+        subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', '-i', str(picture),
+                        '-map', '0', '-map', '1', '-c:a', 'libmp3lame', '-c:v', 'mjpeg', '-disposition:v', 'attached_pic', '-y', str(song)], check=True)
+        subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', '-c:a', 'libmp3lame', '-y', str(bare)], check=True)
+        cover = read_cover(song, self.root, threading.Event())
+        self.assertTrue(cover and cover.startswith('data:image/jpeg;base64,'))
+        import base64
+        with Image.open(io.BytesIO(base64.b64decode(cover.split(',', 1)[1]))) as image:
+            self.assertEqual(max(image.size), 640)
+        self.assertIsNone(read_cover(bare, self.root, threading.Event()))

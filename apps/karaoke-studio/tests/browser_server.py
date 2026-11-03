@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import wave
@@ -17,6 +18,17 @@ def fixture_separation(source, output_dir, model_dir, cancel, stage):
     for _ in range(10):
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
+    # Other formats (an MP3 carrying cover art) are decoded to the fixture's WAV first, through pipes.
+    raw = Path(source).read_bytes()
+    if raw[:4] != b'RIFF':
+        pcm = subprocess.run(['ffmpeg', '-v', 'error', '-i', 'pipe:0', '-ac', '2', '-ar', '44100', '-f', 's16le', 'pipe:1'],
+                             input=raw, capture_output=True, check=True, timeout=30).stdout
+        source = Path(output_dir).parent / 'fixture-decoded.wav'
+        with wave.open(str(source), 'wb') as decoded:
+            decoded.setnchannels(2)
+            decoded.setsampwidth(2)
+            decoded.setframerate(44100)
+            decoded.writeframes(pcm)
     with wave.open(str(source), 'rb') as audio:
         if (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) != (2, 2, 44100):
             raise ValueError('Choose a stereo PCM16 WAV fixture.')

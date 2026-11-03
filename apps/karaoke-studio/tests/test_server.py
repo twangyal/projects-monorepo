@@ -396,6 +396,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
         self.assertEqual(calls[-1].get("style"), "contrast")
         self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "style": "large"})[0], 400)
+        # The background is the cover art unless a plain one is asked for; nothing else is accepted.
+        for body in ({"background": "photo"}, {"background": None}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        status, _, response = self.request("POST", endpoint + "/export", {"background": "plain"})
+        self.assertEqual(status, 202, response)
+        self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+        self.assertEqual(calls[-1].get("background"), "plain")
+        self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "background": "plain"})[0], 400)
         for body, semitones in (({}, None), ({"semitones": -2, "guideVocal": 15}, -2)):
             status, _, response = self.request("POST", endpoint + "/export", body)
             self.assertEqual(status, 202, response)

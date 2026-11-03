@@ -420,13 +420,17 @@ class KaraokeServer(ThreadingHTTPServer):
                 owned = self._descriptor_path(work_fd)
                 media = owned / "media"
                 media.mkdir()
-                # The song's own title tag names the clip better than its file name.
-                from .pipeline import read_song_tags
+                # The song's own title tag names the clip better than its file name, and its cover picture can
+                # stand behind the lyrics in the video.
+                from .pipeline import read_cover, read_song_tags
                 with inherit_media_handles(work_fd):
                     song.update(read_song_tags(owned / upload.name, cancel))
+                    cover = read_cover(owned / upload.name, owned, cancel)
                     duration = self.separate(owned / upload.name, media, self.model_dir, cancel, stage)
                 self.check_storage()
                 project = create_project(project_id, song.get("title", title), duration)
+                if cover:
+                    project = validate_project({**project, "cover": cover})
                 complete = owned / "completed"
                 complete.mkdir()
                 for name in _AUDIO_FILES.values():
@@ -693,7 +697,8 @@ class KaraokeServer(ThreadingHTTPServer):
             for source in sources:
                 source.close()
 
-    def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic"):
+    def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
+                     background: str = "cover"):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -718,6 +723,7 @@ class KaraokeServer(ThreadingHTTPServer):
                              if guide_vocal else {})
                     key = {"semitones": semitones} if semitones else {}
                     key.update({"style": style} if style != "classic" else {})
+                    key.update({"background": background} if background != "cover" else {})
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
                                     owned_work, self.font_path, cancel, **timing, **guide, **key)
@@ -1022,7 +1028,9 @@ class Handler(BaseHTTPRequestHandler):
                     for project in server.projects.values():
                         with server.project_file(project["id"], "project.json") as source:
                             dated.append((os.fstat(source.fileno()).st_mtime_ns, project))
-                    projects = [project for _, project in sorted(dated, key=lambda item: item[0], reverse=True)]
+                    # The list leaves out cover pictures; opening a clip reads its whole project.
+                    projects = [{key: value for key, value in project.items() if key != "cover"}
+                                for _, project in sorted(dated, key=lambda item: item[0], reverse=True)]
                 self._json({"projects": projects})
                 return
             if self.command == "POST":
@@ -1063,14 +1071,16 @@ class Handler(BaseHTTPRequestHandler):
             elif self.command == "POST" and resource in ("export", "key-preview"):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
-                style = value.get("style", "classic")
-                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style"})
+                style, background = value.get("style", "classic"), value.get("background", "cover")
+                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background"})
                 if set(value) - allowed or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
                     raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
                 if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
                     raise RequestError(400, f"Choose a key change from -{MAX_SEMITONES} to +{MAX_SEMITONES} semitones.")
                 if style not in VIDEO_STYLES:
                     raise RequestError(400, "Choose a lyric style: classic, contrast, large or light.")
+                if background not in ("cover", "plain"):
+                    raise RequestError(400, "Choose the cover art or a plain background.")
                 if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):
                     raise RequestError(400, "Choose where in the clip to preview the key.")
             elif self.command == "POST" and resource == "transcribe":
@@ -1131,7 +1141,8 @@ class Handler(BaseHTTPRequestHandler):
                         archive_source.close()
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
-                    job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style)
+                    job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style,
+                                              background=background)
                 if self.command == "POST" and resource == "key-preview":
                     if start >= project["duration"]:
                         raise RequestError(400, "Choose where in the clip to preview the key.")

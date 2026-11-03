@@ -12,7 +12,10 @@ import time
 import unicodedata
 import wave
 
-from PIL import Image, ImageDraw, ImageFont, features
+import base64
+import io
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, features
 
 from .limits import (COUNT_IN, COUNT_IN_BREAK, MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAMES,
                      SAMPLE_RATE, VIDEO_TIMEOUT)
@@ -322,18 +325,45 @@ def count_in(cues: list[dict], position: float) -> int | None:
     return math.ceil(left - 1e-9)
 
 
+BACKGROUNDS = ('cover', 'plain')
+# How much of the style's own background colour lies over a cover picture, so the lyrics stay readable on it.
+COVER_VEIL = 0.62
+
+
+def validate_background(value) -> str:
+    if value not in BACKGROUNDS:
+        raise ValidationError('Choose the cover art or a plain background.')
+    return value
+
+
+@functools.lru_cache(maxsize=4)
+def _cover_backdrop(cover: str, colour: str) -> Image.Image:
+    """The cover picture filling the frame, softened and veiled with the style's background colour."""
+    picture = Image.open(io.BytesIO(base64.b64decode(cover.split(',', 1)[1]))).convert('RGB')
+    scale = max(WIDTH / picture.width, HEIGHT / picture.height)
+    size = (max(WIDTH, round(picture.width * scale)), max(HEIGHT, round(picture.height * scale)))
+    picture = picture.resize(size, Image.Resampling.LANCZOS)
+    left, top = (size[0] - WIDTH) // 2, (size[1] - HEIGHT) // 2
+    picture = picture.crop((left, top, left + WIDTH, top + HEIGHT)).filter(ImageFilter.GaussianBlur(6))
+    return Image.blend(picture, Image.new('RGB', (WIDTH, HEIGHT), colour), COVER_VEIL)
+
+
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
-                sung: list[str] | None = None, count: int | None = None, style: str = 'classic') -> None:
+                sung: list[str] | None = None, count: int | None = None, style: str = 'classic',
+                background: str = 'cover', layer: bool = False) -> None:
     """One video card. ``sung`` lists the active line's words already sung; without it the whole
     active line is highlighted. During a break, ``count`` dots count singers in to the next line. ``style`` names
-    one of STYLES."""
+    one of STYLES; with the ``cover`` background, a clip's cover picture lies behind the lyrics. A ``layer`` is the
+    card's words alone on a transparent ground, to lie over a backdrop drawn once."""
     project = validate_project(project)
     look = STYLES[validate_style(style)]
-    background, muted, main, accent, scale = look['background'], look['muted'], look['main'], look['accent'], look['scale']
+    fill, muted, main, accent, scale = look['background'], look['muted'], look['main'], look['accent'], look['scale']
     cues = project['cues']
     if active_index is not None and (type(active_index) is not int or not 0 <= active_index < len(cues)):
         raise ValidationError('Active cue index must identify a saved lyric cue.')
-    image = Image.new('RGB', (WIDTH, HEIGHT), background)
+    cover = project.get('cover') if validate_background(background) == 'cover' else None
+    image = (Image.new('RGBA', (WIDTH, HEIGHT), (0, 0, 0, 0)) if layer
+             else _cover_backdrop(cover, fill).copy() if cover else Image.new('RGB', (WIDTH, HEIGHT), fill))
     draw = ImageDraw.Draw(image)
     _center_text(draw, ' '.join(project['title'].split()), 80, font_path, 32, 22, 100, main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
@@ -519,7 +549,8 @@ def _sized_wav(data: bytes) -> bytes:
 
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
-                 vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic') -> None:
+                 vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic',
+                 background: str = 'cover') -> None:
     """Render the karaoke video; ``words`` are recognized words that time the word highlighting.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
@@ -528,7 +559,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
     _remaining(cancel, deadline)
-    semitones, style = validate_semitones(semitones), validate_style(style)
+    semitones, style, background = validate_semitones(semitones), validate_style(style), validate_background(background)
     if not (isinstance(guide, (int, float)) and 0 <= guide <= 0.5) or (guide and vocals is None):
         raise ValidationError('Guide vocal level must be from 0 to 50 percent of the separated vocals.')
     backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
@@ -546,6 +577,11 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             directory = Path(temporary)
             states = {}
             card_bytes = 0
+            # A cover picture is drawn once, as a backdrop the cards' words lie over; cards stay small.
+            backdrop = None
+            if background == 'cover' and project.get('cover'):
+                backdrop = directory / 'backdrop.png'
+                _cover_backdrop(project['cover'], STYLES[style]['background']).save(backdrop, format='PNG')
             cues = project['cues']
             timings = word_timings(cues, words or [], project['duration'])
             whole_lines = [text_layout(cue['text'])[1] for cue in cues]
@@ -563,10 +599,12 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                         raise RuntimeError('Video preparation exceeded its card count limit.')
                     card = directory / f'card{len(states):04}.png'
                     if active is None:
-                        render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path, count=count, style=style)
+                        render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path, count=count, style=style,
+                                    background=background, layer=backdrop is not None)
                     else:
                         render_card(project, active, card, font_path,
-                                    sung=[word['text'] for word in timings[active][:sung]], style=style)
+                                    sung=[word['text'] for word in timings[active][:sung]], style=style, background=background,
+                                    layer=backdrop is not None)
                     _remaining(cancel, deadline)
                     card_bytes += card.stat().st_size
                     if card_bytes > MAX_CARD_BYTES:
@@ -585,7 +623,13 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             if guide:
                 arguments += ['-protocol_whitelist', 'file', '-f', 'wav', '-i', str(vocals)]
             program = _audio_program(guide, semitones)
-            arguments += ['-filter_complex', program, '-map', '0:v:0', '-map', '[mix]'] if program else ['-map', '0:v:0', '-map', '1:a:0']
+            video = None
+            if backdrop is not None:
+                # The backdrop is the last input, so the audio program's input numbers stay as they are.
+                arguments += ['-protocol_whitelist', 'file', '-loop', '1', '-framerate', str(FPS), '-i', str(backdrop)]
+                video = f'[{3 if guide else 2}:v][0:v]overlay=shortest=1:format=auto[video]'
+            programs = ';'.join(part for part in (program, video) if part)
+            arguments += (['-filter_complex', programs] if programs else []) + ['-map', '[video]' if video else '0:v:0', '-map', '[mix]' if program else '1:a:0']
             arguments += ['-c:v', 'libx264', '-threads', '2',
                          '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
                          '-c:a', 'aac', '-b:a', '192k', '-t', f'{project["duration"]:.9f}',
