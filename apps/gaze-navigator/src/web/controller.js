@@ -362,6 +362,15 @@ export function createController({ window, actions = pageActions, interpret = in
       const result = commands.numbers(action.on);
       return reply(result.message, result.ok ? 'success' : 'error');
     }
+    // Words found on the page need no gaze; a match inside a control makes it the one "it" means.
+    if (action.type === 'find') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.find) return reply('Finding words on the page is not available here.', 'error');
+      pending = null;
+      const result = commands.find(action);
+      if (result.control) previous = { target: result.control, at: now() };
+      return reply(result.message, result.ok ? 'info' : 'error');
+    }
     // A "Which one?" question still takes its own numbers.
     if (action.type === 'choose' && context.numbered && context.trackingUnavailable !== 'calibration' && pending?.kind !== 'clarify') {
       if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');

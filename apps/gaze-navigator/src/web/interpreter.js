@@ -575,6 +575,14 @@ function interpretInCircle(utterance, context) {
   if (corner) return { type: 'panel', change: 'move', left: corner[2] === 'left', top: corner[1] ? /top|upper/.test(corner[1]) : null };
   const nudge = new RegExp(`^move ${navigator} (up|down)$`).exec(text);
   if (nudge) return { type: 'panel', change: 'move', left: null, top: nudge[1] === 'up' };
+  // Words on the page, found and scrolled to ("find gift cards"), then the next or previous place they appear.
+  if (/^(?:find next|next match|next result|find (?:it |that )?again)$/.test(text)) return { type: 'find', move: 'next' };
+  if (/^(?:find previous|previous match|previous result)$/.test(text)) return { type: 'find', move: 'previous' };
+  if (/^(?:stop finding|clear (?:the )?(?:search|find|highlight|matches)|hide (?:the )?(?:matches|highlight))$/.test(text)) return { type: 'find', clear: true };
+  // "Find" and "look for" alone search with the site's own search box; the page itself is named.
+  const finding = /^(?:(?:find|look for)\s+(?:the (?:words?|text|phrase)\s+)?(.+?)\s+on (?:the|this) page|(?:find|look) on (?:the|this) page (?:for )?(.+?)|search (?:the|this) page for\s+(.+?))[.!?]*$/i.exec(command.trim());
+  const phrase = finding && (finding[1] ?? finding[2] ?? finding[3]);
+  if (phrase && !/^(?:next|previous|it|that)$/i.test(phrase)) return { type: 'find', text: unquote(phrase) };
   // Numbers on every control on screen, said instead of looking at one ("show numbers", then "click 12").
   if (/^(?:show|display|turn on|put up) (?:the )?(?:control )?numbers(?: on (?:the )?(?:page|screen|controls))?$|^number (?:everything|the controls|all (?:the )?controls|the page)$|^numbers on$/.test(text)) return { type: 'numbers', on: true };
   if (/^(?:hide|remove|clear|turn off|take away|stop showing) (?:the )?(?:control )?numbers$|^numbers off$|^no more numbers$/.test(text)) return { type: 'numbers', on: false };

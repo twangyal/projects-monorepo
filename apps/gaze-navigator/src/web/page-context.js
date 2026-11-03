@@ -558,6 +558,54 @@ export function numberControls(document, { exclude = null, previous = new Map(),
     .sort((a, b) => a.number - b.number);
 }
 
+// "Find" on the page: where a phrase appears in the page's visible text (case and accents aside), in reading order,
+// with the control each match sits in (a link's words, a button's label), which "click it" can then use.
+export const FIND_LIMIT = 500;
+const foldText = text => text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export function findText(document, query, { exclude = null, limit = FIND_LIMIT } = {}) {
+  const wanted = foldText(clean(query));
+  if (wanted.length < 2) return [];
+  const view = document.defaultView, nodes = [];
+  const walker = document.createTreeWalker(document.body ?? document.documentElement, view.NodeFilter.SHOW_TEXT, {
+    acceptNode: node => {
+      const parent = node.parentElement;
+      if (!parent || !node.textContent.trim() || exclude?.contains(parent) || parent.closest('script,style,template,noscript,[aria-hidden="true"]')) return view.NodeFilter.FILTER_REJECT;
+      return view.NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  // The visible text as one string, each character mapped back to its node and offset; words split across elements
+  // still match.
+  let text = '';
+  const owners = [];
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const style = view.getComputedStyle(node.parentElement);
+    if (style.visibility === 'hidden' || style.display === 'none' || !node.parentElement.getClientRects().length) continue;
+    const value = node.textContent;
+    for (let i = 0; i < value.length; i++) {
+      const folded = foldText(value[i]);
+      // A run of white space is one space, as the phrase's is.
+      const ch = /\s/.test(folded) ? ' ' : folded;
+      if (ch === ' ' && text.endsWith(' ')) continue;
+      for (const part of ch) { text += part; owners.push([node, i]); }
+    }
+    if (!text.endsWith(' ')) { text += ' '; owners.push([node, value.length]); }
+    nodes.push(node);
+  }
+  const matches = [];
+  for (let at = text.indexOf(wanted); at >= 0 && matches.length < limit; at = text.indexOf(wanted, at + wanted.length)) {
+    const [startNode, startOffset] = owners[at], [endNode, endOffset] = owners[at + wanted.length - 1];
+    const range = document.createRange();
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, Math.min(endNode.textContent.length, endOffset + 1));
+    const rect = range.getBoundingClientRect();
+    if (!(rect.width > 0 || rect.height > 0)) continue;
+    const holder = startNode.parentElement.closest(ACTIONABLE);
+    const control = holder && !exclude?.contains(holder) && usable(holder, exclude) ? { id: 0, element: holder, rect: viewportRect(holder), distance: 0, frames: [], ...describe(holder) } : null;
+    matches.push({ range, control });
+  }
+  return matches;
+}
+
 // Elements whose rectangles intersect the circle, nearest first, numbered for clarification.
 export function captureContext(document, { x, y, radius, exclude = null, limit = 12, scopeCache = null, focus = null }) {
   if (![x, y, radius].every(Number.isFinite) || radius <= 0) return { x, y, radius, elements: [], region: null, unreachable: [] };

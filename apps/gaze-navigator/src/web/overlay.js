@@ -1,6 +1,6 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
@@ -40,6 +40,7 @@ const STYLE = `
 .outline.question { border-color: #f5c76b; border-width: 3px; }
 .badge { position: absolute; left: -2px; top: -22px; min-width: 22px; padding: 1px 6px; border-radius: 10px; background: #75e5b4; color: #07110e; font: 700 13px/18px system-ui, sans-serif; text-align: center; }
 .outline.question .badge { background: #f5c76b; }
+.outline.found { border-color: #ffd166; border-width: 3px; background: rgba(255,209,102,.22); }
 .outline.numbered { border-color: #8fc7ff; border-width: 1px; box-shadow: none; }
 .outline.numbered .badge { top: -2px; left: -2px; transform: translate(-30%, -60%); background: #8fc7ff; box-shadow: 0 0 0 2px #0009; }
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
@@ -248,7 +249,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, browser: action => browser.run(action) }, assistant: assistantRelay });
+  // "Find": the words looked for, where they appear and which of those places is shown.
+  let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
   let numbering = null, numbered = [], numbersTimer = null;
   const filter = createGazeFilter();
@@ -306,6 +309,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     renderOutlines();
   }
 
+  // The place shown by "find", outlined wherever the page has scrolled it.
+  function drawFound() {
+    const match = found?.matches[found.index];
+    if (!match || !match.range.startContainer.isConnected) return;
+    const rect = match.range.getBoundingClientRect(), box = document.createElement('div');
+    box.className = 'outline found';
+    Object.assign(box.style, { left: `${rect.left - 3}px`, top: `${rect.top - 3}px`, width: `${rect.width + 6}px`, height: `${rect.height + 6}px` });
+    ui.outlines.append(box);
+  }
   function renderOutlines() {
     const pending = controller.pending;
     const question = pending?.kind === 'clarify' ? new Map() : null;
@@ -327,6 +339,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         box.append(badge);
         ui.outlines.append(box);
       }
+      drawFound();
       return;
     }
     const shownContext = controller.paused || calibration ? null : pending ? promptContext : spokenContext ?? context;
@@ -351,6 +364,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       }
       ui.outlines.append(box);
     }
+    drawFound();
   }
 
   function renderContextList() {
@@ -998,6 +1012,37 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
   function scheduleNumbers() {
     if (numbering && numbersTimer === null) numbersTimer = window.setTimeout(refreshNumbers, NUMBERS_REFRESH_MS);
+  }
+  function findOnPage({ text = null, move = null, clear = false }) {
+    if (clear) {
+      const had = Boolean(found);
+      found = null; renderOutlines();
+      return { ok: true, message: had ? 'Search cleared.' : 'Nothing was being found.' };
+    }
+    if (move && !found) return { ok: false, message: 'Say find and the words to look for first, such as "find delivery".' };
+    const query = move ? found.query : text;
+    // The page may have changed since: look again, and keep to the place shown when it is still there.
+    const matches = findText(document, query, { exclude: host });
+    if (!matches.length) {
+      found = null; renderOutlines();
+      return { ok: false, message: `"${query}" is not on this page.` };
+    }
+    let index;
+    if (move) {
+      const shown = found.matches[found.index]?.range, same = shown ? matches.findIndex(match => match.range.compareBoundaryPoints(window.Range.START_TO_START, shown) === 0) : -1;
+      index = ((same < 0 ? found.index : same) + (move === 'next' ? 1 : -1) + matches.length) % matches.length;
+    } else {
+      // The first match on or below the top of the screen, as a browser's find starts from where you are.
+      index = Math.max(0, matches.findIndex(match => match.range.getBoundingClientRect().bottom >= 0));
+    }
+    found = { query, matches, index };
+    const match = matches[index];
+    match.range.startContainer.parentElement.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    spokenContext = null; promptContext = null;
+    recapture(true);
+    renderOutlines();
+    const control = match.control;
+    return { ok: true, control, message: `Found "${query}"${matches.length > 1 ? ` (${index + 1} of ${matches.length})` : ''}.${control ? ` It is in the ${control.role} "${control.name}": say "click it" to use it.` : ''}${matches.length > 1 ? ' Say next match or previous match.' : ''}` };
   }
   function setNumbers(on) {
     window.clearTimeout(numbersTimer); numbersTimer = null;
