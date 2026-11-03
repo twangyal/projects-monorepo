@@ -94,8 +94,8 @@ export class ProductScene {
   }
 
   /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown, with the
-   * `companion` garment of an outfit drape. */
-  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true, companion: Product | null = null) {
+   * `companion` garment of an outfit drape (and its third garment, `also`). */
+  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true, companion: Product | null = null, also: Product | null = null) {
     for (const texture of this.provisional.splice(0)) texture.dispose();
     this.setBody(showBody ? drape?.body ?? null : null);
     for (const holder of [this.group, this.worn]) for (const child of [...holder.children]) { holder.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
@@ -106,23 +106,27 @@ export class ProductScene {
     this.height = Math.max(garmentHeight(product), drape && showBody && !isBottoms(product) ? topMeasurements(product).length + 32 : 0) + 6;
     // Joggers' cuffs hang below their leg panels' hems.
     this.low = product.base === 'trousers' ? -trouserDimensions(product).cuffHeight : 0;
-    const worn = companion && drape?.companion ? drape.companion.parts : null;
-    if (worn) {
-      // An outfit spans both garments, with the head above the top's collar.
+    // The other garments of an outfit drape, each with its settled parts.
+    const worn = ([[companion, drape?.companion], [also, drape?.also]] as const).flatMap(([garment, settled]) => (garment && settled ? [{ garment, parts: settled.parts }] : []));
+    if (worn.length) {
+      // An outfit spans all its garments, with the head above the top's collar.
       let low = Infinity, high = -Infinity;
-      for (const { positions } of [...drape!.parts, ...worn]) for (let i = 1; i < positions.length; i += 3) { low = Math.min(low, positions[i]!); high = Math.max(high, positions[i]!); }
+      for (const { positions } of [...drape!.parts, ...worn.flatMap(item => item.parts)]) for (let i = 1; i < positions.length; i += 3) { low = Math.min(low, positions[i]!); high = Math.max(high, positions[i]!); }
       this.low = Math.min(0, low - 4); this.height = Math.max(this.height, high + (showBody ? 32 : 6));
     }
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.setView(this.view);
-    const wornRest = worn ? teeMesh(companion!, Delaunator) : [], wornParts = new Map<PartId, THREE.Mesh>();
-    if (worn) for (const part of wornRest) {
-      const positions = worn.find(item => item.part === part.part)?.positions;
-      if (!positions || positions.length !== part.positions.length) continue;
-      const mesh = this.partMesh(companion!, part, positions, false);
-      mesh.name = `${companion!.name}: ${mesh.name}`; mesh.userData = {};
-      this.worn.add(mesh); wornParts.set(part.part, mesh);
-    }
+    const wornMeshes = worn.map(({ garment, parts }) => {
+      const rest = teeMesh(garment, Delaunator), meshes = new Map<PartId, THREE.Mesh>();
+      for (const part of rest) {
+        const positions = parts.find(item => item.part === part.part)?.positions;
+        if (!positions || positions.length !== part.positions.length) continue;
+        const mesh = this.partMesh(garment, part, positions, false);
+        mesh.name = `${garment.name}: ${mesh.name}`; mesh.userData = {};
+        this.worn.add(mesh); meshes.set(part.part, mesh);
+      }
+      return { garment, rest, meshes };
+    });
     const restParts = teeMesh(product, Delaunator);
     for (const part of restParts) {
       const draped = drape?.parts.find(item => item.part === part.part);
@@ -130,12 +134,12 @@ export class ProductScene {
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true); this.worn.updateMatrixWorld(true);
-    if (worn) for (const art of companion!.artwork) {
-      const target = wornParts.get(art.part);
-      if (target) this.addArtwork(companion!, art, wornRest.find(part => part.part === art.part)!, target, this.worn);
+    for (const { garment, rest, meshes } of wornMeshes) for (const art of garment.artwork) {
+      const target = meshes.get(art.part);
+      if (target) this.addArtwork(garment, art, rest.find(part => part.part === art.part)!, target, this.worn);
     }
     for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
-    if (worn) this.addZip(companion!, wornRest, wornParts, this.worn);
+    for (const { garment, rest, meshes } of wornMeshes) this.addZip(garment, rest, meshes, this.worn);
     this.addZip(product, drape ? restParts : null, this.parts, this.group);
     this.requestRender();
   }
@@ -344,13 +348,13 @@ export class ProductScene {
 }
 
 /** Own one immutable scene for the full asynchronous export and always release its resources. */
-async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>, companion: Product | null = null): Promise<T> {
-  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null, worn = companion ? structuredClone(companion) : null;
-  if (worn && !settled?.companion) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
-  await Promise.all([prepareMotifImages(snapshot.motifs ?? []), prepareMotifImages(worn?.motifs ?? [])]);
+async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>, companion: Product | null = null, also: Product | null = null): Promise<T> {
+  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null, worn = companion ? structuredClone(companion) : null, third = also ? structuredClone(also) : null;
+  if ((worn && !settled?.companion) || (third && !settled?.also)) throw new Error('Drape the outfit and wait for it to settle before exporting its garments together.');
+  await Promise.all([prepareMotifImages(snapshot.motifs ?? []), prepareMotifImages(worn?.motifs ?? []), prepareMotifImages(third?.motifs ?? [])]);
   const scene = new ProductScene(document.createElement('canvas'));
   try {
-    scene.setProduct(snapshot, null, settled, false, worn);
+    scene.setProduct(snapshot, null, settled, false, worn, third);
     await scene.prepareArtwork();
     return await exportScene(scene);
   } finally { scene.dispose(); }
@@ -359,12 +363,12 @@ async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResul
 export function productSnapshotRenders(product: Product, drape: GarmentDrapeResult | null = null): Promise<{ front: Blob; back: Blob }> {
   return withProductSnapshot(product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
 }
-export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<Blob> {
-  return withProductSnapshot(product, drape, scene => scene.png(view), companion);
+export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.png(view), companion, also);
 }
-export function productSnapshotTurntable(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<Blob> {
-  return withProductSnapshot(product, drape, scene => scene.turntable(), companion);
+export function productSnapshotTurntable(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.turntable(), companion, also);
 }
-export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null): Promise<ArrayBuffer> {
-  return withProductSnapshot(product, drape, scene => scene.glb(!!companion), companion);
+export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<ArrayBuffer> {
+  return withProductSnapshot(product, drape, scene => scene.glb(!!companion), companion, also);
 }

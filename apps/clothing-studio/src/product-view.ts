@@ -3,7 +3,7 @@ import { GATHER, skirtBandHeight, skirtDraft, skirtGather } from './product-skir
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
-import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, BODY_HIP_DEPTH, BODY_UPPER_ARM_GIRTH, BODY_UNDERBUST, canTuck, defaultBodyChest, garmentBody, outfitShape, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
+import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, BODY_HIP_DEPTH, BODY_UPPER_ARM_GIRTH, BODY_UNDERBUST, canTuck, defaultBodyChest, garmentBody, outfitShape, threePiece, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { listDesigns, readDesign } from './design-library.ts';
 import { gradedProduct } from './size-grades.ts';
 import { decodeProductFile } from './media.ts';
@@ -62,7 +62,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <details id="top-body-shape"><summary>Bust, waist, hip, depth, height and arms (optional)</summary><div class="measure-grid"><label class="field">Underbust girth (cm, optional)<input id="garment-drape-underbust" type="number" min="${BODY_UNDERBUST[0]}" max="${BODY_UNDERBUST[1]}" step="0.1" aria-describedby="underbust-help"></label><p id="underbust-help" class="fine-print">For a body with a bust: measure just under the bust, and give the chest round the fullest part of the bust. Blank gives a body without a bust.</p><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Waist-to-hip depth (cm, optional)<input id="garment-drape-hip-depth" type="number" min="${BODY_HIP_DEPTH[0]}" max="${BODY_HIP_DEPTH[1]}" step="0.1"></label><label class="field">Body height (cm, optional)<input id="garment-drape-height" type="number" min="${BODY_HEIGHT[0]}" max="${BODY_HEIGHT[1]}" step="0.5"></label><label class="field">Upper-arm girth (cm, optional)<input id="garment-drape-arm-girth" type="number" min="${BODY_UPPER_ARM_GIRTH[0]}" max="${BODY_UPPER_ARM_GIRTH[1]}" step="0.1" aria-describedby="arm-girth-help"></label><p id="arm-girth-help" class="fine-print">Measure around the fullest upper arm. An entered girth is kept even if the sleeve is tight; blank uses automatic proportions that may narrow to the sleeve. Forearms, wrists, shoulder position and pose remain assumed. Fit is not validated.</p><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Height sets torso heights, arm length and trouser leg length as typical proportions; without it they follow the chest. Waist-to-hip depth is the vertical distance from the waist to the fullest hip; blank keeps the current proportions. For trousers, the hip must lie above the displayed crotch. Shoulders remain assumed. Applied body settings are saved with this design. Unapplied fields stay as drafts. These measurements do not establish physical fit.</p></details>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
         <label class="field">Size shown<select id="garment-size" aria-describedby="garment-size-status"></select></label>
-        <label class="field">Wear with<select id="garment-wear-with"></select></label><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping both in the outfit. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
+        <label class="field">Wear with<select id="garment-wear-with"></select></label><label class="field">And with<select id="garment-wear-also" disabled aria-describedby="wear-also-help"></select></label><p id="wear-also-help" class="fine-print">A third garment: a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.</p><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping both in the outfit. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
         <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <p id="garment-size-status" class="fine-print" role="status"></p>
@@ -194,10 +194,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // An outfit: the garment worn with the design, when one is a top and the other bottoms, or a T-shirt under a
   // sweatshirt or hoodie (layers).
   const companionOf = (design: Product) => { const worn = options.current().wornWith; return worn && canWearTogether(worn, design) ? worn : null; };
-  const layersOf = (design: Product) => { const companion = companionOf(design); return companion ? layerOrder(design, companion) : null; };
+  // A three-piece outfit: a third garment that, with these two, is a T-shirt under a sweatshirt or hoodie, with bottoms.
+  const alsoOf = (design: Product) => { const companion = companionOf(design), also = options.current().wornAlso; return companion && also && threePiece([design, companion, also]) ? also : null; };
+  const piecesOf = (design: Product) => { const companion = companionOf(design), also = alsoOf(design); return companion && also ? threePiece([design, companion, also]) : null; };
+  const layersOf = (design: Product) => { const companion = companionOf(design); return piecesOf(design) ?? (companion ? layerOrder(design, companion) : null); };
   const outfitTop = (design: Product) => isBottoms(design) ? companionOf(design) : design;
   // A top worn with bottoms can be tucked in; a dress, or a top worn over another, cannot.
   const tuckedFor = (design: Product) => { const top = outfitTop(design); return !!options.current().tucked && !!companionOf(design) && !layersOf(design) && !!top && canTuck(top); };
+  // The bottoms of an outfit, if it has any.
+  const outfitBottoms = (design: Product) => piecesOf(design)?.bottoms ?? (isBottoms(design) ? (companionOf(design) ? design : null) : companionOf(design) && isBottoms(companionOf(design)!) ? companionOf(design) : null);
   // Layers are draped on a body for the top underneath, nearest the body.
   const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(layersOf(design)?.inner ?? outfitTop(design) ?? design);
   const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,underbust:bodyUnderbust??undefined});
@@ -207,7 +212,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const companion = companionOf(design);
     const entered = {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,underbust:bodyUnderbust??undefined};
     // Girths the bottoms cannot be worn on are left for the drape to explain.
-    if (companion && !layersOf(design)) try { return outfitShape(isBottoms(design) ? design : companion, chestFor(design), entered); } catch { return entered; }
+    const bottomsWorn = companion ? outfitBottoms(design) : null;
+    if (bottomsWorn) try { return outfitShape(bottomsWorn, chestFor(design), entered); } catch { return entered; }
     if (design.base === 'trousers') {
       const drafted = legMeasurements(design);
       return {waist:bodyWaist??drafted.waist,hip:bodyHip??drafted.hip,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined};
@@ -221,7 +227,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
     return {chest:chestFor(design),waist:body.waist,hip:body.hip,...(bodyHipDepth===null?{}:{hipDepth:bodyHipDepth}),...(bodyHeight===null?{}:{height:bodyHeight})};
   };
-  const drapeKeyOf = (design: Product) => { const companion = companionOf(design); return JSON.stringify([shapeKey(viewed(design)), companion ? shapeKey(companion) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design)]); };
+  const drapeKeyOf = (design: Product) => { const companion = companionOf(design), also = alsoOf(design); return JSON.stringify([shapeKey(viewed(design)), companion ? shapeKey(companion) : null, also ? shapeKey(also) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design)]); };
   const currentDrape = (design: Product) => (draping && drape?.key === drapeKeyOf(design) ? drape.result : null);
   function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
   function startDrape(design: Product) {
@@ -245,8 +251,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         else { failedDrapeKey = key; $('garment-drape-status').textContent = `${data.message} Choose Drape again to retry, or Show styling shell.`; }
       };
       worker.onerror = () => { if (worker === drapeWorker) { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run. Choose Drape again to retry, or Show styling shell.'; } };
-      const companion = companionOf(design);
-      try { worker.postMessage({ product: viewed(design), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design) }); }
+      const companion = companionOf(design), also = alsoOf(design);
+      try { worker.postMessage({ product: viewed(design), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), ...(also ? { also } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design) }); }
       catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not receive this design. Choose Drape again to retry.'; }
     }, 250);
   }
@@ -262,8 +268,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     return parts.length ? ` On this ${height ? `${height} cm ` : ''}body ${parts.join(', ')}.` : '';
   }
   function drapeSummary(design: Product, result: GarmentDrapeResult): string {
-    const companion = result.companion && companionOf(design), tucked = !!companion && tuckedFor(design), layers = layersOf(design);
-    const worn = !companion ? '' : layers ? (layers.inner === design ? ` Worn under the ${companion.name}: this top drapes first, on a body posed for the ${companion.name}, and the ${companion.name} rests on it.`
+    const companion = result.companion && companionOf(design), tucked = !!companion && tuckedFor(design), layers = layersOf(design), pieces = result.also ? piecesOf(design) : null;
+    const worn = !companion ? '' : pieces ? (pieces.bottoms === design ? ` Worn under the ${pieces.inner.name} and the ${pieces.outer.name}: these bottoms drape first, the ${pieces.inner.name} drapes over them and the ${pieces.outer.name} over both.`
+        : pieces.inner === design ? ` Worn under the ${pieces.outer.name}, over the ${pieces.bottoms.name}: the ${pieces.bottoms.name} drape first, then this top, on a body posed for the ${pieces.outer.name}, and the ${pieces.outer.name} rests on both.`
+        : ` Worn over the ${pieces.inner.name} and the ${pieces.bottoms.name}: they drape first on the same body, and this top rests on both.`)
+      : layers ? (layers.inner === design ? ` Worn under the ${companion.name}: this top drapes first, on a body posed for the ${companion.name}, and the ${companion.name} rests on it.`
         : ` Worn over the ${companion.name}: the ${companion.name} drapes first on the same body, and this top rests on it.`)
       : tucked ? (isBottoms(design) ? ` Worn with the ${companion.name} tucked in: the top drapes first, held close to the body below the waistband, and these bottoms drape over it.`
         : ` Tucked into the ${companion.name}: this top drapes first, held close to the body below the waistband, and the bottoms drape over it.`)
@@ -339,7 +348,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     renderPatternSize(design);
   });
   // Wear with: templates of the other kind, the kept copy, and saved designs of the other kind (read when the list opens).
-  const wearWith = $('garment-wear-with') as HTMLSelectElement;
+  const wearWith = $('garment-wear-with') as HTMLSelectElement, wearAlso = $('garment-wear-also') as HTMLSelectElement;
   let savedOutfits = new Map<string, Product>(), loadingSaved = false;
   function renderWearWith(design: Product) {
     const kept = options.current().wornWith, companion = companionOf(design), other = (item: Product) => canWearTogether(item, design);
@@ -349,6 +358,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       + ([...savedOutfits].some(([, item]) => other(item)) ? `<optgroup label="Saved designs">${[...savedOutfits].filter(([, item]) => other(item)).map(([id, item]) => option(`s:${id}`, item.name)).join('')}</optgroup>` : '');
     if (wearWith.dataset.html !== html) { wearWith.dataset.html = html; wearWith.innerHTML = html; }
     wearWith.value = companion ? 'kept' : '';
+    // And with: a third garment, when these two can be worn with one.
+    const kept3 = options.current().wornAlso, also = alsoOf(design), third = (item: Product) => !!companion && !!threePiece([design, companion, item]);
+    const thirds = TEMPLATES.filter(item => third(item.product)), savedThirds = [...savedOutfits].filter(([, item]) => third(item));
+    const alsoHtml = option('', 'Nothing else') + (also ? option('kept', `${kept3!.name} (kept with this design)`) : '')
+      + (thirds.length ? `<optgroup label="Templates">${thirds.map(item => option(`t:${item.id}`, item.name)).join('')}</optgroup>` : '')
+      + (savedThirds.length ? `<optgroup label="Saved designs">${savedThirds.map(([id, item]) => option(`s:${id}`, item.name)).join('')}</optgroup>` : '');
+    if (wearAlso.dataset.html !== alsoHtml) { wearAlso.dataset.html = alsoHtml; wearAlso.innerHTML = alsoHtml; }
+    wearAlso.value = also ? 'kept' : '';
+    wearAlso.disabled = !companion || (!thirds.length && !savedThirds.length && !also);
   }
   async function loadSavedOutfits() {
     if (loadingSaved) return;
@@ -363,12 +381,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     finally { loadingSaved = false; }
   }
   wearWith.addEventListener('focus', () => void loadSavedOutfits());
+  wearAlso.addEventListener('focus', () => void loadSavedOutfits());
+  wearAlso.addEventListener('change', () => {
+    const value = wearAlso.value, design = product() ?? template('blank'), companion = companionOf(design);
+    if (value === 'kept' || !companion) return;
+    const worn = value.startsWith('t:') ? template(value.slice(2)) : value.startsWith('s:') ? savedOutfits.get(value.slice(2)) : undefined;
+    const rest = { ...options.current() };
+    delete rest.wornAlso; delete rest.tucked;
+    retireAssets();
+    try {
+      commit(worn ? { ...rest, wornAlso: validateProduct(structuredClone(worn)) } : rest);
+      options.notice(worn ? `The ${design.name} is worn with the ${companion.name} and the ${worn.name}.${draping ? '' : ' Drape on a body to see them together.'} You can undo this.` : `The ${design.name} is worn with the ${companion.name} only. You can undo this.`);
+    } catch (error) { options.notice(error instanceof Error ? error.message : 'That garment cannot be worn with these.', true); renderWearWith(design); }
+  });
   wearWith.addEventListener('change', () => {
     const value = wearWith.value, design = product() ?? template('blank');
     if (value === 'kept') return;
     const worn = value.startsWith('t:') ? template(value.slice(2)) : value.startsWith('s:') ? savedOutfits.get(value.slice(2)) : undefined;
     const rest = { ...options.current() };
-    delete rest.wornWith;
+    delete rest.wornWith; delete rest.wornAlso;
     retireAssets();
     try {
       commit(worn ? { ...rest, wornWith: validateProduct(structuredClone(worn)) } : rest);
@@ -619,7 +650,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       shownSize = null; patternSize = null; selected = 'front'; shown = '';
       $('garment-size-status').textContent = '';
       commit(next);
-      options.notice(`Editing the ${next.product!.name}. The ${next.wornWith!.name} stays in this outfit. Both garments are kept; you can undo the switch.`);
+      options.notice(next.wornAlso ? `Editing the ${next.product!.name}. The ${next.wornWith!.name} and the ${next.wornAlso.name} stay in this outfit; you can undo the switch.`
+        : `Editing the ${next.product!.name}. The ${next.wornWith!.name} stays in this outfit. Both garments are kept; you can undo the switch.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'The worn garment cannot be edited.', true); }
   });
 
@@ -841,17 +873,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     button.addEventListener('click', () => void exporting(async () => {
       if (button.disabled) return;
       const snapshot = structuredClone(options.current()), sample = snapshot.product ?? template('blank'), includeWorn = ($('export-outfit') as HTMLInputElement).checked;
-      const companion = includeWorn ? snapshot.wornWith ?? null : null;
+      const companion = includeWorn ? snapshot.wornWith ?? null : null, also = includeWorn && snapshot.wornAlso && companion && threePiece([sample, companion, snapshot.wornAlso]) ? snapshot.wornAlso : null;
       if (includeWorn && (!companion || !draping)) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
       const settled = captureDrape(sample), design = viewed(sample);
-      if (includeWorn && !settled?.companion) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
+      if (includeWorn && (!settled?.companion || (also && !settled.also))) throw new Error('Drape the outfit and wait for it to settle before exporting its garments together.');
       button.disabled = true;
       try {
         if (!await ready) throw new Error('The 3D view is unavailable.');
         const exports = await import('./product-3d.ts');
-        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled, companion)], {type:'model/gltf-binary'})
-          : kind === 'turntable' ? await exports.productSnapshotTurntable(design, settled, companion)
-          : await exports.productSnapshotPng(design, kind, settled, companion);
+        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled, companion, also)], {type:'model/gltf-binary'})
+          : kind === 'turntable' ? await exports.productSnapshotTurntable(design, settled, companion, also)
+          : await exports.productSnapshotPng(design, kind, settled, companion, also);
         options.download(blob, `${includeWorn ? '-outfit' : ''}${suffix}`, snapshot.title);
       } finally { button.disabled = false; }
     }));
@@ -1180,8 +1212,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
     ($('edit-worn-garment') as HTMLButtonElement).disabled = !project.product || !companion;
     const tuckBox = $('garment-tuck') as HTMLInputElement, top = outfitTop(design), layered = !!layersOf(design), tuckable = !!project.product && !!companion && !layered && !!top && canTuck(top);
+    const alsoWorn = alsoOf(design);
     tuckBox.disabled = !tuckable; tuckBox.checked = tuckable && tuckedFor(design);
-    $('garment-tuck-help').textContent = !companion ? 'Choose bottoms with Wear with to tuck a top in.' : layered ? 'A top worn over another is not tucked in.' : !tuckable ? 'A dress cannot be tucked in; shorten it to a top to tuck it.'
+    $('garment-tuck-help').textContent = !companion ? 'Choose bottoms with Wear with to tuck a top in.' : alsoWorn ? 'A three-piece outfit is worn untucked.' : layered ? 'A top worn over another is not tucked in.' : !tuckable ? 'A dress cannot be tucked in; shorten it to a top to tuck it.'
       : 'The top drapes first, held close to the body below the waistband, and the bottoms drape over it. You can undo this.';
     const outfitExport = $('export-outfit') as HTMLInputElement;
     outfitExport.disabled = !companion; if (!companion) outfitExport.checked = false;
@@ -1201,20 +1234,21 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // A body with a bust has a narrower automatic waist.
     const proportional = () => { try { return validateTopBodyShape(chestFor(design), { underbust: bodyUnderbust ?? undefined }); } catch { return { waist: chestFor(design) * .86, hip: chestFor(design) * 1.02 }; } };
     let auto: { waist: number; hip: number } = design.base === 'trousers' ? legMeasurements(design) : proportional();
-    if (companion) try { auto = outfitShape(bottoms ? design : companion, chestFor(design)); } catch { /* The drape reports the problem. */ }
+    const bottomsWorn = outfitBottoms(design);
+    if (bottomsWorn) try { auto = outfitShape(bottomsWorn, chestFor(design)); } catch { /* The drape reports the problem. */ }
     ($('garment-drape-waist') as HTMLInputElement).placeholder=`Auto: ${Number(auto.waist.toFixed(2))}`;
     ($('garment-drape-hip') as HTMLInputElement).placeholder=`Auto: ${Number(auto.hip.toFixed(2))}`;
     $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
     if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
     else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
     else startDrape(design);
-    const signature = JSON.stringify([design, companion, shownSize, selected, !!project.product, draping, drape?.key ?? '', !!draped]);
+    const signature = JSON.stringify([design, companion, alsoWorn, shownSize, selected, !!project.product, draping, drape?.key ?? '', !!draped]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
-      scene?.setProduct(viewed(design), selected, draped, true, draped?.companion ? companion : null);
+      scene?.setProduct(viewed(design), selected, draped, true, draped?.companion ? companion : null, draped?.also ? alsoWorn : null);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }

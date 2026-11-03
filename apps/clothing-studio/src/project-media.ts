@@ -36,7 +36,7 @@ export function createProjectImageValidator(maxCacheBytes = 16 * 1024 * 1024): (
       validatePhotoHeader(photo);
       await admitted(photo, 'photo', () => validatePhoto(photo));
     }
-    const products = [project.product, project.wornWith];
+    const products = [project.product, project.wornWith, project.wornAlso];
     for (const motif of products.flatMap(product => product?.motifs ?? [])) {
       const asset = { ...motif };
       validateRasterHeader(asset, LIMITS.motifBytes, 2048);

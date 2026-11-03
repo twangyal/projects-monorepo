@@ -603,7 +603,9 @@ export interface GarmentDrapeMetrics {
 }
 export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; body: BodyProxy;
   /** In an outfit, the garment worn with this one, draped on the same body in this garment's place. */
-  companion?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics } }
+  companion?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics };
+  /** In a three-piece outfit, the third garment, likewise. */
+  also?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics } }
 
 /**
  * The extended position-based solver for one cloth with time step `dt`: `inverseMass` (0 holds a particle still) may
@@ -739,8 +741,9 @@ const INNER_PRESSED_RIB = 0.5;
  * underneath, that cloth is moved in towards the body to a layer's gap inside it. Elsewhere (through an open zip, below
  * a hem) it keeps its drape.
  */
-function pressUnder(parts: GarmentDrapeResult['parts'], over: GarmentDrapeResult['parts'], body: BodyProxy, core: number): GarmentDrapeResult['parts'] {
+function pressUnder(parts: GarmentDrapeResult['parts'], over: GarmentDrapeResult['parts'], body: BodyProxy, core: number, below?: LayerField): GarmentDrapeResult['parts'] {
   const { offset, field } = standOff(over, body, core, 'nearest'), out: Vec = [0, 0, 0];
+  below?.scale(1);
   return parts.map(({ part, positions }) => {
     const pressed = Float32Array.from(positions);
     for (let v = 0; v < pressed.length; v += 3) {
@@ -749,6 +752,9 @@ function pressUnder(parts: GarmentDrapeResult['parts'], over: GarmentDrapeResult
       if (!(cover > 0) || d <= cover - LAYER_GAP) continue;
       const to = Math.max(OFFSET, cover - LAYER_GAP);
       for (let axis = 0; axis < 3; axis++) pressed[v + axis] -= out[axis]! * (d - to);
+      // Never into bottoms worn under both (the top's hem over their waistband).
+      const need = below?.radius(pressed[v]!, pressed[v + 1]!, pressed[v + 2]!) ?? 0, radius = Math.hypot(pressed[v]!, pressed[v + 2]!);
+      if (need > 0 && radius > 1e-6 && radius < need + LAYER_GAP) { pressed[v] *= (need + LAYER_GAP) / radius; pressed[v + 2] *= (need + LAYER_GAP) / radius; }
     }
     return { part, positions: pressed };
   });
@@ -1107,8 +1113,10 @@ export function canTuck(top: Product): boolean { return !isBottoms(top) && topMe
  * companion's are returned beside its own.
  */
 export function simulateOutfit(design: Product, designMeshes: PartMesh[], companion: Product, companionMeshes: PartMesh[], bodyChest: number,
-  options: { bodyShape?: TopBodyShape; tucked?: boolean; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  options: { bodyShape?: TopBodyShape; tucked?: boolean; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void;
+    also?: { product: Product; meshes: PartMesh[] } } = {}): GarmentDrapeResult {
   const frames = options.frames ?? GARMENT_FRAMES, steps = { ...(options.frames ? { frames } : {}), ...(options.substeps ? { substeps: options.substeps } : {}) };
+  if (options.also) return simulateThreePiece([{ product: design, meshes: designMeshes }, { product: companion, meshes: companionMeshes }, options.also], bodyChest, { ...options, frames, steps });
   const report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 2 * frames);
   // A top over another: both on the outer top's body, the one underneath first; the outer one then rests on it as on a
   // thicker body, and the one underneath is pressed in where the outer one covers it closer. The top underneath must
@@ -1160,3 +1168,51 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
     landmarks: Object.fromEntries(Object.entries(marks).map(([key, value]) => [key, ['waist', 'hip', 'floor'].includes(key) ? value - shift : value])) };
   return { parts: under.parts, metrics: under.metrics, body: own, companion: { parts: back(over.parts), metrics: over.metrics } };
 }
+
+/** Whether three designs make an outfit: a T-shirt under a sweatshirt or hoodie, worn with bottoms. */
+export function threePiece<T extends Pick<Product, 'base'>>(garments: readonly T[]): { inner: T; outer: T; bottoms: T } | null {
+  const bottoms = garments.filter(garment => isBottoms(garment)), tops = garments.filter(garment => !isBottoms(garment));
+  if (garments.length !== 3 || bottoms.length !== 1 || tops.length !== 2) return null;
+  const layers = layerOrder(tops[0]!, tops[1]!);
+  return layers ? { ...layers, bottoms: bottoms[0]! } : null;
+}
+
+/**
+ * Three garments on one body, in the place of the first (the design): the bottoms drape first on the outfit's lower
+ * body, the T-shirt over them, then the sweatshirt or hoodie over both, resting on the T-shirt as on a thicker body
+ * and outside the bottoms; the T-shirt is then pressed in where the outer top covers it. The second and third come
+ * back as `companion` and `also`. Nothing is tucked in.
+ */
+function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[], bodyChest: number,
+  options: { bodyShape?: TopBodyShape; tucked?: boolean; frames: number; steps: { frames?: number; substeps?: number }; progress?: (frame: number, frames: number) => boolean | void }): GarmentDrapeResult {
+  const pieces = threePiece(garments.map(garment => garment.product));
+  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.');
+  if (options.tucked) throw new Error('A three-piece outfit is worn untucked.');
+  const of = (product: Product) => garments.find(garment => garment.product === product)!;
+  const { inner, outer, bottoms } = pieces;
+  if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('The top underneath must be made for the outer top’s arm pose.');
+  const { body, lower, shift } = outfitBodies(outer, bottoms, bodyChest, options.bodyShape);
+  const { frames, steps } = options, report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 3 * frames);
+  const lifted = (parts: GarmentDrapeResult['parts'], by: number) => parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + by : value) }));
+  const legs = simulateGarment(bottoms, of(bottoms).meshes, bodyChest, { ...steps, body: lower, progress: report(0) });
+  const placed = lifted(legs.parts, shift), core = body.torso[1]!.y;
+  const below = layerField(placed.map(({ part, positions }) => ({ positions, indices: of(bottoms).meshes.find(mesh => mesh.part === part)!.indices })), core);
+  const tee = simulateGarment(inner, of(inner).meshes, bodyChest, { ...steps, body, under: below, progress: report(frames) });
+  const top = simulateGarment(outer, of(outer).meshes, bodyChest, { ...steps, body, under: below, inner: innerLayer(tee.parts, body, core), progress: report(2 * frames) });
+  const results = new Map<Product, { parts: GarmentDrapeResult['parts']; metrics: GarmentDrapeMetrics }>([
+    [bottoms, { parts: placed, metrics: legs.metrics }],
+    [inner, { parts: pressUnder(tee.parts, top.parts, body, core, below), metrics: tee.metrics }],
+    [outer, { parts: top.parts, metrics: top.metrics }],
+  ]);
+  // Bottoms are given back in their own place, as alone; tops in the outfit body's.
+  const designIsBottoms = garments[0]!.product === bottoms, back = designIsBottoms ? -shift : 0;
+  const placedFor = (product: Product) => { const result = results.get(product)!; return { parts: back ? lifted(result.parts, back) : result.parts, metrics: result.metrics }; };
+  const moved = (point: Vec): Vec => [point[0], point[1] + back, point[2]];
+  const own = designIsBottoms ? { ...body, torso: body.torso.map(section => ({ ...section, y: section.y + back })), capsules: body.capsules.map(capsule => ({ ...capsule, a: moved(capsule.a), b: moved(capsule.b) })),
+    ...(body.bottom === undefined ? {} : { bottom: body.bottom + back }),
+    landmarks: Object.fromEntries(Object.entries(body.landmarks ?? {}).map(([key, value]) => [key, ['waist', 'hip', 'floor'].includes(key) ? value + back : value])) } : body;
+  const [first, second, third] = garments.map(garment => placedFor(garment.product)) as [ReturnType<typeof placedFor>, ReturnType<typeof placedFor>, ReturnType<typeof placedFor>];
+  const ownMetrics = designIsBottoms ? legs.metrics : first.metrics;
+  return { parts: first.parts, metrics: ownMetrics, body: own, companion: second, also: third };
+}
+
