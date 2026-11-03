@@ -10,10 +10,14 @@ export type Base = typeof BASES[number];
 export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie', trousers: 'Pull-on trousers', skirt: 'Flared skirt' };
 /** A top at least this long (cm, shoulder to hem) reaches past the hips and is worn as a dress. */
 export const DRESS_LENGTH = 85;
+/** A top at most this long ends above the waist: a crop top. */
+export const CROP_LENGTH = 52;
+const CROP_NAMES: Partial<Record<Base, string>> = { tee: 'Crop top', sweatshirt: 'Cropped sweatshirt', hoodie: 'Cropped hoodie' };
 const DRESS_NAMES: Partial<Record<Base, string>> = { tee: 'T-shirt dress', sweatshirt: 'Sweatshirt dress', hoodie: 'Hoodie dress' };
 /** What the garment is, as a buyer or factory would call it: a long top is a dress and short trousers are shorts. */
 export function garmentName(product: Pick<Product, 'base' | 'measurements'>): string {
   if (product.base === 'trousers') return legMeasurements(product).inseam < 35 ? 'Pull-on shorts' : BASE_NAMES.trousers;
+  if (product.base !== 'skirt' && topMeasurements(product).length <= CROP_LENGTH) return sleeveless(product) ? 'Cropped tank top' : CROP_NAMES[product.base]!;
   if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
   if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return DRESS_NAMES[product.base]!;
   return BASE_NAMES[product.base];
@@ -175,7 +179,7 @@ export interface Product {
 }
 
 export const LIMITS = {
-  chest: [80, 150], length: [55, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  chest: [80, 150], length: [40, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
   fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
@@ -378,6 +382,8 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'tank-top', name: 'Tank top', description: 'Black cotton jersey, sleeveless, with narrow shoulders and a low front neck.',
     product: { base: 'tee', name: 'Tank top', measurements: { chest: 96, length: 68, sleeve: 0 }, neckline: 'crew', fit: { shoulderWidth: 34, neckWidth: 18, armholeDepth: 24, frontNeckDrop: 12 },
       parts: Object.fromEntries(Object.entries(allParts(style('jersey-180', '#1d1f1e'))).filter(([id]) => !id.startsWith('sleeve'))) as Record<PartId, PartStyle>, artwork: [] } },
+  { id: 'crop-top', name: 'Crop top', description: 'A boxy cropped tee in sage cotton jersey that ends above the waist.',
+    product: { base: 'tee', name: 'Crop top', measurements: { chest: 100, length: 46, sleeve: 19 }, neckline: 'crew', parts: allParts(style('jersey-180', '#9fae91'), { neckband: style('rib-220', '#9fae91') }), artwork: [] } },
   { id: 'tee-dress', name: 'T-shirt dress', description: 'A knee-length jersey dress that flares gently from the hips.',
     product: { base: 'tee', name: 'T-shirt dress', measurements: { ...measurements, length: 100 }, neckline: 'crew', fit: { hemWidth: 64 },
       parts: allParts(style('jersey-240', '#2f3b33'), { neckband: style('rib-220', '#2f3b33') }), artwork: [] } },

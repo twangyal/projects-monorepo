@@ -15,7 +15,8 @@ export interface DesignReading { product: Product; scopes: DesignScope[]; ignore
 
 /** The template a garment word starts from, and its base. */
 const GARMENTS: [RegExp, string, Base][] = [
-  // A tank top is a sleeveless tee.
+  // A tank top is a sleeveless tee, and a crop top a short one.
+  [/\bcrop(?:ped)? tops?\b/, 'crop-top', 'tee'],
   [/\b(?:tank|vest|sleeveless) tops?\b|\btanks?\b|\bsinglets?\b/, 'blank', 'tee'],
   // Dresses are long tops; a plain "dress" keeps the current top's base.
   [/\b(?:hoodie|hooded) dress(?:es)?\b/, 'hoodie', 'hoodie'],
@@ -92,12 +93,17 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       const inseam = id === 'shorts' ? 18 : 78;
       product.measurements = { ...legMeasurements(product), inseam };
       garment.push(`${id === 'shorts' ? 'shorts' : 'full-length legs'}: ${inseam} cm inseam`);
+    } else if (base === product.base && id === 'crop-top') {
+      // A tee described as a crop top keeps its styling and is shortened to end above the waist.
+      const length = Math.min(topMeasurements(product).length, topMeasurements(template('crop-top')).length);
+      product.measurements = { ...topMeasurements(product), length };
+      garment.push(`garment: ${garmentName(product)}, ${length} cm long`);
     } else if (base === product.base) {
       garment.push(`garment: ${BASE_NAMES[base]}`);
     } else {
       // A new garment starts from its template; the design's spec and uploaded motifs stay with it.
       product = { ...template(id), ...(current.spec ? { spec: current.spec } : {}), ...(current.motifs ? { motifs: current.motifs } : {}) };
-      garment.push(`garment: ${BASE_NAMES[base]}, started from its template`);
+      garment.push(`garment: ${garmentName(product)}, started from its template`);
     }
     break;
   }
@@ -138,7 +144,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
     if (chest !== null) next.chest = clampTo(LIMITS.chest as readonly [number, number], r.chest + chest);
-    if (cropped) next.length = clampTo(LIMITS.length as readonly [number, number], r.length - 10);
+    // Cropped ends above the waist, as crop tops do.
+    if (cropped) next.length = clampTo(LIMITS.length as readonly [number, number], Math.min(m.length, r.length - 20));
     if (chest !== null) garment.push(`fit: ${next.chest} cm chest`);
     if (cropped) garment.push(`cropped: ${next.length} cm length`);
     product.measurements = next;
