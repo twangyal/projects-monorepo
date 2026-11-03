@@ -790,6 +790,40 @@ export function unhover(element) {
   return { ok: true, message: 'Left the menu.' };
 }
 
+// What a control change replaces, kept so "undo" straight afterwards can put it back: a checkbox's or switch's state, a
+// section's open state, a native dropdown's chosen option, or the radio button chosen in the group before.
+export function rememberChange(type, element) {
+  if (type === 'check') return { type, element, before: element.tagName === 'INPUT' ? element.checked : element.getAttribute('aria-checked') === 'true' };
+  if (type === 'disclosure') {
+    const details = element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS' ? element.parentElement : null;
+    return { type, element, before: details ? details.open : element.getAttribute('aria-expanded') === 'true' };
+  }
+  if (type === 'select-option') return element.tagName === 'SELECT' && !element.multiple ? { type, element, before: element.selectedIndex } : null;
+  if (type === 'select-radio') {
+    if (element.tagName === 'INPUT' && element.type === 'radio') {
+      const root = element.form ?? element.getRootNode();
+      const chosen = [...root.querySelectorAll('input[type="radio"]')].find(radio => radio.name === element.name && radio.form === element.form && radio.checked);
+      return { type, element, before: chosen ?? null };
+    }
+    return { type, element, before: element.closest('[role="radiogroup"]')?.querySelector('[role="radio"][aria-checked="true"]') ?? null };
+  }
+  return null;
+}
+/** Puts back what `rememberChange` kept, through the same checked actions. */
+export function revertChange(change) {
+  switch (change.type) {
+    case 'check': return setChecked(change.element, change.before);
+    case 'disclosure': return setExpanded(change.element, change.before);
+    case 'select-option':
+      return change.before >= 0 ? selectOption(change.element, change.before, captureSelectSnapshot(change.element))
+        : { ok: false, message: 'Nothing was chosen in that list before, so there is nothing to put back.' };
+    case 'select-radio':
+      return change.before?.isConnected ? selectRadio(change.before)
+        : { ok: false, message: 'Nothing was chosen in that group before, and a radio button cannot be cleared.' };
+    default: return { ok: false, message: 'That change cannot be undone.' };
+  }
+}
+
 export function selectOption(element, optionIndex, snapshot) {
   const available = () => element.tagName === 'SELECT' && element.isConnected &&
     !element.multiple && !element.readOnly && unlocked(element);

@@ -15,6 +15,10 @@ const hostOf = url => { try { return new URL(url).host; } catch { return 'the we
 const AGAIN_MS = 120000;
 // How long after a fill of saved details "undo" takes it back.
 const FILL_UNDO_MS = 120000;
+// How long after a checkbox, section, dropdown or radio button is changed "undo" puts it back.
+const CHANGE_UNDO_MS = 120000;
+const UNDO_WORDS = /^(?:undo|undo (?:that|it|this|the last (?:change|one))|take (?:that|it) back|put it back|change it back|scratch that)[.!]*$/i;
+const UNDOABLE = new Set(['check', 'disclosure', 'select-option', 'select-radio']);
 const PREVIOUS_ID = 199;
 const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
@@ -38,6 +42,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
+  // The last control change "undo" can put back, and when text was last typed: the more recent of the two is undone.
+  let changed = null, editedAt = -Infinity;
   // The control last pointed at to open its menu ("show the Shop menu"), left again by "close the menu".
   let hovered = null;
   // The last scroll, back or forward, zoom step or press of an ordinary control, which "again" repeats in the same place.
@@ -165,6 +171,8 @@ export function createController({ window, actions = pageActions, interpret = in
     const problem = writingProblem(action, element, context);
     if (problem) return problem;
     let result;
+    const remembered = UNDOABLE.has(action.type) && actions.rememberChange ? actions.rememberChange(action.type, element) : null;
+    const keep = outcome => { if (outcome.ok && remembered) changed = { change: remembered, at: now() }; };
     switch (action.type) {
       case 'disclosure': result = actions.setExpanded(element, action.expanded, target.disclosureSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'select-radio': result = actions.selectRadio(element, target.radioSnapshot); break;
@@ -295,12 +303,16 @@ export function createController({ window, actions = pageActions, interpret = in
       default: return reply('That action is not supported yet.', 'error');
     }
     if (result.followUp) {
+      // A change checked afterwards can be undone straight away, unless the check finds it did not happen.
+      const mine = remembered ? (changed = { change: remembered, at: now() }) : null;
       const followUp = Promise.resolve(result.followUp)
         .catch(() => ({ ok: false, message: 'The website state could not be checked. Check the control before continuing.' }))
+        .then(later => { if (!later.ok && mine && changed === mine) changed = null; return later; })
         .then(later => executionTurn === turn && !paused
           ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
       return reply(result.message, 'info', { performed: null, followUp });
     }
+    keep(result);
     if (result.ok && target) previous = { target, at: now() };
     if (result.ok && (['scroll', 'back', 'forward'].includes(action.type) || (action.type === 'activate' && target && !confirmable(action, target)))) last = { action, context, at: now() };
     // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
@@ -334,6 +346,7 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     if (change.kind === 'undo') values.pop();
     else remember(element);
+    editedAt = now();
     actions.writeValue(element, after, change.kind === 'insert-selection'
       ? { caret: selection.start + change.text.length } : undefined);
     // A sensitive field's text is never echoed: the message is shown, announced and may be spoken aloud.
@@ -368,6 +381,17 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type !== 'confirm') filled = null;
     if (fill && /^undo(?: that| it| filling| the fill)?[.!]*$/i.test(String(utterance ?? '').trim()) && now() - fill.at <= FILL_UNDO_MS && commands.details) {
       return reply(commands.details.restore(fill.entries).message, 'success');
+    }
+    // "Undo" straight after a checkbox, section, dropdown or radio button changed puts it back, unless text was typed since.
+    const change = changed;
+    if (change && UNDO_WORDS.test(String(utterance ?? '').trim()) && now() - change.at <= CHANGE_UNDO_MS && change.at > editedAt) {
+      changed = null;
+      const result = actions.revertChange(change.change), said = outcome => reply(outcome.ok ? `Undone. ${outcome.message}` : outcome.message, outcome.ok ? 'success' : 'error', { performed: outcome.ok ? 'undo' : null });
+      if (!result.followUp) return said(result);
+      const turnNow = turn;
+      return reply('Putting it back…', 'info', { performed: null, followUp: Promise.resolve(result.followUp)
+        .catch(() => ({ ok: false, message: 'The website state could not be checked. Check the control before continuing.' }))
+        .then(later => (turnNow === turn && !paused ? said(later) : null)) });
     }
     if (action.type === 'cancel') {
       const had = pending;
