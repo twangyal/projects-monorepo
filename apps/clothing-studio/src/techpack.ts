@@ -3,7 +3,7 @@ import { skirtBandHeight, skirtDraft, skirtGather, skirtPanelDraft, skirtPieces 
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, NECK_RIB_RATIO, garmentName, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, PLACKET_CM, garmentName, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -95,6 +95,8 @@ function samplePack(product: Product, date: string): TechPack {
     pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.hemHalf * 2, 2.5, 1),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
     ...(product.base === 'hoodie' ? [pom('K', 'Hood side height', 'Side pattern base to top; no seam allowance; 3D crown is illustrative', dims.hoodHeight, 0.5, 1)]
+      : modules.collar ? [pom('K', 'Collar height', 'Finished, neckline seam to the folded edge at centre back', COLLAR_CM, 0, 0.25),
+        pom('W', 'Placket length', 'Neckline seam at centre front to the bottom of the placket', PLACKET_CM.length, 0, 0.5)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
     ...(product.base === 'tee' ? [] : [
       pom('L', 'Cuff height', 'Finished rib cuff', dims.cuffHeight, 0, 0.25),
@@ -124,6 +126,11 @@ function samplePack(product: Product, date: string): TechPack {
         { area: 'Centre-front zip', operation: 'Set the open-end zip between the front halves through the hem band; topstitch 0.6 cm each side', detail: `Fronts cut 2 (a mirrored pair); zip ${cm(zipLength(product))}, top stop at the neckline seam` },
         { area: 'Kangaroo pocket', operation: 'Turn each pocket opening 2 cm and coverstitch; edgestitch the halves to the fronts', detail: `Halves cut 2, each ${cm(dims.pocketHalfBottom)} wide at the bottom, stopping ${cm(ZIP_CLEAR)} short of the zip; sides caught in the hem band seam` },
       ] : [{ area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` }]),
+    ] : modules.collar ? [
+      { area: 'Placket', operation: 'Cut the centre-front opening; attach the folded placket pieces, lap left over right and box-stitch the base',
+        detail: `${cm(PLACKET_CM.width)} wide × ${cm(PLACKET_CM.length)} long finished; ${PLACKET_CM.buttons} buttonholes on the wearer's left, buttons on the right` },
+      { area: 'Collar', operation: 'Overlock the flat-knit collar to the neckline between the placket edges, then cover the seam with back-neck tape',
+        detail: `Collar ${cm(COLLAR_CM)} finished, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` },
     ] : [{ area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long (${Math.round((1 - NECK_RIB_RATIO) * 100)}% shorter than the flat neckline sewing path; confirm for the chosen rib), ${cm(dims.ribHeight)} finished` }]),
     armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
       : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },

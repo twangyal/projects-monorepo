@@ -64,7 +64,7 @@ export function bendingLength(fabric: Material): number {
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
-const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35]]);
+const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25]]);
 
 export const BODY_CHEST = [70, 140] as const;
 export const BODY_WAIST = [50, 180] as const;
@@ -580,8 +580,9 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   }
   const inverseMass = Float32Array.from(mass, m => (m > 0 ? 1 / m : 0)), offset = new Float32Array(inverseMass.length).fill(OFFSET);
   const sewn = new Set<number>();
-  for (const [part, ids] of vertices) if (part !== 'hood') for (const id of ids) sewn.add(id);
-  for (const id of vertices.get('hood') ?? []) if (!sewn.has(id)) offset[id] = HOOD_OFFSET;
+  for (const [part, ids] of vertices) if (part !== 'hood' && part !== 'collar') for (const id of ids) sewn.add(id);
+  // A hood worn down, and a polo collar folded down, lie over the garment: they keep a layer's distance more.
+  for (const id of [...vertices.get('hood') ?? [], ...vertices.get('collar') ?? []]) if (!sewn.has(id)) offset[id] = HOOD_OFFSET;
   return { offset, positions: Float32Array.from(position), inverseMass, a: Int32Array.from(a), b: Int32Array.from(b), rest: Float32Array.from(rest), compliance: Float32Array.from(compliance), structural: Uint8Array.from(structural), vertices, carried,
     bendParticles: Int32Array.from(bendParticles), bendWeights: Float32Array.from(bendWeights), bendStiffness: Float32Array.from(bendStiffness) };
 }

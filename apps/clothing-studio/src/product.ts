@@ -24,15 +24,20 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   // A hoodie with a front zip is a zip hoodie, cropped or as a dress too.
   const zip = (name: string) => (product.base !== 'hoodie' || !product.options?.zip ? name
     : name === BASE_NAMES.hoodie ? 'Zip hoodie' : name.replace(/hoodie/i, match => `${match[0] === 'H' ? 'Zip' : 'zip'} ${match.toLowerCase()}`));
+  // A tee with a polo collar is a polo, cropped or long too.
+  if (product.base === 'tee' && product.options?.collar) {
+    const length = topMeasurements(product).length;
+    return length <= CROP_LENGTH ? 'Cropped polo' : length >= DRESS_LENGTH ? 'Polo dress' : sleeveless(product) ? 'Sleeveless polo' : 'Polo shirt';
+  }
   if (product.base !== 'skirt' && topMeasurements(product).length <= CROP_LENGTH) return zip(sleeveless(product) ? 'Cropped tank top' : CROP_NAMES[product.base]!);
   if (sleeveless(product)) return topMeasurements(product).length >= DRESS_LENGTH ? 'Tank dress' : 'Tank top';
   if (product.base !== 'skirt' && topMeasurements(product).length >= DRESS_LENGTH) return zip(DRESS_NAMES[product.base]!);
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
-  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband' };
+  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -67,7 +72,7 @@ export function sleeveAngleOf(product: Product): number { return SLEEVE_POSE.get
 /** A copy of `product` made and draped with its arms at `angle` degrees below the horizontal. */
 export function withSleeveAngle(product: Product, angle: number): Product { const copy = { ...product }; SLEEVE_POSE.set(copy, angle); return copy; }
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
-export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
+export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'collar']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
 export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pick<Product, 'measurements'>>): readonly PartId[] {
   const parts = product.base === 'skirt' && (product.measurements as SkirtMeasures | undefined)?.waistbandHeight
@@ -75,7 +80,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
     : product.base === 'trousers' && (product.measurements as LegMeasurements | undefined)?.cuffHeight
       ? [...BASE_PARTS.trousers, 'cuffLeft' as const, 'cuffRight' as const] : BASE_PARTS[product.base];
   const kept = sleeveless(product) ? parts.filter(part => part !== 'sleeveLeft' && part !== 'sleeveRight') : parts;
-  return optionsOf(product).chestPocket ? [...kept, 'chestPocket'] : kept;
+  // A polo's knit collar takes the neck rib's place, and its buttoned placket lies on the front.
+  const collared = optionsOf(product).collar ? [...kept.filter(part => part !== 'neckband'), 'collar' as const, 'placket' as const] : kept;
+  return optionsOf(product).chestPocket ? [...collared, 'chestPocket'] : collared;
 }
 
 /**
@@ -134,12 +141,16 @@ export const HEMS = ['straight', 'curved'] as const;
 export type Hem = typeof HEMS[number];
 export const HEM_NAMES: Record<Hem, string> = { straight: 'Straight', curved: 'Curved shirttail' };
 export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zip (hoodies): the front is cut as two halves. */ zip?: boolean;
-  /** A zip hoodie worn open: in 3D its front halves and hem band are not joined at the centre front, so they hang apart. */ zipOpen?: boolean }
+  /** A zip hoodie worn open: in 3D its front halves and hem band are not joined at the centre front, so they hang apart. */ zipOpen?: boolean;
+  /** A polo (tees): a flat-knit collar instead of the neck rib, and a buttoned placket at the centre front. */ collar?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
 export function chestPocketAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 export function zipAllowed(base: Base): boolean { return base === 'hoodie'; }
+export function collarAllowed(base: Base): boolean { return base === 'tee'; }
+/** A polo's flat-knit collar, its finished height from the neckline seam to its folded edge, and its placket, cm. */
+export const COLLAR_CM = 7, PLACKET_CM = { length: 14, width: 3, buttons: 3 } as const;
 /** A front zip's length: from the centre-front neck down through the hem band. */
 export function zipLength(product: Product): number { const d = teeDimensions(product); return Math.round((d.length - d.neckDepthFront) * 2) / 2; }
 /** Sleeve-length presets in cm; the measurement stays editable. */
@@ -153,7 +164,17 @@ export function sleeveless(product: Pick<Product, 'base'> & Partial<Pick<Product
 export function withOptions(product: Product, next: Options): Product {
   if (!hemAllowed(product.base, next.hem)) fail(`A ${BASE_NAMES[product.base].toLowerCase()} has a rib hem band, so its hem stays straight.`);
   if (next.chestPocket && !chestPocketAllowed(product.base)) fail(product.base === 'hoodie' ? 'A hoodie has a kangaroo pocket instead of a chest pocket.' : 'A chest pocket goes on a top.');
+  if (next.collar && !collarAllowed(product.base)) fail('A polo collar goes on a T-shirt.');
+  if (next.collar && product.neckline !== 'crew') fail('A polo has a round neck under its collar; choose the crew neckline first.');
   const draft = structuredClone(product);
+  // The collar takes the neck rib's style, and the placket the front's; taking them off gives the rib back.
+  const setCollar = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (next.collar) { all.collar ??= structuredClone(all.neckband ?? { ...parts.front, material: 'rib-220', print: null }); all.placket ??= structuredClone(parts.front); delete all.neckband; }
+    else if (all.collar) { all.neckband ??= structuredClone(all.collar); delete all.collar; delete all.placket; }
+  };
+  setCollar(draft.parts);
+  for (const colorway of draft.colorways ?? []) setCollar(colorway.parts);
   const setPocket = (parts: Record<PartId, PartStyle>) => {
     if (next.chestPocket) parts.chestPocket ??= structuredClone(parts.front);
     else delete (parts as Partial<Record<PartId, PartStyle>>).chestPocket;
@@ -370,7 +391,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -379,7 +400,10 @@ export function validateProduct(value: unknown): Product {
     if (o.zip && !zipAllowed(base)) fail('Only a hoodie can have a front zip.');
     if (o.zipOpen !== undefined && typeof o.zipOpen !== 'boolean') fail('An open zip must be open or closed.');
     if (o.zipOpen && !o.zip) fail('Only a zip hoodie can be worn open.');
-    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true, ...(o.zipOpen ? { zipOpen: true } : {}) } : {}) };
+    if (o.collar !== undefined && typeof o.collar !== 'boolean') fail('A polo collar must be on or off.');
+    if (o.collar && !collarAllowed(base)) fail('A polo collar goes on a T-shirt.');
+    if (o.collar && p.neckline !== 'crew') fail('A polo has a round neck under its collar.');
+    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true, ...(o.zipOpen ? { zipOpen: true } : {}) } : {}), ...(o.collar ? { collar: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -419,6 +443,12 @@ const style = (material: string, color: string, print: Print | null = null): Par
 const allParts = (part: PartStyle, overrides: Partial<Record<PartId, PartStyle>> = {}, base: Base = 'tee') =>
   Object.fromEntries(BASE_PARTS[base].map(id => [id, overrides[id] ?? (RIB_PARTS.has(id) ? { ...part, material: 'rib-220', print: null } : part)])) as Record<PartId, PartStyle>;
 const measurements: Measurements = { chest: 104, length: 72, sleeve: 21 };
+// A polo's parts: the body fabric, a matching flat-knit collar in place of the neck rib, and a placket.
+const polo = (body: PartStyle) => {
+  const parts: Partial<Record<PartId, PartStyle>> = allParts(body);
+  delete parts.neckband;
+  return { ...parts, collar: { ...body, material: 'rib-220', print: null }, placket: { ...body } } as Record<PartId, PartStyle>;
+};
 const fleece: Measurements = { chest: 112, length: 70, sleeve: 62 };
 const legFit: LegMeasurements = { waist: 76, hip: 102, rise: 28, inseam: 78, legOpening: 42 };
 
@@ -443,6 +473,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'tee-dress', name: 'T-shirt dress', description: 'A knee-length jersey dress that flares gently from the hips.',
     product: { base: 'tee', name: 'T-shirt dress', measurements: { ...measurements, length: 100 }, neckline: 'crew', fit: { hemWidth: 64 },
       parts: allParts(style('jersey-240', '#2f3b33'), { neckband: style('rib-220', '#2f3b33') }), artwork: [] } },
+  { id: 'polo', name: 'Polo shirt', description: 'Navy cotton piqué with a flat-knit collar and a three-button placket.',
+    product: { base: 'tee', name: 'Polo shirt', measurements: { ...measurements, chest: 106, length: 72, sleeve: 22 }, neckline: 'crew', options: { hem: 'straight', chestPocket: false, collar: true },
+      parts: polo(style('pique-200', '#1f2a4f')), artwork: [] } },
   { id: 'crew-sweat', name: 'Crew sweatshirt', description: 'Heather grey French terry with rib neck, cuffs and hem.',
     product: { base: 'sweatshirt', name: 'Crew sweatshirt', measurements: fleece, neckline: 'crew', parts: allParts(style('terry-300', '#b7b4ad'), {}, 'sweatshirt'), artwork: [] } },
   { id: 'sweat-dress', name: 'Sweatshirt dress', description: 'Oatmeal French terry, long sleeves and a rib hem above the knee.',
@@ -869,7 +902,11 @@ export function patternPieces(product: Product): PatternPiece[] {
   const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
   if (product.base === 'tee') {
     const sleeves = sleeveless(product) ? [] : [make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1)];
-    return [make('front', body(true), 1), make('back', body(false), 1), ...sleeves, make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
+    // A polo's flat-knit collar is as long as the neckline between the placket's edges; its placket is cut as a folded pair.
+    const neck = optionsOf(product).collar
+      ? [make('collar', rect(dims.ribLength / NECK_RIB_RATIO - PLACKET_CM.width, COLLAR_CM), 1), make('placket', rect(PLACKET_CM.width * 2, PLACKET_CM.length), 2)]
+      : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)];
+    return [make('front', body(true), 1), make('back', body(false), 1), ...sleeves, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = product.base === 'hoodie' && !!optionsOf(product).zip;
@@ -1005,6 +1042,11 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     fillRegion(groups.get('chestPocket')!, chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY),
       Delaunator, p => rise(p) + 0.35, top, 'front');
   }
+  if (optionsOf(product).collar) {
+    // A polo's placket: a strip down the centre front from the neckline, slightly proud of the front body.
+    const y0 = dims.neckDepthFront, y1 = dims.neckDepthFront + PLACKET_CM.length, x = PLACKET_CM.width / 2;
+    fillRegion(groups.get('placket')!, [{ x: -x, y: y0 }, { x, y: y0 }, { x, y: y1 }, { x: -x, y: y1 }], Delaunator, p => rise(p) + 0.25, top, 'front');
+  }
   // Sleeves, posed along the sleeve angle like the body's arms; flat directions have y down. A sleeveless top's
   // armholes stay open.
   const sleeve = sleeveOutline(product), angle = dims.sleeveAngle * Math.PI / 180, along = { x: Math.cos(angle), y: Math.sin(angle) }, across = { x: -Math.sin(angle), y: Math.cos(angle) };
@@ -1057,6 +1099,7 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   // The open neck edge, front curve (left to right) then back curve (right to left).
   const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
   if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, neck, new Set(front.neck.map((_, i) => i)), dims, hoodOutline(product));
+  else if (optionsOf(product).collar) collarMesh(groups.get('collar')!, neck, front.neck.length, COLLAR_CM, PLACKET_CM.width);
   else neckRib(groups.get('neckband')!, neck, dims.ribHeight);
   return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
 }
@@ -1129,6 +1172,38 @@ function neckRib(rib: PartMesh, ring: { x: number; y: number; z: number }[], wid
     if (i) { const a = (i - 1) * 2, b = a + 1, c = i * 2, d = c + 1; rib.indices.push(a, c, b, b, c, d); }
   });
   { const last = (ring.length - 1) * 2; rib.indices.push(last, 0, last + 1, last + 1, 0, 1); }
+}
+
+/**
+ * A polo's flat-knit collar, already folded down as worn. It runs from one edge of the placket round the back of the neck
+ * to the other, so its two ends make the collar points either side of the placket. From the neck edge it stands up
+ * COLLAR_STAND cm, then falls outward and down for the rest of its height: steeply over the chest and back, flatter over
+ * the shoulders. Flat, it is a rectangle, so its knit stretches round the fall's longer outer edge. `ring` is the neck
+ * edge, its first `frontCount` points the front curve.
+ */
+const COLLAR_STAND = 1.8;
+function collarMesh(collar: PartMesh, ring: P3[], frontCount: number, height: number, opening: number) {
+  const front = ring.slice(0, frontCount), crossing = front.findIndex((p, k) => k > 0 && Math.sign(p.x) !== Math.sign(front[k - 1]!.x));
+  // The ends are the neck-edge points nearest the placket's edges; a point the front and back curves share is kept once.
+  const clear = (p: P3) => Math.abs(p.x) >= (opening - MESH_STEP) / 2;
+  const neck = [...front.slice(crossing).filter(clear), ...ring.slice(frontCount), ...front.slice(0, crossing).filter(clear)]
+    .filter((p, i, all) => i === 0 || Math.hypot(p.x - all[i - 1]!.x, p.y - all[i - 1]!.y, p.z - all[i - 1]!.z) > 1e-6);
+  const centreZ = ring.reduce((sum, p) => sum + p.z, 0) / ring.length, fall = height - COLLAR_STAND;
+  const out = (p: P3) => { const dx = p.x, dz = p.z - centreZ, length = Math.hypot(dx, dz) || 1; return { x: dx / length, z: dz / length }; };
+  const stand = neck.map(p => ({ x: p.x * 1.04, y: p.y + COLLAR_STAND, z: centreZ + (p.z - centreZ) * 1.04 }));
+  const folded = stand.map(p => {
+    const o = out(p), angle = (37 + 43 * Math.abs(o.z) ** 2) * Math.PI / 180, across = fall * Math.cos(angle);
+    return { x: p.x + o.x * across, y: p.y - fall * Math.sin(angle), z: p.z + o.z * across };
+  });
+  // The flat piece is a rectangle as long as the neck edge: the fall's outer edge stretches over the shoulders.
+  const rows = [neck, stand, folded], heights = [0, COLLAR_STAND, height], columns = neck.length, lengths = [0];
+  for (let i = 1; i < columns; i++) { const a = neck[i - 1]!, b = neck[i]!; lengths.push(lengths[i - 1]! + Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z)); }
+  const middle = lengths[columns - 1]! / 2;
+  rows.forEach((row, r) => row.forEach((p, i) => { collar.positions.push(p.x, p.y, p.z); collar.uvs.push(lengths[i]! - middle, heights[r]!); }));
+  for (let r = 0; r < 2; r++) for (let i = 0; i < columns - 1; i++) {
+    const a = r * columns + i, b = a + 1, c = a + columns, d = b + columns;
+    collar.indices.push(a, c, b, b, c, d);
+  }
 }
 
 /**

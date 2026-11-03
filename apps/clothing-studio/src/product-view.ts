@@ -12,7 +12,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, collarAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -99,7 +99,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> Polo collar and placket</label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -840,6 +840,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const hem = ($('product-hem') as HTMLSelectElement).value as (typeof HEMS)[number];
     setModules(current => ({ ...current, hem }), `${HEM_NAMES[hem]} hem: the 3D garment, pattern pieces and tech pack follow it.`);
   });
+  $('product-collar').addEventListener('change', () => {
+    const on = ($('product-collar') as HTMLInputElement).checked;
+    if (on) selected = 'collar';
+    else if (selected === 'collar' || selected === 'placket') selected = 'front';
+    setModules(current => { const others = { ...current }; delete others.collar; return on ? { ...others, collar: true } : others; },
+      on ? 'Polo collar and placket added: a flat-knit collar in the neck rib’s style, and a three-button placket. You can undo this.' : 'Polo collar removed: a round neck rib again. You can undo this.');
+  });
   $('product-zip').addEventListener('change', () => {
     const on = ($('product-zip') as HTMLInputElement).checked;
     setModules(current => { const others = { ...current }; delete others.zip; delete others.zipOpen; return on ? { ...others, zip: true } : others; },
@@ -1167,6 +1174,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-hem') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=curved]')!.disabled = !hemAllowed(design.base, 'curved');
     $('pocket-fit-fields').hidden = !modules.chestPocket;
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
+    const collar = $('product-collar') as HTMLInputElement;
+    collar.checked = !!modules.collar; collar.disabled = !collarAllowed(design.base) || design.neckline !== 'crew'; collar.closest('label')!.hidden = !collarAllowed(design.base);
     const zip = $('product-zip') as HTMLInputElement;
     zip.checked = !!modules.zip; zip.disabled = !zipAllowed(design.base); zip.closest('label')!.hidden = !zipAllowed(design.base);
     const open = $('product-zip-open') as HTMLInputElement;

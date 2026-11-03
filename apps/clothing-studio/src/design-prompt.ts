@@ -26,6 +26,7 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
+  [/\bpolo(?: shirt)?s?\b/, 'polo', 'tee'],
   [/\b(t-?shirts?|tees?)\b/, 'blank', 'tee'],
   [/\bshorts\b/, 'shorts', 'trousers'],
   [/\b(joggers|sweat ?pants|track ?pants|jogging bottoms|track ?suit bottoms)\b/, 'joggers', 'trousers'],
@@ -103,6 +104,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
         garment.push('ankle cuffs: joggers');
       }
+    } else if (base === product.base && id === 'polo') {
+      // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
+      product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
+      garment.push(`garment: ${garmentName(product)}`);
     } else if (base === product.base && id === 'crop-top') {
       // A tee described as a crop top keeps its styling and is shortened to end above the waist.
       const length = Math.min(topMeasurements(product).length, topMeasurements(template('crop-top')).length);
