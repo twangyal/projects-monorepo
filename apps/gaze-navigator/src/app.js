@@ -397,6 +397,9 @@ setupWorkspace(document, () => {
   resetTracking(true);
 }, keyboard.close);
 simulateButton.addEventListener('click', enableSimulation);
+// The mode buttons start disabled in the page and work from here on, so an early click is never silently lost.
+startButton.disabled = false;
+simulateButton.disabled = false;
 recalibrateButton.addEventListener('click', () => {
   accuracyButton.disabled = true;
   accuracy.cancel();
