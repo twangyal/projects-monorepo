@@ -99,7 +99,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -800,8 +800,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   });
   $('product-zip').addEventListener('change', () => {
     const on = ($('product-zip') as HTMLInputElement).checked;
-    setModules(current => { const others = { ...current }; delete others.zip; return on ? { ...others, zip: true } : others; },
+    setModules(current => { const others = { ...current }; delete others.zip; delete others.zipOpen; return on ? { ...others, zip: true } : others; },
       on ? 'Front zip added: the front, pocket and hem band are cut as halves, and the tech pack lists the zip. You can undo this.' : 'Front zip removed: a pullover hoodie again. You can undo this.');
+  });
+  $('product-zip-open').addEventListener('change', () => {
+    const on = ($('product-zip-open') as HTMLInputElement).checked;
+    setModules(current => { const others = { ...current }; delete others.zipOpen; return on ? { ...others, zipOpen: true } : others; },
+      on ? 'Worn open: the front halves and hem band part at the zip, and hang apart when draped. You can undo this.' : 'Zipped up again. You can undo this.');
   });
   $('product-chest-pocket').addEventListener('change', () => {
     const on = ($('product-chest-pocket') as HTMLInputElement).checked;
@@ -1122,6 +1127,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
     const zip = $('product-zip') as HTMLInputElement;
     zip.checked = !!modules.zip; zip.disabled = !zipAllowed(design.base); zip.closest('label')!.hidden = !zipAllowed(design.base);
+    const open = $('product-zip-open') as HTMLInputElement;
+    open.checked = !!modules.zipOpen; open.disabled = !modules.zip; open.closest('label')!.hidden = !zipAllowed(design.base);
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;

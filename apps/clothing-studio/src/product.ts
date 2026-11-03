@@ -14,6 +14,8 @@ export const DRESS_LENGTH = 85;
 export const CROP_LENGTH = 52;
 /** Half the gap a zip hoodie's pocket halves leave for the zip, cm. */
 export const ZIP_CLEAR = 1.2;
+/** Half the parting between an open zip's front halves in 3D, cm. */
+export const OPEN_ZIP_GAP = 0.15;
 const CROP_NAMES: Partial<Record<Base, string>> = { tee: 'Crop top', sweatshirt: 'Cropped sweatshirt', hoodie: 'Cropped hoodie' };
 const DRESS_NAMES: Partial<Record<Base, string>> = { tee: 'T-shirt dress', sweatshirt: 'Sweatshirt dress', hoodie: 'Hoodie dress' };
 /** What the garment is, as a buyer or factory would call it: a long top is a dress and short trousers are shorts. */
@@ -94,7 +96,8 @@ export function withSkirtWaistband(product: Product, height: number): Product {
 export const HEMS = ['straight', 'curved'] as const;
 export type Hem = typeof HEMS[number];
 export const HEM_NAMES: Record<Hem, string> = { straight: 'Straight', curved: 'Curved shirttail' };
-export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zip (hoodies): the front is cut as two halves. */ zip?: boolean }
+export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zip (hoodies): the front is cut as two halves. */ zip?: boolean;
+  /** A zip hoodie worn open: in 3D its front halves and hem band are not joined at the centre front, so they hang apart. */ zipOpen?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -326,14 +329,16 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, Object.hasOwn(p.options as object, 'zip') ? ['hem', 'chestPocket', 'zip'] : ['hem', 'chestPocket'], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
     if (!hemAllowed(base, o.hem as Hem)) fail('Only a tee can have a curved hem; banded hems stay straight.');
     if (o.chestPocket && !chestPocketAllowed(base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
     if (o.zip && !zipAllowed(base)) fail('Only a hoodie can have a front zip.');
-    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}) };
+    if (o.zipOpen !== undefined && typeof o.zipOpen !== 'boolean') fail('An open zip must be open or closed.');
+    if (o.zipOpen && !o.zip) fail('Only a zip hoodie can be worn open.');
+    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true, ...(o.zipOpen ? { zipOpen: true } : {}) } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -917,9 +922,14 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   // Rounding-level distances are on a seam: snap them so the front and back coincide exactly there.
   const rise = (p: Pt) => { const d = Math.min(depth, ...seams.map(([a, b]) => segmentDistance(p, a, b))); return d < 1e-6 ? 0 : depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
   const shell = (p: Pt, sign: number): P3 => ({ x: p.x, y: top - p.y, z: sign * rise(p) });
+  // A zip hoodie worn open: its front halves (and hem band) part at the centre front.
+  const open = product.base === 'hoodie' && !!optionsOf(product).zip && !!optionsOf(product).zipOpen;
   for (const [side, o] of [['front', front], ['back', back]] as const) {
-    const sign = side === 'front' ? 1 : -1;
-    fillRegion(groups.get(side)!, [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, ...o.neck.slice(0, -1)], Delaunator, p => sign * rise(p), top, side);
+    const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, ...o.neck.slice(0, -1)];
+    if (side === 'front' && open) {
+      const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
+      for (const half of [leftOf(region, -OPEN_ZIP_GAP), mirror(leftOf(mirror(region), -OPEN_ZIP_GAP))]) fillRegion(groups.get(side)!, half, Delaunator, p => sign * rise(p), top, side);
+    } else fillRegion(groups.get(side)!, region, Delaunator, p => sign * rise(p), top, side);
   }
   if (product.base === 'hoodie') {
     // The kangaroo pocket sits just above the hem band, slightly proud of the front body.
@@ -969,7 +979,17 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   }
   if (dims.band) {
     // The hem band: round the open hem, front left to right, then back right to left, hanging straight down.
-    const flat = [...front.hem, ...[...back.hem].reverse().slice(1)], hem = flat.map((p, k) => shell(p, k < front.hem.length ? 1 : -1)), cut = [0];
+    let flat = [...front.hem, ...[...back.hem].reverse().slice(1)], hem = flat.map((p, k) => shell(p, k < front.hem.length ? 1 : -1));
+    if (open) {
+      // Worn open, the band starts at one side of the parting and runs round the back to the other.
+      const crossing = front.hem.findIndex((p, k) => k > 0 && Math.sign(p.x) !== Math.sign(front.hem[k - 1]!.x)), a = front.hem[crossing - 1]!, b = front.hem[crossing]!;
+      const at = (x: number): Pt => ({ x, y: a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x) }), clear = (p: Pt) => Math.abs(p.x) > OPEN_ZIP_GAP;
+      const starts = [at(Math.sign(b.x) * OPEN_ZIP_GAP), ...front.hem.slice(crossing).filter(clear)], back3d = [...back.hem].reverse().slice(1);
+      const ends = [...front.hem.slice(1, crossing).filter(clear), at(Math.sign(a.x) * OPEN_ZIP_GAP)];
+      flat = [...starts, ...back3d, ...ends];
+      hem = [...starts.map(p => shell(p, 1)), ...back3d.map(p => shell(p, -1)), ...ends.map(p => shell(p, 1))];
+    }
+    const cut = [0];
     // The band is cut 15% shorter than the hem it finishes.
     for (let k = 1; k < flat.length; k++) cut.push(cut[k - 1] + Math.hypot(flat[k].x - flat[k - 1].x, flat[k].y - flat[k - 1].y) * 0.85);
     tube(groups.get('hemBand')!, Math.max(2, Math.ceil(dims.band / MESH_STEP)), flat.length - 1, k => [hem[k], { ...hem[k], y: hem[k].y - dims.band }], (k, v) => ({ x: cut[k], y: dims.band * v }));

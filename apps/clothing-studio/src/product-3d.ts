@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
+import { OPEN_ZIP_GAP, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -143,28 +143,40 @@ export class ProductScene {
   private addZip(product: Product, rest: PartMesh[] | null, parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
     if (product.base !== 'hoodie' || !optionsOf(product).zip) return;
     const d = teeDimensions(product), top = d.length - d.neckDepthFront, band = d.band;
+    // Worn open, each front half carries its own side of the zip.
+    const sides = optionsOf(product).zipOpen ? [1, -1] as const : [0] as const;
     for (const [part, low, high] of [['front', band, top], ['hemBand', 0, band]] as const) {
       const target = parts.get(part);
       if (!target || high - low < 0.5) continue;
-      const texture = this.zipTexture(product.parts.front.color, high - low, part === 'front');
-      this.addDecal(texture, { front: true, x: 0, y: (low + high) / 2, width: ZIP_WIDTH, height: high - low }, rest?.find(mesh => mesh.part === part) ?? null, target, holder,
-        holder === this.worn ? `${product.name}: Zip` : 'Zip');
+      for (const side of sides) {
+        // Closed, the slider is at the neck; open, it sits at the foot of the zip, in the hem band.
+        const texture = this.zipTexture(product.parts.front.color, high - low, side ? part === 'hemBand' : part === 'front', side), width = side ? ZIP_WIDTH / 2 : ZIP_WIDTH;
+        this.addDecal(texture, { front: true, x: side * (OPEN_ZIP_GAP + width / 2), y: (low + high) / 2, width, height: high - low }, rest?.find(mesh => mesh.part === part) ?? null, target, holder,
+          holder === this.worn ? `${product.name}: Zip` : 'Zip');
+      }
     }
   }
 
-  /** Zip tape a little darker than the garment, light teeth every half centimetre and, at the top, the slider. */
-  private zipTexture(colour: string, heightCm: number, slider: boolean): THREE.Texture {
-    const key = `zip:${colour}:${heightCm.toFixed(1)}:${slider}`;
+  /** Zip tape a little darker than the garment, light teeth every half centimetre and, at the top, the slider. `half` is
+   * one side of an open zip: 1 for the wearer's left half (its teeth on its inner, viewer's left edge), -1 the right. */
+  private zipTexture(colour: string, heightCm: number, slider: boolean, half: 0 | 1 | -1 = 0): THREE.Texture {
+    const key = `zip:${colour}:${heightCm.toFixed(1)}:${slider}:${half}`;
     const cached = this.artworkTextures.get(key);
     if (cached) return cached;
     const scale = 20, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
-    canvas.width = Math.round(ZIP_WIDTH * scale); canvas.height = Math.max(8, Math.min(4096, Math.round(heightCm * scale)));
+    canvas.width = Math.round((half ? ZIP_WIDTH / 2 : ZIP_WIDTH) * scale); canvas.height = Math.max(8, Math.min(4096, Math.round(heightCm * scale)));
     const tape = new THREE.Color(colour).multiplyScalar(0.72);
     context.fillStyle = `#${tape.getHexString()}`; context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#d6d6d2';
-    const tooth = scale * 0.5, middle = canvas.width / 2;
-    for (let y = 0, side = 0; y < canvas.height; y += tooth / 2, side ^= 1) context.fillRect(side ? middle : middle - scale * 0.22, y, scale * 0.22, tooth / 2 - 1);
-    if (slider) {
+    const tooth = scale * 0.5, middle = half === 1 ? 0 : half === -1 ? canvas.width : canvas.width / 2;
+    if (half) {
+      // One row of teeth along the parting, each in the gap the other side's would fill.
+      for (let y = half === 1 ? 0 : tooth / 2; y < canvas.height; y += tooth) context.fillRect(half === 1 ? 0 : canvas.width - scale * 0.22, y, scale * 0.22, tooth / 2 - 1);
+    } else for (let y = 0, side = 0; y < canvas.height; y += tooth / 2, side ^= 1) context.fillRect(side ? middle : middle - scale * 0.22, y, scale * 0.22, tooth / 2 - 1);
+    if (slider && half) {
+      // The slider stays on the wearer's left half, at the top of its teeth; the right half carries the pin.
+      context.fillStyle = half === 1 ? '#b9b9b4' : '#8f8f8a'; context.fillRect(0, canvas.height - scale * 1.2, canvas.width, scale * 1.2);
+    } else if (slider) {
       context.fillStyle = '#b9b9b4'; context.fillRect(canvas.width * 0.12, 0, canvas.width * 0.76, scale * 1.4);
       context.fillStyle = '#8f8f8a'; context.fillRect(canvas.width * 0.38, scale * 1.4, canvas.width * 0.24, scale * 1.6);
     }

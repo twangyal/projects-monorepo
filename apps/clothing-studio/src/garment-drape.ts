@@ -159,6 +159,8 @@ const GROW_FRAMES = 45;
 const GATHER_FRAMES = 30;
 /** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
 export const GARMENT_FRAMES = 180;
+/** Frames over which a drape's remaining motion is measured. */
+const SETTLE_FRAMES = 10;
 export const GARMENT_SUBSTEPS = 24;
 export const GARMENT_SOLVER = 'xpbd-pattern-pieces-v4';
 
@@ -789,8 +791,11 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   });
   rest.set(shell);
   const core = body.torso[1]!.y, normal: Vec = [0, 0, 0], field = bodyField(body, core, HOOD_OFFSET + 4);
-  let speed = 0;
+  // Where each particle was SETTLE_FRAMES before the end: how far the cloth has moved since says whether it settled.
+  const earlier = new Float32Array(positions.length);
+  let since = 0;
   for (let frame = 1; frame <= frames; frame++) {
+    if (frame === Math.max(1, frames - SETTLE_FRAMES + 1)) { earlier.set(positions); since = frame; }
     // The body grows to full size from inside the garment, then gravity starts.
     const growing = frame <= GROW_FRAMES, scale = growing ? 0.5 + 0.5 * frame / GROW_FRAMES : 1;
     const damping = Math.exp((growing ? -12 : -1.2) * dt), gravity = growing ? 0 : GRAVITY;
@@ -805,7 +810,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     field.scale(scale); under?.scale(scale);
     for (let step = 0; step < substeps; step++) {
       // Body contact with friction: sliding along the body is partly removed, then the point is pushed out.
-      speed = solver.step(damping, gravity, () => {
+      solver.step(damping, gravity, () => {
         for (let i = 0; i < count; i++) {
           if (inverseMass[i] === 0) continue;
           const k = i * 3, distance = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
@@ -851,7 +856,11 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     }
     if (options.progress && options.progress(frame, frames) === false) break;
   }
-  // Metrics.
+  // Metrics. Settling is the fastest any particle moved on over the last SETTLE_FRAMES: contact can keep single
+  // particles trembling in place (as under an open zip hoodie's arm) where nothing is still on its way anywhere.
+  let speed = 0;
+  for (let k = 0; k < positions.length; k += 3) speed = Math.max(speed, Math.hypot(positions[k]! - earlier[k]!, positions[k + 1]! - earlier[k + 1]!, positions[k + 2]! - earlier[k + 2]!));
+  speed /= Math.max(1, frames - since + 1) * FRAME;
   let minClearance = Infinity, touching = 0, maxStrain = 0;
   field.scale(1);
   for (let i = 0; i < count; i++) {
