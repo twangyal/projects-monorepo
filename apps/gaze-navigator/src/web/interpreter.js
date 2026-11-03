@@ -21,7 +21,8 @@ const TRAILING_FILLER = /(?:\s+(?:please|for me))+$/i;
 const ORDINAL = /^(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|\d{1,2}(?:st|nd|rd|th))\s+(.+)$/;
 // Common equivalent names for the same control.
 const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign in'], ['log out', 'sign out'], ['logout', 'sign out'], ['log off', 'sign out'],
-  ['sign up', 'register'], ['create account', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['shopping cart', 'cart'],
+  ['sign up', 'register'], ['create account', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['trolley', 'cart'], ['shopping cart', 'cart'],
+  ['place order', 'checkout'], ['place order', 'buy now'], ['place order', 'complete purchase'], ['prices', 'pricing'], ['price', 'pricing'], ['fees', 'pricing'], ['plans', 'pricing'],
   ['home page', 'home'], ['homepage', 'home'], ['main page', 'home'], ['start page', 'home'],
   ['past versions', 'history'], ['previous versions', 'history'], ['old versions', 'history'], ['revisions', 'history'], ['revision history', 'history'],
   ['version history', 'history'], ['edit history', 'history'],
@@ -224,7 +225,9 @@ function fieldCalled(name, context) {
 function intoNamedField(raw, context) {
   const put = /^put\s+(.+?)\s+in(?:to)?\s+(?:the\s+|my\s+)?(.+?)\p{P}*$/iu.exec(raw);
   const fill = /^fill\s+(?:in\s+|out\s+)?(?:the\s+|my\s+)?(.+?)\s+with\s+(.+?)\p{P}*$/iu.exec(raw);
-  const [text, name] = put ? [put[1], put[2]] : fill ? [fill[2], fill[1]] : [];
+  // "My name is Ada Lovelace": what a field asks for, said as a statement ("remember my ..." saves it instead).
+  const stated = /^my\s+(name|full name|first name|last name|surname|email(?: address)?|e-?mail(?: address)?|phone(?: number)?|mobile(?: number)?|postcode|post code|zip(?: code)?)\s+is\s+(.+?)\p{P}*$/iu.exec(raw);
+  const [text, name] = put ? [put[1], put[2]] : fill ? [fill[2], fill[1]] : stated ? [stated[2], stated[1]] : [];
   return name && fieldCalled(name, context) ? `type ${text} into ${name}` : null;
 }
 
@@ -1007,7 +1010,13 @@ function interpretInCircle(utterance, context) {
     const field = text === 'undo typing' && !context.elements.some(textField) ? continuingIn(context) : null;
     return field ? { ...edit('undo')(field), requireFocus: true } : chooseField(null, context, edit('undo'));
   }
-  if (/^(submit|press enter|hit enter|press return|hit return|send it|submit (the )?form)$/.test(text)) {
+  // "Send it" with one send button in the circle presses it, as a person would; a field being typed in submits its form
+  // as before, and otherwise the form is submitted.
+  const sending = /^(?:(?:i'm|i am) (?:done|finished) )?send (?:it|this|that|the (?:message|form|email))(?: off| now| please)?$/.test(text);
+  const typing = context.elements.some(element => element.id === context.focusedId && element.editable) || context.focusedField?.editable;
+  const sendButton = sending && !typing ? context.elements.filter(element => element.submits && /\bsend\b/i.test(element.name ?? '')) : [];
+  if (sendButton.length === 1) return { type: 'activate', targetId: sendButton[0].id };
+  if (sending || /^(submit|press enter|hit enter|press return|hit return|submit (the )?form)$/.test(text)) {
     const act = element => ({ type: 'submit', targetId: element.id });
     // The field being typed in submits even when the gaze has drifted away from it.
     const focused = context.elements.find(element => element.id === context.focusedId && element.editable) ??

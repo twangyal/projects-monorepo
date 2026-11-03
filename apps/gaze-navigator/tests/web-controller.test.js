@@ -198,7 +198,7 @@ test('a model-assisted answer follows only while it is still the latest instruct
   controller.handle('resume', { elements: [] });
   // Consequential picks still wait for confirmation.
   const consequential = { elements: [describe(2, page.node('Place order'), { consequential: true })] };
-  const buy = controller.handle('complete my purchase', consequential);
+  const buy = controller.handle('ready to settle up', consequential);
   release();
   const asked = await buy.followUp;
   assert.equal(asked.tone, 'question');
