@@ -152,6 +152,11 @@ test('explicit fake-separator full-song fixture seeks late, persists boundary cu
   const lrcText = await readFile((await lrc.path())!, 'utf8');
   expect(lrcText).toMatch(/^\[00:29\.75\]<00:29\.75>BOUNDARY <00:\d\d\.\d\d>chorus <00:\d\d\.\d\d>🌓$/m);
   expect(lrcText).toMatch(/^\[00:58\.00\]<00:58\.00>FINAL /m);
+  const [ass] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export karaoke subtitles (ASS)', exact: true }).click()]);
+  expect(ass.suggestedFilename()).toMatch(/\.ass$/);
+  const assText = await readFile((await ass.path())!, 'utf8');
+  expect(assText).toContain('[Events]');
+  expect(assText).toMatch(/^Dialogue: 0,0:00:29\.75,[^,]+,Karaoke,,0,0,0,,(?:\{\\k\d+\})?\{\\kf\d+\}BOUNDARY/m);
   await expect(page.getByLabel('Guide vocal')).toHaveValue('0');
   const [backing] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download backing WAV', exact: true }).click()]);
   // Only this explicit test fixture copies source to both stems. This byte

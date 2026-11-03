@@ -32,6 +32,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
 from .jobs import JobBusy, JobManager, JobPublication
 from .alignment import ALIGNMENT_FILE, alignable, force_align, max_bytes, read_emissions
 from .lyrics_auto import align_lines, word_timings, words_to_cues
+from .ass import render_ass
 from .lrc import render_lrc
 from .transcription import CHOICES
 from .word_alignment import AlignmentLimitError
@@ -45,7 +46,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings|cover))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings|cover))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -1213,7 +1214,7 @@ class Handler(BaseHTTPRequestHandler):
                     transcript = server.read_transcript(project)
                 if self.command == "POST" and resource == "align" and alignable(value["lines"]):
                     letters = server.read_alignment(project)
-                if read and resource == "lrc":
+                if read and resource in ("lrc", "ass"):
                     transcript = server.optional_transcript(project)
                     letters = server.read_alignment(project) if transcript else None
                 if self.command == "POST" and resource == "word-timings":
@@ -1287,6 +1288,10 @@ class Handler(BaseHTTPRequestHandler):
             if read and resource == "lrc":
                 self._bytes(render_lrc(project, transcript["words"] if transcript else [], letters).encode("utf-8"),
                             "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".lrc"))
+                return
+            if read and resource == "ass":
+                self._bytes(render_ass(project, transcript["words"] if transcript else [], letters).encode("utf-8"),
+                            "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".ass"))
                 return
             if read and resource == "video":
                 self._file(directory / "video.mp4", "video/mp4",

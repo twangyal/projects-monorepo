@@ -396,6 +396,10 @@ class ServerTests(unittest.TestCase):
         self.assertIn(".lrc", headers["Content-Disposition"])
         self.assertIn(b"[00:00.00]<00:00.00>Sing <", lrc)
         self.assertNotIn(b"[along]", lrc)
+        status, headers, ass = self.request("GET", endpoint + "/ass")
+        self.assertEqual(status, 200)
+        self.assertIn(".ass", headers["Content-Disposition"])
+        self.assertIn(b"Dialogue: 0,0:00:00.00,0:00:01.00,Karaoke,,0,0,0,,", ass)
         for body in ({"guideVocal": 51}, {"guideVocal": -1}, {"guideVocal": 0.3}, {"guideVocal": "30"}, {"other": 1}):
             self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
         for body, guide in (({}, None), ({"guideVocal": 30}, 0.3)):
