@@ -55,7 +55,7 @@ app.innerHTML = `
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
         <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at the selected playback speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
-        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div><p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p>
+        <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
@@ -405,18 +405,29 @@ function currentWordTiming(project: Project): WordTiming | null {
   }
   return wordTiming?.key === key ? wordTiming.value : null;
 }
+// Lyric styles, as the exported video draws them (karaoke/video.py STYLES): colours and the lyric sizes' scale.
+const LYRIC_STYLES = {
+  classic: { background: '#14232f', muted: '#9dafbb', main: '#f7f5ed', accent: '#e4b77d', scale: 1 },
+  contrast: { background: '#000000', muted: '#d9d9d9', main: '#ffffff', accent: '#ffd400', scale: 1 },
+  large: { background: '#14232f', muted: '#9dafbb', main: '#f7f5ed', accent: '#e4b77d', scale: 1.45 },
+  light: { background: '#f7f3ea', muted: '#5e6b73', main: '#17242d', accent: '#9a4a12', scale: 1 },
+} as const;
+type LyricStyle = keyof typeof LYRIC_STYLES;
+const lyricStyle = (): LyricStyle => { const value = element<HTMLSelectElement>('lyric-style').value; return value in LYRIC_STYLES ? value as LyricStyle : 'classic'; };
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
-  context.fillStyle = '#14232f'; context.fillRect(0, 0, 1280, 720);
+  const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
+  stage.dataset.lyricStyle = lyricStyle();
+  context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720);
   context.textAlign = 'center'; context.textBaseline = 'middle';
   const invalid = validateWorking();
   element('bidi-status').hidden = !!invalid || !working?.cues.some(cue => textLayout(cue.text).wholeLine);
   if (invalid) {
     // Keep the complete invalid draft in its editor/history, but never send
     // unbounded input to native canvas layout, including during playback.
-    drawBlock('Preview paused', 240, 44, 24, 100, '#e4b77d');
-    drawBlock('Correct the title or lyric draft to resume.', 330, 28, 22, 100, '#f7f5ed');
-    drawBlock(invalid, 430, 24, 18, 160, '#9dafbb');
+    drawBlock('Preview paused', 240, 44, 24, 100, look.accent, undefined, look.accent);
+    drawBlock('Correct the title or lyric draft to resume.', 330, 28, 22, 100, look.main, undefined, look.accent);
+    drawBlock(invalid, 430, 24, 18, 160, look.muted, undefined, look.accent);
     stage.dataset.activeCue = '-1';
     const paused = 'Preview paused — correct the title or lyric draft to resume.';
     if (element('current-line').textContent !== paused) element('current-line').textContent = paused;
@@ -424,24 +435,24 @@ function draw() {
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.remove('active');
     return;
   }
-  drawBlock((working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, '#f7f5ed');
+  drawBlock((working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, look.main, undefined, look.accent);
   const time = audio.currentTime || 0, index = working ? activeCue(working.cues, time) : -1;
   const current = index >= 0 ? working!.cues[index].text : 'Instrumental break';
   const upcoming = working?.cues.find(cue => cue.start > time);
   const fetched = working ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
-  if (timing) drawBlock(current, 320, 44, 24, 300, '#f7f5ed', sungCharacters(timing.lines[index], time));
-  else drawBlock(current, 320, 44, 24, 300, index >= 0 ? '#e4b77d' : '#f7f5ed');
+  if (timing) drawBlock(current, 320, Math.floor(44 * scale), Math.floor(24 * scale), 300, look.main, sungCharacters(timing.lines[index], time), look.accent);
+  else drawBlock(current, 320, Math.floor(44 * scale), Math.floor(24 * scale), 300, index >= 0 ? look.accent : look.main, undefined, look.accent);
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
   stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
   // After a break, dots count singers in to the next line.
   const count = working ? countIn(working.cues, time) : null;
   stage.dataset.countIn = count ? String(count) : '';
   if (count) {
-    context.fillStyle = '#f7f5ed';
+    context.fillStyle = look.main;
     for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(640 - (count - 1) * 22 + dot * 44, 430, 12, 0, 2 * Math.PI); context.fill(); }
   }
-  if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, 26, 18, 80, '#9dafbb');
-  context.font = '20px KaraokeSans'; context.fillStyle = '#9dafbb'; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
+  if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
+  context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
   stage.dataset.activeCue = String(index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
   element('clock').textContent = `${formatTime(time)} / ${formatTime(working?.duration || 0)}`;
@@ -1654,7 +1665,8 @@ element('export-video').addEventListener('click', async () => {
   requestingJob = true; controls();
   // A guide vocal mixes the separated vocals quietly under the backing so singers can follow the melody.
   const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value), semitones = Number(element<HTMLSelectElement>('key-change').value);
-  const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}) };
+  const style = lyricStyle();
+  const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}) };
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', options)); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
@@ -1667,6 +1679,7 @@ function stopKeyPreview(): void {
   if (keyUrl) { URL.revokeObjectURL(keyUrl); keyUrl = ''; }
 }
 audio.addEventListener('play', stopKeyPreview);
+element('lyric-style').addEventListener('change', () => draw());
 element('key-change').addEventListener('change', () => {
   stopKeyPreview();
   element('key-status').textContent = `Exports will play ${keyName(Number(element<HTMLSelectElement>('key-change').value))}. Hear this key plays a few seconds from the playhead.`;

@@ -117,6 +117,28 @@ class VideoTests(unittest.TestCase):
                                 '-f', 's16le', 'pipe:1'], capture_output=True, check=True).stdout
         self.assertAlmostEqual(self._frequency(audio), 440 * 2 ** 0.5, delta=20)
 
+    def test_lyric_styles_change_colours_and_size(self):
+        cards = {}
+        for style in video.STYLES:
+            output = self.root / f'{style}.png'
+            video.render_card(self.project, 0, output, FONT, sung=['FIRST'], style=style)
+            cards[style] = Image.open(output).convert('RGB')
+        self.assertEqual(cards['contrast'].getpixel((5, 5)), (0, 0, 0))
+        self.assertEqual(cards['light'].getpixel((5, 5)), (0xf7, 0xf3, 0xea))
+        # High contrast highlights sung words in yellow.
+        colours = {colour for _, colour in cards['contrast'].crop((0, 250, 1280, 390)).getcolors(1 << 20)}
+        self.assertIn((0xff, 0xd4, 0x00), colours)
+
+        def lyric_height(image):
+            # Rows of the active-line region that differ from the background.
+            background = image.getpixel((5, 5))
+            region = image.crop((0, 200, 1280, 460))
+            rows = [y for y in range(region.height) if any(region.getpixel((x, y)) != background for x in range(0, 1280, 2))]
+            return rows[-1] - rows[0] if rows else 0
+        self.assertGreater(lyric_height(cards['large']), lyric_height(cards['classic']) * 1.3)
+        with self.assertRaises(ValidationError):
+            video.render_card(self.project, 0, self.root / 'bad.png', FONT, style='neon')
+
     def test_key_change_is_bounded(self):
         for semitones in (7, -7, 1.5, True, '2'):
             with self.assertRaises(ValidationError, msg=semitones):
@@ -395,7 +417,7 @@ class VideoTests(unittest.TestCase):
         card_count = [0]
         sung_states = []
 
-        def card(_project, active, path, _font, sung=None, count=None):
+        def card(_project, active, path, _font, sung=None, count=None, style="classic"):
             path.write_text(str(card_count[0]))
             sung_states.append((active, sung))
             card_count[0] += 1
