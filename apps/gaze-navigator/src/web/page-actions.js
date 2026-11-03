@@ -1083,3 +1083,34 @@ export function choosePopupControl(layers, want) {
   return { message: `This cookie banner has no ${want === 'accept' ? 'accept' : 'settings'} button. Look at one of its buttons and say click it.` };
 }
 
+// Saved personal details into a form's fields. A first or last name comes from the saved name when it is not saved
+// on its own. Fields that already hold something are left alone.
+const DETAIL_LABELS = { name: 'name', given: 'first name', family: 'last name', email: 'email address', tel: 'phone number', street: 'street address', city: 'town or city', postcode: 'postcode' };
+export const detailLabel = kind => DETAIL_LABELS[kind] ?? kind;
+export function detailValue(details, kind) {
+  if (details[kind]) return details[kind];
+  const words = (details.name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (kind === 'given' && words.length > 1) return words[0];
+  if (kind === 'family' && words.length > 1) return words.at(-1);
+  if (kind === 'name' && details.given && details.family) return `${details.given} ${details.family}`;
+  return null;
+}
+/** The fields of `fields` (from formDetailFields) a fill would write, each with its value; `only` keeps one kind. */
+export function planDetails(fields, details, only = null) {
+  const used = new Set();
+  return fields.filter(field => field.empty && (!only || field.kind === only || (only === 'name' && ['given', 'family'].includes(field.kind))))
+    .map(field => ({ ...field, value: detailValue(details, field.kind) }))
+    .filter(field => field.value && !used.has(field.element) && used.add(field.element));
+}
+/** Writes each planned value, returning what each field held before, for undo. */
+export function fillDetails(plan) {
+  return plan.filter(({ element }) => element.isConnected && canWrite(element)).map(({ element, value, name, kind }) => {
+    const before = element.value ?? '';
+    writeValue(element, value);
+    return { element, before, name, kind };
+  });
+}
+export function restoreDetails(filled) {
+  for (const { element, before } of filled) if (element.isConnected && canWrite(element)) writeValue(element, before);
+}
+

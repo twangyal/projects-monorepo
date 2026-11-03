@@ -768,3 +768,53 @@ export function findPopups(document, { exclude = null, scopeCache = null } = {})
   }));
 }
 
+// Personal details the navigator keeps for filling forms ("fill in my details"): what a field asks for, from its
+// autocomplete hint, type, label and id. Passwords, payment and one-time codes are never details.
+export const DETAIL_KINDS = ['name', 'given', 'family', 'email', 'tel', 'street', 'city', 'postcode'];
+const DETAIL_HINTS = { name: 'name', 'given-name': 'given', 'family-name': 'family', email: 'email', tel: 'tel', 'tel-national': 'tel',
+  'street-address': 'street', 'address-line1': 'street', 'address-level2': 'city', 'postal-code': 'postcode' };
+export function detailKind(element, name = accessibleName(element)) {
+  if (!isEditable(element) || isSensitive(element) || element.tagName === 'TEXTAREA' && !/address/i.test(element.getAttribute('autocomplete') ?? '')) return null;
+  const hint = (element.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/).find(token => token in DETAIL_HINTS);
+  if (hint) return DETAIL_HINTS[hint];
+  const type = (element.getAttribute('type') ?? '').toLowerCase();
+  if (type === 'email') return 'email';
+  if (type === 'tel') return 'tel';
+  const said = `${name ?? ''} ${element.id ?? ''} ${element.getAttribute('name') ?? ''}`.toLowerCase().replace(/[_-]+/g, ' ');
+  if (/\b(?:first name|given name|forename)\b|\bfname\b/.test(said)) return 'given';
+  if (/\b(?:last name|surname|family name)\b|\blname\b/.test(said)) return 'family';
+  if (/e ?mail/.test(said)) return 'email';
+  if (/\b(?:phone|mobile|telephone|tel)\b/.test(said)) return 'tel';
+  if (/\b(?:post ?code|postal code|zip(?: code)?)\b/.test(said)) return 'postcode';
+  if (/\b(?:town|city)\b/.test(said)) return 'city';
+  if (/\b(?:address line 1|street|address 1)\b|^\s*address\b/.test(said) && !/\bline ?2\b|\baddress 2\b/.test(said)) return 'street';
+  if (/\b(?:full name|your name)\b|^\s*name\b/.test(said)) return 'name';
+  return null;
+}
+
+/**
+ * The form nearest the gaze point (or the page's fields outside any form, when it has no forms), with each of its
+ * fields that asks for a personal detail: `{ element, kind, name, empty }`. Fields in open shadow roots and
+ * same-origin frames count.
+ */
+export function formDetailFields(document, { x = NaN, y = NaN, exclude = null, scopeCache = null } = {}) {
+  const { scopes } = searchScopes(document, exclude, scopeCache), view = document.defaultView, groups = new Map();
+  for (const { root, frames } of scopes) for (const element of root.querySelectorAll('input, textarea')) {
+    if (exclude?.contains(element) || !usable(element, exclude)) continue;
+    const name = accessibleName(element), kind = detailKind(element, name);
+    if (!kind) continue;
+    const rect = viewportRect(element, frames);
+    if (!(rect.width > 0 && rect.height > 0)) continue;
+    const form = element.form ?? element.closest('form') ?? root;
+    if (!groups.has(form)) groups.set(form, []);
+    groups.get(form).push({ element, kind, name, empty: !(element.value ?? '').trim(), rect });
+  }
+  let best = null, nearest = Infinity;
+  for (const fields of groups.values()) {
+    const distance = Math.min(...fields.map(field => (Number.isFinite(x) && Number.isFinite(y) ? distanceToRect(x, y, field.rect)
+      : field.rect.top < view.innerHeight && field.rect.bottom > 0 ? 0 : 1e6)));
+    if (distance < nearest) { nearest = distance; best = fields; }
+  }
+  return best ?? [];
+}
+

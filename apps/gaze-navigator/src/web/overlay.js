@@ -1,8 +1,8 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, findMedia, findPopups, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
-import { chooseMedia, choosePopupControl, controlMedia, pressKeys } from './page-actions.js';
+import { chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -96,6 +96,9 @@ export function sessionStore(window) {
         window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       } catch { /* Settings then last only for this page. */ }
     },
+    // On the practice website, saved details last only as long as the page: the website's own storage is not used.
+    loadDetails: async () => null,
+    saveDetails: () => {},
   };
 }
 
@@ -250,7 +253,43 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, browser: action => browser.run(action) }, assistant: assistantRelay });
+  // Personal details kept for filling forms, on this device only (see the store); never spoken or shown in replies.
+  let details = {};
+  Promise.resolve(store.loadDetails?.()).then(saved => { if (saved && typeof saved === 'object') details = { ...saved, ...details }; }).catch(() => {});
+  const listOf = kinds => kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')} and ${kinds.at(-1)}` : kinds[0] ?? '';
+  const savedDetails = {
+    remember({ field, value }) {
+      details = { ...details, [field]: value };
+      store.saveDetails?.(details);
+      return { ok: true, message: `Your ${detailLabel(field)} is saved on this device. On a form, say "fill in my details".` };
+    },
+    forget({ field }) {
+      details = field ? Object.fromEntries(Object.entries(details).filter(([kind]) => kind !== field)) : {};
+      store.saveDetails?.(details);
+      return { ok: true, message: field ? `Your ${detailLabel(field)} is forgotten.` : 'All your saved details are forgotten.' };
+    },
+    list() {
+      const kinds = Object.keys(details).filter(kind => details[kind]);
+      return { ok: true, message: kinds.length ? `Saved on this device: your ${listOf(kinds.map(detailLabel))}.` : 'No details are saved. Say, for example, "remember my email is …".' };
+    },
+    plan({ only }, used) {
+      if (!Object.keys(details).length) return { ok: false, message: 'No details are saved yet. Say, for example, "remember my email is …", then try again.' };
+      const fields = planDetails(formDetailFields(document, { x: used.x, y: used.y, exclude: host, scopeCache }), details, only);
+      if (!fields.length) return { ok: false, message: only ? `No empty field for your ${detailLabel(only)} was found in the form nearest your gaze.` : 'No empty field this form asks for matches your saved details.' };
+      return { ok: true, fields, message: `Fill ${fields.length === 1 ? `"${fields[0].name || detailLabel(fields[0].kind)}"` : `${fields.length} fields (${listOf(fields.map(field => field.name || detailLabel(field.kind)))})`} with your saved details? Say confirm, or cancel.` };
+    },
+    fill(plan) {
+      const filled = fillDetails(plan ?? []);
+      return filled.length ? { ok: true, filled, message: `Filled ${listOf(filled.map(field => field.name || detailLabel(field.kind)))}. Check them before sending; say undo to empty them again.` }
+        : { ok: false, message: 'The form changed and those fields cannot be written. Nothing was filled.' };
+    },
+    restore(entries) {
+      restoreDetails(entries);
+      return { message: `Emptied ${listOf(entries.map(field => field.name || detailLabel(field.kind)))} again.` };
+    },
+  };
+
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.

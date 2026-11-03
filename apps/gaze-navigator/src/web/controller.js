@@ -13,6 +13,8 @@ const BROWSER = new Set(['reload', 'visit', 'tab', 'zoom']);
 const hostOf = url => { try { return new URL(url).host; } catch { return 'the website'; } };
 // "Again" repeats an action from up to two minutes ago.
 const AGAIN_MS = 120000;
+// How long after a fill of saved details "undo" takes it back.
+const FILL_UNDO_MS = 120000;
 const PREVIOUS_ID = 199;
 const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
@@ -38,6 +40,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let previous = null;
   // The last scroll, back or forward, zoom step or press of an ordinary control, which "again" repeats in the same place.
   let last = null;
+  // The fields a fill of saved details just wrote, which "undo" straight afterwards empties again.
+  let filled = null;
   const history = new WeakMap();
   const rangeHistory = new WeakMap();
   const numberHistory = new WeakMap();
@@ -132,6 +136,11 @@ export function createController({ window, actions = pageActions, interpret = in
     if (BROWSER.has(action.type)) return runBrowser(action);
     if (action.type === 'key') return runKeys(action);
     if (action.type === 'media') return runMedia(action, context);
+    if (action.type === 'details') {
+      const result = commands.details.fill(action.plan);
+      if (result.ok) filled = { entries: result.filled, at: now() };
+      return reply(result.message, result.ok ? 'success' : 'error');
+    }
     const target = targetOf(context, action.targetId);
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
@@ -345,6 +354,12 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function decide(utterance, context, action, current) {
+    // "Undo" straight after a fill of saved details takes back the whole fill.
+    const fill = filled;
+    if (action.type !== 'confirm') filled = null;
+    if (fill && /^undo(?: that| it| filling| the fill)?[.!]*$/i.test(String(utterance ?? '').trim()) && now() - fill.at <= FILL_UNDO_MS && commands.details) {
+      return reply(commands.details.restore(fill.entries).message, 'success');
+    }
     if (action.type === 'cancel') {
       const had = pending;
       pending = null;
@@ -406,6 +421,18 @@ export function createController({ window, actions = pageActions, interpret = in
       }
       pending = null;
       return runKeys(action);
+    }
+    // Personal details kept on this device: saved, listed or forgotten at once; filled into the form nearest the gaze
+    // only after a yes, and "undo" straight afterwards empties those fields again.
+    if (action.type === 'details') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.details) return reply('Saved details are not available here.', 'error');
+      pending = null;
+      if (action.change !== 'fill') { const result = commands.details[action.change](action); return reply(result.message, result.ok ? 'success' : 'error'); }
+      const plan = commands.details.plan(action, context);
+      if (!plan.ok) return reply(plan.message, 'error');
+      pending = { kind: 'confirm', action: { ...action, plan: plan.fields }, context, expiresAt: now() + confirmMs };
+      return reply(plan.message, 'question');
     }
     // Cookie banners and pop-ups are found wherever they are. Saying which choice to make is the choice, so a consent
     // button ("Accept all") is pressed without the usual question.

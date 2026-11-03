@@ -7,6 +7,7 @@ import { createEmbeddedFrames } from './embedded-frames.js';
 const KEY = 'gaze-web-navigator';
 
 const CALIBRATION = 'gaze-calibration';
+const DETAILS = 'gaze-my-details';
 
 // Smarter matching asks the extension's shared on-device model; only roles and names leave the page.
 async function loadAssistant(progress) {
@@ -32,6 +33,9 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     loadCalibration: async () => (await chrome.storage.session.get(CALIBRATION))[CALIBRATION] ?? null,
     saveCalibration: calibration => { chrome.storage.session.set({ [CALIBRATION]: calibration }).catch(() => {}); },
     clearCalibration: () => { chrome.storage.session.remove(CALIBRATION).catch(() => {}); },
+    // Saved details stay on this device, in the extension's own storage, which websites cannot read.
+    loadDetails: async () => (await chrome.storage.local.get(DETAILS))[DETAILS] ?? null,
+    saveDetails: details => { (Object.keys(details).length ? chrome.storage.local.set({ [DETAILS]: details }) : chrome.storage.local.remove(DETAILS)).catch(() => {}); },
   };
   // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
   const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });

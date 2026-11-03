@@ -640,6 +640,33 @@ function mediaCommand(command, context) {
   return null;
 }
 
+// Personal details kept on this device for filling forms: "remember my email is jo at example dot com", "fill in my
+// details" (or just "my address"), "what details do you have", "forget my phone number". Values keep how they were said.
+const DETAIL_WORDS = [[/^(?:full )?name$/, 'name'], [/^(?:first name|given name|forename)$/, 'given'], [/^(?:last name|surname|family name)$/, 'family'],
+  [/^e ?mail(?: address)?$/, 'email'], [/^(?:phone|mobile|telephone|cell)(?: number)?$/, 'tel'], [/^(?:post ?code|postal code|zip(?: code)?)$/, 'postcode'],
+  [/^(?:home |street )?address$|^street$/, 'street'], [/^(?:town|city)$/, 'city']];
+const detailOf = words => DETAIL_WORDS.find(([pattern]) => pattern.test(words))?.[1] ?? null;
+function detailsCommand(command, text) {
+  const remember = /^(?:remember|save|store|keep)(?: that)? my (.+?) (?:is|as) (.+?)[.!?]*$/i.exec(command.trim());
+  const field = remember && detailOf(normalize(remember[1]));
+  if (field) {
+    let value = remember[2].trim();
+    if (field === 'email') value = value.replace(/\s+at\s+/gi, '@').replace(/\s+dot\s+/gi, '.').replace(/\s+/g, '');
+    if (field === 'postcode') value = value.toUpperCase();
+    return { type: 'details', change: 'remember', field, value };
+  }
+  if (/^(?:fill (?:in|out)|complete) (?:the|this) form(?: (?:with|from) my (?:details|information|info))?$/.test(text)) return { type: 'details', change: 'fill', only: null };
+  const fill = /^(?:fill (?:in|out)|complete|enter|type|put in|add)(?: in)? my (.+?)(?: (?:here|in this form|into this form|in the form))?$/.exec(text);
+  if (fill && /^(?:details|information|info|personal details|contact details)$/.test(fill[1])) return { type: 'details', change: 'fill', only: null };
+  const one = fill && detailOf(fill[1]);
+  if (one) return { type: 'details', change: 'fill', only: one };
+  if (/^(?:what|which) (?:details|information) (?:do you (?:have|know)|have you (?:got|saved)|are saved)(?: (?:for|about) me)?$|^(?:list|show) my (?:saved )?details$/.test(text)) return { type: 'details', change: 'list' };
+  const forget = /^(?:forget|delete|clear|remove) (?:all )?my (?:saved )?(.+)$/.exec(text);
+  if (forget && /^(?:details|information|info|personal details)$/.test(forget[1])) return { type: 'details', change: 'forget', field: null };
+  const gone = forget && detailOf(forget[1]);
+  return gone ? { type: 'details', change: 'forget', field: gone } : null;
+}
+
 // Cookie banners and pop-ups, named rather than looked at: "accept cookies", "reject cookies", "only necessary cookies",
 // "cookie settings", "close the pop-up". Their buttons are found wherever the banner is. Closing gives way to what is
 // in the gaze circle: an open toggle, or a Close or Dismiss control there.
@@ -706,6 +733,8 @@ function interpretInCircle(utterance, context) {
   if (media) return media;
   const popup = popupCommand(text, context);
   if (popup) return popup;
+  const details = detailsCommand(command, text);
+  if (details) return details;
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
