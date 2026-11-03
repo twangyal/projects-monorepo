@@ -520,6 +520,44 @@ function searchScopes(document, exclude, cache) {
   return entry;
 }
 
+// "Show numbers": every control on screen gets a number that can be said instead of looking at it, for when the gaze
+// lands too far off. A control keeps its number while it stays on screen, so a number cannot change while it is being
+// said; controls that appear take the lowest free numbers, in reading order. Numbered controls have ids from
+// NUMBERED_FIRST_ID, so they never mix with the circle's.
+export const NUMBERED_FIRST_ID = 1001;
+export const NUMBER_LIMIT = 150;
+export function numberControls(document, { exclude = null, previous = new Map(), limit = NUMBER_LIMIT, scopeCache = null } = {}) {
+  const { scopes } = searchScopes(document, exclude, scopeCache);
+  const view = document.defaultView, found = [];
+  for (const { root, frames } of scopes) {
+    for (const element of root.querySelectorAll(ACTIONABLE)) {
+      const rect = viewportRect(element, frames);
+      if (!(rect.width > 0 && rect.height > 0) || rect.right <= 0 || rect.bottom <= 0 || rect.left >= view.innerWidth || rect.top >= view.innerHeight) continue;
+      if (exclude?.contains(element) || roleOf(element) === 'generic' || !usable(element, exclude)) continue;
+      const x = clamp(rect.left + rect.width / 2, 0, view.innerWidth - 1), y = clamp(rect.top + rect.height / 2, 0, view.innerHeight - 1);
+      if (unobscured(document, element, rect, x, y)) found.push({ element, rect, frames });
+    }
+  }
+  // One number per target: a label beside its own control, or a control around another of the same name, is that control.
+  const listed = new Set(found.map(({ element }) => element)), names = new Map(found.map(item => [item, accessibleName(item.element)]));
+  const distinct = found.filter(outer => !(outer.element.tagName === 'LABEL' && outer.element.control && listed.has(outer.element.control)) &&
+    !(names.get(outer) && found.some(inner => inner !== outer && composedContains(outer.element, inner.element) && names.get(inner) === names.get(outer))));
+  distinct.sort((a, b) => Math.round(a.rect.top / 8) - Math.round(b.rect.top / 8) || a.rect.left - b.rect.left);
+  const kept = distinct.slice(0, limit), numbers = new Map(), taken = new Set();
+  for (const { element } of kept) {
+    const number = previous.get(element);
+    if (number && !taken.has(number)) { numbers.set(element, number); taken.add(number); }
+  }
+  let next = 1;
+  for (const { element } of kept) {
+    if (numbers.has(element)) continue;
+    while (taken.has(next)) next++;
+    numbers.set(element, next); taken.add(next);
+  }
+  return kept.map(({ element, rect, frames }) => ({ id: NUMBERED_FIRST_ID + numbers.get(element) - 1, number: numbers.get(element), element, rect, distance: 0, frames, ...describe(element) }))
+    .sort((a, b) => a.number - b.number);
+}
+
 // Elements whose rectangles intersect the circle, nearest first, numbered for clarification.
 export function captureContext(document, { x, y, radius, exclude = null, limit = 12, scopeCache = null, focus = null }) {
   if (![x, y, radius].every(Number.isFinite) || radius <= 0) return { x, y, radius, elements: [], region: null, unreachable: [] };

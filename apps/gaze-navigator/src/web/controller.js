@@ -2,7 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
-import { composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
+import { NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -20,6 +20,7 @@ const HISTORY_LIMIT = 20;
 const POINTING = new Set(['activate', 'submit', 'check', 'select-radio', 'select-tab', 'disclosure', 'select-option', 'choose-option']);
 
 function targetOf(context, id) {
+  if (id >= NUMBERED_FIRST_ID) return context.numbered?.find(element => element.id === id) ?? null;
   return context.elements.find(element => element.id === id) ?? context.disclosureElements?.find(element => element.id === id) ??
     context.nearby?.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null) ??
     (context.focusedField?.id === id ? context.focusedField : null) ?? (context.previous?.id === id ? context.previous : null) ?? (id > 200 ? context.onScreen?.().find(element => element.id === id) ?? null : null);
@@ -352,6 +353,21 @@ export function createController({ window, actions = pageActions, interpret = in
       if (!handler) return reply(action.type === 'circle-size' ? 'Circle size adjustment is not available here.' : 'Camera tracking is not available here.', 'error');
       const result = handler(action.type === 'circle-size' ? action.size : action.source);
       return reply(result.message, result.ok ? 'success' : 'error');
+    }
+    // Numbers on every control: shown or hidden like the circle's size, and, while shown, a number said (on its own
+    // too) uses the control with that number wherever it is, even when the gaze cannot be tracked.
+    if (action.type === 'numbers') {
+      if (!commands.numbers) return reply('Numbers on controls are not available here.', 'error');
+      pending = null;
+      const result = commands.numbers(action.on);
+      return reply(result.message, result.ok ? 'success' : 'error');
+    }
+    // A "Which one?" question still takes its own numbers.
+    if (action.type === 'choose' && context.numbered && context.trackingUnavailable !== 'calibration' && pending?.kind !== 'clarify') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      const target = context.numbered.find(element => element.number === action.index);
+      if (!target) return reply(`There is no number ${action.index} on the screen.${context.numbered.length ? ` The numbers go up to ${Math.max(...context.numbered.map(element => element.number))}.` : ''}`, 'error');
+      return perform({ type: 'activate', targetId: target.id }, context);
     }
     // The browser itself (reload, websites, tabs, zoom) needs no gaze; closing a tab is asked first.
     if (BROWSER.has(action.type)) {

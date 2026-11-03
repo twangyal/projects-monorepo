@@ -575,10 +575,15 @@ function interpretInCircle(utterance, context) {
   if (corner) return { type: 'panel', change: 'move', left: corner[2] === 'left', top: corner[1] ? /top|upper/.test(corner[1]) : null };
   const nudge = new RegExp(`^move ${navigator} (up|down)$`).exec(text);
   if (nudge) return { type: 'panel', change: 'move', left: null, top: nudge[1] === 'up' };
+  // Numbers on every control on screen, said instead of looking at one ("show numbers", then "click 12").
+  if (/^(?:show|display|turn on|put up) (?:the )?(?:control )?numbers(?: on (?:the )?(?:page|screen|controls))?$|^number (?:everything|the controls|all (?:the )?controls|the page)$|^numbers on$/.test(text)) return { type: 'numbers', on: true };
+  if (/^(?:hide|remove|clear|turn off|take away|stop showing) (?:the )?(?:control )?numbers$|^numbers off$|^no more numbers$/.test(text)) return { type: 'numbers', on: false };
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
-  const chosen = choice && parseNumber(choice[1]);
+  // Shown numbers go past twelve, said as digits or words ("click 23", "one hundred and four").
+  const shownNumber = text => { const value = spokenNumber(text.replace(/^(?:the\s+)?(?:number|option|choice|item)\s+/, '')); return value !== null && /^[1-9]\d{0,2}$/.test(value) ? Number(value) : null; };
+  const chosen = choice && (parseNumber(choice[1]) ?? shownNumber(choice[1]));
   // A number on its own ("two") only answers a question; it is marked so a stray number in conversation
   // never activates a control.
   if (chosen) return /^(?:number|option|choice|item|choose|pick|select|click|press|open)\b/.test(text) ? { type: 'choose', index: chosen } : { type: 'choose', index: chosen, bare: true };

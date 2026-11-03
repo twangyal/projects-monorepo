@@ -1,6 +1,6 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { captureContext, frameOffset, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
@@ -11,6 +11,8 @@ import { runCalibration } from './calibration.js';
 import { recommendedSize, runAccuracyCheck } from './accuracy-check.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
+// Shown numbers follow scrolling and page changes at most this often.
+const NUMBERS_REFRESH_MS = 300;
 // Self-calibration takes at most one sample from used controls in this many milliseconds.
 const LEARN_MS = 2000;
 const STORAGE_KEY = 'gaze-web-navigator';
@@ -38,6 +40,8 @@ const STYLE = `
 .outline.question { border-color: #f5c76b; border-width: 3px; }
 .badge { position: absolute; left: -2px; top: -22px; min-width: 22px; padding: 1px 6px; border-radius: 10px; background: #75e5b4; color: #07110e; font: 700 13px/18px system-ui, sans-serif; text-align: center; }
 .outline.question .badge { background: #f5c76b; }
+.outline.numbered { border-color: #8fc7ff; border-width: 1px; box-shadow: none; }
+.outline.numbered .badge { top: -2px; left: -2px; transform: translate(-30%, -60%); background: #8fc7ff; box-shadow: 0 0 0 2px #0009; }
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
 /* Hidden, the panel keeps its answers and any question, so instructions still get feedback. */
 .panel.collapsed { width: min(300px, calc(100vw - 24px)); }
@@ -244,7 +248,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, browser: action => browser.run(action) }, assistant: assistantRelay });
+  // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
+  let numbering = null, numbered = [], numbersTimer = null;
   const filter = createGazeFilter();
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
@@ -306,6 +312,22 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     for (const candidate of question ? pending.candidates : []) {
       const previous = question.get(candidate.elementId);
       question.set(candidate.elementId, previous ? `${previous}, ${candidate.number}` : String(candidate.number));
+    }
+    // While numbers are shown (and no question is asked), they replace the circle's own numbers.
+    if (numbering && !question && !pending?.farTarget) {
+      ui.outlines.replaceChildren();
+      if (controller.paused || calibration) return;
+      for (const element of numbered) {
+        if (!element.element.isConnected) continue;
+        const rect = viewportRect(element.element, element.frames), box = document.createElement('div'), badge = document.createElement('span');
+        box.className = 'outline numbered';
+        Object.assign(box.style, { left: `${rect.left - 2}px`, top: `${rect.top - 2}px`, width: `${rect.width + 4}px`, height: `${rect.height + 4}px` });
+        badge.className = 'badge';
+        badge.textContent = String(element.number);
+        box.append(badge);
+        ui.outlines.append(box);
+      }
+      return;
     }
     const shownContext = controller.paused || calibration ? null : pending ? promptContext : spokenContext ?? context;
     // A question about controls outside the circle outlines those too; confirming a far control outlines only it.
@@ -437,6 +459,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     scopeCache.rects = null;
     if (records.some(record => record.type === 'childList')) scopeCache.entry = null;
     schedulePlacement();
+    scheduleNumbers();
   });
   pageObserver.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
   schedulePlacement();
@@ -639,7 +662,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // Frame load events reach their document in capture phase, but skip its window.
   document.addEventListener('load', onFrameLoad, true);
   // Scrolling moves everything under the circle; recapture through the usual interval instead of on every event.
-  const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); schedulePlacement(); };
+  const refresh = () => { pageChanged = true; scopeCache.rects = null; recapture(); schedulePlacement(); scheduleNumbers(); };
   window.addEventListener('scroll', refresh, true);
   const onViewportResize = () => {
     const next = { width: window.innerWidth, height: window.innerHeight };
@@ -673,6 +696,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         ? { elements: [], region: null, trackingUnavailable: true }
         : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
+    // Numbers stay usable without the gaze, but not while calibrating.
+    if (numbering && used.trackingUnavailable !== 'calibration') used.numbered = numbered;
     const result = controller.handle(utterance, used, { alternatives });
     show(result, used);
     const report = answer => { try { onResult?.({ utterance, via, source: settings.source, ...outcomeOf(answer) }); } catch { /* A listener's failure is its own. */ } };
@@ -693,6 +718,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       // Shown after a navigation this action may cause; ignored if it arrives much later.
       store.save({ ...settings, announce: result.message, announcedAt: Date.now() });
       window.setTimeout(() => recapture(true), 50);
+      scheduleNumbers();
     }
     renderOutlines();
   }
@@ -963,6 +989,33 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const result = run(text, (recapture(true), context), 'typed');
     if (result.tone !== 'error') ui.instruction.value = '';
   });
+  function refreshNumbers() {
+    numbersTimer = null;
+    if (!numbering || stopped) return;
+    numbered = numberControls(document, { exclude: host, previous: numbering, scopeCache });
+    numbering = new Map(numbered.map(element => [element.element, element.number]));
+    if (!controller.pending || controller.pending.kind !== 'clarify') renderOutlines();
+  }
+  function scheduleNumbers() {
+    if (numbering && numbersTimer === null) numbersTimer = window.setTimeout(refreshNumbers, NUMBERS_REFRESH_MS);
+  }
+  function setNumbers(on) {
+    window.clearTimeout(numbersTimer); numbersTimer = null;
+    if (!on) {
+      const shown = Boolean(numbering);
+      numbering = null; numbered = [];
+      renderOutlines();
+      return { ok: true, message: shown ? 'Numbers hidden.' : 'No numbers are shown.' };
+    }
+    numbering = new Map();
+    refreshNumbers();
+    if (!numbered.length) {
+      numbering = null;
+      return { ok: false, message: 'There are no controls on the screen to number. Scroll to some, then say show numbers again.' };
+    }
+    const more = numbered.length >= NUMBER_LIMIT ? ` (the first ${NUMBER_LIMIT} on screen)` : '';
+    return { ok: true, message: `Numbers shown on ${numbered.length} controls${more}. Say a number, such as "click ${numbered[0].number}", to use one, even without looking at it. Say "hide numbers" when you are done.` };
+  }
   function setCircleSize(requested) {
     const sizes = Object.keys(RADII);
     const index = Math.max(0, sizes.indexOf(settings.size));
@@ -1074,6 +1127,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     stop() {
       clearCameraSilence();
       stopped = true; closing = true; assistLoad++; sourceGeneration++;
+      window.clearTimeout(numbersTimer); numbersTimer = null; numbering = null;
       keyboard.stop();
       controller.cancel(); spokenContext = null; promptContext = null;
       const active = calibration; calibration = null; active?.cancel();
