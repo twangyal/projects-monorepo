@@ -23,34 +23,54 @@ from .limits import (DECODE_TIMEOUT, MAX_DECODE_BYTES, MAX_DURATION, MAX_INPUT_B
                      MAX_WAV_BYTES, MAX_WINDOWS, MAX_WORKER_RSS_KIB, MIN_DURATION,
                      SAMPLE_RATE, WORKER_TIMEOUT)
 
-# UVR-MDX-NET-Voc_FT, an Ultimate Vocal Remover MDX-Net vocal model (TRvlvr/model_repo), in the ONNX
-# conversion published by sherpa-onnx. Runs in worker.py through karaoke/mdx.py.
-MODEL_NAME = 'UVR-MDX-NET-Voc_FT'
+class SeparationModel:
+    """A checksum-pinned Ultimate Vocal Remover MDX-Net model (TRvlvr/model_repo) in the ONNX conversion published by
+    sherpa-onnx, and the stem it estimates ('backing' or 'vocals'); the other is the song minus it. Runs in worker.py
+    through karaoke/mdx.py."""
+
+    def __init__(self, name: str, file: str, size: int, sha256: str, estimates: str) -> None:
+        self.name, self.file, self.size, self.sha256, self.estimates = name, file, size, sha256, estimates
+        self.url = f'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/{file}'
+
+
+# Preferred first. UVR-MDX-NET-Inst_HQ_3 estimates the backing: on the MUSDB18 7-second test excerpts its backing was
+# closer to the reference than UVR-MDX-NET-Voc_FT's song-minus-vocals (median SDR 15.2 dB against 14.1 dB, better on 42
+# of 50), and so were the vocals left once it is removed, at the same speed (both share one network shape). Voc_FT, the
+# earlier model, estimates the vocals; an installation with only it keeps working until setup adds the newer one.
+SEPARATION_MODELS = (
+    SeparationModel('UVR-MDX-NET-Inst_HQ_3', 'UVR-MDX-NET-Inst_HQ_3.onnx', 66759522,
+                    'c207b845d51dc1303c543503f6f5a8b596da5d7de97bead77b3e16ec38e8d5b3', 'backing'),
+    SeparationModel('UVR-MDX-NET-Voc_FT', 'UVR-MDX-NET-Voc_FT.onnx', 66762795,
+                    'e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4', 'vocals'),
+)
+MODEL = SEPARATION_MODELS[0]
+MODEL_NAME, MODEL_FILE, MODEL_URL, MODEL_BYTES, MODEL_SHA256 = MODEL.name, MODEL.file, MODEL.url, MODEL.size, MODEL.sha256
 MODEL_DIRECTORY = 'mdx'
-MODEL_FILE = 'UVR-MDX-NET-Voc_FT.onnx'
-MODEL_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx'
-MODEL_BYTES = 66762795
-MODEL_SHA256 = 'e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4'
-MODEL_FILES = {MODEL_FILE: MODEL_SHA256}
 MAX_METADATA_BYTES = 16 * 1024
 
 
-def model_ready(model_root: Path) -> bool:
-    directory = Path(model_root) / MODEL_DIRECTORY
+def verified_file(path: Path, sha256: str) -> bool:
+    """Whether ``path`` is a regular file (not a link) of model size with this SHA-256."""
     try:
-        for name, expected in MODEL_FILES.items():
-            path = directory / name
-            if path.is_symlink() or not path.is_file() or path.stat().st_size > 80000000:
-                return False
-            digest = hashlib.sha256()
-            with path.open('rb') as source:
-                for chunk in iter(lambda: source.read(1024 * 1024), b''):
-                    digest.update(chunk)
-            if digest.hexdigest() != expected:
-                return False
-        return True
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 80000000:
+            return False
+        digest = hashlib.sha256()
+        with path.open('rb') as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b''):
+                digest.update(chunk)
+        return digest.hexdigest() == sha256
     except OSError:
         return False
+
+
+def installed_model(model_root: Path) -> SeparationModel | None:
+    """The preferred separation model whose file is installed and verified, or None."""
+    directory = Path(model_root) / MODEL_DIRECTORY
+    return next((model for model in SEPARATION_MODELS if verified_file(directory / model.file, model.sha256)), None)
+
+
+def model_ready(model_root: Path) -> bool:
+    return installed_model(model_root) is not None
 
 
 def _check_cancel(cancel: threading.Event) -> None:

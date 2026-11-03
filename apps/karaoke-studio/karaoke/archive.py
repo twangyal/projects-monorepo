@@ -217,6 +217,7 @@ def _project(value):
 _MODEL_FIELDS = {
     'spleeter:2stems': {'modelRelease', 'modelArchiveSha256', 'spleeterVersion', 'tensorflowVersion'},
     'UVR-MDX-NET-Voc_FT': {'modelSha256', 'onnxruntimeVersion'},
+    'UVR-MDX-NET-Inst_HQ_3': {'modelSha256', 'onnxruntimeVersion'},
 }
 
 

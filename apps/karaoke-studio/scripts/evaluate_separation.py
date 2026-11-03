@@ -7,8 +7,9 @@ the mixture minus the vocals.
 
 Separators:
 - ``spleeter``: the production Spleeter 2-stems model, as the worker runs it;
-- ``mdx``: the production UVR-MDX-NET-Voc_FT separator (``karaoke/mdx.py``, from the model directory);
-- ``uvr:PATH``: a UVR MDX-Net ONNX model through sherpa-onnx (stem 0 vocals, stem 1 backing).
+- ``mdx``: the production separator (``karaoke/mdx.py`` with the installed model, from the model directory);
+- ``uvr:PATH``: a UVR MDX-Net ONNX model through sherpa-onnx (stem 0 is the model's own stem: the vocals for a vocal
+  model, the backing for an instrumental one such as Inst_HQ_3; ``uvr-backing:PATH`` reads it as the backing).
 
 Metric: signal-to-distortion ratio per track, 10 log10(sum s^2 / sum (s - estimate)^2), the
 "global SDR" of the Music Demixing challenges, in dB, higher is better. Vocals SDR is reported only
@@ -74,12 +75,15 @@ def spleeter_separator(model_dir: Path, threads: int):
 def mdx_separator(model_dir: Path, threads: int):
     import onnxruntime
     from karaoke.mdx import load_model, separate_vocals
-    from karaoke.pipeline import MODEL_DIRECTORY, MODEL_FILE, MODEL_NAME
-    run = load_model(model_dir / MODEL_DIRECTORY / MODEL_FILE, threads)
-    return (lambda mixture: separate_vocals(mixture, run)), {'model': f'{MODEL_NAME} (studio)', 'onnxruntimeVersion': onnxruntime.__version__}
+    from karaoke.pipeline import MODEL_DIRECTORY, installed_model
+    model = installed_model(model_dir)
+    if model is None:
+        raise SystemExit('No verified separation model in the model directory; run scripts/setup_model.py.')
+    run = load_model(model_dir / MODEL_DIRECTORY / model.file, threads)
+    return (lambda mixture: separate_vocals(mixture, run, model.estimates)), {'model': f'{model.name} (studio)', 'onnxruntimeVersion': onnxruntime.__version__}
 
 
-def uvr_separator(model: Path, threads: int):
+def uvr_separator(model: Path, threads: int, backing_first: bool = False):
     import sherpa_onnx
     config = sherpa_onnx.OfflineSourceSeparationConfig(model=sherpa_onnx.OfflineSourceSeparationModelConfig(
         uvr=sherpa_onnx.OfflineSourceSeparationUvrModelConfig(model=str(model)), num_threads=threads))
@@ -89,7 +93,8 @@ def uvr_separator(model: Path, threads: int):
         output = separator.process(sample_rate=RATE, samples=np.ascontiguousarray(mixture.T, dtype=np.float32))
         if output.sample_rate != RATE or len(output.stems) != 2:
             raise RuntimeError('Unexpected UVR output layout.')
-        return tuple(np.asarray(stem.data).T[:len(mixture)] for stem in output.stems)
+        stems = tuple(np.asarray(stem.data).T[:len(mixture)] for stem in output.stems)
+        return stems[::-1] if backing_first else stems
     return separate, {'model': model.name, 'modelSha256': checksum(model), 'sherpaOnnxVersion': sherpa_onnx.__version__}
 
 
@@ -101,7 +106,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=Path, required=True, help='Unpacked MUSDB18-7-STEMS directory (with test/)')
     parser.add_argument('--model-dir', type=Path, help='Studio model directory (for spleeter)')
-    parser.add_argument('--separator', action='append', required=True, help='spleeter or uvr:PATH (repeatable)')
+    parser.add_argument('--separator', action='append', required=True, help='spleeter, mdx, uvr:PATH or uvr-backing:PATH (repeatable)')
     parser.add_argument('--threads', type=int, default=3)
     parser.add_argument('--limit', type=int)
     parser.add_argument('--json', type=Path)
@@ -118,8 +123,9 @@ def main() -> None:
             separate, details = spleeter_separator(args.model_dir, args.threads)
         elif spec == 'mdx':
             separate, details = mdx_separator(args.model_dir, args.threads)
-        elif spec.startswith('uvr:'):
-            separate, details = uvr_separator(Path(spec[4:]), args.threads)
+        elif spec.startswith('uvr:') or spec.startswith('uvr-backing:'):
+            backing_first = spec.startswith('uvr-backing:')
+            separate, details = uvr_separator(Path(spec.split(':', 1)[1]), args.threads, backing_first)
         else:
             raise SystemExit(f'Unknown separator {spec}')
         separate(references[0][1][:RATE])  # warm-up outside the timing

@@ -36,23 +36,31 @@ class PipelineTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def test_model_ready_verifies_all_actual_files_and_rejects_corruption_or_symlinks(self) -> None:
+    def test_model_ready_verifies_the_actual_files_and_rejects_corruption_or_symlinks(self) -> None:
         model = self.root / 'models' / pipeline.MODEL_DIRECTORY
         model.mkdir(parents=True)
-        self.assertEqual(list(pipeline.MODEL_FILES), [pipeline.MODEL_FILE])
-        manifest = {name: hashlib.sha256(name.encode()).hexdigest() for name in pipeline.MODEL_FILES}
-        for name in manifest:
-            (model / name).write_bytes(name.encode())
-        with patch.object(pipeline, 'MODEL_FILES', manifest):
+        # Stand-ins for the two models: the instrumental one is preferred, the vocal one still serves alone.
+        backing = pipeline.SeparationModel('backing-model', 'backing.onnx', 7, hashlib.sha256(b'backing').hexdigest(), 'backing')
+        vocals = pipeline.SeparationModel('vocal-model', 'vocals.onnx', 6, hashlib.sha256(b'vocals').hexdigest(), 'vocals')
+        with patch.object(pipeline, 'SEPARATION_MODELS', (backing, vocals)):
+            self.assertIsNone(pipeline.installed_model(model.parent))
+            (model / 'vocals.onnx').write_bytes(b'vocals')
+            self.assertIs(pipeline.installed_model(model.parent), vocals)
+            (model / 'backing.onnx').write_bytes(b'backing')
+            self.assertIs(pipeline.installed_model(model.parent), backing)
             self.assertTrue(pipeline.model_ready(model.parent))
-            (model / pipeline.MODEL_FILE).write_bytes(b'broken')
+            (model / 'backing.onnx').write_bytes(b'broken')
+            self.assertIs(pipeline.installed_model(model.parent), vocals)
+            (model / 'vocals.onnx').unlink()
             self.assertFalse(pipeline.model_ready(model.parent))
-            (model / pipeline.MODEL_FILE).unlink()
-            target = self.root / 'weights'
-            target.write_bytes(pipeline.MODEL_FILE.encode())
-            (model / pipeline.MODEL_FILE).symlink_to(target)
+            (model / 'backing.onnx').unlink()
+            (model / 'elsewhere.onnx').write_bytes(b'backing')
+            (model / 'backing.onnx').symlink_to(model / 'elsewhere.onnx')
             self.assertFalse(pipeline.model_ready(model.parent))
         self.assertFalse(pipeline.model_ready(self.root / 'missing'))
+        # The preferred model is the instrumental one, read as the backing.
+        self.assertEqual((pipeline.MODEL.name, pipeline.MODEL.estimates), ('UVR-MDX-NET-Inst_HQ_3', 'backing'))
+        self.assertEqual([model.name for model in pipeline.SEPARATION_MODELS], ['UVR-MDX-NET-Inst_HQ_3', 'UVR-MDX-NET-Voc_FT'])
 
     def test_supported_magic_is_independent_of_upload_filename(self) -> None:
         signatures = [(b'RIFF\0\0\0\0WAVE', 'wav'), (b'ID3\0\0\0\0', 'mp3'), (b'\xff\xfb\x90\0', 'mp3'), (b'fLaC\0\0\0\0', 'flac'), (b'OggS\0\0\0\0', 'ogg')]
@@ -236,15 +244,32 @@ class PipelineTests(unittest.TestCase):
         right = self.root / 'right.onnx'
         right.write_bytes(b'x' * len(b'corrupt model'))
         digest = hashlib.sha256(right.read_bytes()).hexdigest()
-        with patch.object(setup, 'MODEL_BYTES', len(b'corrupt model')), patch.object(setup, 'MODEL_SHA256', digest):
+        current = pipeline.SeparationModel('current', pipeline.MODEL_FILE, len(b'corrupt model'), digest, 'backing')
+        older = pipeline.SeparationModel('older', 'older.onnx', 5, hashlib.sha256(b'older').hexdigest(), 'vocals')
+        with patch.object(setup, 'MODEL_BYTES', len(b'corrupt model')), patch.object(setup, 'MODEL_SHA256', digest), \
+                patch.object(pipeline, 'SEPARATION_MODELS', (current, older)):
             with self.assertRaisesRegex(RuntimeError, 'SHA256'):
                 setup.setup_model(model_root, wrong)
             self.assertEqual(list(model_root.iterdir()), [])
-            with patch.object(pipeline, 'MODEL_FILES', {pipeline.MODEL_FILE: digest}):
-                destination = setup.setup_model(model_root, right)
-                self.assertEqual(destination, model_root.resolve() / pipeline.MODEL_DIRECTORY)
-                self.assertTrue(pipeline.model_ready(model_root))
-                self.assertEqual(setup.setup_model(model_root), destination)
+            destination = setup.setup_model(model_root, right)
+            self.assertEqual(destination, model_root.resolve() / pipeline.MODEL_DIRECTORY)
+            self.assertIs(pipeline.installed_model(model_root), current)
+            self.assertEqual(setup.setup_model(model_root), destination)
+            # An earlier installation with only the older model gets the current one beside it, once it verifies.
+            earlier = self.root / 'earlier-cache'
+            (earlier / pipeline.MODEL_DIRECTORY).mkdir(parents=True)
+            (earlier / pipeline.MODEL_DIRECTORY / 'older.onnx').write_bytes(b'older')
+            self.assertIs(pipeline.installed_model(earlier), older)
+            with self.assertRaisesRegex(RuntimeError, 'SHA256'):
+                setup.setup_model(earlier, wrong)
+            self.assertEqual(sorted(path.name for path in (earlier / pipeline.MODEL_DIRECTORY).iterdir()), ['older.onnx'])
+            setup.setup_model(earlier, right)
+            self.assertIs(pipeline.installed_model(earlier), current)
+            # A directory holding neither model is refused rather than added to.
+            broken = self.root / 'broken-cache'
+            (broken / pipeline.MODEL_DIRECTORY).mkdir(parents=True)
+            with self.assertRaisesRegex(RuntimeError, 'incomplete or corrupt'):
+                setup.setup_model(broken, right)
 
     def test_exact_thirty_second_compressed_clips_allow_encoder_padding_in_probe_metadata(self) -> None:
         original = self.root / 'original.wav'

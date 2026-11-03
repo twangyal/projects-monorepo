@@ -62,6 +62,17 @@ class SeparateVocalsTests(unittest.TestCase):
                 self.assertEqual(vocals.shape, (frames, 2))
                 self.assertEqual(backing.shape, (frames, 2))
 
+    def test_an_instrumental_model_estimates_the_backing_and_leaves_the_vocals(self):
+        mixture = tones(mdx.STEP + 77)
+        vocals, backing = mdx.separate_vocals(mixture, lambda features: features, 'backing')
+        self.assertLess(np.abs(backing - mixture).max(), 1e-3)
+        self.assertLess(np.abs(vocals).max(), 1e-3)
+        silent_vocals, whole = mdx.separate_vocals(mixture, np.zeros_like, 'backing')
+        np.testing.assert_array_equal(silent_vocals, mixture)
+        self.assertEqual(np.abs(whole).max(), 0)
+        with self.assertRaisesRegex(ValueError, 'vocals or the backing'):
+            mdx.separate_vocals(mixture, np.zeros_like, 'drums')
+
     def test_invalid_audio_or_model_output_is_refused(self):
         for audio in (np.zeros((0, 2), np.float32), np.zeros((10, 1), np.float32), np.zeros(10, np.float32)):
             with self.subTest(shape=audio.shape), self.assertRaises(ValueError):

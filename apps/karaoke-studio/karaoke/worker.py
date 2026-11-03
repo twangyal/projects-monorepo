@@ -20,7 +20,7 @@ from karaoke.limits import (  # noqa: E402
     HOP_FRAMES, MAX_DURATION, MAX_WAV_BYTES, OVERLAP_FRAMES, SAMPLE_RATE,
     WINDOW_FRAMES, WORKER_CPU_HARD, WORKER_CPU_SOFT, WORKER_FILE_BYTES,
 )
-from karaoke.pipeline import MODEL_DIRECTORY, MODEL_FILE, MODEL_NAME, MODEL_SHA256, model_ready  # noqa: E402
+from karaoke.pipeline import MODEL_DIRECTORY, installed_model  # noqa: E402
 
 # All destinations are preflighted together before either mutation or cleanup.
 _OUTPUT_NAMES = ('vocals.f32', 'backing.f32', 'vocals.wav', 'backing.wav', 'processing.json')
@@ -120,7 +120,8 @@ def main() -> None:
     parser.add_argument('--model-root', type=Path, required=True)
     args = parser.parse_args()
     _preflight(args.output_dir)
-    if not model_ready(args.model_root):
+    model = installed_model(args.model_root)
+    if model is None:
         raise RuntimeError('Verified model files are missing or corrupt; run explicit model setup.')
     configure_runtime()
     network_attempted = False
@@ -144,11 +145,11 @@ def main() -> None:
             from karaoke.mdx import load_model, separate_vocals
         except ModuleNotFoundError as error:
             raise RuntimeError('Install requirements-ml.lock.txt into the documented Python 3.11 environment.') from error
-        run = load_model(args.model_root / MODEL_DIRECTORY / MODEL_FILE, SEPARATION_THREADS)
+        run = load_model(args.model_root / MODEL_DIRECTORY / model.file, SEPARATION_THREADS)
 
         def predict(raw: bytes, frames: int) -> tuple[bytes, bytes]:
             waveform = np.frombuffer(raw, dtype='<i2').reshape(frames, 2).astype(np.float32) / 32768
-            stems = separate_vocals(waveform, run)
+            stems = separate_vocals(waveform, run, model.estimates)
             for samples in stems:
                 if samples.shape != (frames, 2) or not np.isfinite(samples).all():
                     raise RuntimeError('The model returned invalid or mismatched audio samples.')
@@ -161,7 +162,7 @@ def main() -> None:
         if network_attempted:
             raise RuntimeError('The model attempted a network connection despite its local cache.')
         metadata.update({
-            'model': MODEL_NAME, 'modelSha256': MODEL_SHA256, 'onnxruntimeVersion': onnxruntime.__version__,
+            'model': model.name, 'modelSha256': model.sha256, 'onnxruntimeVersion': onnxruntime.__version__,
             'offlineNetworkAttempts': 0, 'workerSeconds': time.perf_counter() - started,
             'peakRssKiB': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         })

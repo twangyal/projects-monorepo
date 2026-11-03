@@ -397,7 +397,7 @@ class SeparationModelProcessingTests(unittest.TestCase):
             self.assertEqual(_processing(json.dumps(record).encode(), 44100), record)
         for record in ({**mdx, 'modelRelease': 'v1.4.0'}, {**mdx, 'tensorflowVersion': '2.12.1'}, {**spleeter, 'onnxruntimeVersion': '1.23.2'},
                        {**spleeter, 'modelSha256': 'e' * 64}, {**mdx, 'modelSha256': 'E' * 64}, {**mdx, 'onnxruntimeVersion': 'not a version'},
-                       {**mdx, 'model': ['UVR-MDX-NET-Voc_FT']}, {**mdx, 'model': 'UVR-MDX-NET-Inst_HQ_3'}, {**spleeter, 'modelRelease': 'v1.5.0'}):
+                       {**mdx, 'model': ['UVR-MDX-NET-Voc_FT']}, {**mdx, 'model': 'UVR-MDX-NET-Inst_HQ_4'}, {**spleeter, 'modelRelease': 'v1.5.0'}):
             with self.subTest(record=record), self.assertRaises(ArchiveError):
                 _processing(json.dumps(record).encode(), 44100)
 

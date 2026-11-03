@@ -1,12 +1,12 @@
-"""MDX-Net vocal separation (UVR-MDX-NET-Voc_FT ONNX) with bounded memory.
+"""MDX-Net vocal separation (UVR-MDX-NET-Inst_HQ_3 or UVR-MDX-NET-Voc_FT ONNX) with bounded memory.
 
 The model maps a stereo spectrogram segment (real and imaginary parts of both channels, the
-lowest ``DIM_F`` bins, ``DIM_T`` frames) to the vocals' spectrogram. A window is cut into
-segments that each carry ``N_FFT / 2`` samples of context on both sides; only the centre of each
-segment is kept, so consecutive segments join without seams. The backing is the input minus the
-vocals. Segments run one at a time, so memory stays near one segment's activations whatever the
-window length. The STFT conventions follow sherpa-onnx's UVR implementation (centred, reflect
-padded, periodic Hann window).
+lowest ``DIM_F`` bins, ``DIM_T`` frames) to one stem's spectrogram: the backing (Inst_HQ_3) or
+the vocals (Voc_FT); the other stem is the input minus it. A window is cut into segments that
+each carry ``N_FFT / 2`` samples of context on both sides; only the centre of each segment is
+kept, so consecutive segments join without seams. Segments run one at a time, so memory stays
+near one segment's activations whatever the window length. The STFT conventions follow
+sherpa-onnx's UVR implementation (centred, reflect padded, periodic Hann window).
 """
 from __future__ import annotations
 
@@ -53,11 +53,14 @@ def segment_starts(frames: int) -> list[int]:
     return list(range(0, frames, STEP))
 
 
-def separate_vocals(stereo: np.ndarray, run) -> tuple[np.ndarray, np.ndarray]:
+def separate_vocals(stereo: np.ndarray, run, estimates: str = 'vocals') -> tuple[np.ndarray, np.ndarray]:
     """Split ``stereo`` (frames, 2) float audio into (vocals, backing), each (frames, 2) float32.
 
-    ``run`` maps a float32 array (1, 4, DIM_F, DIM_T) to the model output of the same shape.
+    ``run`` maps a float32 array (1, 4, DIM_F, DIM_T) to the model output of the same shape, the spectrogram of the stem
+    the model ``estimates`` ('vocals' or 'backing').
     """
+    if estimates not in ('vocals', 'backing'):
+        raise ValueError('A separation model estimates the vocals or the backing.')
     if stereo.ndim != 2 or stereo.shape[1] != 2 or not len(stereo):
         raise ValueError('MDX separation needs non-empty stereo audio.')
     frames = len(stereo)
@@ -78,9 +81,9 @@ def separate_vocals(stereo: np.ndarray, run) -> tuple[np.ndarray, np.ndarray]:
             spectrum = np.zeros((DIM_T, N_FFT // 2 + 1), dtype=np.complex128)
             spectrum[:, :DIM_F] = estimate[0, 2 * channel].T + 1j * estimate[0, 2 * channel + 1].T
             vocals[number * STEP:(number + 1) * STEP, channel] = istft(spectrum, SEGMENT)[TRIM:TRIM + STEP]
-    vocals = vocals[:frames]
-    backing = (stereo - vocals).astype(np.float32)
-    return vocals, backing
+    estimate = vocals[:frames]
+    rest = (stereo - estimate).astype(np.float32)
+    return (estimate, rest) if estimates == 'vocals' else (rest, estimate)
 
 
 def load_model(path: Path, threads: int):
