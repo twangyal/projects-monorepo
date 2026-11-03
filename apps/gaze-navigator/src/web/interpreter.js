@@ -487,6 +487,7 @@ function interpretInCircle(utterance, context) {
   if (/^(cancel|stop|never ?mind|forget it)(?: (?:that|it|this))?$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on|wait|wait a (?:second|moment|minute)|one moment)$/.test(text)) return { type: 'pause' };
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
+  if (/^(?:again|(?:do|try) (?:that|it|this) again|(?:do (?:that|it) )?once more|one more time|same again|repeat(?: that| it| the last (?:one|action))?)$/.test(text)) return { type: 'again' };
   if (/^(?:use|start|switch to|turn on) (?:the )?(?:camera|webcam|eye tracking|gaze tracking|my eyes)(?: mode| tracking)?$|^camera mode$/.test(text)) {
     return { type: 'tracking', source: 'camera' };
   }

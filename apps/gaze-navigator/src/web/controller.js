@@ -7,6 +7,8 @@ import { composedContains, distanceToRect, isConsequentialName, regionIs } from 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
 const PREVIOUS_MS = 30000;
+// "Again" repeats an action from up to two minutes ago.
+const AGAIN_MS = 120000;
 const PREVIOUS_ID = 199;
 const CLARIFY_MS = 30000;
 const HISTORY_LIMIT = 20;
@@ -29,6 +31,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
+  // The last scroll, back or forward, or press of an ordinary control, which "again" repeats in the same place.
+  let last = null;
   const history = new WeakMap();
   const rangeHistory = new WeakMap();
   const numberHistory = new WeakMap();
@@ -242,6 +246,7 @@ export function createController({ window, actions = pageActions, interpret = in
       return reply(result.message, 'info', { performed: null, followUp });
     }
     if (result.ok && target) previous = { target, at: now() };
+    if (result.ok && (['scroll', 'back', 'forward'].includes(action.type) || (action.type === 'activate' && target && !confirmable(action, target)))) last = { action, context, at: now() };
     // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
     const aimed = result.ok && POINTING.has(action.type) && context.elements.includes(target) ? target : null;
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null, aimed });
@@ -382,6 +387,13 @@ export function createController({ window, actions = pageActions, interpret = in
       if (action.type === 'deny') return reply('Cancelled. Nothing was changed.', 'info', { cancelled: true });
     }
 
+    if (action.type === 'again') {
+      if (!last || now() - last.at > AGAIN_MS) return reply('There is nothing to do again. Say the instruction itself.', 'info');
+      const { action: repeated, context: where } = last;
+      const gone = repeated.targetId != null ? !targetOf(where, repeated.targetId)?.element?.isConnected : repeated.type === 'scroll' && where.region?.isConnected === false;
+      if (gone) { last = null; return reply('What was used last is no longer on the page. Look at it and say what to do.', 'error'); }
+      return perform(repeated, where);
+    }
     switch (action.type) {
       case 'confirm':
       case 'deny': return reply('There is nothing waiting for confirmation.', 'info');
