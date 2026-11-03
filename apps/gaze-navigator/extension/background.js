@@ -87,6 +87,15 @@ chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
   // Read continuation state after earlier explicit operations have committed it.
   await operations.get(tabId)?.catch(() => {});
   if (intents.get(tabId) !== intent) return;
+  // A page the navigator itself was asked to load (reload, a website, a new tab) keeps the navigator on.
+  const carriedAt = carried.get(tabId);
+  carried.delete(tabId);
+  if (carriedAt > Date.now() - CARRY_MS && (await hostAccess())) {
+    if (intents.get(tabId) !== intent) return;
+    await setEnabled(tabId, true);
+    await run(tabId, 'start', intent);
+    return;
+  }
   const [tabs, prefs] = await Promise.all([enabledTabs(), preferences()]);
   if (intents.get(tabId) !== intent) return;
   if (!(prefs.autoStart || (prefs.persist && tabs[tabId]))) {
@@ -107,7 +116,71 @@ chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
   await run(tabId, 'start', intent);
 });
 
+// Browser commands spoken to the navigator in a tab's top frame: reload, a website, tabs and zoom. With access to all
+// websites, the navigator carries on in the page or tab the command leads to; without it, the reply says how to
+// turn it back on.
+const ZOOMS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+// Tabs loading a page the navigator asked for, and when it asked; a load that has not finished in time is forgotten.
+const carried = new Map(), CARRY_MS = 60000;
+let closedAt = 0;
+// The navigator moves with the user to another tab: the one left behind stops once its reply has been shown, so the
+// two do not compete for the camera and microphone.
+const leave = tab => setTimeout(() => { run(tab.id, 'stop').catch(() => {}); }, 200);
+function webAddress(value) {
+  try { const url = new URL(String(value)); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch { return null; }
+}
+async function browserCommand(tab, action) {
+  const access = await hostAccess();
+  const after = access ? '' : ' Gaze Navigator stops there: turn it back on from the toolbar or with Alt+Shift+N, or allow it on all websites to keep it on.';
+  if (action?.type === 'reload') {
+    if (access) carried.set(tab.id, Date.now());
+    await chrome.tabs.reload(tab.id);
+    return { ok: true, message: `Reloading the page.${after}` };
+  }
+  if (action?.type === 'visit' || (action?.type === 'tab' && action.move === 'new')) {
+    const url = webAddress(action.url);
+    if (!url) return { ok: false, message: 'That is not a website address. Nothing was changed.' };
+    const host = new URL(url).host;
+    if (action.type === 'visit') {
+      if (access) carried.set(tab.id, Date.now());
+      await chrome.tabs.update(tab.id, { url });
+      return { ok: true, message: `Opening ${host}.${after}` };
+    }
+    const created = await chrome.tabs.create({ url, index: tab.index + 1, openerTabId: tab.id });
+    if (access) { carried.set(created.id, Date.now()); leave(tab); }
+    return { ok: true, message: `Opened ${host} in a new tab.${after}` };
+  }
+  if (action?.type === 'zoom' && ['in', 'out', 'reset'].includes(action.step)) {
+    const now = await chrome.tabs.getZoom(tab.id);
+    const next = action.step === 'reset' ? 1 : action.step === 'in' ? ZOOMS.find(zoom => zoom > now + 0.001) ?? ZOOMS.at(-1) : [...ZOOMS].reverse().find(zoom => zoom < now - 0.001) ?? ZOOMS[0];
+    await chrome.tabs.setZoom(tab.id, next);
+    return { ok: true, message: `Zoomed to ${Math.round(next * 100)}%.${next !== now ? ' Camera gaze may land beside your look until you say recalibrate.' : ''}` };
+  }
+  if (action?.type === 'tab' && action.move === 'close') {
+    closedAt = access ? Date.now() : 0;
+    // Close after replying, so the answer reaches the navigator first.
+    setTimeout(() => { chrome.tabs.remove(tab.id).catch(() => {}); }, 200);
+    return { ok: true, message: `Closing this tab.${access ? '' : ' Turn Gaze Navigator on in the next tab from the toolbar or with Alt+Shift+N.'}` };
+  }
+  if (action?.type === 'tab' && ['next', 'previous'].includes(action.move)) {
+    const tabs = await chrome.tabs.query({ windowId: tab.windowId });
+    if (tabs.length < 2) return { ok: false, message: 'This is the only tab in the window. Nothing was changed.' };
+    const at = tabs.findIndex(other => other.id === tab.id), target = tabs[(at + (action.move === 'next' ? 1 : -1) + tabs.length) % tabs.length];
+    await chrome.tabs.update(target.id, { active: true });
+    if (access) { leave(tab); await setEnabled(target.id, true); run(target.id, 'start').catch(() => {}); }
+    return { ok: true, message: `Switched to tab ${target.index + 1} of ${tabs.length}.${access ? '' : ' Turn Gaze Navigator on there from the toolbar or with Alt+Shift+N.'}` };
+  }
+  return { ok: false, message: 'That browser command is not supported. Nothing was changed.' };
+}
+// The tab the browser shows after the navigator closed one carries the navigator on.
+chrome.tabs.onActivated?.addListener(({ tabId }) => {
+  if (!closedAt || Date.now() - closedAt > 3000) return;
+  closedAt = 0;
+  setEnabled(tabId, true).then(() => run(tabId, 'start')).catch(() => {});
+});
+
 chrome.tabs.onRemoved.addListener(tabId => {
+  carried.delete(tabId);
   const intent = {}; intents.set(tabId, intent);
   enqueue(tabId, intent, async () => {
     await setEnabled(tabId, false);
@@ -192,6 +265,10 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     ensureOffscreen()
       .then(() => chrome.runtime.sendMessage({ target: 'gaze-offscreen', op: message.op, args: message.args ?? [], tabId: sender.tab.id }))
       .then(respond, error => respond({ ok: false, message: error.message }));
+    return true;
+  }
+  if (message?.type === 'gaze:browser' && sender.tab?.id !== undefined && sender.frameId === 0) {
+    browserCommand(sender.tab, message.action).then(respond, error => respond({ ok: false, message: `The browser refused: ${error.message}. Nothing else was changed.` }));
     return true;
   }
   if (message?.type === 'gaze:assist-progress' && !sender.tab) {

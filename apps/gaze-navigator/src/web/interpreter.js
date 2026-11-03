@@ -343,6 +343,43 @@ function unquote(text) {
   return match ? match[1] : text.trim();
 }
 
+// A website address as said: "bbc dot co dot uk slash news" or "wikipedia.org"; null unless it is one. It must end in
+// a country code or a common ending, so a file ("report.pdf") or a name with a dot ("Node.js") is not taken for one.
+const ENDINGS = new Set('com org net edu gov mil int info biz app dev shop store online site blog news tech xyz art page wiki museum travel jobs pro name mobi asia cloud'.split(' '));
+const NOT_COUNTRIES = new Set('js ts md py rb sh go cs gz rs db'.split(' '));
+export function spokenAddress(said) {
+  const text = said.trim().toLowerCase().replace(/^(?:the\s+)?(?:website\s+|site\s+)?/, '').replace(/\s+dot\s+/g, '.').replace(/\s+slash\s+/g, '/').replace(/\s+/g, '');
+  const match = /^(?:https?:\/\/)?((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+([a-z]{2,24}))(\/[\w\-./?=&%#~+]*)?$/.exec(text);
+  if (!match || !(match[2].length === 2 ? !NOT_COUNTRIES.has(match[2]) : ENDINGS.has(match[2]))) return null;
+  return `https://${match[1]}${match[3] ?? '/'}`;
+}
+function browserCommand(command, context) {
+  const said = command.trim().toLowerCase().replace(/[.!?]+$/, '');
+  // A control on the page named like the address ("Example.com" in a footer) is opened instead.
+  const compact = text => (text ?? '').toLowerCase().replace(/[\s/]+/g, '').replace(/^https?:/, '');
+  const named = target => [...(context.elements ?? []), ...(context.nearby ?? [])].some(element => compact(element.name) === compact(target.replace(/\s+dot\s+/g, '.')));
+  if (/^(?:reload|refresh)(?: (?:the|this) page)?$/.test(said)) return { type: 'reload' };
+  let match;
+  if ((match = /^(?:open|go to|visit)\s+(.+?)\s+in (?:a )?new tab$/.exec(said))) {
+    const url = spokenAddress(match[1]);
+    if (url) return { type: 'tab', move: 'new', url };
+  }
+  if (/^(?:open (?:a )?)?new tab$/.test(said)) return { type: 'unknown', message: 'Say which website to open, for example “open wikipedia dot org in a new tab”. An empty new tab cannot be controlled by the navigator.' };
+  if ((match = /^(?:go to|open|visit|navigate to|take me to)\s+(.+)$/.exec(said)) && !named(match[1])) {
+    const url = spokenAddress(match[1]);
+    if (url) return { type: 'visit', url };
+  }
+  if ((match = /^(?:go to |go back to |switch to )?(?:the )?(next|previous) tab$/.exec(said))) return { type: 'tab', move: match[1] };
+  if (/^close (?:this |the |current )?tab$/.test(said)) return { type: 'tab', move: 'close' };
+  if (/^zoom in$|^make (?:the page|the text|everything|this page) (?:bigger|larger)$/.test(said)) return { type: 'zoom', step: 'in' };
+  if (/^zoom out$|^make (?:the page|the text|everything|this page) smaller$/.test(said)) return { type: 'zoom', step: 'out' };
+  if (/^(?:reset|normal) zoom$|^reset the zoom$|^zoom (?:to )?(?:normal|100 ?(?:%|percent))$|^actual size$/.test(said)) return { type: 'zoom', step: 'reset' };
+  if (/^(?:go to )?(?:the )?top of the page$/.test(said)) return { type: 'scroll', direction: 'top', amount: 'page', scope: 'page' };
+  if (/^(?:go to )?(?:the )?bottom of the page$/.test(said)) return { type: 'scroll', direction: 'bottom', amount: 'page', scope: 'page' };
+  if (/^scroll all the way (up|down)$/.test(said)) return { type: 'scroll', direction: said.endsWith('up') ? 'top' : 'bottom', amount: 'page' };
+  return null;
+}
+
 // Spoken punctuation in dictation, as dictation software takes it: "hello comma how are you question mark" is
 // typed as "hello, how are you?", and the word after a full stop, question mark or exclamation mark, or a new line,
 // starts with a capital. A quoted phrase keeps its words ("type “a comma splice”").
@@ -512,6 +549,10 @@ function interpretInCircle(utterance, context) {
   if (/^(cancel|stop|never ?mind|forget it)(?: (?:that|it|this))?$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on|wait|wait a (?:second|moment|minute)|one moment)$/.test(text)) return { type: 'pause' };
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
+  // The browser itself: reload, go to a website, tabs and zoom. A website is named by its address ("go to bbc dot co
+  // dot uk"), so "open settings" still opens a control.
+  const browser = browserCommand(command, context);
+  if (browser) return browser;
   if (/^(?:again|(?:do|try) (?:that|it|this) again|(?:do (?:that|it) )?once more|one more time|same again|repeat(?: that| it| the last (?:one|action))?)$/.test(text)) return { type: 'again' };
   if (/^(?:use|start|switch to|turn on) (?:the )?(?:camera|webcam|eye tracking|gaze tracking|my eyes)(?: mode| tracking)?$|^camera mode$/.test(text)) {
     return { type: 'tracking', source: 'camera' };

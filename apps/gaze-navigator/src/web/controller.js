@@ -7,6 +7,9 @@ import { composedContains, distanceToRect, isConsequentialName, regionIs } from 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
 const PREVIOUS_MS = 30000;
+// Commands for the browser rather than the page.
+const BROWSER = new Set(['reload', 'visit', 'tab', 'zoom']);
+const hostOf = url => { try { return new URL(url).host; } catch { return 'the website'; } };
 // "Again" repeats an action from up to two minutes ago.
 const AGAIN_MS = 120000;
 const PREVIOUS_ID = 199;
@@ -31,7 +34,7 @@ export function createController({ window, actions = pageActions, interpret = in
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
-  // The last scroll, back or forward, or press of an ordinary control, which "again" repeats in the same place.
+  // The last scroll, back or forward, zoom step or press of an ordinary control, which "again" repeats in the same place.
   let last = null;
   const history = new WeakMap();
   const rangeHistory = new WeakMap();
@@ -90,9 +93,22 @@ export function createController({ window, actions = pageActions, interpret = in
     return execute(action, context);
   }
 
+  function runBrowser(action) {
+    const followUp = Promise.resolve(commands.browser(action))
+      .then(result => {
+        // "Again" zooms another step.
+        if (result?.ok && action.type === 'zoom' && action.step !== 'reset') last = { action, context: {}, at: now() };
+        return reply(result?.message ?? 'Done.', result?.ok ? 'success' : 'error');
+      })
+      .catch(() => reply('The browser did not respond. Nothing else was changed.', 'error'));
+    const working = { reload: 'Reloading the page…', visit: `Opening ${hostOf(action.url)}…`, tab: 'Switching tabs…', zoom: 'Zooming…' };
+    return reply(working[action.type], 'info', { followUp });
+  }
+
   function execute(action, context) {
     const executionTurn = turn;
     pending = null;
+    if (BROWSER.has(action.type)) return runBrowser(action);
     const target = targetOf(context, action.targetId);
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
@@ -336,6 +352,16 @@ export function createController({ window, actions = pageActions, interpret = in
       if (!handler) return reply(action.type === 'circle-size' ? 'Circle size adjustment is not available here.' : 'Camera tracking is not available here.', 'error');
       const result = handler(action.type === 'circle-size' ? action.size : action.source);
       return reply(result.message, result.ok ? 'success' : 'error');
+    }
+    // The browser itself (reload, websites, tabs, zoom) needs no gaze; closing a tab is asked first.
+    if (BROWSER.has(action.type)) {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.browser) return reply('Browser commands are not available here.', 'error');
+      if (action.type === 'tab' && action.move === 'close') {
+        pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
+        return reply('Close this tab? Anything typed here and not sent is lost. Say confirm to close it, or cancel.', 'question');
+      }
+      return runBrowser(action);
     }
     if (context.trackingUnavailable) {
       pending = null;

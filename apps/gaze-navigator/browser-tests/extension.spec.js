@@ -38,7 +38,9 @@ const test = base.extend({
       ...(launch.executablePath ? {} : { channel: 'chromium' }),
       headless: true,
       viewport,
-      args: [...(launch.args ?? []), `--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+      // example.com pages are served by routes below; a load the routes miss (the first page of a tab the extension
+      // opens) fails rather than reaching the real site.
+      args: [...(launch.args ?? []), `--disable-extensions-except=${extension}`, `--load-extension=${extension}`, '--host-resolver-rules=MAP example.com ~NOTFOUND'],
     });
     await context.route('http://shop.example/**', route => {
       const path = new URL(route.request().url()).pathname;
@@ -680,4 +682,58 @@ test('camera silence, loss and capture disconnect retire extension targets and c
   await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(0);
   await typeInstruction(page,'use pointer');const box=await buy.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await expect(panel(page).locator('.context')).toContainText('Button: Buy now');
   await typeInstruction(page,'click buy now');await typeInstruction(page,'confirm');expect(await page.evaluate(()=>window.__purchases)).toBe(1);
+});
+
+test('browser commands zoom, open websites and tabs, switch, reload and close tabs, and the navigator follows', async ({ context, control }) => {
+  await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: false, persist: false } }));
+  await context.route('https://example.com/**', route => route.fulfill({ contentType: 'text/html', body: html(new URL(route.request().url()).pathname) }));
+  const page = await context.newPage();
+  await page.goto('https://example.com/');
+  const id = await tabId(control, 'https://example.com/*');
+  const turnOn = async tab => expect(await control.evaluate(tab => chrome.runtime.sendMessage({ type: 'gaze:toggle', tabId: tab }), tab)).toBe('on');
+  await turnOn(id);
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await typeInstruction(page, 'zoom in');
+  await expect(status(page)).toContainText('Zoomed to 110%');
+  await typeInstruction(page, 'again');
+  await expect(status(page)).toContainText('Zoomed to 125%');
+  expect(await control.evaluate(tab => chrome.tabs.getZoom(tab), id)).toBeCloseTo(1.25);
+  await typeInstruction(page, 'reset zoom');
+  await expect(status(page)).toContainText('Zoomed to 100%');
+  // A website said by its address opens in this tab, and the navigator carries on there.
+  await typeInstruction(page, 'go to example dot com slash about');
+  await page.waitForURL('https://example.com/about');
+  await expect(status(page)).toContainText('Ready on "About Example Shop"');
+  // A new tab opens beside this one, and the navigator stops here to move there.
+  const opened = context.waitForEvent('page');
+  await typeInstruction(page, 'open example dot com slash contact in a new tab');
+  const created = await opened;
+  await expect.poll(() => created.url()).toBe('https://example.com/contact');
+  await expect(overlay(page)).toHaveCount(0);
+  await created.close();
+  // Switching tabs moves the navigator to the tab switched to, and back.
+  const second = await context.newPage();
+  await second.goto('https://example.com/contact');
+  await page.bringToFront();
+  await turnOn(id);
+  await expect(status(page)).toContainText('Ready on "About Example Shop"');
+  await typeInstruction(page, 'next tab');
+  await expect(status(second)).toContainText('Ready on "Contact Example Shop"');
+  await expect(overlay(page)).toHaveCount(0);
+  await typeInstruction(second, 'previous tab');
+  await expect(status(page)).toContainText('Ready on "About Example Shop"');
+  await expect(overlay(second)).toHaveCount(0);
+  // Reloading keeps the navigator on.
+  await page.evaluate(() => { window.beforeReload = true; });
+  const reloaded = page.waitForEvent('load');
+  await typeInstruction(page, 'reload');
+  await reloaded;
+  expect(await page.evaluate(() => window.beforeReload ?? false)).toBe(false);
+  await expect(status(page)).toContainText('Ready on "About Example Shop"');
+  // Closing the tab is asked first.
+  await typeInstruction(page, 'close this tab');
+  await expect(status(page)).toContainText('Close this tab?');
+  const closed = page.waitForEvent('close');
+  await typeInstruction(page, 'confirm');
+  await closed;
 });

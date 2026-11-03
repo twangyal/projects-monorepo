@@ -128,7 +128,19 @@ export function outcomeOf(result) {
   return { outcome, message: result.message };
 }
 
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null } = {}) {
+// Browser commands a page can carry out itself (outside the extension): reloading and going to a website. Tabs and
+// zoom belong to the browser, which only the extension can ask.
+export function pageBrowser(window) {
+  return {
+    async run(action) {
+      if (action.type === 'reload') { window.setTimeout(() => window.location.reload(), 300); return { ok: true, message: 'Reloading the page.' }; }
+      if (action.type === 'visit') { window.setTimeout(() => window.location.assign(action.url), 300); return { ok: true, message: `Opening ${new URL(action.url).host}.` }; }
+      return { ok: false, message: 'Tabs and zoom need the Gaze Navigator extension. Nothing was changed.' };
+    },
+  };
+}
+
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null, browser = pageBrowser(window) } = {}) {
   const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
@@ -232,7 +244,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, browser: action => browser.run(action) }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,

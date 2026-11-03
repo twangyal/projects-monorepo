@@ -38,5 +38,7 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
   const createSpeech = (window, callbacks) => createFrameSpeech({ document, window, mount: document.getElementById('gaze-web-navigator').shadowRoot, runtime: chrome.runtime, ...callbacks });
   // Iframes from other sites are reached through the extension's frame agents.
   const embeddedFrames = createEmbeddedFrames({ window, runtime: chrome.runtime });
-  return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant, embeddedFrames });
+  // Reloading, websites, tabs and zoom are carried out by the extension's background for this tab.
+  const browser = { run: async action => (await chrome.runtime.sendMessage({ type: 'gaze:browser', action })) ?? { ok: false, message: 'The browser did not respond. Nothing else was changed.' } };
+  return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant, embeddedFrames, browser });
 }
