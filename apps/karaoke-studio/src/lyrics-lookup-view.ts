@@ -37,6 +37,11 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
     if(auto.checked&&tagged&&context&&!context.busy&&!request&&!result&&!tried.includes(context.projectId)){
       remember(context.projectId);automatic=true;find.disabled=false;queueMicrotask(()=>find.click());
     }
+    // Where the automatic lyrics are shown, a song file that names its title and artist is offered a lookup, until one has
+    // been tried for this clip.
+    const offered=!!context&&tagged&&!context.busy&&!request&&!result&&!tried.includes(context.projectId);
+    el('lookup-offer').hidden=!offered;
+    if(offered)el('lookup-offer-text').textContent=`Published lyrics may exist for “${title.value.trim()}” by ${artist.value.trim()}: usually more accurate than recognition. Looking them up sends only the title, artist and clip length to LRCLIB.`;
     find.disabled=!context||context.busy||!!request;title.disabled=artist.disabled=!context||context.busy;
     use.disabled=!result||!context||context.key!==owner||context.busy||context.pastedDirty||context.alignmentState!=='ready';
     // Published timings need no alignment, so they do not wait for recognition information.
@@ -46,8 +51,10 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
   }
   for(const input of [title,artist])input.addEventListener('input',()=>{tagged=false;fromName=false;clear('Metadata changed. Look up lyrics when ready.');sync();});
   cancel.addEventListener('click',()=>{clear('Lyrics lookup cancelled. Your lyrics are unchanged.');sync();});
+  el('lookup-offer-find').addEventListener('click',()=>{(el('lyrics-lookup') as HTMLDetailsElement).open=true;find.click();el('lookup-status').scrollIntoView({block:'nearest'});});
   find.addEventListener('click',async()=>{
     const context=current(),wasAutomatic=automatic;automatic=false;if(!context||context.busy)return;
+    remember(context.projectId);
     clear();const ticket=++epoch,controller=new AbortController();request=controller;owner=context.key;status.textContent='Looking up lyrics from LRCLIB…';sync();
     try{
       let found:LyricsRecord;
