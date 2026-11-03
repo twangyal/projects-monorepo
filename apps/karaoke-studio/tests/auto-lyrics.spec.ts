@@ -270,3 +270,27 @@ test('a known recognizer can be chosen before a new song without changing the re
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   });
 });
+
+test('the correction report measures every saved clip and downloads titles and numbers, no lyrics', async ({ page }) => {
+  await isolatedClip(page, async () => {
+    await page.goto('/');
+    await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+    await page.getByLabel('Upload song clip').setInputFiles({ name: 'report-check.wav', mimeType: 'audio/wav', buffer: tone(16) });
+    await expect(page.locator('#message')).toContainText('Your stems', { timeout: 15000 });
+    await page.getByLabel('Lyric line 2', { exact: true }).fill('This is my chorus');
+    await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+    await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+    await page.getByText('Correction report', { exact: true }).click();
+    await page.getByRole('button', { name: 'Measure saved clips', exact: true }).click();
+    await expect(page.locator('#correction-status')).toContainText(/Across \d+ clips? with automatic lyrics, your saved lyrics changed/);
+    const row = page.getByRole('table', { name: 'Correction of automatic lyrics per saved clip' }).getByRole('row').filter({ hasText: 'report-check' });
+    await expect(row.getByRole('cell')).toHaveText(['report-check', 'English', '1 of 12 (8%)', '0 of 3']);
+    const wait = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download report (CSV)', exact: true }).click();
+    const download = await wait, csv = (await (await import('node:fs/promises')).readFile((await download.path())!)).toString();
+    expect(download.suggestedFilename()).toBe('karaoke-correction-report.csv');
+    expect(csv).toContain('title,recognizer,seconds,automatic_words,changed_words,changed_percent,saved_lines,moved_line_starts');
+    expect(csv).toContain('report-check,English,16,12,1,8,3,0');
+    expect(csv).not.toContain('chorus');
+  });
+});
