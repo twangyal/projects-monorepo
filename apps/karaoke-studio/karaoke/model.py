@@ -108,6 +108,15 @@ def update_project(project: dict, title: str, cues: list, expected_revision: int
                              'revision': current['revision'] + 1})
 
 
+def set_cover(project: dict, cover: object, expected_revision: int) -> dict:
+    """The project with this cover picture (a JPEG data URL), or without one when ``cover`` is None."""
+    current = validate_project(project)
+    if type(expected_revision) is not int or expected_revision != current['revision']:
+        raise ValidationError('Project revision is stale; reload before saving.')
+    kept = {key: value for key, value in current.items() if key != 'cover'}
+    return validate_project({**kept, 'revision': current['revision'] + 1, **({} if cover is None else {'cover': validate_cover(cover)})})
+
+
 def draft_cues(text: str, duration: float) -> list[dict]:
     duration = _duration(duration)
     if not isinstance(text, str) or len(text) > MAX_LYRIC_CHARS:

@@ -72,3 +72,37 @@ test('a song file\'s cover art lies behind the lyrics in the preview, and a plai
   await page.getByRole('button', { name: 'Export karaoke MP4', exact: true }).click();
   expect(JSON.parse((await exported).postData()!)).toEqual({ background: 'plain' });
 }));
+
+/** A 16-second WAV with no tags, and a picture to choose for it. */
+function untagged(): { song: Buffer; picture: Buffer } {
+  const folder = mkdtempSync(join(tmpdir(), 'karaoke-picture-'));
+  try {
+    const song = join(folder, 'song.wav'), picture = join(folder, 'picture.png');
+    const run = (args: string[]) => { const result = spawnSync('ffmpeg', ['-v', 'error', '-y', ...args]); if (result.status !== 0) throw new Error(result.stderr.toString()); };
+    run(['-f', 'lavfi', '-i', 'sine=frequency=220:duration=16', '-ac', '2', '-ar', '44100', '-c:a', 'pcm_s16le', song]);
+    run(['-f', 'lavfi', '-i', 'color=c=0x1e9a3c:s=900x500', '-frames:v', '1', picture]);
+    return { song: readFileSync(song), picture: readFileSync(picture) };
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+}
+
+test('a picture can be chosen for a clip without cover art, and removed again', async ({ page }) => {
+  const { song, picture } = untagged();
+  await withClip(page, song, async id => {
+    const background = page.locator('#video-background'), stage = page.locator('#stage');
+    await expect(background).toBeDisabled();
+    await page.locator('#video-picture').setInputFiles({ name: 'green.png', mimeType: 'image/png', buffer: picture });
+    await expect(page.locator('#message')).toContainText('The picture now lies behind the lyrics');
+    await expect(background).toBeEnabled();
+    await expect(stage).toHaveAttribute('data-background', 'cover');
+    const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+    expect(saved.cover).toMatch(/^data:image\/jpeg;base64,/);
+    // The green picture shows through the veil.
+    const [r, g] = await stage.evaluate(canvas => Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(20, 360, 1, 1).data.slice(0, 2)));
+    expect(g - r).toBeGreaterThan(15);
+    await page.getByRole('button', { name: 'Remove picture', exact: true }).click();
+    await expect(page.locator('#message')).toContainText('The picture was removed');
+    await expect(background).toBeDisabled();
+    await expect(stage).toHaveAttribute('data-background', 'plain');
+    expect(await (await page.request.get(`/api/projects/${id}`)).json()).not.toHaveProperty('cover');
+  });
+});

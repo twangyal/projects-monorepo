@@ -38,13 +38,13 @@ from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
                      MAX_WAV_BYTES, MAX_VIDEO_BYTES, MIN_FREE_BYTES,
                      UPLOAD_TIMEOUT, UPLOAD_IDLE_TIMEOUT)
-from .model import MAX_DURATION, ValidationError, create_project, render_srt, update_project, validate_project
+from .model import MAX_DURATION, ValidationError, create_project, render_srt, set_cover, update_project, validate_project
 
 MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings|cover))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -1063,6 +1063,10 @@ class Handler(BaseHTTPRequestHandler):
             value = None
             if self.command == "PUT" and resource is None:
                 value = self._read_json()
+            elif self.command == "PUT" and resource == "cover":
+                value = self._read_json()
+                if set(value) != {"revision", "cover"} or type(value["revision"]) is not int or value["revision"] < 0:
+                    raise RequestError(400, "Provide the saved revision and a cover picture, or null to remove it.")
             elif self.command == "POST" and resource == "archive":
                 value = self._read_json()
                 if (set(value) != {"revision"} or type(value["revision"]) is not int
@@ -1113,6 +1117,22 @@ class Handler(BaseHTTPRequestHandler):
                     if value["revision"] != project["revision"]:
                         raise RequestError(409, "Project revision is stale; reload before saving.")
                     updated = update_project(project, value["title"], value["cues"], value["revision"])
+                    fd = server._open_project(project_id)
+                    try:
+                        _atomic_json(directory / "project.json", updated, directory_fd=fd)
+                    finally:
+                        os.close(fd)
+                    server.projects[project_id] = updated
+                if self.command == "PUT" and resource == "cover":
+                    # A picture to show behind the lyrics, chosen for a clip whose song file had none (or a new one).
+                    if server.jobs.exporting(project_id):
+                        raise RequestError(409, "This project is exporting; wait or cancel before changing its picture.")
+                    if value["revision"] != project["revision"]:
+                        raise RequestError(409, "Project revision is stale; reload before saving.")
+                    try:
+                        updated = set_cover(project, value["cover"], value["revision"])
+                    except ValidationError as error:
+                        raise RequestError(400, str(error)) from None
                     fd = server._open_project(project_id)
                     try:
                         _atomic_json(directory / "project.json", updated, directory_fd=fd)
@@ -1181,7 +1201,7 @@ class Handler(BaseHTTPRequestHandler):
             if read and resource is None:
                 self._json(project)
                 return
-            if self.command == "PUT" and resource is None:
+            if self.command == "PUT" and resource in (None, "cover"):
                 self._json(updated)
                 return
             if read and resource == 'archive-info':

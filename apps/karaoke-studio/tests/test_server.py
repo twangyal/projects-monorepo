@@ -53,6 +53,36 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.token = payload["token"]
 
+    def test_a_chosen_picture_is_kept_with_the_clip_and_can_be_removed(self):
+        import base64
+        import io
+        from PIL import Image
+        buffer = io.BytesIO()
+        Image.new("RGB", (64, 36), (200, 40, 40)).save(buffer, format="JPEG")
+        picture = "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+        project_id = self.upload()["projectId"]
+        endpoint = f"/api/projects/{project_id}"
+        status, _, project = self.request("GET", endpoint)
+        self.assertEqual(status, 200)
+        self.assertNotIn("cover", project)
+        status, _, saved = self.request("PUT", endpoint + "/cover", {"revision": project["revision"], "cover": picture})
+        self.assertEqual(status, 200, saved)
+        self.assertEqual((saved["cover"], saved["revision"]), (picture, project["revision"] + 1))
+        self.assertEqual(self.request("GET", endpoint)[2]["cover"], picture)
+        # A stale revision, a picture that is not a JPEG, or anything else in the body is refused.
+        self.assertEqual(self.request("PUT", endpoint + "/cover", {"revision": project["revision"], "cover": None})[0], 409)
+        for body in ({"revision": saved["revision"], "cover": "data:image/png;base64,iVBORw0KGgo="}, {"revision": saved["revision"]},
+                     {"revision": saved["revision"], "cover": None, "title": "x"}):
+            self.assertEqual(self.request("PUT", endpoint + "/cover", body)[0], 400, body)
+        # Saving lyrics keeps the picture; removing it takes it away.
+        changes = {"title": "Picture", "revision": saved["revision"], "cues": [{"start": 0.0, "end": 1.0, "text": "Sing"}]}
+        status, _, lyrics = self.request("PUT", endpoint, changes)
+        self.assertEqual((status, lyrics["cover"]), (200, picture))
+        status, _, removed = self.request("PUT", endpoint + "/cover", {"revision": lyrics["revision"], "cover": None})
+        self.assertEqual(status, 200)
+        self.assertNotIn("cover", removed)
+        self.assertNotIn("cover", self.request("GET", endpoint)[2])
+
     def test_lyrics_lookup_csp_allows_only_the_fixed_provider_in_addition_to_self(self):
         status, headers, _ = self.request("GET", "/")
         self.assertEqual(status, 200)
