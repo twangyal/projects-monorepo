@@ -99,7 +99,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> Polo collar and placket</label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -844,13 +844,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const on = ($('product-collar') as HTMLInputElement).checked;
     if (on) selected = 'collar';
     else if (selected === 'collar' || selected === 'placket') selected = 'front';
+    const polo = (product() ?? template('blank')).base === 'tee';
     setModules(current => { const others = { ...current }; delete others.collar; return on ? { ...others, collar: true } : others; },
-      on ? 'Polo collar and placket added: a flat-knit collar in the neck rib’s style, and a three-button placket. You can undo this.' : 'Polo collar removed: a round neck rib again. You can undo this.');
+      polo ? (on ? 'Polo collar and placket added: a flat-knit collar in the neck rib’s style, and a three-button placket. You can undo this.' : 'Polo collar removed: a round neck rib again. You can undo this.')
+        : on ? 'Rib stand collar added in the neck rib’s style: with a front zip, a bomber jacket. You can undo this.' : 'Stand collar removed: a round neck rib again. You can undo this.');
   });
   $('product-zip').addEventListener('change', () => {
     const on = ($('product-zip') as HTMLInputElement).checked;
     setModules(current => { const others = { ...current }; delete others.zip; delete others.zipOpen; return on ? { ...others, zip: true } : others; },
-      on ? 'Front zip added: the front, pocket and hem band are cut as halves, and the tech pack lists the zip. You can undo this.' : 'Front zip removed: a pullover hoodie again. You can undo this.');
+      on ? `Front zip added: the front${(product() ?? template('blank')).base === 'hoodie' ? ', pocket' : ''} and hem band are cut as halves, and the tech pack lists the zip. You can undo this.`
+        : `Front zip removed: a pullover ${(product() ?? template('blank')).base === 'hoodie' ? 'hoodie' : 'sweatshirt'} again. You can undo this.`);
   });
   $('product-zip-open').addEventListener('change', () => {
     const on = ($('product-zip-open') as HTMLInputElement).checked;
@@ -1176,6 +1179,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
     const collar = $('product-collar') as HTMLInputElement;
     collar.checked = !!modules.collar; collar.disabled = !collarAllowed(design.base) || design.neckline !== 'crew'; collar.closest('label')!.hidden = !collarAllowed(design.base);
+    $('product-collar-name').textContent = design.base === 'sweatshirt' ? 'Rib stand collar' : 'Polo collar and placket';
     const zip = $('product-zip') as HTMLInputElement;
     zip.checked = !!modules.zip; zip.disabled = !zipAllowed(design.base); zip.closest('label')!.hidden = !zipAllowed(design.base);
     const open = $('product-zip-open') as HTMLInputElement;

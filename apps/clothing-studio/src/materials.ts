@@ -9,6 +9,7 @@ export const MATERIALS: readonly Material[] = [
   { id: 'terry-300', name: 'French terry', composition: '80% cotton, 20% polyester', gsm: 300, texture: 'terry', tileCm: 2, sheen: 0.03 },
   { id: 'chiffon-50', name: 'Chiffon', composition: '100% polyester, plain-weave chiffon', gsm: 50, texture: 'chiffon', tileCm: 2, sheen: 0.12 },
   { id: 'poplin-120', name: 'Cotton poplin', composition: '100% cotton, plain-weave poplin', gsm: 120, texture: 'poplin', tileCm: 2, sheen: 0.06 },
+  { id: 'nylon-150', name: 'Nylon poplin', composition: '100% nylon, plain weave', gsm: 150, texture: 'poplin', tileCm: 1.5, sheen: 0.22 },
   { id: 'linen-170', name: 'Linen', composition: '100% linen, plain weave', gsm: 170, texture: 'linen', tileCm: 4, sheen: 0.08 },
   { id: 'denim-340', name: 'Denim twill', composition: '100% cotton, 3×1 twill', gsm: 340, texture: 'twill', tileCm: 2, sheen: 0.07 },
 ];

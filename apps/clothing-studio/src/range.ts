@@ -5,7 +5,7 @@ import { fabricUsage, xlsx, FABRIC_WIDTH_CM } from './techpack.ts';
 
 /** Indicative starting prices per linear metre of 150 cm fabric; designers replace them with quotes. */
 export const DEFAULT_FABRIC_PRICES: Record<string, number> = {
-  'jersey-180': 6.5, 'jersey-240': 8, 'slub-160': 7, 'rib-220': 9, 'pique-200': 8.5, 'terry-300': 10, 'linen-170': 12, 'denim-340': 11,
+  'jersey-180': 6.5, 'jersey-240': 8, 'slub-160': 7, 'rib-220': 9, 'pique-200': 8.5, 'terry-300': 10, 'linen-170': 12, 'denim-340': 11, 'nylon-150': 7.5,
 };
 export const DEFAULT_COSTING: Costing = { currency: 'USD', retail: 35, make: 3.5, trims: 0.6, printPerArtwork: 1.2, fabricPrices: { ...DEFAULT_FABRIC_PRICES } };
 export const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£' } as const;

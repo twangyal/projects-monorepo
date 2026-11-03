@@ -11,7 +11,7 @@ const open = (product: Product = closed) => validateProduct({ ...product, option
 test('only a zip hoodie can be worn open, and zipping it up again drops the setting', () => {
   assert.deepEqual(open().options, { hem: 'straight', chestPocket: false, zip: true, zipOpen: true });
   assert.deepEqual(validateProduct({ ...closed, options: { ...closed.options!, zipOpen: false } }).options, closed.options);
-  assert.throws(() => validateProduct({ ...template('hoodie'), options: { hem: 'straight', chestPocket: false, zipOpen: true } }), /Only a zip hoodie can be worn open/);
+  assert.throws(() => validateProduct({ ...template('hoodie'), options: { hem: 'straight', chestPocket: false, zipOpen: true } }), /Only a garment with a front zip can be worn open/);
   assert.throws(() => validateProduct({ ...closed, options: { ...closed.options!, zipOpen: 'yes' } }), /open or closed/);
 });
 

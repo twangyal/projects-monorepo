@@ -477,9 +477,10 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   const p = (i: number, axis: number) => position[i * 3 + axis]!;
   const flat = (i: number, j: number) => Math.hypot(p(i, 0) - p(j, 0), p(i, 1) - p(j, 1));
   const spatial = (i: number, j: number) => Math.hypot(p(i, 0) - p(j, 0), p(i, 1) - p(j, 1), p(i, 2) - p(j, 2));
-  // The neck rib runs along the neckline: its lengths along the neck are the flat neckline's, so it does not pull the
-  // neckline to its modelled 3D length. Its vertices alternate neck edge, rib edge (see neckRib).
-  const ribAlong = new Map<number, number>(), ribIds = vertices.get('neckband');
+  // The neck rib (or a stand collar) runs along the neckline: its lengths along the neck are the flat neckline's, so it
+  // does not pull the neckline to its modelled 3D length. Its vertices alternate neck edge, rib edge (see neckRib).
+  const band = simulated.find(mesh => mesh.part === 'neckband' || mesh.modelled);
+  const ribAlong = new Map<number, number>(), ribIds = band && vertices.get(band.part);
   if (ribIds) {
     let along = 0;
     for (let v = 0; v < ribIds.length; v += 2) {
@@ -489,7 +490,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   }
   const ribWidth = ribIds && ribIds.length > 1 ? spatial(ribIds[0]!, ribIds[1]!) : 0, ribEdge = new Set(ribIds ? [...ribIds].filter((_, v) => v % 2) : []);
   const modelledRest = (part: PartId, i: number, j: number) => {
-    if (part !== 'neckband' || !ribAlong.has(i) || !ribAlong.has(j)) return spatial(i, j);
+    if (part !== band?.part || !ribAlong.has(i) || !ribAlong.has(j)) return spatial(i, j);
     let along = Math.abs(ribAlong.get(i)! - ribAlong.get(j)!);
     // The ring closes: the last neck point joins the first.
     const total = Math.max(...ribAlong.values()) + flat(ribIds![ribIds!.length - 2]!, ribIds![0]!);
@@ -504,7 +505,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   // the flat positions of that triangle's corners.
   const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: Opposite[] }>();
   for (const mesh of simulated) {
-    const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part);
+    const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part) || !!mesh.modelled;
     // The hood is lined, so it bends four times as stiffly.
     const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {

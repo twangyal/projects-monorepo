@@ -24,8 +24,9 @@ test('a tee becomes a polo with a collar, placket and buttons in 3D, and back ag
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(polo).not.toBeChecked();
   expect((await backup(page)).product.parts.neckband).toBeDefined();
-  // A sweatshirt has no polo collar to offer.
+  // A sweatshirt offers a rib stand collar instead.
   page.once('dialog', dialog => void dialog.accept());
   await editor(page).getByRole('button', { name: /^Use the Crew sweatshirt template/ }).click();
   await expect(polo).toBeHidden();
+  await expect(page.getByRole('checkbox', { name: 'Rib stand collar', exact: true })).toBeVisible();
 });

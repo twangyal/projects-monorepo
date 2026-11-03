@@ -30,6 +30,7 @@ const MATERIAL_WORDS: [RegExp, string][] = [
   [/\b(pique|piqué|polo)\b/, 'pique-200'],
   [/\b(terry|french terry|fleece|sweatshirt fabric|loopback)\b/, 'terry-300'],
   [/\b(linen|flax)\b/, 'linen-170'],
+  [/\b(nylon|ripstop|windbreaker fabric|flight satin)\b/, 'nylon-150'],
   [/\b(denim|twill|chambray|jean)\b/, 'denim-340'],
   [/\b(jersey|cotton|t-?shirt fabric)\b/, 'jersey-180'],
 ];

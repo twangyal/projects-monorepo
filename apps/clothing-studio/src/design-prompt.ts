@@ -8,8 +8,7 @@ import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts'
 import { GATHER, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
-  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type PartId, type Product,
-} from './product.ts';
+  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
 export interface DesignReading { product: Product; scopes: DesignScope[]; ignored: string[]; /** Words in quotes, to print on the garment. */ text?: TextRequest }
@@ -25,6 +24,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\b(?:t-?shirt|tee) dress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
+  // Jackets start from the bomber, the one jacket so far.
+  [/\b(?:bomber|flight|track|zip(?:-? ?up)?) jackets?\b|\bbombers?\b|\btrack tops?\b|\bjackets?\b/, 'bomber', 'sweatshirt'],
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
   [/\bpolo(?: shirt)?s?\b/, 'polo', 'tee'],
   [/\b(t-?shirts?|tees?)\b/, 'blank', 'tee'],
@@ -42,13 +43,13 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bright cuffs?\b/, () => ['cuffRight']],
   [/\bchest pockets?\b/, () => ['chestPocket']],
   [/\b(kangaroo pockets?|pouch|pockets?)\b/, parts => [parts.has('pocket') ? 'pocket' : 'chestPocket']],
-  [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
+  [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'collar', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
   [/\b(hem ?bands?|hem ribs?|bottom bands?)\b/, () => ['hemBand']],
   [/\b(waist ?bands?)\b/, () => ['waistband']],
   [/\b(sleeves?|arms?)\b/, () => ['sleeveLeft', 'sleeveRight']],
   [/\bcuffs?\b/, () => ['cuffLeft', 'cuffRight']],
   [/\bhoods?\b/, () => ['hood']],
-  [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, () => ['neckband']],
+  [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, parts => [parts.has('collar') ? 'collar' : 'neckband']],
   [/\b(front panels?|front)\b/, () => ['front']],
   [/\b(back panels?|back)\b/, () => ['back']],
   [/\b(body|bodies|torso|legs?|panels)\b/, () => ['front', 'back']],
@@ -108,6 +109,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
       garment.push(`garment: ${garmentName(product)}`);
+    } else if (base === product.base && id === 'bomber') {
+      // A sweatshirt described as a bomber keeps its styling and gains the front zip and rib stand collar, on a round neck.
+      product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), zip: true, collar: true });
+      garment.push(`garment: ${garmentName(product)}`);
     } else if (base === product.base && id === 'crop-top') {
       // A tee described as a crop top keeps its styling and is shortened to end above the waist.
       const length = Math.min(topMeasurements(product).length, topMeasurements(template('crop-top')).length);
@@ -144,14 +149,22 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   }
   // A front zip ("zip hoodie", "zip-up", "full-zip"), or none ("pullover").
   const zipped = take(/\b(?:full[- ]?)?zip(?:ped|[- ]?(?:up|through))?\b/) ? true : take(/\bpull[- ]?over\b/) ? false : null;
-  if (zipped !== null && product.base === 'hoodie') {
-    const had = !!optionsOf(product).zip, others = { ...optionsOf(product) };
-    delete others.zip;
+  if (zipped !== null && zipAllowed(product.base)) {
+    const had = !!optionsOf(product).zip, before = garmentName(product), others = { ...optionsOf(product) };
+    delete others.zip; delete others.zipOpen;
     product = withOptions(product, zipped ? { ...others, zip: true } : others);
     // The garment as now named ("Zip hoodie, started from its template").
-    for (let i = 0; i < garment.length; i++) garment[i] = garment[i]!.replace(BASE_NAMES.hoodie, garmentName(product));
+    for (let i = 0; i < garment.length; i++) garment[i] = garment[i]!.replace(before, garmentName(product)).replace(BASE_NAMES[product.base], garmentName(product));
     if (zipped !== had) garment.push(zipped ? 'front zip added' : 'front zip removed');
-  } else if (zipped) notApplied.push(`front zip (only a hoodie has one, not a ${garmentName(product).toLowerCase()})`);
+  } else if (zipped) notApplied.push(`front zip (only a hoodie or a sweatshirt has one, not a ${garmentName(product).toLowerCase()})`);
+  // A sweatshirt's rib stand collar ("funnel neck", "stand-up collar").
+  if (take(/\b(?:funnel|mock)[- ]?necks?\b|\bstand(?:-up| up)? collars?\b/)) {
+    if (product.base !== 'sweatshirt') notApplied.push(`stand collar (only a sweatshirt has one, not a ${garmentName(product).toLowerCase()})`);
+    else if (!optionsOf(product).collar) {
+      product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
+      garment.push(`rib stand collar added: ${garmentName(product)}`);
+    }
+  }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
   const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /\bpockets?\b/.test(text) && top) ? true : null;
   if (pocket !== null) {

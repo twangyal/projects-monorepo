@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, PLACKET_CM, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product } from './product.ts';
+import { OPEN_ZIP_GAP, PLACKET_CM, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product, zipAllowed } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -145,9 +145,9 @@ export class ProductScene {
     this.requestRender();
   }
 
-  /** A zip hoodie's zip, down the centre front from the neck and on through the hem band. */
+  /** A front zip (a zip hoodie's or a bomber jacket's), down the centre front from the neck and on through the hem band. */
   private addZip(product: Product, rest: PartMesh[] | null, parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
-    if (product.base !== 'hoodie' || !optionsOf(product).zip) return;
+    if (!zipAllowed(product.base) || !optionsOf(product).zip) return;
     const d = teeDimensions(product), top = d.length - d.neckDepthFront, band = d.band;
     // Worn open, each front half carries its own side of the zip.
     const sides = optionsOf(product).zipOpen ? [1, -1] as const : [0] as const;

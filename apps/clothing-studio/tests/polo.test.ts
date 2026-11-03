@@ -23,7 +23,7 @@ test('a polo is a tee with a flat-knit collar in place of the neck rib, and a bu
   assert.deepEqual(withOptions(collared, { ...optionsOf(collared), collar: false }).parts.neckband, tee.parts.neckband);
   // Only on a round-necked tee.
   assert.throws(() => withOptions({ ...tee, neckline: 'v' }, { ...optionsOf(tee), collar: true }), /round neck/);
-  assert.throws(() => validateProduct({ ...template('crew-sweat'), options: { hem: 'straight', chestPocket: false, collar: true } }), /polo collar goes on a T-shirt/);
+  assert.throws(() => validateProduct({ ...template('hoodie'), options: { hem: 'straight', chestPocket: false, collar: true } }), /A collar goes on a T-shirt/);
 });
 
 test('described as a polo, a tee gains the collar and placket and keeps its styling', () => {
