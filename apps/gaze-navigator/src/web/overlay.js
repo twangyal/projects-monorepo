@@ -354,6 +354,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const PLACEMENT_MS = 400;
   const GAZE_WEIGHT = 5;
   const CONTROLS = 'a[href], button, input, select, textarea, [role=button], [role=link], [role=checkbox], [tabindex]';
+  // Ordinary page controls under a corner count too, at half weight: they could be scrolled out from under the panel,
+  // but a corner over the page's main controls (a switch, a form) hides what the person came to use, as moving away
+  // from a "Back to top" button into the content did on the WAI-ARIA examples.
+  const ORDINARY = `${CONTROLS}, [role=switch], [role=radio], [role=tab], [role=menuitem], [role=option], [role=slider], [role=treeitem]`;
+  const ORDINARY_WEIGHT = 0.5;
+  // Together they never outweigh covering the gaze (GAZE_WEIGHT), and on a narrow screen, where the panel is a sheet
+  // across the width, they are not counted: it would only swap which half of the page it covers.
+  const ORDINARY_CAP = 4;
   const DIALOGS = '[role=dialog], [role=alertdialog], [aria-modal=true]';
   let placement = 0;
   const fixedLayer = node => {
@@ -380,7 +388,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         if (box.width && x >= left && x <= left + width && y >= top && y <= top + height) score += weight;
       }
     }
-    return score;
+    let ordinary = 0;
+    if (width <= window.innerWidth / 2) for (const control of document.querySelectorAll(ORDINARY)) {
+      const box = control.getBoundingClientRect(), x = box.left + box.width / 2, y = box.top + box.height / 2;
+      if (box.width && box.height && x >= left && x <= left + width && y >= top && y <= top + height && !fixedLayer(control)) ordinary += ORDINARY_WEIGHT;
+    }
+    return score + Math.min(ORDINARY_CAP, ordinary);
   };
   function placePanel() {
     placement = 0;

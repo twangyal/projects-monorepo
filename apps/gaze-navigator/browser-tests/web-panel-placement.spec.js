@@ -64,3 +64,26 @@ test('moving aside, the panel never lands on the place the user is looking at', 
   await panel.getByRole('button', { name: 'Do it', exact: true }).click();
   await expect(page.locator('#watched')).toHaveText('Saved');
 });
+
+test('the panel does not move off a "Back to top" button onto the page\'s own controls', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/practice-site/index.html');
+  const panel = page.locator('#gaze-web-navigator section');
+  await expect(panel).toBeVisible();
+  await page.evaluate(() => {
+    const host = document.getElementById('gaze-web-navigator');
+    for (const element of [...document.body.children]) if (element !== host) element.remove();
+    // The WAI-ARIA examples' layout: a fixed back-to-top link in one bottom corner, the example's controls in the other.
+    const top = document.createElement('a');
+    top.href = '#'; top.textContent = 'Back to top'; top.style.cssText = 'position:fixed;right:16px;bottom:16px';
+    const form = document.createElement('div');
+    form.style.cssText = 'position:absolute;left:40px;top:600px;width:320px';
+    form.innerHTML = ['Notifications', 'Sounds', 'Updates', 'Location', 'Backups'].map(name => `<div role="switch" aria-checked="false" tabindex="0" style="height:44px">${name}</div>`).join('');
+    document.body.append(top, form);
+  });
+  await page.waitForTimeout(1200);
+  const box = await panel.boundingBox();
+  expect(box.x).toBeGreaterThan(640);
+  const first = await page.getByRole('switch', { name: 'Notifications' }).boundingBox();
+  expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.getAttribute('role'), [first.x + first.width / 2, first.y + first.height / 2])).toBe('switch');
+});

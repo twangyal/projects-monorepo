@@ -110,8 +110,33 @@ function controlVisible(element) {
   return true;
 }
 
+/**
+ * A tree item opens and closes the way trees promise (WAI-ARIA Authoring Practices): Right arrow expands, Left
+ * collapses. When the keys do nothing, one click is tried, unless the item is a link a click would follow.
+ */
+function setTreeItemExpanded(element, expanded, isCurrent) {
+  const state = () => element.getAttribute('aria-expanded') === 'true' ? true : element.getAttribute('aria-expanded') === 'false' ? false : null;
+  const available = () => element.isConnected && element.getAttribute('role') === 'treeitem' && unlocked(element) && controlVisible(element) &&
+    typeof element.focus === 'function' && typeof element.click === 'function';
+  const refused = () => ({ ok: false, message: 'The tree item changed, is unavailable or cannot open and close. Look at it and try again.' });
+  if (typeof expanded !== 'boolean' || !isCurrent() || !available() || state() === null) return refused();
+  if (state() === expanded) return { ok: true, message: `Tree item is already ${expanded ? 'expanded' : 'collapsed'}.` };
+  element.focus({ preventScroll: true });
+  const view = element.ownerDocument.defaultView;
+  return { message: 'Checking the requested tree item state…', followUp: (async () => {
+    if (!isCurrent() || !available()) return refused();
+    pressKey(element, expanded ? 'ArrowRight' : 'ArrowLeft');
+    for (const wait of [0, 0, 50]) { if (state() === expanded || !available()) break; await pause(view, wait); }
+    const link = element.matches('a[href]') || element.querySelector(':scope > a[href]');
+    if (state() !== expanded && available() && isCurrent() && !link) { element.click(); await pause(view, 0); }
+    const ok = available() && state() === expanded;
+    return { ok, message: ok ? `Tree item ${expanded ? 'expanded' : 'collapsed'}.` : 'The tree did not keep the requested state. Check it before continuing.' };
+  })() };
+}
+
 /** Request a website-owned disclosure state with one activation at most. */
 export function setExpanded(element, expanded, snapshot = captureDisclosureSnapshot(element), { isCurrent = () => true } = {}) {
+  if (element.getAttribute?.('role') === 'treeitem') return setTreeItemExpanded(element, expanded, isCurrent);
   const native = snapshot.kind === 'native';
   const state = () => native ? snapshot.details.open : element.getAttribute('aria-expanded') === 'true' ? true
     : element.getAttribute('aria-expanded') === 'false' ? false : null;
@@ -360,9 +385,15 @@ function ariaNumber(element, attribute) {
   return element.hasAttribute(attribute) && element.getAttribute(attribute).trim() !== '' && Number.isFinite(value) ? value : null;
 }
 
+// Many widgets, including older WAI-ARIA examples, still read the legacy keyCode/which rather than key, so both are set.
+const KEY_CODES = { Enter: 13, Escape: 27, ' ': 32, PageUp: 33, PageDown: 34, End: 35, Home: 36, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
+function keyInit(key) {
+  const keyCode = KEY_CODES[key] ?? 0;
+  return { key, code: key, keyCode, which: keyCode, bubbles: true, cancelable: true, composed: true };
+}
 function pressKey(element, key) {
   const view = element.ownerDocument.defaultView;
-  for (const type of ['keydown', 'keyup']) element.dispatchEvent(new view.KeyboardEvent(type, { key, code: key, bubbles: true, cancelable: true, composed: true }));
+  for (const type of ['keydown', 'keyup']) element.dispatchEvent(new view.KeyboardEvent(type, keyInit(key)));
 }
 
 const pause = (view, ms = 0) => new Promise(resolve => view.setTimeout(resolve, ms));
@@ -779,7 +810,7 @@ export function submit(element) {
   }
   const view = element.ownerDocument.defaultView;
   for (const type of ['keydown', 'keyup']) {
-    element.dispatchEvent(new view.KeyboardEvent(type, { key: 'Enter', code: 'Enter', bubbles: true }));
+    element.dispatchEvent(new view.KeyboardEvent(type, { ...keyInit('Enter'), cancelable: false, composed: false }));
   }
   return { ok: true, message: 'Enter pressed.' };
 }

@@ -288,7 +288,10 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type === 'cancel') {
       const had = pending;
       pending = null;
-      return reply(had ? 'Cancelled. Nothing was changed.' : 'Cancelled.', 'info', { cancelled: true });
+      // "Cancel" always stops the navigator and never presses anything; with nothing to stop and the website's own
+      // Cancel button in view, say how to press it.
+      const button = !had && context.elements?.find(element => /^cancel$/i.test((element.name ?? '').trim()) && ['button', 'link'].includes(element.role));
+      return reply(had ? 'Cancelled. Nothing was changed.' : button ? 'Nothing to cancel. To press the website\'s Cancel button, say "click cancel".' : 'Cancelled.', 'info', { cancelled: true });
     }
     if (action.type === 'pause') {
       paused = true;

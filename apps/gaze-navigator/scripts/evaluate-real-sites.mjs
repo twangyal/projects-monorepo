@@ -3,7 +3,10 @@
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
 //   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
-//     [--gaze-error PX] [--trials N] [--seed S]
+//     [--gaze-error PX] [--trials N] [--seed S] [--panel-typing]
+// Instructions are typed in keyboard command mode (Alt+Shift+G), which, like speech, leaves the website's focus where
+// it is, so menus and dialogs that close or trap focus behave as they would for a speaking user. --panel-typing types
+// into the navigator panel's box instead, which moves focus to the panel.
 // --gaze-error offsets each look by random Gaussian error with that standard deviation per axis, like
 // webcam gaze (often 100-200 px), instead of resting exactly on the control. --trials repeats each task
 // with fresh offsets; --seed makes the offsets reproducible.
@@ -15,6 +18,7 @@ import { join } from 'node:path';
 
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : null; };
 const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json'), only = argument('--only');
+const panelTyping = process.argv.includes('--panel-typing');
 const gazeError = Number(argument('--gaze-error') ?? 0), trials = Math.max(1, Number(argument('--trials') ?? 1)), seed = Number(argument('--seed') ?? 1);
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
 if (!(gazeError >= 0)) throw new Error('--gaze-error must be a number of pixels.');
@@ -127,6 +131,36 @@ export const TASKS = [
   { site: 'Python docs', goal: 'Search the documentation', start: 'https://docs.python.org/3/', steps: [
     { look: page => page.getByRole('searchbox', { name: 'Quick search' }).first(), say: 'search for dataclasses', done: url(/search\.html\?q=dataclasses/) },
   ] },
+  // More WAI-ARIA widget patterns, each driven the way a person would name it.
+  { site: 'WAI-ARIA APG', goal: 'Open an actions menu button and choose an action', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/examples/menu-button-actions/', steps: [
+    { look: button('Actions'), say: 'open actions', done: expanded(button('Actions'), 'true') },
+    { look: page => page.getByRole('menuitem', { name: 'Action 3', exact: true }), say: 'choose action 3', done: async page => (await page.locator('#action_output').inputValue()) === 'Action 3' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Turn on a switch', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/switch/examples/switch/', steps: [
+    { look: page => page.getByRole('switch').first(), say: 'turn on notifications', done: async page => (await page.getByRole('switch').first().getAttribute('aria-checked')) === 'true' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Choose an option in a scrollable listbox', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/listbox/examples/listbox-scrollable/', steps: [
+    { look: page => page.getByRole('option', { name: 'Curium', exact: true }), say: 'choose curium', done: async page => (await page.getByRole('option', { name: 'Curium', exact: true }).getAttribute('aria-selected')) === 'true' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Expand a folder in a tree view', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/treeview/examples/treeview-1a/', steps: [
+    { look: page => page.locator('[role=treeitem] > span', { hasText: /^\s*Projects\s*$/ }).first(), say: 'expand projects',
+      done: async page => (await page.locator('[role=treeitem]', { has: page.locator(':scope > span', { hasText: /^\s*Projects\s*$/ }) }).first().getAttribute('aria-expanded')) === 'true' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Open a dialog, type into it, then cancel it', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/dialog/', steps: [
+    { look: button('Add Delivery Address'), say: 'open add delivery address', done: async page => page.getByRole('dialog', { name: 'Add Delivery Address' }).isVisible() },
+    { look: page => page.getByRole('dialog', { name: 'Add Delivery Address' }).getByRole('textbox', { name: 'Street:' }), say: 'type 12 High Street', target: 'Street:', done: async page => (await page.getByRole('dialog', { name: 'Add Delivery Address' }).getByRole('textbox', { name: 'Street:' }).inputValue()) === '12 High Street' },
+    { look: page => page.getByRole('dialog', { name: 'Add Delivery Address' }).getByRole('button', { name: 'Cancel', exact: true }), say: 'click cancel', target: 'Cancel', done: async page => !(await page.getByRole('dialog', { name: 'Add Delivery Address' }).isVisible()) },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Open one answer in a FAQ', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/', steps: [
+    { look: page => page.getByRole('button', { name: /lose my permit/ }), say: 'open what do I do if I lose my permit', done: expanded(page => page.getByRole('button', { name: /lose my permit/ }), 'true') },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Set a date spin button to a value', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/examples/datepicker-spinbuttons/', steps: [
+    { look: page => page.getByRole('spinbutton', { name: 'Day' }), say: 'set day to 15', done: async page => (await page.getByRole('spinbutton', { name: 'Day' }).getAttribute('aria-valuenow')) === '15' },
+  ] },
+  { site: 'WAI-ARIA APG', goal: 'Press toolbar buttons for bold and centred text', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/examples/toolbar/', steps: [
+    { look: button('Bold'), say: 'press bold', done: async page => (await button('Bold')(page).getAttribute('aria-pressed')) === 'true' },
+    { look: page => page.getByRole('radio', { name: 'Text Align Center' }), say: 'align center', done: async page => (await page.getByRole('radio', { name: 'Text Align Center' }).getAttribute('aria-checked')) === 'true' },
+  ] },
   // GOV.UK Design System form patterns, as a service would ask them.
   { site: 'GOV.UK Design System', goal: 'Say a date into Day, Month and Year boxes', start: 'https://design-system.service.gov.uk/components/date-input/default/index.html', steps: [
     { look: field('Day'), say: 'type 12 March 2019', done: async page => [await field('Day')(page).inputValue(), await field('Month')(page).inputValue(), await field('Year')(page).inputValue()].join('/') === '12/3/2019' },
@@ -217,8 +251,14 @@ async function run() {
         const say = async text => {
           entry.utterances++;
           await aim();
-          await panel.getByLabel('Typed instruction').fill(text);
-          await panel.getByRole('button', { name: 'Do it' }).click();
+          if (panelTyping) {
+            await panel.getByLabel('Typed instruction').fill(text);
+            await panel.getByRole('button', { name: 'Do it' }).click();
+          } else {
+            await page.keyboard.press('Alt+Shift+G');
+            await page.keyboard.type(text);
+            await page.keyboard.press('Enter');
+          }
           await page.waitForTimeout(300);
           await page.waitForFunction(() => !/Working out/.test(document.querySelector('#gaze-web-navigator')?.shadowRoot.querySelector('.status')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
           await page.waitForLoadState('domcontentloaded').catch(() => {});

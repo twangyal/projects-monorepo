@@ -9,6 +9,8 @@ const STOPWORDS = new Set(['the', 'a', 'an', 'on', 'to', 'please', 'my', 'this',
 const ROLE_HINTS = { link: ['link'], button: ['button'], tab: ['tab'], checkbox: ['checkbox', 'switch'], box: ['checkbox', 'textbox', 'searchbox'], field: ['textbox', 'searchbox', 'combobox'], menu: ['combobox', 'menuitem'], option: ['option', 'combobox', 'radio'] };
 // Scores closer than this are treated as equally plausible and trigger a question.
 const MARGIN = 0.05;
+// A match below this shares only some of the words said; a control named this well just outside the circle wins.
+const STRONG = 0.8;
 const DEICTIC = /^(this|that|it|here|there|this one|that one)$/;
 const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
 // Politeness and lead-ins that carry no instruction; dictated text keeps everything after its verb.
@@ -126,9 +128,9 @@ function resolve(query, elements, roles, act, noun = 'control', topics = false) 
     return { type: 'unknown', missing: true, message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.` };
   }
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN);
-  if (close.length > 1) return clarify(close.map(entry => entry.element), act);
+  if (close.length > 1) return { ...clarify(close.map(entry => entry.element), act), ...(ranked[0].score < STRONG ? { weak: true } : {}) };
   const action = act(ranked[0].element);
-  return ranked[0].related ? { ...action, related: true } : action;
+  return { ...action, ...(ranked[0].related ? { related: true } : {}), ...(ranked[0].score < STRONG ? { weak: true } : {}) };
 }
 
 // Candidates carry the number to say, a label, and the page element to outline when there is one.
@@ -303,6 +305,30 @@ function typedSet(target, value, context, now) {
 // understood) are retried: "open this" never reaches outside the circle.
 const FAR_CHOICES = 3;
 export function interpret(utterance, context = { elements: [] }) {
+  const { weak, ...action } = interpretWithin(utterance, context);
+  // A control inside the circle that shares only some of the words said gives way to one just outside it that is
+  // named closely ("lose my permit" against "I have a permit"): webcam error often leaves the gaze beside the target.
+  if (weak && action.targetId != null) {
+    const elsewhere = elements => ({ ...context, elements, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null });
+    const near = context.nearby?.length ? beyond(utterance, elsewhere(context.nearby), 'outside', 'Not inside the gaze circle, but nearby') : null;
+    if (near && !near.weak && near.type !== 'clarify' && near.targetId !== action.targetId) { const { weak: _, ...closer } = near; return closer; }
+    // Further away, a closely named control is not used without asking, and neither is the loose match: "open
+    // actions" should not follow "Action Menu Button Example" when an "Actions" button is elsewhere on screen.
+    const screen = context.onScreen?.() ?? [];
+    const far = screen.length ? beyond(utterance, elsewhere(screen), 'far', 'Not near your gaze', FAR_CHOICES) : null;
+    if (far && !far.weak && far.type !== 'clarify' && far.targetId !== action.targetId) {
+      const { far: _far, weak: _weak, ...chosen } = far;
+      const here = [...context.elements, ...(context.nearby ?? [])].find(element => element.id === action.targetId), there = screen.find(element => element.id === far.targetId);
+      return question([
+        { number: 1, label: here?.name || here?.role || 'The control you are looking at', elementId: action.targetId },
+        { number: 2, label: there?.name || there?.role || 'The control elsewhere', elementId: far.targetId },
+      ], number => (number === 1 ? action : chosen));
+    }
+  }
+  return action;
+}
+
+function interpretWithin(utterance, context) {
   const action = interpretInCircle(utterance, context);
   if (action.fieldMiss) { const { fieldMiss: _, ...missed } = action; return typingElsewhere(utterance, context) ?? missed; }
   if (!action.missing && !action.unparsed) return action;
@@ -480,7 +506,12 @@ function interpretInCircle(utterance, context) {
     return !subject || DEICTIC.test(subject) ? deictic(candidates, act, 'radio button')
       : resolve(subject, candidates, null, act, 'radio button');
   }
-  const checkboxState = /^(check|uncheck|tick|untick)(?:\s+(.+))?$/.exec(text);
+  // Switches (and checkboxes) are also turned on and off: "turn on notifications", "switch dark mode off",
+  // "enable alerts". Camera and pointer commands were read above.
+  const onFirst = /^(?:turn|switch)\s+(on|off)(?:\s+(.+))?$/.exec(text), onLast = /^(?:turn|switch)\s+(.+?)\s+(on|off)$/.exec(text);
+  const enabled = /^(enable|disable)(?:\s+(.+))?$/.exec(text);
+  const turned = onFirst ? [onFirst[1], onFirst[2]] : onLast ? [onLast[2], onLast[1]] : enabled ? [enabled[1], enabled[2]] : null;
+  const checkboxState = turned ? [text, ['on', 'enable'].includes(turned[0]) ? 'check' : 'uncheck', turned[1]] : /^(check|uncheck|tick|untick)(?:\s+(.+))?$/.exec(text);
   if (checkboxState && !/^check out(?: now)?$/.test(text)) {
     const candidates = context.elements.filter(element => ['checkbox', 'switch'].includes(element.role));
     const subject = checkboxState[2]?.replace(/^the\s+/, '');
