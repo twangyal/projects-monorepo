@@ -650,7 +650,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // `via` says where the instruction came from (speech, typed or a panel button) for `onResult`, which hears each
   // instruction's final answer. Only the website's own pages pass `onResult`; the extension never does.
-  function run(utterance, captured, via = 'panel') {
+  function run(utterance, captured, via = 'panel', alternatives = []) {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     expireCameraSilence();
     keyboard.cancel();
@@ -661,7 +661,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         ? { elements: [], region: null, trackingUnavailable: true }
         : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
-    const result = controller.handle(utterance, used);
+    const result = controller.handle(utterance, used, { alternatives });
     show(result, used);
     const report = answer => { try { onResult?.({ utterance, via, source: settings.source, ...outcomeOf(answer) }); } catch { /* A listener's failure is its own. */ } };
     if (!result.followUp) report(result);
@@ -717,11 +717,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       ui.transcript.textContent = `Heard: ${text}`;
       run(text, { elements: [] }, 'speech');
     },
-    onFinal(text) {
+    onFinal(text, alternatives = []) {
       expireCameraSilence();
       ui.transcript.textContent = `Heard: ${text}`;
       const invalid = spokenInvalid; spokenInvalid = false;
-      if (text) run(text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech');
+      if (text) run(text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech', alternatives);
       else spokenContext = null;
     },
     onError(message) {

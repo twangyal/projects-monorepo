@@ -280,11 +280,27 @@ export function createController({ window, actions = pageActions, interpret = in
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 
-  function handle(utterance, context) {
+  function handle(utterance, context, { alternatives = [] } = {}) {
     const current = ++turn;
     const recent = previous && now() - previous.at <= PREVIOUS_MS && previous.target.element?.isConnected !== false ? { ...previous.target, id: PREVIOUS_ID } : null;
     if (recent) context = { ...context, previous: recent };
-    const action = interpret(utterance, context);
+    let action = interpret(utterance, context), heardAs = null;
+    // The recogniser's other readings of the same speech ("click sign in" behind "click signing"): when the first is
+    // not understood, the first that is, or else the first that names something which can be offered by sound.
+    if (action.type === 'unknown' && alternatives.length) {
+      const readings = alternatives.map(text => ({ text, action: interpret(text, context) }));
+      const chosen = readings.find(reading => reading.action.type !== 'unknown') ?? (action.alike ? undefined : readings.find(reading => reading.action.alike));
+      if (chosen) ({ text: heardAs, action } = chosen);
+    }
+    const response = decide(heardAs ?? utterance, context, action, current);
+    if (!heardAs || !response) return response;
+    // Say which reading was used, also in the website's later answer when its state is checked afterwards.
+    const noted = answer => (answer?.message ? { ...answer, message: `Heard "${heardAs}". ${answer.message}` } : answer);
+    if (response.followUp && !response.assisting) response.followUp = Promise.resolve(response.followUp).then(noted);
+    return response.assisting ? response : noted(response);
+  }
+
+  function decide(utterance, context, action, current) {
     if (action.type === 'cancel') {
       const had = pending;
       pending = null;
@@ -392,12 +408,27 @@ export function createController({ window, actions = pageActions, interpret = in
     }
   }
 
+  // Speech recognition can mishear a name ("signing" for Sign in) or a command word ("quick submit"): what was
+  // probably meant is offered, outlined, and done only after a yes.
+  function offer(action, context) {
+    const { heardAs, heardName: _heard, ...offered } = action.alike;
+    const target = offered.targetId != null ? targetOf(context, offered.targetId) : null;
+    if (offered.targetId != null) {
+      if (!target?.element?.isConnected) return reply(action.message, 'error');
+      const problem = writingProblem(offered, target.element, context);
+      if (problem) return problem;
+    }
+    const risk = target && confirmable(offered, target) ? ' It may have consequences.' : '';
+    pending = { kind: 'confirm', action: offered, context, ...(target ? { farTarget: target } : {}), expiresAt: now() + confirmMs };
+    return reply(`Did you mean "${heardAs ?? (target.name || target.role)}"?${risk} Say confirm to do it, or cancel.`, 'question');
+  }
+
   function respond(action, context) {
     switch (action.type) {
       case 'clarify':
         pending = { kind: 'clarify', candidates: action.candidates, choose: action.choose, context, expiresAt: now() + CLARIFY_MS };
         return reply(action.message, 'question');
-      case 'unknown': return reply(action.message, 'error');
+      case 'unknown': return action.alike ? offer(action, context) : reply(action.message, 'error');
       default: {
         const response = perform(action, context);
         // A control found just outside the circle: say so, so the user knows where the action happened.

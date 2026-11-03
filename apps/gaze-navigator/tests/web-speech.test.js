@@ -200,3 +200,15 @@ for (const ending of ['end','no-speech','aborted']) test(`an unfinished recognit
   current.onerror({error:'no-speech'}); current.onresult({resultIndex:0,results:[result('late',true)]});
   assert.deepEqual(events,[],'stopped recognizers cannot reset or execute a newer capture');
 });
+
+test('a final result carries the recogniser\'s other readings, without repeats', () => {
+  const { window, instances } = fakeWindow();
+  const heard = [];
+  const speech = createSpeechInput(window, { onFinal: (text, alternatives) => heard.push([text, alternatives]) });
+  speech.start();
+  const [recognition] = instances;
+  assert.equal(recognition.maxAlternatives, 5);
+  const readings = Object.assign([{ transcript: 'click signing' }, { transcript: 'Click Signing' }, { transcript: 'click sign in' }, { transcript: ' ' }, { transcript: 'quick sign in' }], { isFinal: true });
+  emit(recognition, 0, readings);
+  assert.deepEqual(heard, [['click signing', ['click sign in', 'quick sign in']]]);
+});

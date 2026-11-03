@@ -34,7 +34,7 @@ const speech = createSpeechInput(window, {
   onSpeechStart: () => sendSpeech('start'),
   onReset: () => sendSpeech('reset'),
   onInterim: text => sendSpeech('interim', text),
-  onFinal: text => sendSpeech('final', text),
+  onFinal: (text, alternatives = []) => sendSpeech('final', text, alternatives.length ? { alternatives } : {}),
   onImmediate: text => sendSpeech('immediate', text),
   onError: (message, code) => sendSpeech('error', message, { code, listening: speech.listening }),
   onState: state => sendSpeech('state', state),

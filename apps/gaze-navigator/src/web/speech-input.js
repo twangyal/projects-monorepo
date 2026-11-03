@@ -19,6 +19,17 @@ const QUIET_MS = 1500, REFRESH_MS = 3000;
 
 // `onMode` reports where recognition runs once listening has started: 'device', 'downloadable' (it could, after
 // installLocal()) or 'service'; until then the mode is 'unknown'.
+const ALTERNATIVES = 5;
+// A final result's other readings, without repeats of the first.
+function readings(result, first) {
+  const seen = new Set([first.trim().toLowerCase()]), found = [];
+  for (let index = 1; index < Math.min(result.length ?? 0, ALTERNATIVES); index++) {
+    const text = (result[index]?.transcript ?? '').trim();
+    if (text && !seen.has(text.toLowerCase())) { seen.add(text.toLowerCase()); found.push(text); }
+  }
+  return found;
+}
+
 export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, onImmediate, onError, onState, onMode, onReset }) {
   const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
   let recognition = null;
@@ -57,6 +68,8 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     started.clear();
     recognition.continuous = true;
     recognition.interimResults = true;
+    // Other readings of each utterance, tried when the first is not understood.
+    recognition.maxAlternatives = ALTERNATIVES;
     recognition.lang = lang();
     stale = false;
     applied = phrases.join('\n');
@@ -84,7 +97,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
           if (result.isFinal) handled.delete(index);
           continue;
         }
-        if (result.isFinal) onFinal?.(transcript.trim());
+        if (result.isFinal) onFinal?.(transcript.trim(), readings(result, transcript));
         else if (IMMEDIATE.test(transcript)) {
           handled.add(index);
           onImmediate?.(transcript.trim());

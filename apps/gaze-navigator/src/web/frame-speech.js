@@ -76,7 +76,10 @@ export function createFrameSpeech({ document, window, mount, runtime, ...callbac
             stop(); callbacks.onState?.('stopped');
           } else {
             const name = {start:'onSpeechStart',reset:'onReset',interim:'onInterim',final:'onFinal',immediate:'onImmediate',state:'onState'}[message.event];
-            if (name) callbacks[name]?.(message.value);
+            // A final result may carry the recogniser's other readings: a few short strings.
+            const alternatives = name === 'onFinal' && Array.isArray(message.alternatives)
+              ? message.alternatives.filter(text => typeof text === 'string' && text.length <= 500).slice(0, 4) : undefined;
+            if (name) callbacks[name]?.(message.value, alternatives);
           }
         }
       });

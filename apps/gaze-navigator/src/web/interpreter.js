@@ -121,11 +121,50 @@ function rank(query, elements, roles, topics = false) {
     .sort((a, b) => b.score - a.score || a.element.distance - b.element.distance);
 }
 
+// Names compared by sound: lower case letters and digits, a few spellings of the same sound merged, doubled letters
+// once. "Sign in" and "signing" are then one letter apart, and so are "Cart" and "card", or "Submit" and "summit".
+function soundKey(text) {
+  return (text ?? '').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '')
+    .replace(/ph/g, 'f').replace(/ck/g, 'k').replace(/qu/g, 'kw').replace(/x/g, 'ks').replace(/c(?=[eiy])/g, 's').replace(/c/g, 'k')
+    .replace(/z/g, 's').replace(/(.)\1+/g, '$1');
+}
+function editDistance(a, b) {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[b.length];
+}
+// The one control whose name (or the start of it) sounds like `query`: within one letter for short names, two for
+// long ones. None when the name is very short or two controls are equally close.
+function soundsAlike(query, elements) {
+  const heard = soundKey(query);
+  if (heard.length < 4) return null;
+  const allowed = heard.length <= 7 ? 1 : heard.length <= 12 ? 2 : 3;
+  let best = null, tie = false;
+  for (const element of elements) {
+    const words = (element.name ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) continue;
+    let distance = Infinity;
+    for (let end = 1; end <= words.length; end++) distance = Math.min(distance, editDistance(heard, soundKey(words.slice(0, end).join(' '))));
+    if (distance > allowed) continue;
+    if (!best || distance < best.distance || (distance === best.distance && element.distance < best.element.distance)) { tie = best?.distance === distance; best = { element, distance }; }
+    else if (distance === best.distance) tie = true;
+  }
+  return best && !tie ? best.element : null;
+}
+
 // A unique strong match acts; similarly strong matches become a numbered question.
 function resolve(query, elements, roles, act, noun = 'control', topics = false) {
   const ranked = rank(query, elements, roles, topics);
   if (!ranked.length) {
-    return { type: 'unknown', missing: true, message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.` };
+    // Speech recognition often mishears a name ("signing" for Sign in): a control whose name sounds alike is kept
+    // with the answer, to be offered as a question only if nothing else is found (see `alike`).
+    const like = soundsAlike(query, elements);
+    return { type: 'unknown', missing: true, message: `No ${noun} called "${query}" is inside the gaze circle. Look at it and try again.`,
+      ...(like ? { alike: { ...act(like), heardName: query } } : {}) };
   }
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN);
   if (close.length > 1) return { ...clarify(close.map(entry => entry.element), act), ...(ranked[0].score < STRONG ? { weak: true } : {}) };
@@ -337,7 +376,43 @@ function typedSet(target, value, context, now) {
 // offered for confirmation and two or three become a question. Only named misses (and bare names that were not
 // understood) are retried: "open this" never reaches outside the circle.
 const FAR_CHOICES = 3;
+// Command words speech recognition commonly mishears, tried only when an instruction is not understood as heard.
+const MISHEARD = [
+  [/^(?:quick|clique|flick|klick|kick|lick|clicked|clicks)\b/, 'click'],
+  [/^(?:school|scrawl|skull|squirrel|stroll|scrolled|scrolls)\b/, 'scroll'],
+  [/^(scroll|school|scrawl|skull) (?:town|dawn|done)\b/, 'scroll down'],
+  [/^go (?:bag|black|buck|pack|bach)$/, 'go back'],
+  [/^(?:tight|typed|types|tie|thai)\b/, 'type'],
+  [/^(?:chews|shoes|chose)\b/, 'choose'],
+  [/^(?:dress|pressed|presses)\b/, 'press'],
+  [/^(?:clothes|clothe)\b/, 'close'],
+  [/^(?:and|on) check\b/, 'uncheck'],
+  [/^(?:and do|undue|on do)$/, 'undo'],
+  [/^expend\b/, 'expand'],
+  [/^(?:cancer|council)$/, 'cancel'],
+];
+// A corrected instruction that only scrolls, cancels or pauses is done; anything else is asked first.
+const HARMLESS = new Set(['scroll', 'cancel', 'pause']);
+
 export function interpret(utterance, context = { elements: [] }) {
+  const action = interpretHeard(utterance, context);
+  if (action.type !== 'unknown' || action.alike) return action;
+  // Not understood as heard: a commonly misheard command word, corrected, may make sense. Only the command word
+  // changes; dictated words keep their capitals and punctuation.
+  const heard = (utterance ?? '').trim(), plain = heard.replace(/[.!?,]+$/, '');
+  for (const [pattern, word] of MISHEARD) {
+    const match = pattern.exec(plain.toLowerCase());
+    if (!match) continue;
+    const said = word + plain.slice(match[0].length) + heard.slice(plain.length);
+    const corrected = interpretHeard(said, context);
+    if (corrected.type === 'unknown') continue;
+    if (HARMLESS.has(corrected.type) || corrected.type === 'clarify') return corrected;
+    return { ...action, alike: { ...corrected, heardAs: said } };
+  }
+  return action;
+}
+
+function interpretHeard(utterance, context) {
   const { weak, ...action } = interpretWithin(utterance, context);
   // A control inside the circle that shares only some of the words said gives way to one just outside it that is
   // named closely ("lose my permit" against "I have a permit"): webcam error often leaves the gaze beside the target.

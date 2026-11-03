@@ -1,6 +1,9 @@
 // Measures interpreters on the fixed spoken-instruction suite.
 //   node scripts/evaluate-instructions.js          rule interpreter: summary plus every miss
 //   node scripts/evaluate-instructions.js --json   full machine-readable results
+//   node scripts/evaluate-instructions.js --misheard
+//       also scores the suite's commands as speech recognition often mishears them ("quick" for click, "school" for
+//       scroll), as heard and with every "Did you mean …?" offer accepted
 //   node scripts/evaluate-instructions.js --watersheep DIR
 //       also scores rules + WaterSheep target choice, from a local copy of the model repository
 //       (https://huggingface.co/samratduttaofficial/WaterSheep). Needs, outside package.json:
@@ -12,6 +15,22 @@ import { HELD_OUT_2_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpr
 
 const runs = [evaluateInterpreter(interpret), evaluateInterpreter(interpret, HELD_OUT_SUITE, `${SUITE_VERSION}-held-out`),
   evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`)];
+// A misheard command word in place of each instruction's own, where one is common.
+const MISHEARINGS = [[/^click\b/, 'quick'], [/^scroll\b/, 'school'], [/^type\b/, 'tight'], [/^press\b/, 'dress'], [/^choose\b/, 'chews'],
+  [/^go back$/, 'go bag'], [/^close\b/, 'clothes'], [/^uncheck\b/, 'and check']];
+if (process.argv.includes('--misheard')) {
+  const suite = SUITE.flatMap(test => {
+    const match = MISHEARINGS.map(([pattern, word]) => [pattern.exec(test.say.toLowerCase()), word]).find(([found]) => found);
+    return match ? [{ ...test, say: match[1] + test.say.slice(match[0][0].length) }] : [];
+  });
+  const offersTaken = (say, context) => {
+    const got = interpret(say, context);
+    if (got.type !== 'unknown' || !got.alike) return got;
+    const { heardAs: _as, heardName: _name, ...offered } = got.alike;
+    return offered;
+  };
+  runs.push(evaluateInterpreter(interpret, suite, `${SUITE_VERSION}-misheard`), evaluateInterpreter(offersTaken, suite, `${SUITE_VERSION}-misheard-offers-accepted`));
+}
 const modelAt = process.argv.indexOf('--watersheep');
 if (modelAt > 0) {
   const directory = process.argv[modelAt + 1];
