@@ -386,10 +386,12 @@ function ariaNumber(element, attribute) {
 }
 
 // Many widgets, including older WAI-ARIA examples, still read the legacy keyCode/which rather than key, so both are set.
-const KEY_CODES = { Enter: 13, Escape: 27, ' ': 32, PageUp: 33, PageDown: 34, End: 35, Home: 36, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
+const KEY_CODES = { Backspace: 8, Tab: 9, Enter: 13, Escape: 27, ' ': 32, PageUp: 33, PageDown: 34, End: 35, Home: 36, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40, Delete: 46 };
 function keyInit(key) {
-  const keyCode = KEY_CODES[key] ?? 0;
-  return { key, code: key, keyCode, which: keyCode, bubbles: true, cancelable: true, composed: true };
+  // Letters, digits and function keys carry their own codes (A is 65, F1 is 112).
+  const keyCode = KEY_CODES[key] ?? (/^[a-z0-9]$/i.test(key) ? key.toUpperCase().charCodeAt(0) : /^F([1-9]|1[0-2])$/.test(key) ? 111 + Number(key.slice(1)) : 0);
+  const code = /^[a-z]$/i.test(key) ? `Key${key.toUpperCase()}` : /^[0-9]$/.test(key) ? `Digit${key}` : key === ' ' ? 'Space' : key;
+  return { key, code, keyCode, which: keyCode, bubbles: true, cancelable: true, composed: true };
 }
 function pressKey(element, key) {
   const view = element.ownerDocument.defaultView;
@@ -854,4 +856,64 @@ export function navigate(window, direction) {
   if (direction === 'back') window.history.back();
   else window.history.forward();
   return { ok: true, message: direction === 'back' ? 'Going back.' : 'Going forward.' };
+}
+
+// Keys said aloud ("press escape", "press shift tab", "press page down", "press control enter"), sent to the page's
+// focused element. A page sees them as key events; the browser itself does nothing with synthetic keys, so when the
+// page leaves one alone, its usual effect is done here: Tab moves focus, and paging keys scroll.
+const KEY_LABELS = { ' ': 'Space', Escape: 'Escape', Tab: 'Tab', Enter: 'Enter', Backspace: 'Backspace', Delete: 'Delete', Home: 'Home', End: 'End',
+  PageUp: 'Page Up', PageDown: 'Page Down', ArrowUp: 'Up Arrow', ArrowDown: 'Down Arrow', ArrowLeft: 'Left Arrow', ArrowRight: 'Right Arrow' };
+export function keyLabel({ key, ctrl = false, alt = false, shift = false, meta = false }) {
+  return [ctrl && 'Control', alt && 'Alt', shift && 'Shift', meta && 'Command', KEY_LABELS[key] ?? key.toUpperCase()].filter(Boolean).join('+');
+}
+const TABBABLE = 'a[href], area[href], button, input:not([type=hidden]), select, textarea, summary, iframe, [contenteditable=""], [contenteditable="true"], [tabindex]';
+// Widgets that use arrow and paging keys themselves.
+const KEYED_ROLES = new Set(['slider', 'spinbutton', 'listbox', 'tree', 'treegrid', 'grid', 'menu', 'menubar', 'tablist', 'radiogroup', 'combobox', 'option', 'tab', 'menuitem', 'treeitem', 'radio']);
+function moveFocus(document, from, step, exclude) {
+  const view = document.defaultView;
+  const order = [...document.querySelectorAll(TABBABLE)].filter(element => {
+    if (exclude?.contains(element) || element.disabled || element.closest('[inert]') || Number(element.getAttribute('tabindex')) < 0) return false;
+    const style = view.getComputedStyle(element);
+    return style.visibility !== 'hidden' && style.display !== 'none' && element.getClientRects().length > 0;
+  });
+  // Positive tab indexes come first, in their order; the rest follow in document order.
+  const rank = element => { const index = Number(element.getAttribute('tabindex') ?? 0); return index > 0 ? index : Infinity; };
+  order.sort((a, b) => rank(a) - rank(b));
+  if (!order.length) return null;
+  const at = order.indexOf(from), next = order[at < 0 ? (step > 0 ? 0 : order.length - 1) : (at + step + order.length) % order.length];
+  next.focus();
+  return next;
+}
+function scrollerOf(element, document) {
+  const view = document.defaultView;
+  for (let node = element; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+    const style = view.getComputedStyle(node);
+    if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
+  }
+  return document.scrollingElement ?? document.documentElement;
+}
+export function pressKeys(document, target, combo, { exclude = null } = {}) {
+  const { key, ctrl = false, alt = false, shift = false, meta = false } = combo, view = document.defaultView;
+  const to = target && target.isConnected && !exclude?.contains(target) ? target : document.body;
+  const init = { ...keyInit(key), ctrlKey: ctrl, altKey: alt, shiftKey: shift, metaKey: meta };
+  const taken = !to.dispatchEvent(new view.KeyboardEvent('keydown', init));
+  to.dispatchEvent(new view.KeyboardEvent('keyup', init));
+  const label = keyLabel(combo);
+  if (taken || ctrl || alt || meta) return { ok: true, message: `Pressed ${label}.` };
+  if (key === 'Tab') {
+    const next = moveFocus(document, to === document.body ? null : to, shift ? -1 : 1, exclude);
+    return next ? { ok: true, focused: next, message: `Pressed ${label}: ${accessibleName(next) || next.getAttribute('role') || next.tagName.toLowerCase()} has the focus.` }
+      : { ok: true, message: `Pressed ${label}; nothing on the page takes the focus.` };
+  }
+  const role = to.getAttribute?.('role');
+  const keyed = isEditable(to) || ['SELECT', 'INPUT', 'TEXTAREA'].includes(to.tagName) || (role && KEYED_ROLES.has(role));
+  if (!keyed && ['PageDown', 'PageUp', 'Home', 'End', ' ', 'ArrowDown', 'ArrowUp'].includes(key)) {
+    const scroller = scrollerOf(to, document), page = Math.max(40, scroller.clientHeight * 0.9);
+    const by = { PageDown: page, PageUp: -page, ' ': shift ? -page : page, ArrowDown: 40, ArrowUp: -40 }[key];
+    if (key === 'Home') scroller.scrollTo({ top: 0, behavior: 'instant' });
+    else if (key === 'End') scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' });
+    else scroller.scrollBy({ top: by, behavior: 'instant' });
+    return { ok: true, message: `Pressed ${label}: the page scrolled.` };
+  }
+  return { ok: true, message: `Pressed ${label}.` };
 }

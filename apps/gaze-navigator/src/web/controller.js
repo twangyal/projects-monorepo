@@ -2,6 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
+import { keyLabel } from './page-actions.js';
 import { NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
 
 const CONFIRM_MS = 15000;
@@ -106,10 +107,16 @@ export function createController({ window, actions = pageActions, interpret = in
     return reply(working[action.type], 'info', { followUp });
   }
 
+  function runKeys(action) {
+    const result = commands.keys(action);
+    return reply(result.message, result.ok ? 'success' : 'error');
+  }
+
   function execute(action, context) {
     const executionTurn = turn;
     pending = null;
     if (BROWSER.has(action.type)) return runBrowser(action);
+    if (action.type === 'key') return runKeys(action);
     const target = targetOf(context, action.targetId);
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
@@ -370,6 +377,18 @@ export function createController({ window, actions = pageActions, interpret = in
       const result = commands.find(action);
       if (result.control) previous = { target: result.control, at: now() };
       return reply(result.message, result.ok ? 'info' : 'error');
+    }
+    // A key said aloud goes to the page's focused element and needs no gaze. Control or Command with Enter often sends
+    // a message or a form, so it is asked first.
+    if (action.type === 'key') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.keys) return reply('Pressing keys is not available here.', 'error');
+      if (action.key === 'Enter' && (action.ctrl || action.meta || action.alt || action.shift)) {
+        pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
+        return reply(`${keyLabel(action)} often sends a message or a form. Say confirm to press it, or cancel.`, 'question');
+      }
+      pending = null;
+      return runKeys(action);
     }
     // A "Which one?" question still takes its own numbers.
     if (action.type === 'choose' && context.numbered && context.trackingUnavailable !== 'calibration' && pending?.kind !== 'clarify') {

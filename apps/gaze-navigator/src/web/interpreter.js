@@ -537,6 +537,28 @@ function beyond(utterance, context, flag, where, most = Infinity) {
   return result.related ? { ...result, far: true } : { ...result, [flag]: true };
 }
 
+// Keys said aloud: "press escape", "press shift tab", "press page down", "press control enter", "press the home key".
+const KEY_NAMES = new Map([['escape', 'Escape'], ['esc', 'Escape'], ['tab', 'Tab'], ['enter', 'Enter'], ['return', 'Enter'], ['space', ' '], ['spacebar', ' '],
+  ['space bar', ' '], ['backspace', 'Backspace'], ['back space', 'Backspace'], ['delete', 'Delete'], ['home', 'Home'], ['end', 'End'], ['page up', 'PageUp'],
+  ['page down', 'PageDown'], ['up', 'ArrowUp'], ['down', 'ArrowDown'], ['left', 'ArrowLeft'], ['right', 'ArrowRight']]);
+for (const direction of ['up', 'down', 'left', 'right']) {
+  KEY_NAMES.set(`${direction} arrow`, KEY_NAMES.get(direction));
+  KEY_NAMES.set(`arrow ${direction}`, KEY_NAMES.get(direction));
+}
+// Key names that are also everyday names of controls ("press home" may mean the Home link).
+const WORD_KEYS = new Set(['home', 'end', 'delete', 'up', 'down', 'left', 'right', 'space', 'enter', 'return', 'tab', 'escape', 'backspace']);
+const MODIFIER_WORDS = { control: 'ctrl', ctrl: 'ctrl', command: 'meta', cmd: 'meta', meta: 'meta', alt: 'alt', option: 'alt', shift: 'shift' };
+export function keyCombo(phrase) {
+  let words = phrase.toLowerCase().replace(/\+|\bplus\b/g, ' ').split(/\s+/).filter(Boolean);
+  const named = /^keys?$/.test(words.at(-1) ?? '');
+  if (named) words = words.slice(0, -1);
+  const modifiers = { ctrl: false, alt: false, shift: false, meta: false };
+  while (words.length > 1 && MODIFIER_WORDS[words[0]]) { modifiers[MODIFIER_WORDS[words[0]]] = true; words.shift(); }
+  const name = words.join(' '), modified = Object.values(modifiers).some(Boolean);
+  const key = KEY_NAMES.get(name) ?? (/^f(?:[1-9]|1[0-2])$/.test(name) ? name.toUpperCase() : /^[a-z0-9]$/.test(name) && (modified || named) ? name : null);
+  return key ? { key, ...modifiers, named, word: WORD_KEYS.has(name) && !modified && !named } : null;
+}
+
 function interpretInCircle(utterance, context) {
   const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
@@ -839,6 +861,14 @@ function interpretInCircle(utterance, context) {
     const focused = context.elements.find(element => element.id === context.focusedId && element.editable) ??
       (context.focusedField?.editable ? context.focusedField : null);
     return focused ? act(focused) : deictic(context.elements.filter(element => element.editable || element.submits), act, 'form control');
+  }
+
+  // A key said aloud. A key whose name is also a control's ("press home") is the control when one nearby has that
+  // name, unless said as a key ("the home key"). Enter alone submits, above.
+  const pressing = /^(?:press|hit|tap|push)\s+(?:the\s+)?(.+)$/.exec(text), combo = pressing && keyCombo(pressing[1]);
+  if (combo && !(combo.word && [...context.elements, ...(context.nearby ?? [])].some(element => matchScore(pressing[1], element.name ?? '') >= 0.9))) {
+    const { named, word, ...keys } = combo;
+    return { type: 'key', ...keys };
   }
 
   // Choosing a value from a dropdown inside the circle.
