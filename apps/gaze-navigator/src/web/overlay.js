@@ -1,8 +1,8 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, findMedia, findText, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
-import { pressKeys } from './page-actions.js';
+import { chooseMedia, controlMedia, pressKeys } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -250,7 +250,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
@@ -713,6 +713,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     spokenContext = null;
     // Numbers stay usable without the gaze, but not while calibrating.
     if (numbering && used.trackingUnavailable !== 'calibration') used.numbered = numbered;
+    // The page's videos and sounds, looked for once per instruction and only when it might be about them.
+    if (used.trackingUnavailable !== 'calibration') {
+      let media = null;
+      used.media = () => (media ??= findMedia(document, { x: used.x, y: used.y, exclude: host, scopeCache }));
+    }
     const result = controller.handle(utterance, used, { alternatives });
     show(result, used);
     const report = answer => { try { onResult?.({ utterance, via, source: settings.source, ...outcomeOf(answer) }); } catch { /* A listener's failure is its own. */ } };
@@ -1014,6 +1019,20 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function scheduleNumbers() {
     if (numbering && numbersTimer === null) numbersTimer = window.setTimeout(refreshNumbers, NUMBERS_REFRESH_MS);
   }
+  function controlPageMedia(action, used) {
+    const media = used.media?.() ?? findMedia(document, { exclude: host, scopeCache });
+    const chosen = chooseMedia(media, { radius: used.radius ?? 0, change: action.change });
+    if (chosen.none) {
+      const embedded = [...document.querySelectorAll('iframe')].some(frame => { try { return !frame.contentDocument; } catch { return true; } });
+      return { ok: false, message: `No video or sound on this page can be reached.${embedded ? ' A video inside a player embedded from another site can still be used with its own buttons: look at one and say click.' : ''}` };
+    }
+    if (chosen.ambiguous) {
+      const videos = chosen.ambiguous.every(item => item.kind === 'video');
+      return { ok: false, message: `${chosen.ambiguous.length} ${videos ? 'videos' : 'players'} are on this page. Look at the one you mean and say it again.` };
+    }
+    return controlMedia(chosen.targets, action);
+  }
+
   function findOnPage({ text = null, move = null, clear = false }) {
     if (clear) {
       const had = Boolean(found);

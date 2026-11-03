@@ -107,6 +107,20 @@ export function createController({ window, actions = pageActions, interpret = in
     return reply(working[action.type], 'info', { followUp });
   }
 
+  // Playing starts later (the browser may refuse sound); everything else is done at once. "Again" skips, or changes the
+  // volume or speed, another step.
+  function runMedia(action, context) {
+    const result = commands.media(action, context);
+    if (typeof result?.then === 'function') {
+      const executionTurn = turn;
+      const followUp = result.then(later => (executionTurn === turn && !paused ? reply(later.message, later.ok ? 'success' : 'error') : null))
+        .catch(() => reply('The video did not respond. Nothing else was changed.', 'error'));
+      return reply('Starting…', 'info', { followUp });
+    }
+    if (result.ok && (action.change === 'skip' || (['volume', 'speed'].includes(action.change) && action.to == null))) last = { action, context, at: now() };
+    return reply(result.message, result.ok ? 'success' : 'error');
+  }
+
   function runKeys(action) {
     const result = commands.keys(action);
     return reply(result.message, result.ok ? 'success' : 'error');
@@ -117,6 +131,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     if (BROWSER.has(action.type)) return runBrowser(action);
     if (action.type === 'key') return runKeys(action);
+    if (action.type === 'media') return runMedia(action, context);
     const target = targetOf(context, action.targetId);
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
@@ -341,7 +356,9 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type === 'pause') {
       paused = true;
       pending = null;
-      return reply('Paused. Say resume to continue.', 'info', { paused: true });
+      // "Pause" alone pauses the navigator; a video it leaves playing is pointed out.
+      const playing = context.media?.().some(item => item.playing);
+      return reply(`Paused. Say resume to continue.${playing ? ' A video is still playing: after resume, say "pause the video" to pause it.' : ''}`, 'info', { paused: true });
     }
     if (action.type === 'resume') {
       paused = false;
@@ -389,6 +406,13 @@ export function createController({ window, actions = pageActions, interpret = in
       }
       pending = null;
       return runKeys(action);
+    }
+    // Videos and sounds need no particular control: the one the gaze is on, else the one playing, is used.
+    if (action.type === 'media') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.media) return reply('Controlling videos is not available here.', 'error');
+      pending = null;
+      return runMedia(action, context);
     }
     // A "Which one?" question still takes its own numbers.
     if (action.type === 'choose' && context.numbered && context.trackingUnavailable !== 'calibration' && pending?.kind !== 'clarify') {

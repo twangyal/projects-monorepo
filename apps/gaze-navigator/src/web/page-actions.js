@@ -917,3 +917,127 @@ export function pressKeys(document, target, combo, { exclude = null } = {}) {
   }
   return { ok: true, message: `Pressed ${label}.` };
 }
+
+// Videos and sounds by voice: play, pause, mute, volume, skipping, speed and captions. Players often hide their
+// buttons until the mouse moves over them, which gaze cannot do, so the media element itself is used.
+const clockOf = seconds => {
+  const total = Math.max(0, Math.round(seconds)), hours = Math.floor(total / 3600), minutes = Math.floor(total / 60) % 60, rest = String(total % 60).padStart(2, '0');
+  return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`;
+};
+const lengthOf = seconds => {
+  const total = Math.round(Math.abs(seconds)), minutes = Math.floor(total / 60), rest = total % 60;
+  const part = (value, unit) => `${value} ${unit}${value === 1 ? '' : 's'}`;
+  return [minutes && part(minutes, 'minute'), (rest || !minutes) && part(rest, 'second')].filter(Boolean).join(' ');
+};
+const timesSpeed = rate => (rate === 1 ? 'normal speed' : `${Number(rate.toFixed(2))} times speed`);
+
+/**
+ * Which of the page's media (from `findMedia`) a command means: the one under the gaze circle, else the one playing,
+ * else the only one on screen or on the page. Pausing or muting reaches every one playing when several are.
+ */
+export function chooseMedia(found, { radius = 0, change = null } = {}) {
+  const under = found.filter(item => item.distance <= radius);
+  if (under.length) return { targets: [under[0]] };
+  const playing = found.filter(item => item.playing);
+  if (playing.length === 1) return { targets: playing };
+  if (playing.length > 1) return ['pause', 'mute'].includes(change) ? { targets: playing } : { ambiguous: playing };
+  const shown = found.filter(item => item.onScreen);
+  if (shown.length === 1) return { targets: shown };
+  if (found.length === 1) return { targets: found };
+  return found.length ? { ambiguous: shown.length ? shown : found } : { none: true };
+}
+
+async function startPlaying(media, noun, fromStart) {
+  if (fromStart) media.currentTime = 0;
+  const from = fromStart ? ' from the start' : media.currentTime >= 1 ? ` from ${clockOf(media.currentTime)}` : '';
+  try {
+    await media.play();
+    return { ok: true, message: `Playing${from}.` };
+  } catch (error) {
+    if (error?.name !== 'NotAllowedError') return { ok: false, message: `The ${noun} could not be played: the page has not given it anything the browser can play.` };
+  }
+  // Browsers allow sound only after the page has been clicked or typed in; without sound, playing is allowed.
+  if (media.muted) return { ok: false, message: `The browser did not let this page play the ${noun}. Click the page once, then say play.` };
+  media.muted = true;
+  try {
+    await media.play();
+    return { ok: true, message: `Playing${from} without sound: the browser lets a page play sound only after the page has been clicked or typed in. Say unmute to try sound.` };
+  } catch {
+    media.muted = false;
+    return { ok: false, message: `The browser did not let this page play the ${noun}. Click the page once, then say play.` };
+  }
+}
+
+// Sound turned on by script, before the page has been clicked or typed in, makes the browser pause the media instead.
+function soundOn(media, noun) {
+  const was = !media.paused;
+  media.muted = false;
+  return was && media.paused ? ` The browser paused the ${noun} rather than play its sound, because the page has not been clicked or typed in yet. Say play to continue without sound.` : '';
+}
+
+/** Does `action` (`{ change, by, to, on }`) to the chosen media; play returns a promise of the result. */
+export function controlMedia(targets, action) {
+  const [{ element: media, kind }] = targets, noun = kind === 'video' ? 'video' : 'sound';
+  const several = targets.length > 1 ? `${targets.length} ${kind === 'video' ? 'videos' : 'players'}` : null;
+  const position = () => (Number.isFinite(media.duration) ? `${clockOf(media.currentTime)} of ${clockOf(media.duration)}` : clockOf(media.currentTime));
+  switch (action.change) {
+    case 'play':
+      if (!media.paused && !media.ended) return { ok: true, message: `The ${noun} is already playing, at ${position()}.` };
+      return startPlaying(media, noun, false);
+    case 'restart': return startPlaying(media, noun, true);
+    case 'pause': {
+      const playing = targets.filter(({ element }) => !element.paused);
+      for (const { element } of playing) element.pause();
+      if (!playing.length) return { ok: true, message: `The ${noun} is already paused.` };
+      return { ok: true, message: playing.length > 1 ? `Paused ${playing.length} ${kind === 'video' ? 'videos' : 'players'}.` : `Paused at ${position()}.` };
+    }
+    case 'mute': {
+      for (const { element } of targets) element.muted = true;
+      return { ok: true, message: several ? `Muted ${several}.` : `The ${noun} is muted. Say unmute to hear it again.` };
+    }
+    case 'unmute': {
+      if (!media.muted && media.volume > 0) return { ok: true, message: `The ${noun} is not muted. Say louder to turn it up.` };
+      if (media.volume === 0) media.volume = 0.5;
+      return { ok: true, message: `Sound on, at ${Math.round(media.volume * 100)}% volume.${soundOn(media, noun)}` };
+    }
+    case 'volume': {
+      // Louder after mute brings the sound back from where it was.
+      if (action.to == null && action.by < 0 && (media.muted || media.volume === 0)) return { ok: true, message: `The ${noun} is already silent.` };
+      const after = Math.min(1, Math.max(0, action.to ?? Math.round((media.volume + action.by) * 10) / 10));
+      if (action.to == null && after === media.volume && !media.muted) return { ok: true, message: 'The volume is already at its highest.' };
+      media.volume = after;
+      const note = after > 0 && media.muted ? soundOn(media, noun) : '';
+      return { ok: true, message: `Volume ${Math.round(after * 100)}%.${note}` };
+    }
+    case 'skip':
+    case 'seek': {
+      if (Number.isNaN(media.duration)) return { ok: false, message: `The ${noun} has not loaded yet. Say play first, or try again in a moment.` };
+      if (!Number.isFinite(media.duration)) return { ok: false, message: `This ${noun} is live, so it cannot skip.` };
+      const to = Math.min(media.duration, Math.max(0, action.change === 'skip' ? media.currentTime + action.by : action.to));
+      if (action.change === 'seek' && action.to > media.duration) return { ok: false, message: `The ${noun} is only ${clockOf(media.duration)} long.` };
+      if (action.change === 'skip' && Math.abs(to - media.currentTime) < 0.5) return { ok: true, message: action.by > 0 ? `The ${noun} is at its end.` : `The ${noun} is at its start.` };
+      media.currentTime = to;
+      const how = action.change === 'seek' ? 'Moved' : action.by > 0 ? `Skipped ahead ${lengthOf(action.by)},` : `Went back ${lengthOf(action.by)},`;
+      return { ok: true, message: `${how} to ${clockOf(to)} of ${clockOf(media.duration)}.` };
+    }
+    case 'speed': {
+      const after = Math.min(3, Math.max(0.25, action.to ?? media.playbackRate + action.by));
+      if (action.to == null && after === media.playbackRate) return { ok: true, message: `The ${noun} is already at its ${action.by > 0 ? 'fastest' : 'slowest'} speed.` };
+      media.playbackRate = after;
+      return { ok: true, message: `Playing at ${timesSpeed(after)}.` };
+    }
+    case 'captions': {
+      const tracks = [...(media.textTracks ?? [])].filter(track => ['captions', 'subtitles'].includes(track.kind));
+      if (!tracks.length) return { ok: false, message: `This ${noun} has no captions the navigator can reach. If the player has a captions button, look at it and say click it.` };
+      if (!action.on) {
+        for (const track of tracks) track.mode = 'disabled';
+        return { ok: true, message: 'Captions off.' };
+      }
+      const language = (media.ownerDocument.defaultView.navigator.language ?? '').slice(0, 2).toLowerCase();
+      const chosen = tracks.find(track => track.mode === 'showing') ?? tracks.find(track => track.language?.slice(0, 2).toLowerCase() === language) ?? tracks[0];
+      for (const track of tracks) track.mode = track === chosen ? 'showing' : 'disabled';
+      return { ok: true, message: `Captions on${chosen.label ? `: ${chosen.label}` : ''}.` };
+    }
+    default: return { ok: false, message: 'That is not something the navigator can do to a video.' };
+  }
+}

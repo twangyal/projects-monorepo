@@ -95,6 +95,44 @@ export function spokenSliderValue(text) {
   return spokenNumber(String(text ?? '').replace(/\s*(?:%|per ?cent)\s*$/i, ''));
 }
 
+const TIME_UNITS = { hour: 3600, hours: 3600, hr: 3600, hrs: 3600, minute: 60, minutes: 60, min: 60, mins: 60, second: 1, seconds: 1, sec: 1, secs: 1 };
+
+/**
+ * A length of time in seconds: "ten seconds", "2 minutes", "a minute and a half", "one and a half minutes",
+ * "1 minute 30", "half an hour", or a clock reading ("1:30" is a minute and a half, "1:02:03" over an hour). Null when
+ * no unit is said: a bare number could be seconds or minutes.
+ */
+export function spokenDuration(text) {
+  const literal = String(text ?? '').trim();
+  const clock = /^(?:(\d{1,2}):)?(\d{1,3}):(\d{2})$/.exec(literal);
+  if (clock) {
+    const [hours, minutes, seconds] = [clock[1] ?? 0, clock[2], clock[3]].map(Number);
+    return seconds > 59 || (clock[1] !== undefined && minutes > 59) ? null : hours * 3600 + minutes * 60 + seconds;
+  }
+  const tokens = words(literal);
+  let total = 0, at = 0, lastUnit = null;
+  while (at < tokens.length) {
+    let unit = tokens.findIndex((token, index) => index >= at && token in TIME_UNITS);
+    if (unit < 0) {
+      // "1 minute 30" and "an hour 10": a final number counts in the next smaller unit.
+      const rest = spokenNumber(tokens.slice(at).filter((token, index) => index > 0 || token !== 'and').join(' '));
+      if (rest === null || lastUnit === null || lastUnit === 1) return null;
+      return total + Number(rest) * (lastUnit / 60);
+    }
+    let said = tokens.slice(at, unit);
+    if (said[0] === 'and') said = said.slice(1);
+    const phrase = said.join(' ');
+    const value = ['a', 'an', 'one'].includes(phrase) ? 1 : ['half a', 'half an'].includes(phrase) ? 0.5 : spokenNumber(phrase);
+    if (value === null || value === '') return null;
+    lastUnit = TIME_UNITS[tokens[unit]];
+    total += Number(value) * lastUnit;
+    // "A minute and a half".
+    if (tokens.slice(unit + 1, unit + 4).join(' ') === 'and a half') { total += lastUnit / 2; unit += 3; }
+    at = unit + 1;
+  }
+  return lastUnit === null ? null : total;
+}
+
 function dayOfMonth(tokens) {
   if (tokens.length === 1) {
     const [token] = tokens;

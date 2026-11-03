@@ -715,3 +715,21 @@ export function findPageSearch(document, exclude = null) {
   if (fields.length !== 1) return null;
   return { id: 0, element: fields[0], distance: Infinity, ...describe(fields[0]) };
 }
+
+// Videos and sounds on the page, in open shadow roots and same-origin frames too, nearest the gaze point first: for
+// "play", "pause the video" and the like. Hidden players count (podcast and music sites drive a hidden audio element
+// from their own buttons). Live camera and call streams are not media to play, pause or skip.
+export function findMedia(document, { x = NaN, y = NaN, exclude = null, scopeCache = null } = {}) {
+  const { scopes } = searchScopes(document, exclude, scopeCache);
+  const view = document.defaultView, found = [];
+  for (const { root, frames } of scopes) {
+    for (const element of root.querySelectorAll('video, audio')) {
+      if (exclude?.contains(element) || element.srcObject) continue;
+      const rect = viewportRect(element, frames);
+      const onScreen = rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < view.innerWidth && rect.top < view.innerHeight;
+      found.push({ element, rect, frames, onScreen, kind: element.tagName === 'VIDEO' ? 'video' : 'audio', playing: !element.paused && !element.ended,
+        distance: onScreen && Number.isFinite(x) && Number.isFinite(y) ? distanceToRect(x, y, rect) : Infinity });
+    }
+  }
+  return found.sort((a, b) => a.distance - b.distance);
+}

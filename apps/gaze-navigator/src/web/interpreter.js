@@ -1,6 +1,6 @@
 // Interpretation stage: maps one instruction plus a described gaze context to one typed action.
 // Deterministic rules form the baseline; a model interpreter can implement the same contract.
-import { spokenDate, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
+import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
 import { relatedWords } from './topics.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
@@ -559,6 +559,87 @@ export function keyCombo(phrase) {
   return key ? { key, ...modifiers, named, word: WORD_KEYS.has(name) && !modified && !named } : null;
 }
 
+// Videos and sounds: "pause the video", "play", "mute", "skip ahead 30 seconds", "go back 10 seconds", "jump to 2
+// minutes", "louder", "volume 50 percent", "speed up", "captions on". A command that names the video is always one.
+// A bare word ("play", "mute", "rewind") is one only when the page has a video or sound (`context.media`) and no control
+// near the gaze is named like it: a call's Mute button or a game's Play link is pressed as before. "Pause" alone still
+// pauses the navigator, "stop" alone cancels, and "go back" and "go forward" alone move through the browser's history.
+const MEDIA_NOUN = '(?:(?:the|this|that) )?(?:video|audio|song|track|music|clip|movie|film|episode|podcast|recording|media|player|playback|it)';
+const SKIP_DEFAULT = 10;
+function mediaCommand(command, context) {
+  // Times, rates and levels keep their colons, points and percent signs ("1:30", "1.5", "50%").
+  const text = command.toLowerCase().replace(/[’']/g, "'").replace(/(?<!\d)[.:]|[.:](?!\d)/g, ' ').replace(/[^\p{L}\p{N}'\s.:%]+/gu, ' ').replace(/\s+/g, ' ').trim();
+  const found = context.media?.() ?? [];
+  // "It" means the video only when there is one.
+  if (!found.length && /\bit\b/.test(text)) return null;
+  const named = phrase => [...context.elements, ...(context.nearby ?? [])].some(element => matchScore(phrase, element.name ?? '') >= 0.9);
+  const bare = phrase => found.length > 0 && !named(phrase);
+  const act = (change, extra = {}) => ({ type: 'media', change, ...extra });
+  const noun = new RegExp(` ${MEDIA_NOUN}$`).test(text);
+  const value = said => { const number = spokenNumber(said); return number === null ? NaN : Number(number); };
+  const seconds = said => {
+    if (!said) return SKIP_DEFAULT;
+    if (/^(?:a (?:bit|little)|a few seconds|some)$/.test(said)) return found.length ? SKIP_DEFAULT : null;
+    const duration = spokenDuration(said);
+    if (duration !== null) return duration;
+    return value(said) > 0 ? value(said) : null;
+  };
+  let match;
+  if (new RegExp(`^(?:play|start|resume|continue|unpause)(?: playing)? ${MEDIA_NOUN}$|^(?:keep|continue|resume) playing$`).test(text)) return act('play');
+  if (/^(?:(?:press|hit|click|tap) )?play$/.test(text) && bare('play')) return act('play');
+  if (new RegExp(`^(?:pause|stop|halt|freeze) ${MEDIA_NOUN}$|^(?:stop|pause) (?:playing|playback)$`).test(text)) return act('pause');
+  if (/^(?:press|hit|click|tap) pause$/.test(text) && bare('pause')) return act('pause');
+  if ((match = new RegExp(`^(mute|silence|unmute)(?: ${MEDIA_NOUN})?$`).exec(text)) && (noun || bare(match[1]))) return act(match[1] === 'unmute' ? 'unmute' : 'mute');
+  if ((match = /^(?:turn|switch) (?:the )?(?:sound|audio|volume) (off|on)$|^(?:turn|switch) (off|on) (?:the )?(?:sound|audio)$|^sound (off|on)$/.exec(text))) {
+    return act((match[1] ?? match[2] ?? match[3]) === 'off' ? 'mute' : 'unmute');
+  }
+  // Volume, in steps of a tenth or to a level; a Volume slider near the gaze is set as a slider instead.
+  if (!named('volume')) {
+    if ((match = /^(?:turn|crank) (?:it|the (?:volume|sound|video|music|audio)) (up|down)(?: a (bit|little|lot))?$|^(?:volume|sound) (up|down)(?: a (bit|little|lot))?$/.exec(text))) {
+      return act('volume', { by: ((match[1] ?? match[3]) === 'up' ? 1 : -1) * ((match[2] ?? match[4]) === 'lot' ? 0.3 : 0.1) });
+    }
+    if ((match = /^(?:make it |a (?:bit|little) )?(louder|quieter|softer)$/.exec(text)) && found.length) return act('volume', { by: match[1] === 'louder' ? 0.1 : -0.1 });
+    if ((match = /^(?:set |change |turn )?(?:the )?volume (?:to |at )?(.+?)(?: ?%| percent)?$/.exec(text))) {
+      const level = /^(?:max(?:imum)?|full)$/.test(match[1]) ? 100 : value(match[1]);
+      if (match[1] && Number.isFinite(level) && level >= 0 && level <= 100) return act('volume', { to: level / 100 });
+    }
+    if (/^(?:max(?:imum)?|full) volume$/.test(text)) return act('volume', { to: 1 });
+  }
+  // Skipping. "Go back" and "go forward" alone stay the browser's; "skip ahead" and "rewind" alone skip ten seconds.
+  if ((match = /^(?:(skip|jump|seek) (?:ahead|forwards?)|(fast[ -]?forward)|(?:go|move) (?:ahead|forwards?)|forward)(?: by)?(?: (.+))?$/.exec(text))) {
+    const by = seconds(match[3]);
+    if (by !== null && (match[3] || ((match[1] || match[2]) && bare(text)))) return act('skip', { by });
+  }
+  if ((match = /^(?:(skip|jump|seek) back(?:wards?)?|(rewind)|(?:go|move) back(?:wards?)?|back)(?: by)?(?: (.+))?$/.exec(text))) {
+    const by = seconds(match[3]);
+    if (by !== null && (match[3] || ((match[1] || match[2]) && bare(text)))) return act('skip', { by: -by });
+  }
+  if ((match = /^skip (.+)$/.exec(text)) && spokenDuration(match[1]) !== null) return act('skip', { by: spokenDuration(match[1]) });
+  // To a time: "jump to 1:30", "go to two minutes", back to the start.
+  if ((match = /^(?:skip|jump|go|seek|move|fast[ -]?forward|rewind)(?: (?:back|ahead|forward))? to (.+)$/.exec(text))) {
+    const to = spokenDuration(match[1]);
+    if (to !== null) return act('seek', { to });
+    if (/^(?:the )?(?:start|beginning)$/.test(match[1]) && bare('start')) return act('seek', { to: 0 });
+  }
+  if (new RegExp(`^(?:restart|replay)(?: ${MEDIA_NOUN})?$`).test(text) && (noun || bare(text))) return act('restart');
+  if ((match = new RegExp(`^(?:play|start)(?: ${MEDIA_NOUN})? (?:again|over|from the (?:start|beginning|top))$`).exec(text)) && (new RegExp(` ${MEDIA_NOUN} `).test(text) || bare(text))) return act('restart');
+  // Speed, in quarter steps or to a rate.
+  if (new RegExp(`^(?:speed(?: ${MEDIA_NOUN})? up|play faster|faster)$`).test(text) && found.length) return act('speed', { by: 0.25 });
+  if (new RegExp(`^(?:slow(?: ${MEDIA_NOUN})? down|play slower|slower)$`).test(text) && found.length) return act('speed', { by: -0.25 });
+  if (/^(?:(?:play at )?(?:normal|regular|usual|default) speed|reset (?:the )?speed)$/.test(text)) return act('speed', { to: 1 });
+  if ((match = /^(?:play (?:it )?at )?(double|half) speed$/.exec(text))) return act('speed', { to: match[1] === 'double' ? 2 : 0.5 });
+  if ((match = /^(?:play (?:it )?at|set (?:the )?(?:playback )?speed(?: to)?|(?:playback )?speed(?: to)?) (.+?)(?: ?x| times)?(?: speed)?$/.exec(text))) {
+    const rate = value(match[1]);
+    if (Number.isFinite(rate) && rate >= 0.25 && rate <= 3) return act('speed', { to: rate });
+  }
+  // Captions the page's player provides to the browser; a site's own captions button is pressed as before.
+  if ((match = /^(?:(turn on|show|enable|switch on)|(turn off|hide|disable|switch off)) (?:the )?(?:captions|subtitles|closed captions|cc)$|^(?:captions|subtitles) (on|off)$/.exec(text))) {
+    const said = text.replace(/^(?:turn on|show|enable|switch on|turn off|hide|disable|switch off) /, '');
+    if (!named(said) && !named(text)) return act('captions', { on: Boolean(match[1]) || match[3] === 'on' });
+  }
+  return null;
+}
+
 function interpretInCircle(utterance, context) {
   const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
@@ -608,6 +689,8 @@ function interpretInCircle(utterance, context) {
   // Numbers on every control on screen, said instead of looking at one ("show numbers", then "click 12").
   if (/^(?:show|display|turn on|put up) (?:the )?(?:control )?numbers(?: on (?:the )?(?:page|screen|controls))?$|^number (?:everything|the controls|all (?:the )?controls|the page)$|^numbers on$/.test(text)) return { type: 'numbers', on: true };
   if (/^(?:hide|remove|clear|turn off|take away|stop showing) (?:the )?(?:control )?numbers$|^numbers off$|^no more numbers$/.test(text)) return { type: 'numbers', on: false };
+  const media = mediaCommand(command, context);
+  if (media) return media;
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
