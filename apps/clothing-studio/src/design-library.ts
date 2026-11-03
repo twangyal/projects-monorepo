@@ -12,7 +12,9 @@ export function validateDesignReceipt(value:unknown):DesignReceipt {
  if(typeof r.id!=='string'||!/^[-0-9a-f]{36}$/.test(r.id)||!/^\w{8}-\w{4}-4\w{3}-[89ab]\w{3}-\w{12}$/.test(r.id)||validateDesignName(r.name)!==r.name||typeof r.savedAt!=='string'||new Date(r.savedAt).toISOString()!==r.savedAt||!Number.isInteger(r.bytes)||r.bytes<1||r.bytes>MAX_PROJECT_BYTES)throw new Error('Invalid saved design metadata.');
  return{id:r.id,name:r.name,savedAt:r.savedAt,bytes:r.bytes};
 }
-const DB='clothing-studio-designs',META='metadata',PAYLOAD='payloads',CAP=12,DEADLINE=10_000;
+const DB='clothing-studio-designs',META='metadata',PAYLOAD='payloads',DEADLINE=10_000;
+/** Saved copies the library keeps, versions included. */
+export const CAP=30;
 const unavailable=()=>new Error('Saved design storage is unavailable. Keep the current concept open and export a JSON backup, then retry.');
 function openLibrary():Promise<IDBDatabase>{
  return new Promise((resolve,reject)=>{
@@ -44,7 +46,7 @@ async function transaction<T>(mode:IDBTransactionMode,work:(tx:IDBTransaction,do
 function metadata(tx:IDBTransaction,accept:(rows:DesignReceipt[])=>void,fail:(error:unknown)=>void):void{
  const store=tx.objectStore(META),count=store.count();
  count.onsuccess=()=>{try{
-  if(count.result>CAP)throw new Error('Saved design library exceeds12 copies. No data was changed.');
+  if(count.result>CAP)throw new Error(`Saved design library exceeds ${CAP} copies. No data was changed.`);
   const request=store.getAll();request.onsuccess=()=>{try{accept(request.result.map(validateDesignReceipt));}catch(error){fail(error);}};
  }catch(error){fail(error);}};
 }
@@ -61,7 +63,7 @@ export async function saveDesign(name:string,project:Project):Promise<DesignRece
  const receipt=validateDesignReceipt({id:crypto.randomUUID(),name:safeName,savedAt:new Date().toISOString(),bytes:new TextEncoder().encode(json).length});
  await validateProjectImages(safe);
  return transaction('readwrite',(tx,done,fail)=>metadata(tx,rows=>{
-  if(rows.length>=CAP)throw new Error('The library holds12 saved designs. Download and delete a copy before saving another.');
+  if(rows.length>=CAP)throw new Error(`The library holds ${CAP} saved designs. Download and delete a copy before saving another.`);
   if(rows.some(row=>row.name.toLowerCase()===safeName.toLowerCase()))throw new Error('That saved design name already exists. Choose a new version name.');
   tx.objectStore(META).add(receipt,receipt.id);tx.objectStore(PAYLOAD).add(json,receipt.id);done(receipt);
  },fail));
