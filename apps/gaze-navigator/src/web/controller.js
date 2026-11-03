@@ -407,6 +407,17 @@ export function createController({ window, actions = pageActions, interpret = in
       pending = null;
       return runKeys(action);
     }
+    // Cookie banners and pop-ups are found wherever they are. Saying which choice to make is the choice, so a consent
+    // button ("Accept all") is pressed without the usual question.
+    if (action.type === 'popup') {
+      if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
+      if (!commands.popup) return reply('Cookie banners and pop-ups are not available here.', 'error');
+      pending = null;
+      const found = commands.popup(action);
+      if (!found.target) return reply(found.message, 'error');
+      const result = execute({ type: 'activate', targetId: found.target.id }, { elements: [found.target] });
+      return result.tone === 'success' ? { ...result, message: found.message } : result;
+    }
     // Videos and sounds need no particular control: the one the gaze is on, else the one playing, is used.
     if (action.type === 'media') {
       if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');

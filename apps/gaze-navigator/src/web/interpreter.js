@@ -640,6 +640,19 @@ function mediaCommand(command, context) {
   return null;
 }
 
+// Cookie banners and pop-ups, named rather than looked at: "accept cookies", "reject cookies", "only necessary cookies",
+// "cookie settings", "close the pop-up". Their buttons are found wherever the banner is. Closing gives way to what is
+// in the gaze circle: an open toggle, or a Close or Dismiss control there.
+function popupCommand(text, context) {
+  const kinds = '(?:optional |non ?essential |unnecessary |tracking |marketing |advertising )?';
+  if (/^(?:accept|allow|agree to|ok|okay) (?:all )?(?:the )?cookies$|^accept all cookies$/.test(text)) return { type: 'popup', want: 'accept' };
+  if (new RegExp(`^(?:reject|decline|refuse|deny|block|no) (?:all )?(?:the )?${kinds}cookies$|^(?:only|just) (?:the )?(?:necessary|essential) cookies$|^(?:necessary|essential) cookies only$`).test(text)) return { type: 'popup', want: 'reject' };
+  if (/^(?:open )?(?:the )?(?:cookie|privacy|consent) (?:settings|preferences|options|choices)$|^(?:manage|customi[sz]e|choose) (?:the |my )?cookies$/.test(text)) return { type: 'popup', want: 'settings' };
+  if (/^(?:close|dismiss|hide|get rid of|shut) (?:the |this |that )?(?:pop ?up|dialog|banner|overlay|modal|notice|cookie (?:banner|notice|message|pop ?up))$/.test(text) &&
+    !context.elements.some(element => element.expanded === true || /^[×✕✖x]$|\b(?:close|dismiss)\b/i.test((element.name ?? '').trim()))) return { type: 'popup', want: 'close' };
+  return null;
+}
+
 function interpretInCircle(utterance, context) {
   const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
@@ -691,6 +704,8 @@ function interpretInCircle(utterance, context) {
   if (/^(?:hide|remove|clear|turn off|take away|stop showing) (?:the )?(?:control )?numbers$|^numbers off$|^no more numbers$/.test(text)) return { type: 'numbers', on: false };
   const media = mediaCommand(command, context);
   if (media) return media;
+  const popup = popupCommand(text, context);
+  if (popup) return popup;
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);
