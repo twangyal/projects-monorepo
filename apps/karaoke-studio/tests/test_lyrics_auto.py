@@ -86,6 +86,9 @@ class AutomaticLineTests(unittest.TestCase):
         words = sung((0, 'Now'), (0.8, 'I'), (0.7, "know that you don't care"), (0.7, 'at all'), (3.0, 'time wasted gave all my soul'))
         self.assertEqual([c['text'] for c in words_to_cues(words, 30.0)],
                          ["Now I know that you don't care at all", 'time wasted gave all my soul'])
+        # Two short lines stay two lines.
+        pair = sung((0, 'Hello world'), (0.9, 'Final chorus'))
+        self.assertEqual([c['text'] for c in words_to_cues(pair, 30.0)], ['Hello world', 'Final chorus'])
         # A fragment that would make its neighbour too long, or that is far from both, stays on its own.
         far = sung((0, 'Yeah'), (2.0, 'this line nearly fills a whole card'), (2.0, 'oh'))
         self.assertEqual([c['text'] for c in words_to_cues(far, 30.0)], ['Yeah', 'this line nearly fills a whole card', 'oh'])

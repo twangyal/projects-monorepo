@@ -161,8 +161,10 @@ def _finish(groups: list[list[dict]], duration: float, scores: list[float] | Non
 
 
 # A line of one or two words (a singer's breath splitting "now I know that you don't care") joins the neighbour it is
-# sung closer to, when that pause is shorter than FRAGMENT_PAUSE and the joined line still fits. On 20 JamendoLyrics
-# songs this cut such fragments from 22% to 14% of lines and brought line starts closer to the published lines.
+# sung closer to, when that pause is shorter than FRAGMENT_PAUSE and the joined line still fits. It joins a full line
+# (three or more words), or another fragment only while the two together are still a fragment, so two short lines
+# ("hello world", "final chorus") stay apart. On 20 JamendoLyrics songs this cut such fragments from 22% to 16% of lines
+# and brought line starts closer to the published lines.
 FRAGMENT_WORDS = 2
 FRAGMENT_PAUSE = 1.5
 
@@ -176,11 +178,13 @@ def _join_fragments(groups: list[list[dict]]) -> list[list[dict]]:
         if len(line) <= FRAGMENT_WORDS and len(groups) > 1:
             before = line[0]['start'] - groups[i - 1][-1]['end'] if i > 0 else math.inf
             after = groups[i + 1][0]['start'] - line[-1]['end'] if i + 1 < len(groups) else math.inf
-            if i > 0 and before <= after and before < FRAGMENT_PAUSE and width(groups[i - 1]) + width(line) <= HARD_CHARS:
+            joins = lambda other: len(other) > FRAGMENT_WORDS or len(other) + len(line) <= FRAGMENT_WORDS  # noqa: E731
+            prior, following = i > 0 and joins(groups[i - 1]), i + 1 < len(groups) and joins(groups[i + 1])
+            if prior and (before <= after or not following) and before < FRAGMENT_PAUSE and width(groups[i - 1]) + width(line) <= HARD_CHARS:
                 groups[i - 1] += line
                 del groups[i]
                 continue
-            if i + 1 < len(groups) and after < before and after < FRAGMENT_PAUSE and width(groups[i + 1]) + width(line) <= HARD_CHARS:
+            if following and (after < before or not prior) and after < FRAGMENT_PAUSE and width(groups[i + 1]) + width(line) <= HARD_CHARS:
                 groups[i + 1] = line + groups[i + 1]
                 del groups[i]
                 continue
