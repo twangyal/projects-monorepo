@@ -1,4 +1,4 @@
-import { isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { DRESS_LENGTH, isBottoms, material, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtHeight } from './product-skirt.ts';
 
 /**
@@ -122,6 +122,17 @@ const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 // body instead, lying over the back rather than through it.
 const HOOD_OFFSET = 1.1;
 const LAYER_GAP = 0.3;   // kept between a garment and the one under it, cm
+// A tucked top: below the bottoms' waistline, and this far above it, its fabric is pressed to within TUCK_GAP of the
+// body (as a waistband holds it), easing in from TUCK_EASE farther out once the body has grown. The bottoms are worn
+// over its fabric from a centimetre lower, where only held fabric lies.
+const TUCK_ABOVE = 1, TUCK_GAP = 0.1, TUCK_EASE = 10;
+// Tucked jersey is thin, and the bottoms' fitted waist and hip have little room for it: they are kept this close to it.
+const TUCK_LAYER_GAP = 0.1;
+// Below the tucked fabric's lowest band, its push on the bottoms fades out over this many cm, back to inside where the
+// bottoms lie on their own (the layer's thickness and both gaps, and a little more).
+const TUCK_FADE = 3, TUCK_FADE_DROP = OFFSET + TUCK_GAP + TUCK_LAYER_GAP + 0.2;
+// The parts of a top that go into the bottoms: its body, not its sleeves (whose cuffs can hang as low as the waist).
+const TUCKED_PARTS: readonly PartId[] = ['front', 'back', 'hemBand', 'pocket'];
 const FRICTION = 0.35;    // share of sliding removed while touching the body
 export const FRAME = 1 / 60;
 // Fabric loses energy as it bends: a damping force proportional to the bending rate, in seconds. Without it stiff
@@ -640,9 +651,9 @@ function foldHood(cloth: Cloth, meshes: PartMesh[]) {
  * same inputs; `progress` receives completed frames and can return false to stop early.
  */
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
-  options: { bodyShape?:TopBodyShape; body?: BodyProxy; under?: LayerField; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  options: { bodyShape?:TopBodyShape; body?: BodyProxy; under?: LayerField; underGap?: number; tuck?: number; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   const skirt = product.base === 'skirt', trousers = product.base === 'trousers';
-  const body = options.body ?? garmentBody(product, bodyChest, options.bodyShape), under = options.under;
+  const body = options.body ?? garmentBody(product, bodyChest, options.bodyShape), under = options.under, tuck = options.tuck, layerGap = options.underGap ?? LAYER_GAP;
   const cloth = buildCloth(product, meshes);
   const frames = options.frames ?? GARMENT_FRAMES, substeps = options.substeps ?? GARMENT_SUBSTEPS, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
@@ -653,18 +664,31 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   if (skirt) {
     let top = -Infinity;
     for (let i = 0; i < count; i++) top = Math.max(top, cloth.positions[i * 3 + 1]!);
-    const field=bodyField(body,body.torso[1]!.y,0),normal:Vec=[0,0,0];
+    const field=bodyField(body,body.torso[1]!.y,0),normal:Vec=[0,0,0],held:number[]=[];
     field.scale(1);
     for (let i = 0; i < count; i++) if (cloth.positions[i * 3 + 1]! > top - 1e-6) {
       const k=i*3,distance=field.distance(cloth.positions[k]!,Math.min(top,body.torso[0]!.y-0.0001),cloth.positions[k+2]!,normal),keep=cloth.offset[i]!+0.01;
       if(distance<keep)for(const axis of [0,2])cloth.positions[k+axis]+=normal[axis]!*(keep-distance);
-      inverseMass[i] = 0;
+      inverseMass[i] = 0; held.push(i);
     }
+    // Over a garment underneath (a tucked top), the held waist grows evenly until all of it clears that garment, so
+    // the extra girth is shared round the waist rather than stretching it where the garment underneath is fullest.
+    let grow = 1;
+    for (const i of held) {
+      const k = i * 3, need = under?.radius(cloth.positions[k]!, cloth.positions[k + 1]!, cloth.positions[k + 2]!) ?? 0, radius = Math.hypot(cloth.positions[k]!, cloth.positions[k + 2]!);
+      if (need > 0 && radius > 1e-6) grow = Math.max(grow, (need + cloth.offset[i]! - OFFSET + layerGap) / radius);
+    }
+    if (grow > 1) for (const i of held) { cloth.positions[i * 3] *= grow; cloth.positions[i * 3 + 2] *= grow; }
   }
   // A trouser waistband is held. Once the body has grown, its elastic gathers it from the hip-wide shell onto the
   // body's waist (gathering earlier would fold fabric into the space the body grows into): each band point moves along
   // its direction from the centre line to just outside the waist.
   const gathered = new Map<number, Vec>();
+  // A held point is not pushed by contact, so one held over a garment underneath (a tucked top) is placed outside it.
+  function clearUnder(at: ArrayLike<number> & { [n: number]: number }, k: number, offset: number) {
+    const need = under?.radius(at[k]!, at[k + 1]!, at[k + 2]!) ?? 0, radius = Math.hypot(at[k]!, at[k + 2]!), reach = need + offset - OFFSET + layerGap;
+    if (need > 0 && radius > 1e-6 && radius < reach) { at[k] *= reach / radius; at[k + 2] *= reach / radius; }
+  }
   if (trousers) {
     const keep = OFFSET + 0.15;
     for (const id of cloth.vertices.get('waistband') ?? []) {
@@ -675,11 +699,19 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
       const x = cloth.positions[id * 3]!, z = cloth.positions[id * 3 + 2]!, outside = (t: number) => Math.hypot(Math.max(Math.abs(x * t) - (halfWidth - halfDepth), 0), z * t) - halfDepth >= keep;
       let low = 0, high = 4;
       for (let k = 0; k < 40; k++) { const t = (low + high) / 2; if (outside(t)) high = t; else low = t; }
-      gathered.set(id, [x * high, cloth.positions[id * 3 + 1]!, z * high]);
+      const to: Vec = [x * high, cloth.positions[id * 3 + 1]!, z * high];
+      clearUnder(to, 0, cloth.offset[id]!);
+      gathered.set(id, to);
       inverseMass[id] = 0;
     }
   }
   foldHood(cloth, meshes);
+  // A tucked top's body particles (not those it shares with a sleeve or cuff).
+  const tucking = new Uint8Array(count);
+  if (tuck !== undefined) {
+    for (const part of TUCKED_PARTS) for (const id of cloth.vertices.get(part) ?? []) tucking[id] = 1;
+    for (const part of ['sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight'] as const) for (const id of cloth.vertices.get(part) ?? []) tucking[id] = 0;
+  }
   const solver = clothSolver(cloth, inverseMass, dt), { positions, previous } = solver;
   // The shell is the cloth stretched over a pillow: while the body grows inside it, every rest length eases from its
   // length on the shell to its flat length, so the fabric shrinks onto the body instead of snapping.
@@ -716,18 +748,39 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
           const again = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal);
           if (again < keep) for (let axis = 0; axis < 3; axis++) positions[k + axis] += normal[axis]! * (keep - again);
         }
+        // A tucked top: below the waistline, fabric farther from the body than a waistband allows is pressed in, until
+        // the band holds it.
+        if (tuck !== undefined && !growing && frame <= GROW_FRAMES + GATHER_FRAMES) {
+          const ease = Math.max(0, 1 - (frame - GROW_FRAMES) / GATHER_FRAMES) * TUCK_EASE;
+          for (let i = 0; i < count; i++) {
+            const k = i * 3;
+            if (!tucking[i] || inverseMass[i] === 0 || positions[k + 1]! > tuck) continue;
+            const distance = field.distance(positions[k]!, positions[k + 1]!, positions[k + 2]!, normal), most = cloth.offset[i]! + TUCK_GAP + ease;
+            if (distance > most) for (let axis = 0; axis < 3; axis++) positions[k + axis] -= normal[axis]! * (distance - most);
+          }
+        }
         // A garment underneath: the same friction, then the point is pushed out from the body's axis to outside it.
         if (under) for (let i = 0; i < count; i++) {
           if (inverseMass[i] === 0) continue;
           const k = i * 3, need = under.radius(positions[k]!, positions[k + 1]!, positions[k + 2]!);
           if (need <= 0) continue;
-          const reach = need + cloth.offset[i]! - OFFSET + LAYER_GAP;
+          const reach = need + cloth.offset[i]! - OFFSET + layerGap;
           if (Math.hypot(positions[k]!, positions[k + 2]!) >= reach) continue;
           if (!growing) for (const axis of [0, 2]) positions[k + axis] = previous[k + axis]! + (positions[k + axis]! - previous[k + axis]!) * (1 - FRICTION);
           const radius = Math.hypot(positions[k]!, positions[k + 2]!);
           if (radius > 1e-6 && radius < reach) { positions[k] *= reach / radius; positions[k + 2] *= reach / radius; }
         }
       });
+    }
+    // Once pressed in, the tucked fabric is held by the waistband: squeezed into a thin layer, it has no room to fold
+    // and would otherwise never settle. The free part above it settles against it.
+    if (tuck !== undefined && frame === GROW_FRAMES + GATHER_FRAMES) {
+      for (let i = 0; i < count; i++) if (tucking[i] && positions[i * 3 + 1]! <= tuck) inverseMass[i] = 0;
+      // The fabric gathered into the band is at rest there, so it does not push the free fabric above it.
+      for (let n = 0; n < rest.length; n++) if (inverseMass[a[n]!] === 0 || inverseMass[b[n]!] === 0) {
+        const ka = a[n]! * 3, kb = b[n]! * 3;
+        rest[n] = Math.hypot(positions[ka]! - positions[kb]!, positions[ka + 1]! - positions[kb + 1]!, positions[ka + 2]! - positions[kb + 2]!);
+      }
     }
     if (options.progress && options.progress(frame, frames) === false) break;
   }
@@ -795,9 +848,10 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
  */
 export interface LayerField { scale(s: number): void; radius(x: number, y: number, z: number): number }
 const SECTORS = 72;
-export function layerField(surfaces: { positions: Float32Array; indices: ArrayLike<number> }[], core: number): LayerField {
+export function layerField(surfaces: { positions: Float32Array; indices: ArrayLike<number> }[], core: number, fade?: { depth: number; drop: number }): LayerField {
   let low = Infinity, high = -Infinity;
-  for (const { positions } of surfaces) for (let i = 1; i < positions.length; i += 3) { low = Math.min(low, positions[i]!); high = Math.max(high, positions[i]!); }
+  for (const { positions, indices } of surfaces) for (let t = 0; t < indices.length; t++) { const y = positions[indices[t]! * 3 + 1]!; low = Math.min(low, y); high = Math.max(high, y); }
+  if (fade) low -= fade.depth;
   const rows = Math.max(1, Math.round(high - low) + 1), reach = new Float32Array(rows * SECTORS);
   const sectorOf = (x: number, z: number) => Math.atan2(z, x) / (2 * Math.PI) * SECTORS;
   const mark = (x: number, y: number, z: number) => {
@@ -821,6 +875,15 @@ export function layerField(surfaces: { positions: Float32Array; indices: ArrayLi
       const at = row * SECTORS + sector;
       if (!before[at]) reach[at] = Math.max(before[row * SECTORS + (sector + 1) % SECTORS]!, before[row * SECTORS + (sector + SECTORS - 1) % SECTORS]!);
     }
+  }
+  // With a fade, below its lowest band the reach eases in by `drop` over `depth` cm, so cloth resting on that edge is
+  // not pushed out and released by turns as it moves across it.
+  if (fade) for (let sector = 0; sector < SECTORS; sector++) {
+    let lowest = 0;
+    while (lowest < rows && !reach[lowest * SECTORS + sector]) lowest++;
+    if (lowest === rows) continue;
+    const edge = reach[lowest * SECTORS + sector]!;
+    for (let d = 1; d <= lowest; d++) reach[(lowest - d) * SECTORS + sector] = Math.max(0, edge - fade.drop * Math.min(1, d / fade.depth));
   }
   let s = 1;
   return {
@@ -863,23 +926,46 @@ export function outfitBodies(top: Product, bottoms: Product, chest: number, shap
   return { body, lower, shift };
 }
 
+/** Whether a top can be tucked into bottoms: a dress cannot. */
+export function canTuck(top: Product): boolean { return !isBottoms(top) && topMeasurements(top).length < DRESS_LENGTH; }
+
 /**
- * Drapes `design` worn with `companion`, a top over bottoms (shirts are not tucked in): the bottoms drape first on the
- * outfit's lower body, then the top drapes on the outfit's body over them. The bottoms do not feel the top's weight.
- * Positions are in the design's own place, and the companion's are returned beside its own.
+ * Drapes `design` worn with `companion`, a top with bottoms. Untucked, the bottoms drape first on the outfit's lower
+ * body, then the top drapes on the outfit's body over them. `tucked`, the top drapes first, its fabric below the
+ * bottoms' waistline pressed close to the body as a waistband holds it, then the bottoms drape outside that part of it.
+ * The garment underneath does not feel the other's weight. Positions are in the design's own place, and the
+ * companion's are returned beside its own.
  */
 export function simulateOutfit(design: Product, designMeshes: PartMesh[], companion: Product, companionMeshes: PartMesh[], bodyChest: number,
-  options: { bodyShape?: TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  options: { bodyShape?: TopBodyShape; tucked?: boolean; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt.');
   const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
+  if (options.tucked && !canTuck(top)) throw new Error('A dress cannot be tucked in. Shorten it to a top, or wear it untucked.');
   const topMeshes = designIsTop ? designMeshes : companionMeshes, bottomMeshes = designIsTop ? companionMeshes : designMeshes;
   const { body, lower, shift } = outfitBodies(top, bottoms, bodyChest, options.bodyShape);
   const frames = options.frames ?? GARMENT_FRAMES, steps = { ...(options.frames ? { frames } : {}), ...(options.substeps ? { substeps: options.substeps } : {}) };
   const report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 2 * frames);
-  const under = simulateGarment(bottoms, bottomMeshes, bodyChest, { ...steps, body: lower, progress: report(0) });
-  const placed = under.parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + shift : value) }));
-  const surfaces = placed.map(({ part, positions }) => ({ positions, indices: bottomMeshes.find(mesh => mesh.part === part)!.indices }));
-  const over = simulateGarment(top, topMeshes, bodyChest, { ...steps, body, under: layerField(surfaces, body.torso[1]!.y), progress: report(frames) });
+  let under: GarmentDrapeResult, over: GarmentDrapeResult, placed: GarmentDrapeResult['parts'];
+  if (options.tucked) {
+    const tuck = body.landmarks!.waist! + TUCK_ABOVE;
+    over = simulateGarment(top, topMeshes, bodyChest, { ...steps, body, tuck, progress: report(0) });
+    // The tucked part of the top, in the bottoms' place: triangles wholly below the top of the waistband and, in
+    // trousers, above the hip. Below it the seat curves in under the body, where pushing the trousers out from the
+    // body's axis would fight the legs; the tucked fabric there is pressed to the body, inside the seat's ease.
+    const floor = body.bottom === undefined ? -Infinity : body.landmarks!.hip!;
+    const surfaces = over.parts.filter(({ part }) => TUCKED_PARTS.includes(part)).map(({ part, positions }) => {
+      const indices = topMeshes.find(mesh => mesh.part === part)!.indices, kept: number[] = [];
+      for (let t = 0; t + 2 < indices.length; t += 3) if ([0, 1, 2].every(c => { const y = positions[indices[t + c]! * 3 + 1]!; return y <= tuck - TUCK_ABOVE && y >= floor; })) kept.push(indices[t]!, indices[t + 1]!, indices[t + 2]!);
+      return { positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value - shift : value), indices: kept };
+    }).filter(surface => surface.indices.length);
+    under = simulateGarment(bottoms, bottomMeshes, bodyChest, { ...steps, body: lower, ...(surfaces.length ? { under: layerField(surfaces, lower.torso[1]!.y, { depth: TUCK_FADE, drop: TUCK_FADE_DROP }), underGap: TUCK_LAYER_GAP } : {}), progress: report(frames) });
+    placed = under.parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + shift : value) }));
+  } else {
+    under = simulateGarment(bottoms, bottomMeshes, bodyChest, { ...steps, body: lower, progress: report(0) });
+    placed = under.parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + shift : value) }));
+    const surfaces = placed.map(({ part, positions }) => ({ positions, indices: bottomMeshes.find(mesh => mesh.part === part)!.indices }));
+    over = simulateGarment(top, topMeshes, bodyChest, { ...steps, body, under: layerField(surfaces, body.torso[1]!.y), progress: report(frames) });
+  }
   if (designIsTop) return { ...over, companion: { parts: placed, metrics: under.metrics } };
   const back = (parts: GarmentDrapeResult['parts']) => parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value - shift : value) }));
   const moved = (point: Vec): Vec => [point[0], point[1] - shift, point[2]];

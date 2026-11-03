@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
-import { layerField, outfitBodies, outfitShape, simulateGarment, simulateOutfit } from '../src/garment-drape.ts';
+import { canTuck, layerField, outfitBodies, outfitShape, simulateGarment, simulateOutfit } from '../src/garment-drape.ts';
 import { teeMesh, template } from '../src/product.ts';
 import { createProject, validateProject } from '../src/model.ts';
 
@@ -64,4 +64,51 @@ test('a project keeps the garment worn with its product', () => {
   const project = validateProject({ ...createProject(), product: template('blank'), wornWith: template('trousers') });
   assert.equal(project.wornWith?.name, 'Straight trousers');
   assert.throws(() => validateProject({ ...createProject(), wornWith: { base: 'cape' } }));
+  // Tucking is kept with an outfit, and dropped without a garment worn with the product.
+  assert.equal(validateProject({ ...project, tucked: true }).tucked, true);
+  assert.equal(validateProject({ ...createProject(), product: template('blank'), tucked: true }).tucked, undefined);
+  assert.throws(() => validateProject({ ...project, tucked: 'yes' }), /Tucked must be true or false/);
+});
+
+test('a tucked top drapes first, held close to the body below the waist, and the bottoms drape outside it', () => {
+  // Long sleeves: the cuffs hang about as low as the waist, but only the top's body is tucked.
+  const top = template('breton'), topMeshes = teeMesh(top, Delaunator);
+  for (const bottoms of [template('trousers'), template('flared-skirt')]) {
+    const bottomMeshes = teeMesh(bottoms, Delaunator);
+    const result = simulateOutfit(top, topMeshes, bottoms, bottomMeshes, 94, { frames: 120, tucked: true });
+    const { body } = outfitBodies(top, bottoms, 94), waist = body.landmarks!.waist!, floor = body.bottom === undefined ? -Infinity : body.landmarks!.hip!;
+    // The top's body below the waistband (and above the hip, in trousers), as a layer: no point of the bottoms is inside it.
+    const tucked = result.parts.filter(({ part }) => ['front', 'back', 'hemBand', 'pocket'].includes(part)).map(({ part, positions }) => {
+      const indices = topMeshes.find(mesh => mesh.part === part)!.indices, kept: number[] = [];
+      for (let t = 0; t + 2 < indices.length; t += 3) if ([0, 1, 2].every(c => { const y = positions[indices[t + c]! * 3 + 1]!; return y <= waist && y >= floor; })) kept.push(indices[t]!, indices[t + 1]!, indices[t + 2]!);
+      return { positions, indices: kept };
+    });
+    const field = layerField(tucked, 0);
+    let covered = 0, inside = 0;
+    for (const { positions } of result.companion!.parts) for (let i = 0; i < positions.length; i += 3) {
+      const reach = field.radius(positions[i]!, positions[i + 1]!, positions[i + 2]!);
+      if (reach <= 0) continue;
+      covered++;
+      if (Math.hypot(positions[i]!, positions[i + 2]!) < reach - 0.05) inside++;
+    }
+    assert.ok(covered > 50, `${bottoms.name}: the bottoms cover the tucked tee (${covered} points)`);
+    assert.equal(inside, 0, `${bottoms.name}: no point of the bottoms is inside the tucked tee`);
+    // Untucked, the tee would hang outside the bottoms; tucked, its hem stays inside them, close to the body.
+    let lowest = Infinity;
+    for (const { positions } of result.parts) for (let i = 1; i < positions.length; i += 3) lowest = Math.min(lowest, positions[i]!);
+    assert.ok(lowest < waist - 5, `${bottoms.name}: the tee reaches ${(waist - lowest).toFixed(1)} cm below the waist, inside the bottoms`);
+    assert.ok(result.metrics.maxStrain < 0.6, `${bottoms.name}: stretch ${result.metrics.maxStrain}`);
+    // The bottoms stay on the body: near the waist none of them reaches far from it.
+    let widest = 0;
+    for (const { positions } of result.companion!.parts) for (let i = 0; i < positions.length; i += 3) if (Math.abs(positions[i + 1]! - waist) < 3) widest = Math.max(widest, Math.hypot(positions[i]!, positions[i + 2]!));
+    assert.ok(widest < 22, `${bottoms.name}: at the waist the bottoms reach ${widest.toFixed(1)} cm from the body's axis`);
+    assert.ok(result.companion!.metrics.residualSpeed < 10 && result.metrics.residualSpeed < 10, 'both garments settle');
+  }
+});
+
+test('a dress cannot be tucked in', () => {
+  const dress = template('tee-dress'), trousers = template('trousers');
+  assert.throws(() => simulateOutfit(dress, teeMesh(dress, Delaunator), trousers, teeMesh(trousers, Delaunator), 94, { frames: 60, tucked: true }), /dress cannot be tucked/);
+  assert.equal(canTuck(dress), false);
+  assert.equal(canTuck(template('blank')), true);
 });

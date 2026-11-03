@@ -60,3 +60,41 @@ test('a body the bottoms cannot be worn on is explained by the outfit drape', as
   await expect(page.locator('#garment-drape-status')).toContainText("smaller than the skirt's 80 cm waist", { timeout: 60000 });
   await expect(page.getByRole('combobox', { name: 'Wear with', exact: true })).toHaveValue('kept');
 });
+
+test('a top is tucked into trousers and draped that way, undoably; a dress cannot be tucked', async ({ page }) => {
+  test.setTimeout(240000);
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const tuck = page.getByRole('checkbox', { name: 'Tuck the top in', exact: true });
+  await expect(tuck).toBeDisabled();
+  await expect(page.locator('#garment-tuck-help')).toHaveText('Choose bottoms with Wear with to tuck a top in.');
+  await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
+  await expect(tuck).toBeEnabled();
+  await tuck.check();
+  await expect(page.locator('#message')).toContainText('The Blank tee is tucked into the Straight trousers.');
+  expect((await backup(page)).tucked).toBe(true);
+  await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  const status = page.locator('#garment-drape-status');
+  await expect(status).toContainText('Tucked into the Straight trousers', { timeout: 120000 });
+  await expect(status).not.toContainText('the hem falls');
+
+  // Undo leaves it untucked, draped over the trousers again (undo shows the styling shell until Drape is chosen).
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(tuck).not.toBeChecked();
+  expect((await backup(page)).tucked).toBeUndefined();
+  await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  await expect(status).toContainText('Worn over the Straight trousers', { timeout: 120000 });
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(tuck).toBeChecked();
+
+  // Taking the trousers off drops the tuck; a dress worn with them cannot be tucked.
+  await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Nothing else' });
+  await expect(tuck).toBeDisabled();
+  expect((await backup(page)).tucked).toBeUndefined();
+  page.once('dialog', dialog => void dialog.accept());
+  await editor(page).getByRole('button', { name: /^Use the T-shirt dress template/ }).click();
+  await expect(page.locator('#message')).toContainText('T-shirt dress template loaded.');
+  await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
+  await expect(tuck).toBeDisabled();
+  await expect(page.locator('#garment-tuck-help')).toContainText('A dress cannot be tucked in');
+});

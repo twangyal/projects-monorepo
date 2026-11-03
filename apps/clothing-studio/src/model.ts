@@ -15,6 +15,8 @@ export interface Project {
   schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements; topBody?:ProfileBody; product?: ProductDesign;
   /** A garment worn with the product in Body & drape (a top over bottoms), kept as a copy. */
   wornWith?: ProductDesign;
+  /** In an outfit, the top is tucked into the bottoms. */
+  tucked?: boolean;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -155,7 +157,10 @@ export function validateProject(value: unknown): Project {
   if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
   const product = Object.hasOwn(project, 'product') ? validateProduct(project.product) : undefined;
   const wornWith = Object.hasOwn(project, 'wornWith') ? validateProduct(project.wornWith) : undefined;
-  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(topBody?{topBody}:{}), ...(product ? {product} : {}), ...(wornWith ? {wornWith} : {}) };
+  if (Object.hasOwn(project, 'tucked') && typeof project.tucked !== 'boolean') throw new Error('Tucked must be true or false.');
+  // Tucking belongs to an outfit; without a garment worn with the product it is dropped.
+  const tucked = project.tucked === true && !!wornWith;
+  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(topBody?{topBody}:{}), ...(product ? {product} : {}), ...(tucked ? {tucked} : {}), ...(wornWith ? {wornWith} : {}) };
   // Admission, history and autosave must never accept a graph that its canonical backup cannot reopen.
   boundedJson(JSON.stringify(admitted, null, 2));
   return admitted;
