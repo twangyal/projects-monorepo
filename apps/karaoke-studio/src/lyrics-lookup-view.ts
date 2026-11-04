@@ -10,7 +10,9 @@ export const lyricsLookupMarkup=`<details id="lyrics-lookup"><summary>Look up ex
 <p id="lookup-timing-notice" class="fine" role="status"></p><section id="lookup-timing-review" aria-label="Published words and line timings" hidden><h3>Published words and line timings</h3><pre id="lookup-timing-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto"></pre></section>
 <p class="fine">Review the words and song edition. Use lyrics replaces the lyric draft and aligns to locally recognized vocals. Without recognized words, timing is estimated. Current cues change as one unsaved edit; Undo restores them and Save lyrics is separate. Finish or discard any pasted draft first.</p><p id="lookup-timed-note" class="fine" hidden>This edition also has published line timings. Review their words and times above before using them. Lines end at the next timestamp or instrumental gap and are held at most eight seconds. Word highlighting uses local recognition where it heard the words.</p><p id="lookup-readiness" class="fine" role="status"></p><div class="timing-actions"><button id="lookup-use-timed" hidden disabled>Use lyrics with published timings</button><button id="lookup-use" disabled>Use lyrics and align</button></div></section></details>`;
 interface Context {key:string;projectId:string;duration:number;busy:boolean;pastedDirty:boolean;alignmentState:'loading'|'ready'|'error'}
-interface Options {context:()=>Context|null;useLyrics:(text:string)=>void;useTimedLyrics:(cues:LyricsCue[])=>void;suggest:()=>{title:string;artist:string;fromName?:boolean}|null}
+interface Options {context:()=>Context|null;useLyrics:(text:string)=>void;useTimedLyrics:(cues:LyricsCue[])=>void;suggest:()=>{title:string;artist:string;fromName?:boolean}|null;
+  /** Brings the lookup into view where the studio shows one tool at a time. */
+  reveal?:()=>void}
 /** Lookup owns only its metadata/result; it never writes cues or audio itself. */
 export function mountLyricsLookup(options:Options):{sync:()=>void} {
   const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -41,6 +43,10 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
     // been tried for this clip.
     const offered=!!context&&tagged&&!context.busy&&!request&&!result&&!tried.includes(context.projectId);
     el('lookup-offer').hidden=!offered;
+    // Found lyrics wait in the lookup until used or dismissed; where the automatic lyrics are shown, they are pointed to.
+    const found=!!result&&!!context&&context.key===owner;
+    el('lookup-found').hidden=!found;
+    if(found)el('lookup-found-text').textContent=`Published lyrics were found for “${title.value.trim()}”${artist.value.trim()?` by ${artist.value.trim()}`:''}. Review them before using them.`;
     if(offered)el('lookup-offer-text').textContent=`Published lyrics may exist for “${title.value.trim()}” by ${artist.value.trim()}: usually more accurate than recognition. Looking them up sends only the title, artist and clip length to LRCLIB.`;
     find.disabled=!context||context.busy||!!request;title.disabled=artist.disabled=!context||context.busy;
     use.disabled=!result||!context||context.key!==owner||context.busy||context.pastedDirty||context.alignmentState!=='ready';
@@ -51,7 +57,8 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
   }
   for(const input of [title,artist])input.addEventListener('input',()=>{tagged=false;fromName=false;clear('Metadata changed. Look up lyrics when ready.');sync();});
   cancel.addEventListener('click',()=>{clear('Lyrics lookup cancelled. Your lyrics are unchanged.');sync();});
-  el('lookup-offer-find').addEventListener('click',()=>{(el('lyrics-lookup') as HTMLDetailsElement).open=true;find.click();el('lookup-status').scrollIntoView({block:'nearest'});});
+  el('lookup-offer-find').addEventListener('click',()=>{options.reveal?.();(el('lyrics-lookup') as HTMLDetailsElement).open=true;find.click();el('lookup-status').scrollIntoView({block:'nearest'});});
+  el('lookup-found-review').addEventListener('click',()=>{options.reveal?.();(el('lyrics-lookup') as HTMLDetailsElement).open=true;review.scrollIntoView({block:'nearest'});});
   find.addEventListener('click',async()=>{
     const context=current(),wasAutomatic=automatic;automatic=false;if(!context||context.busy)return;
     remember(context.projectId);

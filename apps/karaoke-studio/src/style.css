@@ -870,3 +870,78 @@ button {
 .correction-report table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
 .correction-report th, .correction-report td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line, #dcded8); vertical-align: top; overflow-wrap: anywhere; }
 .correction-report th { font-weight: 600; }
+/* Focused workspace: the preview beside one tool at a time; Show all tools lists every tool in the same column. */
+.workspace-grid { grid-template-columns:minmax(0,1fr) minmax(0,1.12fr); margin-top:1rem }
+.workspace-focused .intro { display:none }
+.workspace-expanded .intro { margin-top:0 }
+.tools-panel .song-panel { grid-row:auto; padding-bottom:1.1rem }
+.stage-panel .transport { flex-wrap:wrap; gap:.5rem 1rem }
+.transport .field { flex-direction:row; align-items:center; gap:.4rem; font-size:.65rem }
+.transport .field select { width:auto; min-height:38px; font-size:.68rem }
+#playback-speed-status { margin:.35rem 1.15rem 1rem }
+#playback-speed-status:empty { display:none }
+.lyrics-bar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .65rem; padding:.75rem 1.15rem; border-bottom:1px solid #e7e9df; background:#f6f8f1 }
+.lyrics-bar #save-state { flex:1 1 13rem; font-size:.7rem; color:#536a5f }
+.lyrics-bar .draft-history { padding:0; gap:.4rem }
+.lyrics-bar button { min-height:40px }
+.tool-bar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:.25rem .5rem; padding:.55rem .8rem 0; border-bottom:1px solid #dae0d6 }
+.tool-tabs { display:flex; flex-wrap:wrap; gap:.15rem; flex:1 1 auto; min-width:0 }
+.tool-tabs [role=tab] { min-height:44px; padding:.5rem .8rem; border:1px solid transparent; border-bottom:0; border-radius:7px 7px 0 0; background:transparent; color:#5b7270 }
+.tool-tabs [role=tab]:hover { background:#eef2e8 }
+.tool-tabs [role=tab][aria-selected=true] { background:#fdfcf7; border-color:#dae0d6; color:#22393a; margin-bottom:-1px; box-shadow:inset 0 3px 0 #456461 }
+#workspace-mode { margin:0 0 .45rem auto; min-height:38px; font-size:.68rem }
+#workspace-mode[aria-pressed=true] { background:#e7ece7 }
+.tool-heading { display:none }
+.workspace-expanded .tool-tabs { display:none }
+.workspace-expanded #workspace-mode { margin-top:.45rem }
+.workspace-expanded .tool-heading { display:block; padding:1.1rem 1.15rem .2rem; font-size:.95rem; font-weight:600; color:#2f4a47 }
+.workspace-expanded .tool-panel+.tool-panel { border-top:1px solid #dae0d6 }
+.lyric-review { padding:0 1.15rem; min-width:0 }
+.lyric-review>#srt-status { margin:.8rem 0 0 }
+.lyric-review>#srt-status:empty { display:none }
+.lyric-review>#srt-cancel { margin:0 0 .8rem }
+.tool-panel>details { margin:.35rem 1.15rem }
+/* Find, replace and add sit on one row until one is opened across it. */
+.line-tools { display:flex; flex-wrap:wrap; align-items:flex-start; gap:0 1.4rem; margin:.35rem 1.15rem }
+.line-tools>details[open] { flex:1 1 100% }
+.tool-panel>details>summary,.line-tools>details>summary { display:flex; align-items:center; min-height:40px; cursor:pointer; font-size:.78rem; font-weight:600; color:#3f5b56 }
+.tool-panel>details>summary::before,.line-tools>details>summary::before { content:'▸'; margin-right:.45rem; color:#7c9c83 }
+.tool-panel>details[open]>summary::before,.line-tools>details[open]>summary::before { content:'▾' }
+.tool-panel>details>summary::-webkit-details-marker,.line-tools>details>summary::-webkit-details-marker { display:none }
+.export-panel .export-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr)); align-items:end; gap:.75rem; border-top:0; padding:1rem 1.15rem .6rem }
+.export-panel .guide-vocal { flex-direction:column; align-items:stretch; gap:.3rem; font-size:.66rem }
+.export-panel .guide-vocal select { width:100% }
+.export-panel #key-preview { min-height:44px }
+.export-panel>.fine { margin:.35rem 1.15rem }
+.export-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1rem; padding:.8rem 1.15rem }
+.export-actions .primary { min-height:44px; padding-inline:1.2rem }
+.export-panel .secondary-exports { border-top:1px solid #e3e8dc; padding-top:.8rem }
+@media (min-width:1100px) and (min-height:640px) { .stage-panel { position:sticky; top:1rem } }
+@media (max-width:1099px) {
+  .workspace-grid { grid-template-columns:minmax(0,1fr) }
+  .stage-wrap { max-width:760px }
+  .stage-panel .stage-wrap { margin-inline:auto }
+}
+@media (max-width:700px) {
+  .lyrics-bar { padding:.65rem .8rem }
+  .tool-bar { padding:.45rem .5rem 0 }
+  .tool-tabs [role=tab] { padding:.45rem .6rem; font-size:.7rem }
+  .workspace-expanded .tool-heading { padding:1rem .8rem .2rem }
+  .lyric-review,.export-panel>.fine { padding:0 .8rem }
+  .export-panel>.fine { margin:.35rem 0 }
+  .export-panel .export-row,.export-actions { padding-inline:.8rem }
+  .tool-panel>details,.line-tools { margin:.35rem .8rem }
+}
+.transport .field select { max-width:10.5rem }
+#playback-speed-help { margin:.6rem 1.15rem 1rem }
+.tools-panel .archive-panel { padding:18px 1.15rem }
+.tools-panel #delete-project { display:inline-block; width:auto; margin:0 1.15rem }
+/* The picture chooser reads as a link; its file input stays reachable but is not drawn. */
+.file-button { position:relative; cursor:pointer; margin-right:.6rem }
+.file-button input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer }
+.file-button:focus-within { outline:3px solid #cb9b58; outline-offset:3px }
+@media (max-width:700px) {
+  .tools-panel .archive-panel { padding:18px .8rem }
+  .tools-panel #delete-project { margin:0 .8rem }
+  #playback-speed-help { margin:.6rem .8rem 1rem }
+}
