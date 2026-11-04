@@ -71,3 +71,39 @@ test('snapshot tech-pack images include genuine uploaded motif and front artwork
   }, source);
   expect(counts.red).toBeGreaterThan(100); expect(counts.blue).toBeGreaterThan(100);
 });
+
+test('the printable pack keeps sample renders while a different size is draped', async ({ page }) => {
+  test.setTimeout(120000);
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const sample = await exportPack(page);
+  expect(renders(sample.html)).toHaveLength(2);
+
+  const size = page.getByRole('combobox', { name: 'Size shown', exact: true });
+  await size.selectOption('L');
+  await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  await expect(page.locator('#garment-drape-status')).toContainText('Size L, graded from M. Draped on a body', { timeout: 75000 });
+
+  const pack = await exportPack(page);
+  expect(pack.html).toEqual(sample.html);
+  await expect(size).toHaveValue('L');
+  await expect(page.locator('#garment-drape-status')).toContainText('Size L, graded from M. Draped on a body');
+
+  await size.selectOption('M');
+  await expect(page.locator('#garment-drape-status')).toContainText('10 cm of ease at the chest', { timeout: 75000 });
+  const drapedSample = await exportPack(page);
+  expect(renders(drapedSample.html)).toHaveLength(2);
+  expect(renders(drapedSample.html)).not.toEqual(renders(sample.html));
+
+  const whileSolving = page.waitForEvent('download');
+  await size.evaluate(node => {
+    const select = node as HTMLSelectElement;
+    select.value = 'XL';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    // Start the export in the same turn, before the preview's worker can deliver a result.
+    (document.querySelector('#techpack-html') as HTMLButtonElement).click();
+  });
+  const pendingPack = await whileSolving;
+  expect((await readFile((await pendingPack.path())!)).toString()).toEqual(sample.html);
+  await expect(size).toHaveValue('XL');
+});

@@ -941,7 +941,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('techpack-html').addEventListener('click', () => void exporting(async () => {
     const button = $('techpack-html') as HTMLButtonElement;
     if (button.disabled) return;
-    const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), date = today(), settled = captureDrape(design);
+    const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), date = today();
+    // The diagram and tables describe the sample, so a different size's drape cannot supply its images.
+    const settled = viewed(design) === design ? captureDrape(design) : null;
     button.disabled = true;
     try {
       const available = await ready;
