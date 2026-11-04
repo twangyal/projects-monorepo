@@ -1781,9 +1781,12 @@ async function upload(file: File, model: string, follow: boolean): Promise<{ sta
   }
   finally { requestingJob = false; controls(); queueStatus(); }
 }
+function uploadMustWait(): boolean {
+  return timingBusy() || !!timingOwner || !!srtOwner || practice.active || aligning;
+}
 let pumping = false;
 async function pumpUploads() {
-  if (pumping || !uploadQueue.length || currentJob || requestingJob || loading || saving || archiveChecking || timingOwner || srtOwner || practice.active || !session?.modelReady) return;
+  if (pumping || !uploadQueue.length || uploadMustWait() || !session?.modelReady) return;
   pumping = true;
   try {
     const version = queueClearVersion, next = uploadQueue.shift()!;
@@ -1799,16 +1802,13 @@ element<HTMLInputElement>('audio-file').addEventListener('change', async event =
   const input = event.target as HTMLInputElement, files = [...input.files ?? []], file = files[0]; input.value = '';
   if (!file) return;
   // New songs join an existing batch, even between preparations. They do not replace the clip being edited.
-  if (uploadQueue.length || currentJob || requestingJob || loading || saving || archiveChecking) {
+  if (uploadQueue.length || uploadMustWait()) {
     const model = element<HTMLSelectElement>('upload-recognition').value;
     enqueueSongs(files, model);
     message(`${files.length === 1 ? `“${file.name}” is` : `${files.length} songs are`} waiting until the studio is free. ${files.length === 1 ? 'It lands' : 'They land'} in Saved clips.`);
     return;
   }
-  retireTiming('Choosing audio cancelled the timing session. Staged times were not applied.');
   if (!mayLeave()) return;
-  retireSrt('Importing audio cancelled the lyric import review.');
-  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const model = element<HTMLSelectElement>('upload-recognition').value;
   enqueueSongs(files.slice(1), model);
   if (file.size < 1 || file.size > uploadLimit()) { message(`Choose a nonempty song clip no larger than ${uploadLimit() / 1024 / 1024} MiB.`, true); return; }

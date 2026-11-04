@@ -54,3 +54,38 @@ test('a foreign saved revision makes explicit Save refuse without replaying or l
 test('controlled visibility loss retires review without rebuilding focused multiline cue text',async({page,request,timingClips})=>{
  const project=await timingClips.create();await openTiming(page,project);await captureTwo(page);const lyric=page.getByLabel('Lyric line 1',{exact:true});await lyric.focus();await lyric.evaluate(node=>{const field=node as HTMLTextAreaElement;field.dataset.timingIdentity='hidden-same';field.setSelectionRange(2,5);});await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});Object.defineProperty(document,'visibilityState',{configurable:true,value:'hidden'});document.dispatchEvent(new Event('visibilitychange'));Reflect.deleteProperty(document,'hidden');Reflect.deleteProperty(document,'visibilityState');document.dispatchEvent(new Event('visibilitychange'));});await expect(page.locator('#timing-apply')).toBeDisabled();await expect(lyric).toBeFocused();await expect(lyric).toHaveAttribute('data-timing-identity','hidden-same');expect(await lyric.evaluate(node=>[(node as HTMLTextAreaElement).selectionStart,(node as HTMLTextAreaElement).selectionEnd])).toEqual([2,5]);expect(await editorCues(page)).toEqual(INITIAL_CUES);expect(await fromServer(request,project.id)).toEqual(project);
 });
+
+test('choosing another song keeps staged timing and prepares it after Apply', async ({ page, request, timingClips }) => {
+  test.setTimeout(45000);
+  const project = await timingClips.create();
+  await openTiming(page, project);
+  const draftTitle = 'Unsaved timing title';
+  await page.locator('#title').fill(draftTitle);
+  await captureTwo(page);
+  const dialogMessages: string[] = [];
+  page.on('dialog', async dialog => {
+    dialogMessages.push(dialog.message());
+    await dialog.dismiss();
+  });
+
+  await page.getByLabel('Upload song clip').setInputFiles({
+    name: 'after-timing.wav', mimeType: 'audio/wav', buffer: timingWav(),
+  });
+  await expect(page.locator('#timing-review')).toBeVisible();
+  await expect(page.locator('#upload-queue-list li span')).toHaveText(['after-timing.wav']);
+  expect(dialogMessages).toEqual([]);
+  await expect(page.locator('#timing-apply')).toBeEnabled();
+  await page.locator('#timing-apply').click();
+  const captured = await editorCues(page);
+  expect(captured).not.toEqual(INITIAL_CUES);
+
+  await expect(page.locator('#projects option', { hasText: 'after-timing' })).toHaveCount(1, { timeout: 15000 });
+  await expect(page.locator('#title')).toHaveValue(draftTitle);
+  expect(await editorCues(page)).toEqual(captured);
+  expect(await fromServer(request, project.id)).toEqual(project);
+
+  const newId = await page.locator('#projects option', { hasText: 'after-timing' }).getAttribute('value');
+  const { token } = await (await request.get('/api/session')).json();
+  const removed = await request.delete(`/api/projects/${newId}`, { headers: { 'X-Karaoke-Token': token }, data: {} });
+  expect(removed.ok()).toBe(true);
+});
