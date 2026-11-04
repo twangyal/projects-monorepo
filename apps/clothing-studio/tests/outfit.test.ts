@@ -55,6 +55,8 @@ test('a top drapes over the bottoms it is worn with, outside them', () => {
 test('bottoms worn under a top keep their own place', () => {
   const shorts = template('shorts'), top = template('ringer'), shortsMeshes = teeMesh(shorts, Delaunator);
   const result = simulateOutfit(shorts, shortsMeshes, top, teeMesh(top, Delaunator), 94, { frames: 60 });
+  assert.equal(result.settings.frames, 60);
+  assert.deepEqual(result.companion?.settings, result.settings);
   const alone = simulateGarment(shorts, shortsMeshes, 94, { frames: 60, body: outfitBodies(top, shorts, 94).lower });
   assert.deepEqual(result.parts.map(part => part.positions), alone.parts.map(part => part.positions));
   assert.ok(lowestY(result.companion!.parts) > lowestY(result.parts) - 1, 'the tee sits on the shorts, not below them');

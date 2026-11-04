@@ -46,3 +46,13 @@ test('skirts and trousers compare fabrics on their own lower body, and the recei
   assert.notDeepEqual(Array.from(results[0]!.parts[0]!.positions),Array.from(results[1]!.parts[0]!.positions));
  }
 });
+
+test('matched comparison records actual solve settings and rejects different durations', () => {
+ const source=template('blank'), shape=garmentBody(source,94), body={chest:94,waist:shape.waist,hip:shape.hip};
+ const ids:[string,string]=['jersey-180','denim-340'];
+ const [a,b]=fabricVariants(source,ids);
+ const first=simulateGarment(a,teeMesh(a,Delaunator),94,{bodyShape:body,frames:46,substeps:1});
+ const second=simulateGarment(b,teeMesh(b,Delaunator),94,{bodyShape:body,frames:47,substeps:1});
+ assert.deepEqual(comparisonReceipt(source,body,ids,[first,first]).settings,{frames:46,substeps:1,frameSeconds:1/60});
+ assert.throws(()=>comparisonReceipt(source,body,ids,[first,second]),/same solve settings/);
+});

@@ -1,11 +1,11 @@
 import {MATERIALS,isBottoms,partsOf,RIB_PARTS,type Product} from './product.ts';
 import {fabricVariants,comparisonReceipt,type ComparisonBody,type GarmentComparisonReceipt} from './garment-comparison.ts';
-import type {GarmentDrapeResult} from './garment-drape.ts';
+import {GARMENT_FRAMES,LONG_GARMENT_FRAMES,previewDrapeFrames,type GarmentDrapeResult} from './garment-drape.ts';
 interface Capture {product:Product;body:ComparisonBody}
 /** A read-only experiment until the explicit, guarded material choice. */
 export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Capture;apply:(material:string)=>boolean}){
  const panel=document.createElement('details');panel.id='garment-comparison';panel.dataset.independentExperiment='true';
- panel.innerHTML=`<summary>Compare fabrics on this garment</summary><p>Compare two approximate fabric drapes on the same committed garment and entered body. Colors, prints, artwork and rib trims stay the same. Apply pending product edits first.</p><form><div class="measure-grid">${['A','B'].map((name,i)=>`<label class="field">Comparison fabric ${name}<select name="fabric${name}">${MATERIALS.map(m=>`<option value="${m.id}"${m.id===(i?'denim-340':'jersey-180')?' selected':''}>${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>`).join('')}</div><div class="inline-actions"><button type="submit">Compare garment fabrics</button><button type="button" id="garment-comparison-cancel" class="quiet" hidden>Cancel garment comparison</button><button type="button" id="garment-comparison-download" class="quiet" disabled>Download garment comparison</button></div></form><p id="garment-comparison-status" role="status">Choose a top to compare fabrics.</p><div id="garment-comparison-results" class="garment-comparison-grid"></div><p class="fine-print">Approximate texture-based stretch/bending and library weight; not measured fabric specimens. Same pattern, body, mesh, solve settings and fixed front/back views. Pockets ride on the body fabric; no cloth self/layer contact. Images and numerical differences do not establish physical fit. Comparison results are session-only.</p>`;host.append(panel);
+ panel.innerHTML=`<summary>Compare fabrics on this garment</summary><p>Compare two approximate fabric drapes on the same committed garment and entered body. Colors, prints, artwork and rib trims stay the same. Apply pending product edits first.</p><form><div class="measure-grid">${['A','B'].map((name,i)=>`<label class="field">Comparison fabric ${name}<select name="fabric${name}">${MATERIALS.map(m=>`<option value="${m.id}"${m.id===(i?'denim-340':'jersey-180')?' selected':''}>${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>`).join('')}</div><label class="field">Comparison drape time<select name="frames"><option value="${GARMENT_FRAMES}">Standard (3 s)</option><option value="${LONG_GARMENT_FRAMES}">Longer (12 s)</option></select></label><p class="fine-print">Simulated time per fabric. Longer takes more time to run.</p><div class="inline-actions"><button type="submit">Compare garment fabrics</button><button type="button" id="garment-comparison-cancel" class="quiet" hidden>Cancel garment comparison</button><button type="button" id="garment-comparison-download" class="quiet" disabled>Download garment comparison</button></div></form><p id="garment-comparison-status" role="status">Choose a top to compare fabrics.</p><div id="garment-comparison-results" class="garment-comparison-grid"></div><p class="fine-print">Approximate texture-based stretch/bending and library weight; not measured fabric specimens. Same pattern, body, mesh, solve settings and fixed front/back views. Pockets ride on the body fabric; no cloth self/layer contact. Images and numerical differences do not establish physical fit. Comparison results are session-only.</p>`;host.append(panel);
  const form=panel.querySelector('form')!,status=panel.querySelector<HTMLElement>('#garment-comparison-status')!,cards=panel.querySelector<HTMLElement>('#garment-comparison-results')!,run=form.querySelector<HTMLButtonElement>('[type=submit]')!,cancel=panel.querySelector<HTMLButtonElement>('#garment-comparison-cancel')!,download=panel.querySelector<HTMLButtonElement>('#garment-comparison-download')!;
  let current:Capture|null=null,origin:Capture|null=null,worker:Worker|null=null,generation=0,receipt:GarmentComparisonReceipt|null=null;
  const urls:string[]=[];
@@ -15,10 +15,10 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
  const owns=(token:number,capture:Capture)=>generation===token&&same(current,capture);
  const sync=(product:Product|null,body:ComparisonBody|null)=>{const next=product&&body?{product,body:{...body}}:null;if(!same(current,next)){current=next;invalidate(next?'Ready to compare fabrics on this garment.':'Choose a garment to compare fabrics.');}run.disabled=!current||!!worker||!cancel.hidden;};
  const reset=()=>invalidate('Comparison cleared. Run again for the current garment.');
- form.addEventListener('input',()=>invalidate('Comparison fabrics changed. Run again.'));form.addEventListener('change',()=>invalidate('Comparison fabrics changed. Run again.'));
+ form.addEventListener('input',()=>invalidate('Comparison choices changed. Run again.'));form.addEventListener('change',()=>invalidate('Comparison choices changed. Run again.'));
  cancel.addEventListener('click',()=>invalidate('Comparison cancelled. Your garment is unchanged.'));
  window.addEventListener('pagehide',()=>invalidate('Comparison stopped on leaving the page.'));
- function solve(product:Product,capture:Capture,token:number):Promise<GarmentDrapeResult>{return new Promise((resolve,reject)=>{
+ function solve(product:Product,capture:Capture,token:number,frames:number):Promise<GarmentDrapeResult>{return new Promise((resolve,reject)=>{
   let active:Worker;
   try{active=new Worker(new URL('./garment-drape.worker.ts',import.meta.url),{type:'module'});worker=active;
    active.onmessage=(event:MessageEvent<{kind:string;result:GarmentDrapeResult;message:string;frame:number;frames:number}>)=>{
@@ -28,7 +28,7 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
     if(event.data.kind==='result')resolve(event.data.result);else reject(new Error(event.data.message||'Garment comparison failed.'));
    };
    active.onerror=event=>{event.preventDefault();if(owns(token,capture)&&worker===active){active.terminate();worker=null;reject(new Error('The comparison worker could not run.'));}};
-   active.postMessage({product,bodyChest:capture.body.chest,bodyShape:capture.body});
+   active.postMessage({product,bodyChest:capture.body.chest,bodyShape:capture.body,frames});
   }catch(error){worker?.terminate();worker=null;reject(error);}
  });}
  form.addEventListener('submit',event=>{event.preventDefault();void compare();});
@@ -38,12 +38,13 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
   try{
    const capture=options.capture();sync(capture.product,capture.body);
    const materials:[string,string]=[(form.elements.namedItem('fabricA') as HTMLSelectElement).value,(form.elements.namedItem('fabricB') as HTMLSelectElement).value];
+   const frames=previewDrapeFrames(Number((form.elements.namedItem('frames') as HTMLSelectElement).value));
    const source=structuredClone(capture.product),products=fabricVariants(source,materials),token=++generation;owned=token;
    origin=capture;run.disabled=true;cancel.hidden=false;
    const results:GarmentDrapeResult[]=[],renders:{front:Blob;back:Blob}[]=[];
    for(let i=0;i<2;i++){
     status.textContent=`Comparing fabric ${i+1} of 2…`;
-    const result=await solve(products[i]!,capture,token);if(!owns(token,capture))return;results.push(result);
+    const result=await solve(products[i]!,capture,token,frames);if(!owns(token,capture))return;results.push(result);
     status.textContent=`Rendering fabric ${i+1} of 2…`;
     const {productSnapshotRenders}=await import('./product-3d.ts');if(!owns(token,capture))return;
     renders.push(await productSnapshotRenders(products[i]!,result));if(!owns(token,capture))return;
@@ -60,7 +61,7 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
      catch(error){status.textContent=error instanceof Error?error.message:'The fabric could not be applied.';}
     });card.append(heading,images,metrics,use);cards.append(card);
    }
-   receipt=data;download.disabled=false;run.disabled=false;cancel.hidden=true;status.textContent=`Comparison ready. Captured body: ${isBottoms(capture.product) ? '' : capture.body.underbust === undefined ? `${capture.body.chest} cm chest / ` : `${capture.body.chest} cm bust / ${capture.body.underbust} cm underbust / `}${Number(capture.body.waist.toFixed(2))} cm waist / ${Number(capture.body.hip.toFixed(2))} cm hip${capture.body.chestDepth === undefined ? "" : ` / ${capture.body.chestDepth} cm chest depth`}${capture.body.hipDepth === undefined ? "" : ` / ${capture.body.hipDepth} cm waist-to-hip depth`}${capture.body.height === undefined ? "" : ` / ${capture.body.height} cm height`}. Choose a fabric deliberately; your garment is unchanged.`;
+   receipt=data;download.disabled=false;run.disabled=false;cancel.hidden=true;status.textContent=`Comparison ready. Captured body: ${isBottoms(capture.product) ? '' : capture.body.underbust === undefined ? `${capture.body.chest} cm chest / ` : `${capture.body.chest} cm bust / ${capture.body.underbust} cm underbust / `}${Number(capture.body.waist.toFixed(2))} cm waist / ${Number(capture.body.hip.toFixed(2))} cm hip${capture.body.chestDepth === undefined ? "" : ` / ${capture.body.chestDepth} cm chest depth`}${capture.body.hipDepth === undefined ? "" : ` / ${capture.body.hipDepth} cm waist-to-hip depth`}${capture.body.height === undefined ? "" : ` / ${capture.body.height} cm height`}. ${data.settings.frames * data.settings.frameSeconds} simulated seconds per fabric. Choose a fabric deliberately; your garment is unchanged.`;
   }catch(error){if(owned!==undefined&&owned!==generation)return;invalidate(`${error instanceof Error?error.message:'Comparison unavailable.'} Run again to retry.`);}
  }
  download.addEventListener('click',()=>{if(!receipt)return;const url=URL.createObjectURL(new Blob([JSON.stringify(receipt,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='clothing-garment-comparison.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});

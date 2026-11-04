@@ -163,6 +163,11 @@ const GROW_FRAMES = 45;
 const GATHER_FRAMES = 30;
 /** Default solve: 3 s of 1/60 s frames, 24 substeps each, enough for woven fabrics to stay close to their length. */
 export const GARMENT_FRAMES = 180;
+export const LONG_GARMENT_FRAMES = 720;
+export function previewDrapeFrames(value: unknown = GARMENT_FRAMES): number {
+  if (value === GARMENT_FRAMES || value === LONG_GARMENT_FRAMES) return value;
+  throw new Error('Choose Standard or Longer settling.');
+}
 /** Frames over which a drape's remaining motion is measured. */
 const SETTLE_FRAMES = 10;
 export const GARMENT_SUBSTEPS = 24;
@@ -641,11 +646,13 @@ export interface GarmentDrapeMetrics {
    * the floor, and (for a body of given height) how far the sleeves reach past the wrists (negative: short of them). */
   fit?: { hemBelowHip?: number; hemAboveFloor?: number; sleeveBeyondWrist?: number };
 }
-export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; body: BodyProxy;
+export interface DrapeSettings { frames: number; substeps: number; frameSeconds: number }
+type DrapedPiece = { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; settings: DrapeSettings };
+export interface GarmentDrapeResult extends DrapedPiece { body: BodyProxy;
   /** In an outfit, the garment worn with this one, draped on the same body in this garment's place. */
-  companion?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics };
+  companion?: DrapedPiece;
   /** In a three-piece outfit, the third garment, likewise. */
-  also?: { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics } }
+  also?: DrapedPiece }
 
 /**
  * The extended position-based solver for one cloth with time step `dt`: `inverseMass` (0 holds a particle still) may
@@ -928,6 +935,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
   // Where each particle was SETTLE_FRAMES before the end: how far the cloth has moved since says whether it settled.
   const earlier = new Float32Array(positions.length);
   let since = 0;
+  let completed = 0;
   for (let frame = 1; frame <= frames; frame++) {
     if (frame === Math.max(1, frames - SETTLE_FRAMES + 1)) { earlier.set(positions); since = frame; }
     // The body grows to full size from inside the garment, then gravity starts.
@@ -1004,6 +1012,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
         rest[n] = Math.hypot(positions[ka]! - positions[kb]!, positions[ka + 1]! - positions[kb + 1]!, positions[ka + 2]! - positions[kb + 2]!);
       }
     }
+    completed = frame;
     if (options.progress && options.progress(frame, frames) === false) break;
   }
   // Metrics. Settling is the fastest any particle moved on over the last SETTLE_FRAMES: contact can keep single
@@ -1064,7 +1073,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     if (marks.sleeveBeyondWrist !== undefined) fit.sleeveBeyondWrist = marks.sleeveBeyondWrist;
   }
   const ease = skirt ? skirtDraft(product).waist - body.waist : trousers ? trouserDimensions(product).waistbandLength - body.hip : topMeasurements(product).chest - body.chest;
-  return { parts, body, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed, ...(Object.keys(fit).length ? { fit } : {}) } };
+  return { parts, body, settings: { frames: completed, substeps, frameSeconds: FRAME }, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed, ...(Object.keys(fit).length ? { fit } : {}) } };
 }
 
 /**
@@ -1181,7 +1190,7 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
     const core = body.torso[1]!.y, over = simulateGarment(outer, outerMeshes, bodyChest, { ...steps, body, inner: innerLayer(under.parts, body, core), progress: report(frames) });
     const pressed = { ...under, parts: pressUnder(under.parts, over.parts, body, core) };
     const [own, other] = inner === design ? [pressed, over] : [over, pressed];
-    return { ...own, companion: { parts: other.parts, metrics: other.metrics } };
+    return { ...own, companion: { parts: other.parts, metrics: other.metrics, settings: other.settings } };
   }
   if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt or hoodie.');
   const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
@@ -1209,14 +1218,14 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
     const surfaces = placed.map(({ part, positions }) => ({ positions, indices: bottomMeshes.find(mesh => mesh.part === part)!.indices }));
     over = simulateGarment(top, topMeshes, bodyChest, { ...steps, body, under: layerField(surfaces, body.torso[1]!.y), progress: report(frames) });
   }
-  if (designIsTop) return { ...over, companion: { parts: placed, metrics: under.metrics } };
+  if (designIsTop) return { ...over, companion: { parts: placed, metrics: under.metrics, settings: under.settings } };
   const back = (parts: GarmentDrapeResult['parts']) => parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value - shift : value) }));
   const moved = (point: Vec): Vec => [point[0], point[1] - shift, point[2]];
   const marks = body.landmarks ?? {};
   const own: BodyProxy = { ...body, torso: body.torso.map(section => ({ ...section, y: section.y - shift })), capsules: body.capsules.map(capsule => ({ ...capsule, a: moved(capsule.a), b: moved(capsule.b) })),
     ...(body.bottom === undefined ? {} : { bottom: body.bottom - shift }),
     landmarks: Object.fromEntries(Object.entries(marks).map(([key, value]) => [key, ['waist', 'hip', 'floor'].includes(key) ? value - shift : value])) };
-  return { parts: under.parts, metrics: under.metrics, body: own, companion: { parts: back(over.parts), metrics: over.metrics } };
+  return { parts: under.parts, metrics: under.metrics, settings: under.settings, body: own, companion: { parts: back(over.parts), metrics: over.metrics, settings: over.settings } };
 }
 
 /** Whether three designs make an outfit: a T-shirt under a sweatshirt or hoodie, worn with bottoms. */
@@ -1249,20 +1258,20 @@ function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[]
   const below = layerField(placed.map(({ part, positions }) => ({ positions, indices: of(bottoms).meshes.find(mesh => mesh.part === part)!.indices })), core);
   const tee = simulateGarment(inner, of(inner).meshes, bodyChest, { ...steps, body, under: below, progress: report(frames) });
   const top = simulateGarment(outer, of(outer).meshes, bodyChest, { ...steps, body, under: below, inner: innerLayer(tee.parts, body, core), progress: report(2 * frames) });
-  const results = new Map<Product, { parts: GarmentDrapeResult['parts']; metrics: GarmentDrapeMetrics }>([
-    [bottoms, { parts: placed, metrics: legs.metrics }],
-    [inner, { parts: pressUnder(tee.parts, top.parts, body, core, below), metrics: tee.metrics }],
-    [outer, { parts: top.parts, metrics: top.metrics }],
+  const results = new Map<Product, DrapedPiece>([
+    [bottoms, { parts: placed, metrics: legs.metrics, settings: legs.settings }],
+    [inner, { parts: pressUnder(tee.parts, top.parts, body, core, below), metrics: tee.metrics, settings: tee.settings }],
+    [outer, { parts: top.parts, metrics: top.metrics, settings: top.settings }],
   ]);
   // Bottoms are given back in their own place, as alone; tops in the outfit body's.
   const designIsBottoms = garments[0]!.product === bottoms, back = designIsBottoms ? -shift : 0;
-  const placedFor = (product: Product) => { const result = results.get(product)!; return { parts: back ? lifted(result.parts, back) : result.parts, metrics: result.metrics }; };
+  const placedFor = (product: Product) => { const result = results.get(product)!; return { parts: back ? lifted(result.parts, back) : result.parts, metrics: result.metrics, settings: result.settings }; };
   const moved = (point: Vec): Vec => [point[0], point[1] + back, point[2]];
   const own = designIsBottoms ? { ...body, torso: body.torso.map(section => ({ ...section, y: section.y + back })), capsules: body.capsules.map(capsule => ({ ...capsule, a: moved(capsule.a), b: moved(capsule.b) })),
     ...(body.bottom === undefined ? {} : { bottom: body.bottom + back }),
     landmarks: Object.fromEntries(Object.entries(body.landmarks ?? {}).map(([key, value]) => [key, ['waist', 'hip', 'floor'].includes(key) ? value + back : value])) } : body;
   const [first, second, third] = garments.map(garment => placedFor(garment.product)) as [ReturnType<typeof placedFor>, ReturnType<typeof placedFor>, ReturnType<typeof placedFor>];
   const ownMetrics = designIsBottoms ? legs.metrics : first.metrics;
-  return { parts: first.parts, metrics: ownMetrics, body: own, companion: second, also: third };
+  return { parts: first.parts, metrics: ownMetrics, settings: first.settings, body: own, companion: second, also: third };
 }
 

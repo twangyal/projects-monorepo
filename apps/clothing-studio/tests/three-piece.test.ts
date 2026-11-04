@@ -19,6 +19,9 @@ test('joggers, a T-shirt over them and a hoodie over both drape together, each o
   const teeMeshes = teeMesh(tee, Delaunator), jogMeshes = teeMesh(joggers, Delaunator);
   const result = simulateOutfit(hoodie, teeMesh(hoodie, Delaunator), tee, teeMeshes, 94, { also: { product: joggers, meshes: jogMeshes } });
   assert.ok(result.companion && result.also, 'the tee and the joggers come back beside the hoodie');
+  assert.equal(result.settings.frames, 180);
+  assert.deepEqual(result.companion.settings, result.settings);
+  assert.deepEqual(result.also.settings, result.settings);
   // The hoodie is outside the tee.
   const layer = innerLayer(result.companion.parts, result.body, result.body.torso[1]!.y);
   let covered = 0, inside = 0;

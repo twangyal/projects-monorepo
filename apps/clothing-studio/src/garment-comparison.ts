@@ -1,5 +1,5 @@
 import {material,partsOf,RIB_PARTS,type Product} from './product.ts';
-import {garmentBody,bendingLength,GARMENT_FRAMES,GARMENT_SOLVER,GARMENT_SUBSTEPS,type GarmentDrapeResult} from './garment-drape.ts';
+import {garmentBody,bendingLength,FRAME,GARMENT_SOLVER,type GarmentDrapeResult} from './garment-drape.ts';
 /** Every metric is a finite number, including where the garment ends on the body. */
 const finiteMetrics=(metrics:GarmentDrapeResult['metrics'])=>Object.values(metrics).every(value=>typeof value==='object'?Object.values(value).every(Number.isFinite):Number.isFinite(value));
 export interface ComparisonBody {chest:number;waist:number;hip:number;chestDepth?:number;hipDepth?:number;height?:number;upperArmGirth?:number;underbust?:number}
@@ -13,10 +13,15 @@ export function comparisonWarnings(result:GarmentDrapeResult):string[]{
  const m=result.metrics;
  return[...(m.maxStrain>1?['Excessive numerical stretch: enlarge the garment or reduce the body girths.']:[]),...(m.residualSpeed>10?['Still moving at the end of the solve; convergence is not established.']:[]),...(m.minClearance<.34?['Nominal body clearance was undershot; inspect contact carefully.']:[])];
 }
-/** Captures the existing worker's fixed default solve, not a calibrated fabric experiment. */
+/** Records actual matching solve settings, not a calibrated fabric experiment. */
 export function comparisonReceipt(source:Product,body:ComparisonBody,materials:[string,string],results:[GarmentDrapeResult,GarmentDrapeResult]){
  const products=fabricVariants(source,materials),shape=garmentBody(source,body.chest,body);
  if(results.length!==2||results.some(r=>JSON.stringify(r.body)!==JSON.stringify(shape)||!finiteMetrics(r.metrics)||r.parts.some(p=>!p.positions.every(Number.isFinite))))throw new Error('Comparison results must be finite and match the captured body.');
- return{schema:1,experiment:'matched-garment-fabrics-v1',solver:GARMENT_SOLVER,settings:{frames:GARMENT_FRAMES,substeps:GARMENT_SUBSTEPS,frameSeconds:1/60},units:{positions:'cm',speed:'cm/s',strain:'dimensionless edge extension',arealDensity:'g/m²'},body:{...body},source:structuredClone(source),assumptions:['Stretch (by direction to the grain) and bending from typical published values for each fabric construction (bending length shown per fabric); no measured specimen calibration.','Same pattern, body, mesh and solve settings; fabric replaced on non-rib parts only.','Rib trims, colors, prints, artwork and saved colorways retained. Pockets are carried offsets.','No cloth self/layer contact; body dimensions and contact are approximations.','Matched fixed front/back camera and lighting; garment-only snapshots. Differences do not validate physical fit.'],candidates:products.map((product,i)=>({material:{...material(materials[i]!)},bendingLengthCm:Math.round(bendingLength(material(materials[i]!))*100)/100,product,warnings:comparisonWarnings(results[i]!),result:{...structuredClone(results[i]!),parts:results[i]!.parts.map(p=>({part:p.part,positions:Array.from(p.positions)}))}}))};
+ const settings=results[0].settings;
+ if(!settings||!Number.isInteger(settings.frames)||settings.frames<1||settings.frames>2000
+   ||!Number.isInteger(settings.substeps)||settings.substeps<1||settings.substeps>60||settings.frameSeconds!==FRAME
+   ||results.some(r=>r.settings?.frames!==settings.frames||r.settings?.substeps!==settings.substeps||r.settings?.frameSeconds!==settings.frameSeconds))
+   throw new Error('Comparison results must use the same solve settings.');
+ return{schema:1,experiment:'matched-garment-fabrics-v1',solver:GARMENT_SOLVER,settings:{...settings},units:{positions:'cm',speed:'cm/s',strain:'dimensionless edge extension',arealDensity:'g/m²'},body:{...body},source:structuredClone(source),assumptions:['Stretch (by direction to the grain) and bending from typical published values for each fabric construction (bending length shown per fabric); no measured specimen calibration.','Same pattern, body, mesh and solve settings; fabric replaced on non-rib parts only.','Rib trims, colors, prints, artwork and saved colorways retained. Pockets are carried offsets.','No cloth self/layer contact; body dimensions and contact are approximations.','Matched fixed front/back camera and lighting; garment-only snapshots. Differences do not validate physical fit.'],candidates:products.map((product,i)=>({material:{...material(materials[i]!)},bendingLengthCm:Math.round(bendingLength(material(materials[i]!))*100)/100,product,warnings:comparisonWarnings(results[i]!),result:{...structuredClone(results[i]!),parts:results[i]!.parts.map(p=>({part:p.part,positions:Array.from(p.positions)}))}}))};
 }
 export type GarmentComparisonReceipt=ReturnType<typeof comparisonReceipt>;
