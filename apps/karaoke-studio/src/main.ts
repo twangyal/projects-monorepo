@@ -45,7 +45,7 @@ app.innerHTML = `
         <section id="tool-song" class="tool-panel song-panel" role="tabpanel" aria-labelledby="tab-song"><h3 class="tool-heading">Your song</h3>
           <p id="model-help" class="model-help" hidden>Install the local separation model first. From the app directory, run <code>python scripts/setup_model.py --help</code> and follow the README setup steps, then refresh.</p>
           <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–600 seconds · up to 128 MiB</span></span><input id="audio-file" type="file" multiple accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
-          <p class="fine">Choose several songs to prepare them one after another.</p><div id="upload-queue" class="fine" role="status" hidden><span id="upload-queue-text"></span> <button id="upload-queue-clear" class="text-button">Clear waiting songs</button></div>
+          <p class="fine">Choose several songs to prepare them one after another.</p><div id="upload-queue" class="fine" hidden><span id="upload-queue-text" role="status"></span><ol id="upload-queue-list" aria-label="Waiting songs"></ol><button type="button" id="upload-queue-clear" class="text-button">Clear waiting songs</button></div>
           <div class="field"><label for="upload-recognition">Lyrics for new uploads</label><select id="upload-recognition" aria-describedby="upload-recognition-help" disabled>${recognitionOptions}</select></div><p id="upload-recognition-help" class="fine">Automatic unless you know the song's language. The selected local model must be installed; failed recognition keeps the separated audio for retry. Explicit East Asian language choices apply to the whole song, so mixed-language passages may fare worse.</p>
           <p class="fine">Separation and recognition run on this computer, with no account, and no song is uploaded to a service. The model estimates vocals and backing; listen for remaining vocals or altered instruments before exporting.</p>
           <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
@@ -1708,13 +1708,64 @@ function startPolling(job: Job, follow = true, owned = true, savedRevision: numb
 // Songs chosen together: the first is prepared at once, the rest wait here (in this tab only) and each is uploaded when
 // the studio is free, without interrupting a review, timing session or rehearsal, and without opening it over the
 // clip being edited. Each keeps the lyric choice made when it was added.
-let uploadQueue: { file: File; model: string }[] = [];
+type WaitingSong = { id: number; file: File; model: string };
+const uploadQueue: WaitingSong[] = [];
+let nextWaitingSong = 0, queueClearVersion = 0;
+let renderedQueue = '';
 const queuedJobs = new Set<string>();
 const uploadLimit = () => Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
+function enqueueSongs(files: File[], model: string) {
+  for (const file of files) uploadQueue.push({ id: ++nextWaitingSong, file, model });
+  queueStatus();
+}
 function queueStatus() {
-  const box = element('upload-queue'), count = uploadQueue.length;
+  const order = uploadQueue.map(item => item.id).join(',');
+  if (order === renderedQueue) return;
+  renderedQueue = order;
+  const box = element('upload-queue'), list = element('upload-queue-list'), count = uploadQueue.length;
+  const focused = document.activeElement;
+  const oldRows = [...list.children];
+  const oldIndex = oldRows.findIndex(row => row.contains(focused));
+  const focusedId = oldIndex < 0 ? undefined : (oldRows[oldIndex] as HTMLElement).dataset.songId;
+  const focusedAction = focused instanceof HTMLButtonElement ? focused.dataset.action : undefined;
+  const status = element('upload-queue-text');
+  const summary = count ? `${count} ${count === 1 ? 'song is' : 'songs are'} waiting. Preparation starts when the studio is free.` : '';
+  if (status.textContent !== summary) status.textContent = summary;
   box.hidden = !count;
-  element('upload-queue-text').textContent = count ? `${count} ${count === 1 ? 'song is' : 'songs are'} waiting: ${uploadQueue.map(item => item.file.name).join(', ')}. ${count === 1 ? 'It starts' : 'They start one at a time'} when the studio is free.` : '';
+  list.replaceChildren(...uploadQueue.map((item, index) => {
+    const row = document.createElement('li'), name = document.createElement('span');
+    row.dataset.songId = String(item.id);
+    name.textContent = item.file.name;
+    row.append(name);
+    for (const action of ['move', 'remove'] as const) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'text-button';
+      button.dataset.action = action;
+      button.textContent = action === 'move' ? 'Move to front' : 'Remove';
+      button.setAttribute('aria-label', action === 'move' ? `Move to front: ${item.file.name}` : `Remove ${item.file.name}`);
+      button.disabled = action === 'move' && index === 0;
+      button.addEventListener('click', () => {
+        const at = uploadQueue.indexOf(item);
+        if (at < 0 || (action === 'move' && at === 0)) return;
+        uploadQueue.splice(at, 1);
+        if (action === 'move') uploadQueue.unshift(item);
+        queueStatus();
+        message(action === 'move' ? `“${item.file.name}” moved to the front of the waiting list.` : `“${item.file.name}” removed from the waiting list.`);
+      });
+      row.append(button);
+    }
+    return row;
+  }));
+  if (oldIndex >= 0) {
+    const index = uploadQueue.findIndex(item => String(item.id) === focusedId);
+    const row = list.children[index < 0 ? Math.min(oldIndex, count - 1) : index];
+    const selector = focusedAction === 'move' ? '[data-action="move"]:enabled' : '[data-action="remove"]';
+    const target = row?.querySelector<HTMLButtonElement>(selector) ?? row?.querySelector<HTMLButtonElement>('[data-action="remove"]');
+    (target ?? element('audio-file')).focus();
+  } else if (!count && focused === element('upload-queue-clear')) {
+    element('audio-file').focus();
+  }
 }
 /** Starts preparing one song; false when it was not accepted. `busy` is true when another job held the studio. */
 async function upload(file: File, model: string, follow: boolean): Promise<{ started: boolean; busy?: boolean }> {
@@ -1735,24 +1786,22 @@ async function pumpUploads() {
   if (pumping || !uploadQueue.length || currentJob || requestingJob || loading || saving || archiveChecking || timingOwner || srtOwner || practice.active || !session?.modelReady) return;
   pumping = true;
   try {
-    const next = uploadQueue.shift()!;
+    const version = queueClearVersion, next = uploadQueue.shift()!;
     queueStatus();
     const outcome = await upload(next.file, next.model, false);
-    // Another tab's job holds the studio: the song waits its turn again.
-    if (outcome.busy) { uploadQueue.unshift(next); queueStatus(); }
+    // Retry if another job held the studio, unless the waiting batch was cleared in the meantime.
+    if (outcome.busy && version === queueClearVersion) { uploadQueue.unshift(next); queueStatus(); }
   } finally { pumping = false; }
 }
 setInterval(() => void pumpUploads(), 2000);
-element('upload-queue-clear').addEventListener('click', () => { const count = uploadQueue.length; uploadQueue = []; queueStatus(); if (count) message(`${count} waiting ${count === 1 ? 'song was' : 'songs were'} removed. Songs already prepared stay in Saved clips.`); });
+element('upload-queue-clear').addEventListener('click', () => { const count = uploadQueue.length; queueClearVersion++; uploadQueue.length = 0; queueStatus(); if (count) message(`${count} waiting ${count === 1 ? 'song was' : 'songs were'} removed. Songs already prepared stay in Saved clips.`); });
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, files = [...input.files ?? []], file = files[0]; input.value = '';
   if (!file) return;
-  // While the studio is busy (preparing another song, saving, loading), the songs wait their turn instead of being
-  // dropped; they do not replace the clip being edited.
-  if (currentJob || requestingJob || loading || saving || archiveChecking) {
+  // New songs join an existing batch, even between preparations. They do not replace the clip being edited.
+  if (uploadQueue.length || currentJob || requestingJob || loading || saving || archiveChecking) {
     const model = element<HTMLSelectElement>('upload-recognition').value;
-    uploadQueue.push(...files.map(waiting => ({ file: waiting, model })));
-    queueStatus();
+    enqueueSongs(files, model);
     message(`${files.length === 1 ? `“${file.name}” is` : `${files.length} songs are`} waiting until the studio is free. ${files.length === 1 ? 'It lands' : 'They land'} in Saved clips.`);
     return;
   }
@@ -1761,8 +1810,7 @@ element<HTMLInputElement>('audio-file').addEventListener('change', async event =
   retireSrt('Importing audio cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const model = element<HTMLSelectElement>('upload-recognition').value;
-  uploadQueue.push(...files.slice(1).map(waiting => ({ file: waiting, model })));
-  queueStatus();
+  enqueueSongs(files.slice(1), model);
   if (file.size < 1 || file.size > uploadLimit()) { message(`Choose a nonempty song clip no larger than ${uploadLimit() / 1024 / 1024} MiB.`, true); return; }
   await upload(file, model, true);
 });

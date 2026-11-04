@@ -22,7 +22,8 @@ test('several songs chosen together are prepared one after another without repla
   await page.goto('/');
   await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
   await page.getByLabel('Upload song clip').setInputFiles(songs('first-song', 'second-song', 'third-song'));
-  await expect(page.locator('#upload-queue')).toContainText('2 songs are waiting: second-song.wav, third-song.wav.');
+  await expect(page.locator('#upload-queue-text')).toContainText('2 songs are waiting.');
+  await expect(page.locator('#upload-queue-list li span')).toHaveText(['second-song.wav', 'third-song.wav']);
   // The first song opens as usual; the others follow by themselves into Saved clips.
   await expect(page.getByLabel('Clip title')).toHaveValue('first-song', { timeout: 15000 });
   await expect(page.locator('#message')).toHaveText(ready('second-song', ' 1 more waiting'), { timeout: 20000 });
@@ -54,8 +55,73 @@ test('a song chosen while another is being prepared waits its turn instead of be
   await expect(page.getByLabel('Upload song clip')).toBeEnabled();
   await page.getByLabel('Upload song clip').setInputFiles(songs('busy-later'));
   await expect(page.locator('#message')).toHaveText('“busy-later.wav” is waiting until the studio is free. It lands in Saved clips.');
-  await expect(page.locator('#upload-queue')).toContainText('1 song is waiting: busy-later.wav.');
+  await expect(page.locator('#upload-queue-text')).toContainText('1 song is waiting.');
+  await expect(page.locator('#upload-queue-list li span')).toHaveText(['busy-later.wav']);
   await expect(page.getByLabel('Clip title')).toHaveValue('busy-first', { timeout: 15000 });
   await expect(page.locator('#message')).toHaveText(ready('busy-later'), { timeout: 20000 });
   await expect(page.getByLabel('Clip title')).toHaveValue('busy-first');
+});
+
+test('a waiting song can move to the front or be removed without changing the open clip or model', async ({ page }) => {
+  test.setTimeout(60000);
+  const uploads: [string,string][] = [];
+  let release!:()=>void;
+  const held=new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/api/projects',async route=>{
+    if(route.request().method()!=='POST'){await route.continue();return;}
+    const headers=route.request().headers(), name=decodeURIComponent(headers['x-audio-name'] ?? '');
+    uploads.push([name,headers['x-lyrics-model'] ?? 'auto']);
+    if(name==='queue-owner.wav')await held;
+    await route.continue();
+  });
+  try {
+    await page.goto('/');
+    await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+    await page.locator('#upload-recognition').selectOption('multilingual');
+    await page.getByLabel('Upload song clip').setInputFiles(songs('queue-owner','keep-after','remove-me','move-first'));
+    const list=page.getByRole('list',{name:'Waiting songs'});
+    await expect(list.getByRole('listitem')).toHaveCount(3);
+    await page.getByRole('button',{name:'Move to front: move-first.wav',exact:true}).click();
+    await expect(list.getByRole('listitem').first()).toContainText('move-first.wav');
+    await expect(page.getByRole('button',{name:'Remove move-first.wav',exact:true})).toBeFocused();
+    await page.getByRole('button',{name:'Remove remove-me.wav',exact:true}).click();
+    await expect(list.getByRole('listitem')).toHaveCount(2);
+    await expect(list).not.toContainText('remove-me.wav');
+    release();
+    await expect(page.getByLabel('Clip title')).toHaveValue('queue-owner',{timeout:15000});
+    await expect(page.locator('#message')).toHaveText(ready('keep-after'),{timeout:30000});
+    expect(uploads).toEqual([['queue-owner.wav','multilingual'],['move-first.wav','multilingual'],['keep-after.wav','multilingual']]);
+    await expect(page.getByLabel('Clip title')).toHaveValue('queue-owner');
+    await expect(page.locator('#projects option',{hasText:'remove-me'})).toHaveCount(0);
+  } finally { release(); }
+});
+
+test('clearing waiting songs does not resurrect a held busy upload', async ({ page }) => {
+  test.setTimeout(60000);
+  let attempts=0, release!:()=>void;
+  const held=new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/api/projects',async route=>{
+    if(route.request().method()!=='POST'||route.request().headers()['x-audio-name']!=='held-busy.wav'){
+      await route.continue();return;
+    }
+    attempts++;
+    if (attempts > 1) await held;
+    await route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'A media job is already running.' }) });
+  });
+  try {
+    await page.goto('/');
+    await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+    await page.getByLabel('Upload song clip').setInputFiles(songs('clear-owner','held-busy','clear-tail'));
+    await expect(page.getByLabel('Clip title')).toHaveValue('clear-owner',{timeout:15000});
+    await expect.poll(() => attempts, { timeout: 15000 }).toBe(2);
+    await expect(page.locator('#delete-project')).toBeDisabled();
+    await page.getByRole('button',{name:'Clear waiting songs',exact:true}).click();
+    release();
+    await expect(page.locator('#delete-project')).toBeEnabled();
+    await expect(page.locator('#upload-queue')).toBeHidden();
+    await page.getByLabel('Upload song clip').setInputFiles(songs('clear-new'));
+    await expect(page.getByLabel('Clip title')).toHaveValue('clear-new', { timeout: 15000 });
+    expect(attempts).toBe(2);
+    await expect(page.locator('#projects option',{hasText:'clear-tail'})).toHaveCount(0);
+  } finally { release(); }
 });

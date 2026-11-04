@@ -70,6 +70,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   background:none;
   color:#35514e
 }
+#upload-queue-list {
+  margin:.35rem 0;
+  padding-inline-start:1.2rem;
+}
+#upload-queue-list li {
+  margin-block:.2rem;
+}
+#upload-queue-list li span {
+  display:block;
+  overflow-wrap:anywhere;
+}
+#upload-queue-list button {
+  min-height:1.75rem;
+  margin-inline-end:.75rem;
+}
 header {
   display:flex;
   justify-content:space-between;
