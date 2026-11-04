@@ -1485,13 +1485,15 @@ async function openProject(id: string) {
   workspace.clipOpened();
   } finally { if (generation === projectGeneration) { loading = false; controls(); } }
 }
-function mayLeave(): boolean { return !(dirty || draftDirty) || window.confirm('Discard unsaved lyric edits and open a different clip?'); }
+function mayLeave(): boolean {
+  const edits = dirty || draftDirty, staged = !!timingOwner || !!srtReview;
+  if (!edits && !staged) return true;
+  const work = edits && staged ? 'unsaved lyric edits and staged lyric work' : edits ? 'unsaved lyric edits' : 'staged lyric work';
+  return window.confirm(`Discard ${work} and open a different clip?`);
+}
 element<HTMLSelectElement>('projects').addEventListener('change', async event => {
-  retirePractice('Choosing a clip stopped practice.');
-  retireSrt('Choosing a clip cancelled the lyric import review.');
-  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const select = event.target as HTMLSelectElement;
-  if (!select.value || !mayLeave()) { select.value = working?.id || ''; return; }
+  if (!select.value || select.value === working?.id || !mayLeave()) { select.value = working?.id || ''; return; }
   try { await openProject(select.value); message(''); } catch (error) { message(String(error instanceof Error ? error.message : error), true); }
 });
 element<HTMLInputElement>('title').addEventListener('input', event => { if (working) { working.title = (event.target as HTMLInputElement).value; changed('title'); } });
@@ -1602,12 +1604,12 @@ element('lrc-download').addEventListener('click', () => { if (working && !dirty 
 element('ass-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/ass`, '.ass'); });
 element('video-download').addEventListener('click', () => { if (videoUrl && !timingOwner) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
+  if (!working || timingBusy()) return;
+  if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
   retirePractice('Deleting a clip stopped practice.');
   timeline.cancelGesture();
-  if (!working || currentJob || saving || loading || archiveChecking) return;
   retireSrt('Deleting a clip cancelled the lyric import review.');
-  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-  if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
+  retireTiming('Deleting a clip cancelled the timing session. Staged times were not applied.');
   saving = true; controls();
   try {
     await request(`/api/projects/${working.id}`, json('DELETE', {}));
@@ -1999,11 +2001,7 @@ element<HTMLInputElement>('archive-file').addEventListener('change', async event
 });
 element('archive-upload-cancel').addEventListener('click', () => archiveUpload?.abort());
 element('open-imported').addEventListener('click', async () => {
-  retirePractice('Opening an imported clip stopped practice.');
-  if (!importedResult || archiveBusy()) return;
-  retireSrt('Opening an imported clip cancelled the lyric import review.');
-  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-  if (!mayLeave()) return;
+  if (!importedResult || archiveBusy() || !mayLeave()) return;
   const id = importedResult.id;
   try { await openProject(id); message('Opened the restored clip. Imported audio and processing claims remain unverified.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not open the restored clip. Your previous editor is still here.', true); }
