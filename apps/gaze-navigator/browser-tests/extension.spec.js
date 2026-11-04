@@ -628,6 +628,29 @@ test('speech refusal opens extension microphone setup and typed instructions rem
   await expect(status(page)).toHaveText('Done: About us activated. Now on "About Example Shop".');
 });
 
+test('hiding a tab releases the extension microphone frame until explicit restart', async ({context, control}) => {
+  await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready');
+  const frame = await listenInExtension(page);
+  const oldUrl = frame.url();
+  const target = { tabId: await tabId(control, 'http://shop.example/*') };
+  const setHidden = hidden => control.evaluate(({target, hidden}) => chrome.scripting.executeScript({
+    target, args: [hidden], func: hidden => {
+      if (hidden) Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+      else Reflect.deleteProperty(document, 'hidden');
+      document.dispatchEvent(new Event('visibilitychange'));
+    },
+  }), {target, hidden});
+  await setHidden(true);
+  await expect(panel(page).getByRole('button', { name: 'Start listening', exact: true })).toBeVisible();
+  await expect.poll(() => frame.isDetached()).toBe(true);
+  await setHidden(false);
+  const restarted = await listenInExtension(page);
+  expect(restarted.url()).not.toBe(oldUrl);
+});
+
 test('camera and extension speech frames stop independently and microphone disconnect recovers', async ({context,control}) => {
   test.setTimeout(60000);
   await control.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));

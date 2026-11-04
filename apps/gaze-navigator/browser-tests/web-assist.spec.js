@@ -93,7 +93,7 @@ test('a newer instruction or cancel discards a pending model answer, and failure
   expect(new URL(page.url()).pathname).toBe('/practice-site/index.html');
 });
 
-for (const lifecycle of ['stop', 'pagehide', 'disable matching']) {
+for (const lifecycle of ['stop', 'pagehide', 'hidden tab', 'disable matching']) {
   test(`a delayed model answer cannot activate after ${lifecycle}`, async ({ page }) => {
     await page.goto('/practice-site/index.html');
     await turnOnMatching(page);
@@ -111,7 +111,11 @@ for (const lifecycle of ['stop', 'pagehide', 'disable matching']) {
     if (lifecycle === 'disable matching') await panel(page).getByLabel('Smarter target matching').uncheck();
     else await page.evaluate(action => {
       if (action === 'stop') window.gazeNavigator.stop();
-      else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      else if (action === 'hidden tab') {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        Reflect.deleteProperty(document, 'hidden');
+      } else window.dispatchEvent(new PageTransitionEvent('pagehide'));
     }, lifecycle);
     await page.evaluate(() => window.__releaseAnswer());
     await expect.poll(() => page.evaluate(() => window.__assist.calls.length)).toBe(1);

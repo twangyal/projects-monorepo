@@ -346,8 +346,8 @@ test('search fallback into a message waits for confirmation before sending', asy
   await expect(page.locator('.notice')).toHaveText('Practice message sent. Nothing left this page.');
 });
 
-test('pagehide and navigator stop discard queued speech confirmations', async ({ page }) => {
-  for (const lifecycle of ['pagehide', 'stop']) {
+test('pagehide, tab hiding and navigator stop discard queued speech confirmations', async ({ page }) => {
+  for (const lifecycle of ['pagehide', 'hidden tab', 'stop']) {
     await page.goto('/practice-site/account.html');
     const start = panel(page).getByRole('button', { name: 'Start listening' });
     if (await start.count()) await start.click();
@@ -356,10 +356,14 @@ test('pagehide and navigator stop discard queued speech confirmations', async ({
     await expect(status(page)).toContainText('may have consequences');
     await page.evaluate(action => {
       if (action === 'stop') window.gazeNavigator.stop();
-      else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      else if (action === 'hidden tab') {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      } else window.dispatchEvent(new PageTransitionEvent('pagehide'));
       window.__speech.say('confirm');
     }, lifecycle);
     await expect(page.locator('.notice')).toBeEmpty();
+    if (lifecycle === 'hidden tab') await expect(panel(page).locator('.prompt').getByRole('button', { name: 'Confirm' })).toHaveCount(0);
     expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(false);
     expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('gaze-web-navigator')).listening)).toBe(true);
   }

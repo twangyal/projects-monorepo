@@ -745,6 +745,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // instruction's final answer. Only the website's own pages pass `onResult`; the extension never does.
   function run(utterance, captured, via = 'panel', alternatives = []) {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
+    if (document.hidden) return { message: 'Return to this tab to give an instruction.', tone: 'info' };
     expireCameraSilence();
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
@@ -831,7 +832,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (!speech.listening) setListening(false);
     },
     onState(state) {
-      if (closing || stopped) return;
+      if (closing || stopped || document.hidden) return;
       if (state === 'stopped' && settings.listening && !speech.listening) setListening(false);
     },
     onMode() { renderSpeechMode(); },
@@ -1031,7 +1032,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     });
   }
 
+  function renderListening(on) {
+    ui.listen.setAttribute('aria-pressed', String(on));
+    ui.listen.textContent = on ? 'Stop listening' : 'Start listening';
+  }
+
   function setListening(on) {
+    if (on && document.hidden) { renderListening(false); return; }
     if (on && !speech.supported) {
       feedback({ message: 'Speech recognition is not available in this browser. Type instructions instead.', tone: 'error' });
       on = false;
@@ -1040,15 +1047,33 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (!on) { spokenContext = null; spokenInvalid = false; speech.stop(); }
     settings.listening = on;
     store.save(settings);
-    ui.listen.setAttribute('aria-pressed', String(on));
-    ui.listen.textContent = on ? 'Stop listening' : 'Start listening';
+    renderListening(on);
   }
 
-  ui.listen.addEventListener('click', () => setListening(!settings.listening));
+  ui.listen.addEventListener('click', () => setListening(!speech.listening));
   ui.usePointer.addEventListener('click', () => run('use pointer', { elements: [] }));
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
   ui.useHead.addEventListener('click', () => run('use head pointer', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
+  const onVisibilityChange = () => {
+    if (!document.hidden || stopped || closing) return;
+    const wasListening = speech.listening;
+    const hadPrompt = !!controller.pending;
+    keyboard.cancel();
+    spokenContext = null; spokenInvalid = false; promptContext = null;
+    speech.stop(); controller.cancel();
+    renderListening(false);
+    if (wasListening) {
+      ui.transcript.textContent = '';
+      feedback({ message: 'Listening stopped when this tab was hidden. Choose Start listening to continue.' });
+    } else if (hadPrompt) {
+      feedback({ message: 'The pending question was cleared when this tab was hidden.' });
+    } else {
+      renderPrompt();
+    }
+    renderOutlines();
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
   const onPageHide = () => {
     clearCameraSilence();
     closing = true; sourceGeneration++;
@@ -1283,6 +1308,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       controller.cancel(); spokenContext = null; promptContext = null;
       const active = calibration; calibration = null; active?.cancel();
       camera.stop();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('pageshow', onPageShow);
       speech.stop();
