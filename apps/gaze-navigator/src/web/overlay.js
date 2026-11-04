@@ -861,7 +861,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.usePointer.setAttribute('aria-pressed', String(settings.source === 'pointer'));
     ui.useCamera.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'eyes'));
     ui.useHead.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'head'));
-    ui.recalibrate.disabled = settings.source !== 'camera' || camera.state === 'off';
+    ui.recalibrate.disabled = settings.source !== 'camera' || camera.state !== 'ready';
   }
 
   function setSource(source) {
@@ -884,10 +884,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       return { ok: true, message: wasOn ? 'Camera off. The circle follows the pointer.' : 'The circle follows the pointer.' };
     }
     const mode = source === 'head' ? 'head' : 'eyes';
-    if (camera.state !== 'off' && following() === mode) return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    const starting = { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
+    if (camera.state !== 'off' && following() === mode) {
+      return camera.state === 'starting' ? starting : { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    }
     settings.cameraMode = mode;
     camera.setMode(mode);
-    if (camera.state !== 'off') {
+    if (camera.state === 'starting') {
+      // Keep the pending start in charge. When it settles it will use the latest mode or return to pointer.
+      store.save(settings);
+      renderSource();
+      return starting;
+    }
+    if (camera.state === 'ready') {
       // Switching between the eyes and the head while the camera is on: each needs its own calibration, and one
       // under way for the other is dropped.
       const generation = ++sourceGeneration, active = calibration;
@@ -899,7 +908,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       settings.source = 'camera';
       store.save(settings);
       renderSource();
-      if (camera.state === 'ready') restoreOrCalibrate(generation).then(result => { if (generation === sourceGeneration && result && !stopped && !closing) feedback(result); });
+      restoreOrCalibrate(generation).then(result => { if (generation === sourceGeneration && result && !stopped && !closing) feedback(result); });
       return { ok: true, message: mode === 'head' ? 'The circle now follows your head.' : 'The circle now follows your eyes.' };
     }
     const generation = ++sourceGeneration;
@@ -921,7 +930,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       const restored = await restoreOrCalibrate(generation);
       if (generation === sourceGeneration && restored && !stopped && !closing) feedback(restored);
     });
-    return { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
+    return starting;
   }
 
   // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.

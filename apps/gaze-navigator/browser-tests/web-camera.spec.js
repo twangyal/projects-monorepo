@@ -216,6 +216,44 @@ test('calibration retries hidden-face dots, reports failure, and spoken cancel s
   await expect(dot(page)).toHaveClass(/hidden/);
 });
 
+// Keep camera startup pending until the test supplies its result, while using the real navigator and camera adapter.
+async function delayCameraStart(page) {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const pending = new Promise((resolve, reject) => {
+      window.finishCameraStart = error => error ? reject(new DOMException(error, 'NotAllowedError')) : resolve(window.webgazer);
+    });
+    window.gazeNavigator = startWebNavigator({ window, loadCamera: () => pending });
+  });
+  await openSettings(page);
+}
+
+test('switching to head during camera startup starts head calibration when ready', async ({ page }) => {
+  await delayCameraStart(page);
+  await typeInstruction(page, 'use camera');
+  await typeInstruction(page, 'use head');
+  await expect(panel(page).getByRole('button', { name: 'Head', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(dot(page)).toHaveClass(/hidden/);
+  await expect(panel(page).getByRole('button', { name: 'Recalibrate' })).toBeDisabled();
+  await page.evaluate(() => window.finishCameraStart());
+  await expect(dot(page)).toHaveClass(/settling/);
+  await expect(panel(page).getByRole('button', { name: 'Recalibrate' })).toBeEnabled();
+  await expect(status(page)).toContainText('Point your nose at dot 1 of 9');
+});
+
+test('camera startup failure after switching to eyes returns to pointer', async ({ page }) => {
+  await delayCameraStart(page);
+  await typeInstruction(page, 'use head');
+  await typeInstruction(page, 'use camera');
+  await expect(panel(page).getByRole('button', { name: 'Camera', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => window.finishCameraStart('Permission denied'));
+  await expect(panel(page).getByRole('button', { name: 'Pointer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel(page).getByRole('button', { name: 'Recalibrate' })).toBeDisabled();
+  await expect(status(page)).toContainText('Camera tracking could not start (Permission denied)');
+});
+
 test('a cancelled camera start cannot change the mode of an immediate retry', async ({ page }) => {
   await open(page, '/practice-site/catalog.html');
   const state = await page.evaluate(async () => {
