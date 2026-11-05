@@ -1,3 +1,4 @@
+import { buildOutfitBundle } from './outfit-bundle.ts';
 import { switchOutfitEditing } from './outfit-edit.ts';
 import { FITTED_HIP_DEPTH, GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, skirtBandHeight, skirtDraft, skirtFit, skirtGather, skirtPleats, type PleatStyle } from './product-skirt.ts';
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
@@ -122,7 +123,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
     <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
     <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
-  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label></div><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
+  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label><button id="outfit-bundle" class="product-export" aria-describedby="outfit-bundle-help">Download outfit patterns and tech packs (ZIP) ↓</button></div><p id="outfit-bundle-help" class="fine-print">All outfit garments at their own applied sample sizes: SVG, DXF, Excel and printable tech packs with measurement diagrams. Apply or discard drafts first. No drape is needed.</p><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
   <p class="fine-print">PNG, GLB and video use the size shown in 3D: the styling shell, or the current settled drape. The turntable video records one turn in real time, so it takes a few seconds. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
   <section class="techpack" aria-labelledby="techpack-heading">
     <div class="techpack-head"><div><p class="eyebrow">TECH PACK</p><h4 id="techpack-heading">Factory-ready tech pack</h4>
@@ -928,6 +929,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }));
   }
 
+  $('outfit-bundle').addEventListener('click', () => void exporting(async () => {
+    if (hasDrafts()) { refuseDrafts(); return; }
+    const snapshot = structuredClone(options.current());
+    options.download(new Blob([buildOutfitBundle(snapshot, today())], { type: 'application/zip' }), '-outfit-patterns-tech-packs.zip', snapshot.title);
+  }));
+
   // Tech pack: details are part of the design; the pack itself is always derived from it.
   $('apply-spec').addEventListener('click', () => update(draft => {
     draft.spec = { styleNumber: ($('spec-style') as HTMLInputElement).value, season: ($('spec-season') as HTMLInputElement).value, sampleSize: ($('spec-size') as HTMLSelectElement).value as Size };
@@ -1262,6 +1269,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     tuckBox.disabled = !tuckable; tuckBox.checked = tuckable && tuckedFor(design);
     $('garment-tuck-help').textContent = !companion ? 'Choose bottoms with Wear with to tuck a top in.' : alsoWorn ? 'A three-piece outfit is worn untucked.' : layered ? 'A top worn over another is not tucked in.' : !tuckable ? 'A dress cannot be tucked in; shorten it to a top to tuck it.'
       : 'The top drapes first, held close to the body below the waistband, and the bottoms drape over it. You can undo this.';
+    ($('outfit-bundle') as HTMLButtonElement).disabled = !companionOf(design);
     const outfitExport = $('export-outfit') as HTMLInputElement;
     outfitExport.disabled = !companion; if (!companion) outfitExport.checked = false;
     chestInput.closest('label')!.hidden = !onTop; ($('garment-drape-depth') as HTMLInputElement).closest('label')!.hidden = !onTop; ($('garment-drape-arm-girth') as HTMLInputElement).closest('label')!.hidden = !onTop; $('arm-girth-help').hidden = !onTop;
