@@ -258,12 +258,15 @@ function updateTimeline() {
 function message(text: string, error = false) {
   const node = element('message'); node.textContent = text; node.hidden = !text; node.classList.toggle('error', error);
 }
+class StudioRequestError extends Error {
+  constructor(readonly status: number, message: string) { super(message); }
+}
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.method && init.method !== 'GET' && session) headers.set('X-Karaoke-Token', session.token);
   const response = await fetch(path, { ...init, headers, cache: 'no-store' });
   const value = await readReply(response) as {error?:unknown};
-  if (!response.ok) throw new Error(typeof value?.error === 'string' ? value.error : `Local studio request failed (${response.status}).`);
+  if (!response.ok) throw new StudioRequestError(response.status, typeof value?.error === 'string' ? value.error : `Local studio request failed (${response.status}).`);
   return value as T;
 }
 function json(method: string, body: unknown): RequestInit { return { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }; }
@@ -1778,7 +1781,7 @@ async function upload(file: File, model: string, follow: boolean): Promise<{ sta
     message(''); if (!follow) queuedJobs.add(result.job.id); startPolling(result.job, follow); return { started: true };
   } catch (error) {
     const text = error instanceof Error ? error.message : 'Could not import this clip.';
-    if (!follow && /already running/i.test(text)) return { started: false, busy: true };
+    if (error instanceof StudioRequestError && error.status === 409 && /^A media job(?: or upload)? is already running\./.test(text)) return { started: false, busy: true };
     message(follow ? text : `“${file.name}” could not be added: ${text}`, true); return { started: false };
   }
   finally { requestingJob = false; controls(); queueStatus(); }
@@ -1814,7 +1817,13 @@ element<HTMLInputElement>('audio-file').addEventListener('change', async event =
   const model = element<HTMLSelectElement>('upload-recognition').value;
   enqueueSongs(files.slice(1), model);
   if (file.size < 1 || file.size > uploadLimit()) { message(`Choose a nonempty song clip no larger than ${uploadLimit() / 1024 / 1024} MiB.`, true); return; }
-  await upload(file, model, true);
+  const version = queueClearVersion;
+  const outcome = await upload(file, model, true);
+  if (outcome.busy && version === queueClearVersion) {
+    uploadQueue.unshift({ id: ++nextWaitingSong, file, model });
+    queueStatus();
+    message(`“${file.name}” is waiting until the studio is free. It lands in Saved clips.`);
+  }
 });
 element('cancel-job').addEventListener('click', async () => {
   if (!currentJob || !ownedJob) return;

@@ -125,3 +125,54 @@ test('clearing waiting songs does not resurrect a held busy upload', async ({ pa
     await expect(page.locator('#projects option',{hasText:'clear-tail'})).toHaveCount(0);
   } finally { release(); }
 });
+
+test('the first upload refused by a busy studio is retried before the rest of the batch', async ({ page }) => {
+  test.setTimeout(60000);
+  const uploads: [string, string][] = [];
+  await page.route('**/api/projects', async route => {
+    if (route.request().method() !== 'POST') { await route.continue(); return; }
+    const headers = route.request().headers();
+    const name = decodeURIComponent(headers['x-audio-name'] ?? '');
+    if (name === 'existing-clip.wav') { await route.continue(); return; }
+    uploads.push([name, headers['x-lyrics-model'] ?? 'auto']);
+    if (uploads.length === 1) {
+      await route.fulfill({ status: 409, json: { error: 'A media job or upload is already running.' } });
+    } else await route.continue();
+  });
+  await page.goto('/');
+  await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+  const upload = page.getByLabel('Upload song clip');
+  await upload.setInputFiles(songs('existing-clip'));
+  await expect(page.getByLabel('Clip title')).toHaveValue('existing-clip', { timeout: 15000 });
+  await page.locator('#upload-recognition').selectOption('multilingual');
+  await upload.setInputFiles(songs('busy-head', 'busy-tail'));
+  await expect(page.locator('#message')).toHaveText(ready('busy-tail'), { timeout: 25000 });
+  expect(uploads).toEqual([
+    ['busy-head.wav', 'multilingual'], ['busy-head.wav', 'multilingual'], ['busy-tail.wav', 'multilingual'],
+  ]);
+  await expect(page.locator('#projects option', { hasText: 'busy-head' })).toHaveCount(1);
+  await expect(page.getByLabel('Clip title')).toHaveValue('existing-clip');
+});
+
+test('clearing the batch while the first upload waits for a reply does not restore a busy refusal', async ({ page }) => {
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let attempts = 0;
+  await page.route('**/api/projects', async route => {
+    if (route.request().method() !== 'POST') { await route.continue(); return; }
+    attempts++;
+    await held;
+    await route.fulfill({ status: 409, json: { error: 'A media job or upload is already running.' } });
+  });
+  try {
+    await page.goto('/');
+    await expect(page.locator('#model-state')).toHaveText('Local CPU model ready');
+    await page.getByLabel('Upload song clip').setInputFiles(songs('cleared-head', 'cleared-tail'));
+    await expect.poll(() => attempts).toBe(1);
+    await page.getByRole('button', { name: 'Clear waiting songs' }).click();
+    release();
+    await expect(page.locator('#upload-recognition')).toBeEnabled();
+    await expect(page.locator('#upload-queue')).toBeHidden();
+    await expect(page.locator('#message')).toContainText('1 waiting song was removed.');
+  } finally { release(); }
+});
