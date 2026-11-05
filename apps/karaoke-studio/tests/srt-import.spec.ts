@@ -184,3 +184,25 @@ test('ten-second aggregate deadline retires a held native read and late release 
   await releaseRead(page); expect(await editorCues(page)).toEqual(BEFORE); expect(await projectFromServer(request, project.id)).toEqual(project);
   await chooseSrt(page, NEWER); await reviewReady(page, 1);
 });
+
+test('local LRC previews line timing, cancels safely, applies as one edit and survives save/reload', async ({ page, request, clips }) => {
+  await page.setViewportSize({width:390,height:844});
+  const project = await clips.create(); await openClip(page, project);
+  const after = [{ start:.5, end:1.5, text:'Hello café' }, { start:2, end:3.75, text:'Second 🌗' }];
+  const input = page.getByLabel('Import timed lyrics (LRC)', { exact:true });
+  const file = { name:'song.lrc', mimeType:'text/plain', buffer:Buffer.from('[ti:Title stays unchanged]\n[00:00.50]<00:00.50>Hello <00:01.00>café\n[00:01.50]\n[00:02.00]Second 🌗\n[00:03.75]\n') };
+  await input.setInputFiles(file); await reviewReady(page, 2);
+  await expect(page.locator('#srt-summary')).toContainText('word highlighting is regenerated');
+  expect(await editorCues(page)).toEqual(BEFORE);
+  await page.locator('#srt-cancel').click(); expect(await editorCues(page)).toEqual(BEFORE);
+  await input.setInputFiles(file); await reviewReady(page, 2); await page.locator('#srt-apply').click();
+  expect(await editorCues(page)).toEqual(after); expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
+  await page.locator('#redo-lyrics').click(); expect(await editorCues(page)).toEqual(after);
+  await page.locator('#save').click(); await expect(page.locator('#save-state')).toContainText('Saved');
+  expect((await projectFromServer(request, project.id)).cues).toEqual(after);
+  await page.reload(); await expect(page.locator('#title')).toHaveValue(project.title); expect(await editorCues(page)).toEqual(after);
+  await input.setInputFiles({ name:'bad.lrc', mimeType:'text/plain', buffer:Buffer.from('[offset:100]\n[00:00.50]do not apply') });
+  await expect(page.locator('#srt-status')).toContainText('offset');
+  expect(await editorCues(page)).toEqual(after); await expect(page.locator('#srt-apply')).toBeDisabled();
+});

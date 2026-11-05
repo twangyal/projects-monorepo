@@ -19,10 +19,10 @@ export function lookupQuery(query:LyricsQuery):LyricsQuery {
 const MAX_HOLD=8;
 /**
  * Published line timings from synced LRC ("[01:02.34] words", several stamps for a repeated line). A line ends when the
- * next timed line, or a timed blank (an instrumental gap), starts, and is held at most MAX_HOLD seconds. Returns null
- * when the timings do not fit the clip, so the plain words are aligned locally instead.
+ * next timed line, or a timed blank (an instrumental gap), starts, and is held at most eight seconds by default. Local imports can supply a longer
+ * hold. Returns null when the timings do not fit the clip, so the plain words are aligned locally instead.
  */
-export function parseSyncedLyrics(lrc:string,duration:number):LyricsCue[]|null {
+export function parseSyncedLyrics(lrc:string,duration:number,maxHold=MAX_HOLD):LyricsCue[]|null {
   if(typeof lrc!=='string'||lrc.length>MAX_BYTES)return null;
   const stamps:{time:number;text:string}[]=[];
   for(const line of lrc.split(/\r\n|\n|\r/)){
@@ -44,8 +44,8 @@ export function parseSyncedLyrics(lrc:string,duration:number):LyricsCue[]|null {
   stamps.forEach((stamp,index)=>{
     if(!stamp.text)return;
     const next=stamps.slice(index+1).find(other=>other.time>stamp.time)?.time??duration;
-    const end=Math.min(next,stamp.time+MAX_HOLD,duration);
-    cues.push({start:Math.round(stamp.time*1000)/1000,end:Math.round(end*1000)/1000,text:stamp.text});
+    const end=Math.min(next,stamp.time+maxHold,duration);
+    cues.push({start:Math.round(stamp.time*1000)/1000,end:end===duration?duration:Math.round(end*1000)/1000,text:stamp.text});
   });
   if(!cues.length)return null;
   try{return validateCues(cues,duration);}catch{return null;}
