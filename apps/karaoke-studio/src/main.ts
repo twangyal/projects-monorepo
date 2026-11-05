@@ -8,7 +8,7 @@ import { correctionReport, reportCsv, reportSummary, type CorrectionReport, type
 import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Cue, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
-import { parseLrc } from './lrc.ts';
+import { MAX_LRC_BYTES, parseLrc } from './lrc.ts';
 import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
@@ -71,7 +71,7 @@ app.innerHTML = `
         <section id="tool-get" class="tool-panel" role="tabpanel" aria-labelledby="tab-get"><h3 class="tool-heading">Get lyrics</h3>
           ${lyricsLookupMarkup}
           <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
-          <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><label class="field">Import timed lyrics (LRC)<input id="lrc-file" type="file" accept=".lrc,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Lines start with [mm:ss.xx] or [mm:ss.xxx]; repeated timestamps and timed blank lines are supported. Each line ends at the next timestamp or clip end. Enhanced word tags supply words only; word highlighting is regenerated. Offset tags are not supported. Review before replacing current lyrics.</p></section>
+          <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><label class="field">Import timed lyrics (LRC)<input id="lrc-file" type="file" accept=".lrc,text/plain" disabled></label><p class="fine">Up to 320 KiB UTF-8. Lines start with [mm:ss.xx] or [mm:ss.xxx]; repeated timestamps and timed blank lines are supported. Each line ends at the next timestamp or clip end. Enhanced word tags supply words only; word highlighting is regenerated. Offset tags are not supported. Review before replacing current lyrics.</p></section>
         </section>
         <section id="tool-timing" class="tool-panel" role="tabpanel" aria-labelledby="tab-timing"><h3 class="tool-heading">Timing</h3>
           <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
@@ -1073,7 +1073,11 @@ for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).addEven
   workspace.reveal(element('srt-status'));
   retireSrt('');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-  if (file.size < 1 || file.size > MAX_SRT_BYTES) { element('srt-status').textContent = 'Choose a nonempty UTF-8 SRT or LRC file no larger than 128 KiB.'; return; }
+  const isLrc = id === 'lrc-file', maxBytes = isLrc ? MAX_LRC_BYTES : MAX_SRT_BYTES;
+  if (file.size < 1 || file.size > maxBytes) {
+    element('srt-status').textContent = `Choose a nonempty UTF-8 ${isLrc ? 'LRC' : 'SRT'} file no larger than ${maxBytes / 1024} KiB.`;
+    return;
+  }
   const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working!.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
   const duration = working!.duration, title = working!.title, previousCount = working!.cues.length;
   srtOwner = owner; element('srt-status').textContent = 'Reading and validating all timed lyric cues. Current editor values are kept.'; srtControls();
@@ -1082,7 +1086,6 @@ for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).addEven
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (!srtCurrent(owner)) return;
     if (performance.now() >= owner.deadline) { retireSrt('Timed lyrics reading took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
-    const isLrc = id === 'lrc-file';
     const cues = isLrc ? parseLrc(bytes, duration) : parseSrt(bytes, duration);
     if (!srtCurrent(owner)) return;
     if (!srtAllowed()) { retireSrt('Other studio work cancelled the lyric import. Current lyrics were kept.'); return; }

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLrc } from '../src/lrc.ts';
+import { MAX_LRC_BYTES, parseLrc } from '../src/lrc.ts';
+import { parseSyncedLyrics } from '../src/lyrics-lookup.ts';
 const bytes = (text:string) => new TextEncoder().encode(text);
 
 test('local LRC preserves explicit long holds, timed gaps, repeated lines and Unicode words', () => {
@@ -18,7 +19,7 @@ test('invalid local LRC refuses without skipping malformed words, offsets or out
     assert.throws(() => parseLrc(bytes(source), 5), source);
   }
   assert.throws(() => parseLrc(new Uint8Array([255]), 5), /UTF-8/);
-  assert.throws(() => parseLrc(new Uint8Array(128*1024+1), 5), /128 KiB/);
+  assert.throws(() => parseLrc(new Uint8Array(MAX_LRC_BYTES+1), 5), /320 KiB/);
 });
 
 test('the final line reaches the exact clip end for audio durations between milliseconds', () => {
@@ -27,4 +28,19 @@ test('the final line reaches the exact clip end for audio durations between mill
 
 test('a precise clearing timestamp equal to the clip end does not compare above it', () => {
   assert.deepEqual(parseLrc(bytes('[00:01.001]Last\n[00:01.128]'), 1.128), [{start:1.001,end:1.128,text:'Last'}]);
+});
+
+test('dense enhanced LRC remains importable without relaxing lyric or catalogue limits', () => {
+  const phrase = '唱'.repeat(120);
+  const timed = (count: number) => Array.from({length:count}, (_, index) => {
+    const stamp = `${String(Math.floor(index / 60)).padStart(2,'0')}:${String(index % 60).padStart(2,'0')}.00`;
+    return `[${stamp}]${`<${stamp}>唱`.repeat(120)}`;
+  }).join('\n');
+  const source = timed(120);
+  assert.ok(bytes(source).byteLength > 128 * 1024);
+  assert.equal(parseSyncedLyrics(source,120),null);
+  const cues = parseLrc(bytes(source),120);
+  assert.equal(cues.length,120);
+  assert.deepEqual(cues[119],{start:119,end:120,text:phrase});
+  assert.throws(()=>parseLrc(bytes(timed(170)),170)); // 20,400 lyric code points.
 });

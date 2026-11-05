@@ -266,3 +266,31 @@ test('a held LRC reply cannot download after switching clips or block the new cl
   expect((await next).suggestedFilename()).toBe('Second-ready-LRC.lrc');
   expect(files).toEqual(['Second-ready-LRC.lrc']);
 });
+
+test('a dense word-timed export re-imports locally while SRT and LRC file caps still apply', async ({page, request, clips}) => {
+  const project = await clips.create(), token = (await (await request.get('/api/session')).json()).token;
+  const cues = Array.from({length:100}, (_, index) => ({start:index/25,end:(index+1)/25,text:'唱'.repeat(120)}));
+  const reply = await request.put(`/api/projects/${project.id}`, {headers:{'X-Karaoke-Token':token},data:{revision:project.revision,title:project.title,cues}});
+  expect(reply.status()).toBe(200);
+  const saved = await reply.json() as OriginalProject;
+  await openClip(page, saved);
+  const wait = page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export word-timed LRC',exact:true}).click();
+  const file = await wait, buffer = await readFile((await file.path())!);
+  expect(buffer.byteLength).toBeGreaterThan(128*1024);
+  const first = page.getByLabel('Lyric line 1',{exact:true});
+  await first.fill('Draft before dense import');
+  await chooseSrt(page,buffer,'oversize.srt');
+  await expect(page.locator('#srt-status')).toContainText('SRT file no larger than 128 KiB');
+  const input = page.getByLabel('Import timed lyrics (LRC)',{exact:true});
+  await input.setInputFiles({name:'oversize.lrc',mimeType:'text/plain',buffer:Buffer.alloc(320*1024+1)});
+  await expect(page.locator('#srt-status')).toContainText('LRC file no larger than 320 KiB');
+  await expect(first).toHaveValue('Draft before dense import');
+  await input.setInputFiles({name:file.suggestedFilename(),mimeType:'text/plain',buffer});
+  await reviewReady(page,100);
+  await page.locator('#srt-apply').click();
+  expect(await editorCues(page)).toEqual(cues);
+  await page.locator('#undo-lyrics').click();
+  await expect(first).toHaveValue('Draft before dense import');
+  expect(await projectFromServer(request,project.id)).toEqual(saved);
+});

@@ -22,8 +22,8 @@ const MAX_HOLD=8;
  * next timed line, or a timed blank (an instrumental gap), starts, and is held at most eight seconds by default. Local imports can supply a longer
  * hold. Returns null when the timings do not fit the clip, so the plain words are aligned locally instead.
  */
-export function parseSyncedLyrics(lrc:string,duration:number,maxHold=MAX_HOLD):LyricsCue[]|null {
-  if(typeof lrc!=='string'||lrc.length>MAX_BYTES)return null;
+export function parseSyncedLyrics(lrc:string,duration:number,{maxHold=MAX_HOLD,maxChars=MAX_BYTES}: {maxHold?:number;maxChars?:number}={}):LyricsCue[]|null {
+  if(typeof lrc!=='string'||lrc.length>maxChars)return null;
   const stamps:{time:number;text:string}[]=[];
   for(const line of lrc.split(/\r\n|\n|\r/)){
     const tags=/^((?:\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\])+)(.*)$/.exec(line.trim());
