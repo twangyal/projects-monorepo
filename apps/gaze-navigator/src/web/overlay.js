@@ -936,13 +936,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
   async function restoreOrCalibrate(generation) {
+    if (document.hidden) return { message: 'Camera ready. Return to this tab and choose Recalibrate before using camera navigation.', tone: 'info' };
     const attempt = ++calibrationGeneration;
     const session = camera.session;
     let restored = { ok: false, reason: 'none' };
     try {
       restored = await camera.restoreCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
     } catch { /* Fall back to a fresh calibration. */ }
-    if (attempt !== calibrationGeneration || generation !== sourceGeneration || camera.state !== 'ready' || camera.session !== session || stopped || closing) return null;
+    if (document.hidden || attempt !== calibrationGeneration || generation !== sourceGeneration || camera.state !== 'ready' || camera.session !== session || stopped || closing) return null;
     if (restored.ok) {
       cameraCalibrated = true;
       filter.reset();
@@ -955,6 +956,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
 
   function calibrate() {
+    if (document.hidden) return { ok: false, message: 'Return to this tab to calibrate.' };
     if (camera.state !== 'ready') return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
     const session = camera.session;
     calibrationGeneration++;
@@ -1058,6 +1060,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const onVisibilityChange = () => {
     if (!document.hidden || stopped || closing) return;
     const wasListening = speech.listening;
+    const activeCalibration = calibration;
+    const wasCalibrated = cameraCalibrated;
+    calibrationGeneration++;
+    calibration = null;
+    activeCalibration?.cancel();
     const hadPrompt = !!controller.pending;
     keyboard.cancel();
     spokenContext = null; spokenInvalid = false; promptContext = null;
@@ -1066,6 +1073,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (wasListening) {
       ui.transcript.textContent = '';
       feedback({ message: 'Listening stopped when this tab was hidden. Choose Start listening to continue.' });
+    } else if (activeCalibration) {
+      feedback({ message: wasCalibrated
+        ? 'Accuracy check stopped when this tab was hidden. Your completed calibration is kept.'
+        : 'Calibration stopped when this tab was hidden. Choose Recalibrate when you return, or use pointer.' });
     } else if (hadPrompt) {
       feedback({ message: 'The pending question was cleared when this tab was hidden.' });
     } else {

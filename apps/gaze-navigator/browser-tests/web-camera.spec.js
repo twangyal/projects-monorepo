@@ -566,3 +566,110 @@ test('camera silence discovered on speech finalization does not consume the next
   await page.evaluate(()=>{window.__stallSpeech.onspeechstart?.();window.__stallSpeech.onresult({resultIndex:1,results:[Object.assign([{transcript:'choose title'}],{isFinal:true}),Object.assign([{transcript:'choose title'}],{isFinal:true})]});});
   await expect(sort).toHaveValue('Title');
 });
+
+test('hidden calibration dots stop training until an explicit visible retry', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await startCamera(page);
+  await page.clock.runFor(1900);
+  const samples = await page.evaluate(() => window.webgazer.samples);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(dot(page)).toHaveClass(/hidden/);
+  await page.clock.runFor(30000);
+  expect(await page.evaluate(() => window.webgazer.samples)).toBe(samples);
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const sort = page.getByLabel('Sort by');
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Newest');
+  await expect(status(page)).toContainText('calibration is not ready');
+  await typeInstruction(page, 'recalibrate');
+  await finishCalibration(page);
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Title');
+});
+
+test('hiding the optional accuracy check keeps completed calibration', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await startCamera(page);
+  await page.clock.runFor(9 * 1900 + 100);
+  await expect(dot(page)).toHaveClass(/checking/);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(dot(page)).toHaveClass(/hidden/);
+  await page.clock.runFor(10000);
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const sort = page.getByLabel('Sort by');
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Title');
+  expect(await page.evaluate(() => window.gazeNavigator.calibrating)).toBe(false);
+});
+
+test('a delayed calibration restore cannot revive training after hiding the tab', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => {
+      const camera = createLocalCamera(options);
+      camera.restoreCalibration = () => new Promise(resolve => { window.__restoreReady = () => resolve({ ok: true }); });
+      return camera;
+    } });
+  });
+  await openSettings(page);
+  await panel(page).getByRole('button', { name: 'Camera', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => typeof window.__restoreReady)).toBe('function');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.__restoreReady();
+  });
+  const sort = page.getByLabel('Sort by');
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Newest');
+  await expect(status(page)).toContainText('calibration is not ready');
+  await expect(dot(page)).toHaveClass(/hidden/);
+});
+
+test('camera startup finishing in a hidden tab does not start calibration dots', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    window.gazeNavigator = startWebNavigator({ window, loadCamera: () => new Promise(resolve => {
+      window.__cameraReady = () => resolve(window.webgazer);
+    }) });
+    window.gazeNavigator.run('use camera');
+  });
+  await expect.poll(() => page.evaluate(() => typeof window.__cameraReady)).toBe('function');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.__cameraReady();
+  });
+  await expect.poll(() => page.evaluate(() => window.gazeNavigator.camera.state)).toBe('ready');
+  await expect(dot(page)).toHaveClass(/hidden/);
+  expect(await page.evaluate(() => window.gazeNavigator.calibrating)).toBe(false);
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await typeInstruction(page, 'recalibrate');
+  await expect(dot(page)).toHaveClass(/settling/);
+});
