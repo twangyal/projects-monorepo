@@ -5,7 +5,7 @@ import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from 
 import './style.css';
 import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
 import { correctionReport, reportCsv, reportSummary, type CorrectionReport, type ReportClip } from './correction-report.ts';
-import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
+import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Cue, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
@@ -851,6 +851,15 @@ function srtTime(seconds: number): string {
   const milliseconds = Math.round(seconds * 1000), whole = Math.floor(milliseconds / 1000);
   return `${String(Math.floor(whole / 3600)).padStart(2, '0')}:${String(Math.floor(whole / 60) % 60).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')},${String(milliseconds % 1000).padStart(3, '0')}`;
 }
+// Transcript and saved cue arrays are replaced on load, recognition, and confirmed Save. Drafts never mutate them.
+let correctionCache: { automatic: readonly Cue[]; saved: readonly Cue[]; summary: string } | null = null;
+function savedCorrection(automatic: readonly Cue[]): string {
+  if (!savedLyrics.length) return '';
+  if (correctionCache?.automatic !== automatic || correctionCache.saved !== savedLyrics) {
+    correctionCache = { automatic, saved: savedLyrics, summary: correctionSummary(correction(automatic, savedLyrics)) };
+  }
+  return correctionCache.summary ? ` ${correctionCache.summary}` : '';
+}
 function autoControls() {
   const status = element('auto-status'), review = element<HTMLButtonElement>('auto-review'), transcribe = element<HTMLButtonElement>('auto-transcribe');
   const current = working && transcript?.projectId === working.id ? transcript.value : null;
@@ -863,7 +872,7 @@ function autoControls() {
   else if (!current) status.textContent = 'Checking for recognized lyrics…';
   else if (current.available) {
     const unsure = unsureSummary(current.cues);
-    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals by ${recognizerName(current.model)}${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.${savedLyrics.length ? ` ${correctionSummary(correction(current.cues, savedLyrics))}` : ''}`;
+    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals by ${recognizerName(current.model)}${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.${savedCorrection(current.cues)}`;
   }
   else status.textContent = session?.lyricsModelReady ? 'This clip has no recognized lyrics yet. Transcribe lyrics listens to its separated vocals locally.'
     : 'Automatic lyrics need the local lyric recognition model. Run scripts/setup_lyrics_model.py with this studio’s model directory, refresh this page, then transcribe this clip.';

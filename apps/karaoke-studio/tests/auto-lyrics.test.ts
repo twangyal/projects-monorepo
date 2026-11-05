@@ -60,3 +60,23 @@ test('corrections of automatic lyrics count changed words and moved line starts'
   assert.equal(correction([{ start: 0, end: 2, text: '今夜的月光' }], [{ start: 0, end: 2, text: '今夜的阳光' }]).changed, 1);
   assert.equal(correctionSummary(correction([], saved)), '');
 });
+
+test('word edit counts match a recursive oracle across repeated and unequal lyric sequences', () => {
+  function distance(a: string[], b: string[]): number {
+    if (!a.length || !b.length) return a.length + b.length;
+    return Math.min(
+      1 + distance(a.slice(1), b),
+      1 + distance(a, b.slice(1)),
+      Number(a[0] !== b[0]) + distance(a.slice(1), b.slice(1)),
+    );
+  }
+  const all = ['', 'a', 'b', 'a a', 'a b', 'b a', 'b b', 'a a a', 'a a b', 'a b a', 'a b b', 'b a a', 'b a b', 'b b a', 'b b b'];
+  for (const a of all) for (const b of all) {
+    const expected = distance(a.split(' ').filter(Boolean), b.split(' ').filter(Boolean));
+    assert.equal(correction([cue(0, 1, a)], [cue(0, 1, b)]).changed, expected, `${a} → ${b}`);
+  }
+  const long = Array.from({ length: 80 }, (_, i) => cue(i, i + 1, '今夜的月光'.repeat(40)));
+  const changed = structuredClone(long);
+  changed[40]!.text = changed[40]!.text.replace('月', '星');
+  assert.deepEqual(correction(long, changed), { words: 16000, changed: 1, lines: 80, moved: 0 });
+});

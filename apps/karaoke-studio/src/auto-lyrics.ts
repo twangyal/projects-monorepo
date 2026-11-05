@@ -108,16 +108,27 @@ export interface Correction { words: number; changed: number; lines: number; mov
 export function correction(automatic: readonly Cue[], saved: readonly Cue[]): Correction {
   const words = (cues: readonly Cue[]) => cues.flatMap(cue => cueWords(cue.text)).map(word => word.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean);
   const before = words(automatic), after = words(saved);
-  let previous = Int32Array.from({ length: after.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= before.length; i++) {
-    const current = new Int32Array(after.length + 1);
-    current[0] = i;
-    for (let j = 1; j <= after.length; j++) current[j] = Math.min(previous[j]! + 1, current[j - 1]! + 1, previous[j - 1]! + (before[i - 1] === after[j - 1] ? 0 : 1));
-    previous = current;
+  // Shared prefixes and suffixes contribute no edits. On a long song with just a few corrections,
+  // the matrix only needs to cover the changed span, including any words inserted or removed there.
+  let first = 0, beforeEnd = before.length, afterEnd = after.length;
+  while (first < beforeEnd && first < afterEnd && before[first] === after[first]) first++;
+  while (beforeEnd > first && afterEnd > first && before[beforeEnd - 1] === after[afterEnd - 1]) { beforeEnd--; afterEnd--; }
+  const left = beforeEnd - first, right = afterEnd - first;
+  let changed = left + right;
+  if (left && right) {
+    let previous = Int32Array.from({ length: right + 1 }, (_, j) => j);
+    let current = new Int32Array(right + 1);
+    for (let i = 1; i <= left; i++) {
+      current[0] = i;
+      for (let j = 1; j <= right; j++) current[j] = Math.min(previous[j]! + 1, current[j - 1]! + 1,
+        previous[j - 1]! + (before[first + i - 1] === after[first + j - 1] ? 0 : 1));
+      const swap = previous; previous = current; current = swap;
+    }
+    changed = previous[right]!;
   }
   const starts = automatic.map(cue => cue.start);
   const moved = saved.filter(cue => !starts.some(start => Math.abs(start - cue.start) <= MOVED_SECONDS)).length;
-  return { words: before.length, changed: previous[after.length]!, lines: saved.length, moved };
+  return { words: before.length, changed, lines: saved.length, moved };
 }
 
 /** The correction in a sentence, or an empty string when there were no automatic words. */
