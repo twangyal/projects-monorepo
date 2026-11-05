@@ -41,3 +41,63 @@ test('a description with nothing applicable is refused without changing the desi
   assert.throws(() => readDesignPrompt('sparkly unicorn vibes', template('blank')), /could be applied/);
   assert.throws(() => readDesignPrompt('   ', template('blank')), /Describe the garment/);
 });
+
+test('explicit centimetre and millimetre measurements shape tops without changing the source', () => {
+  const source = template('blank'), before = structuredClone(source);
+  const reading = readDesignPrompt('navy tee, chest 110 cm, 700 mm length, sleeves 25 cm', source);
+  assert.deepEqual(topMeasurements(reading.product), { chest: 110, length: 70, sleeve: 25 });
+  assert.equal(reading.product.parts.front.color, '#1f2a4f');
+  assert.ok(scope(reading, 'Garment')?.includes('chest: 110 cm'));
+  assert.deepEqual(reading.ignored, []);
+  assert.deepEqual(source, before);
+});
+
+test('explicit trouser and skirt measurements retain their categories and validate together', () => {
+  const trousers = readDesignPrompt('linen trousers, waist 82 cm, hip 108 cm, inseam 740 mm, leg opening 44 cm', template('trousers'));
+  assert.deepEqual(legMeasurements(trousers.product), { waist: 82, hip: 108, rise: 28, inseam: 74, legOpening: 44 });
+  assert.deepEqual(trousers.ignored, []);
+  const skirt = readDesignPrompt('navy skirt, waist 78 cm, hem 180 cm, slant 620 mm', template('flared-skirt'));
+  assert.deepEqual(skirt.product.measurements, { waist: 78, hem: 180, slant: 62 });
+});
+
+test('invalid or contradictory dimensions refuse atomically and unsupported ones stay visible', () => {
+  const source = template('blank'), before = structuredClone(source);
+  assert.throws(() => readDesignPrompt('red tee chest 10 cm', source));
+  assert.throws(() => readDesignPrompt('chest 100 cm, chest 110 cm', source), /conflicting/i);
+  assert.deepEqual(source, before);
+  const reading = readDesignPrompt('navy tee waist 80 cm', source);
+  assert.deepEqual(reading.product.measurements, source.measurements);
+  assert.ok(reading.ignored.some(word => word.includes('waist')));
+});
+
+test('dimensions remain separate from print repeats and sleeve removal updates the linked parts', () => {
+  const source = template('blank');
+  const reading = readDesignPrompt('navy stripes 6 cm, chest 110 cm, 1100 mm chest, sleeves 0 cm', source);
+  assert.equal(topMeasurements(reading.product).chest, 110);
+  assert.equal(topMeasurements(reading.product).sleeve, 0);
+  assert.equal(reading.product.parts.front.print?.scaleCm, 6);
+  assert.equal(reading.product.parts.sleeveLeft, undefined);
+  assert.equal(reading.product.parts.sleeveRight, undefined);
+  assert.throws(() => readDesignPrompt('navy tee, sleeves -1 cm', source));
+  assert.equal(topMeasurements(source).sleeve, 21);
+});
+
+test('comma-delimited dimensions keep their sign and unsupported values cannot become print repeats', () => {
+  const source = template('blank');
+  assert.equal(topMeasurements(readDesignPrompt('navy tee,100 cm chest', source).product).chest, 100);
+  for (const value of ['-100', '10', '+10']) assert.throws(() => readDesignPrompt(`red tee,${value} cm chest`, source));
+  const printed = readDesignPrompt('navy stripes,100 cm hip', source);
+  assert.equal(printed.product.parts.front.print?.scaleCm, 2);
+  assert.ok(printed.ignored.some(word => word.includes('100 cm hip')));
+  // A decimal comma must not be reinterpreted as its fractional suffix.
+  assert.equal(topMeasurements(readDesignPrompt('navy tee,10,100 cm chest', source).product).chest, 104);
+});
+
+test('measured sleeves retain the color scope in the same clause', () => {
+  const reading = readDesignPrompt('navy tee with red sleeves 25 cm', template('blank'));
+  assert.equal(topMeasurements(reading.product).sleeve, 25);
+  assert.equal(reading.product.parts.front.color, '#1f2a4f');
+  assert.equal(reading.product.parts.sleeveLeft.color, '#b23a2e');
+  assert.equal(reading.product.parts.sleeveRight.color, '#b23a2e');
+  assert.deepEqual(reading.ignored, []);
+});

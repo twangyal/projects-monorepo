@@ -125,3 +125,27 @@ test('a garment description chooses the garment, styles the parts it names and t
   expect(tee.parts.neckband.color).toBe('#f7f7f4');
   expect(tee.parts.front).toEqual(before.parts.front);
 });
+
+for (const width of [1280, 390]) test(`named dimensions reshape linked patterns and remain undoable at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Ringer tee template/ }).click();
+  const before = (await backup(page)).product;
+  const prompt = editor(page).getByLabel('Describe a style', { exact: true });
+  await prompt.fill('navy tee, chest 110 cm, 700 mm length, sleeves 25 cm');
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  await expect(editor(page).locator('#describe-result')).toContainText('chest: 110 cm');
+  const shaped = (await backup(page)).product;
+  expect(shaped.measurements).toEqual({ chest: 110, length: 70, sleeve: 25 });
+  await expect(editor(page).getByLabel('Chest (cm)', { exact: true })).toHaveValue('110');
+  await expect(editor(page).locator('[data-piece="front"]')).toHaveAttribute('aria-label', 'Front body, 57.0 by 70.0 cm');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect((await backup(page)).product).toEqual(before);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  expect((await backup(page)).product).toEqual(shaped);
+  await prompt.fill('red tee, chest 10 cm');
+  await editor(page).getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('Chest');
+  await expect(prompt).toHaveValue('red tee, chest 10 cm');
+  expect((await backup(page)).product).toEqual(shaped);
+});

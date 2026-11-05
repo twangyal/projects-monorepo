@@ -241,6 +241,36 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     }
   }
 
+  // Explicit garment dimensions override rough fit presets. Only a named measurement next to a unit is read;
+  // a print repeat such as "stripes 6 cm" remains with the style interpreter.
+  const labels = 'leg opening|sleeve length|sleeves?|chest|length|waist|hip|inseam|rise|hem|slant';
+  const number = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)';
+  const measured = new RegExp(`\\b(${labels})\\s*(?:of|:|=)?\\s*(${number})\\s*(cm|mm)\\b|(?<![\\w.+-])(?<!\\d,)(${number})\\s*(cm|mm)\\s+(${labels})\\b`, 'g');
+  const values = new Map<string, number>();
+  const supported = new Set(top ? ['chest', 'length', 'sleeve'] : product.base === 'trousers'
+    ? ['waist', 'hip', 'inseam', 'rise', 'legOpening'] : ['waist', 'hem', 'slant']);
+  for (const match of text.matchAll(measured)) {
+    const label = match[1] ?? match[6], raw = Number(match[2] ?? match[4]), unit = match[3] ?? match[5];
+    const key = label.startsWith('sleeve') ? 'sleeve' : label === 'leg opening' ? 'legOpening' : label;
+    const value = raw / (unit === 'mm' ? 10 : 1);
+    if (!supported.has(key)) { notApplied.push(`${match[0]} (not a supported measurement on this garment)`); }
+    else {
+      if (values.has(key) && values.get(key) !== value) throw new Error(`Conflicting ${label} measurements. Give one value in cm or mm.`);
+      values.set(key, value);
+    }
+    const start = match.index!;
+    // Keep the part scope in "red sleeves 25 cm" without changing later match positions.
+    const remaining = key === 'sleeve' && supported.has(key) ? 'sleeves' : '';
+    text = text.slice(0, start) + remaining.padEnd(match[0].length) + text.slice(start + match[0].length);
+  }
+  if (values.size) {
+    const measures = { ...product.measurements, ...Object.fromEntries(values) };
+    product.measurements = measures as Product['measurements'];
+    if (top && values.has('sleeve')) product = withSleeveLength(product, values.get('sleeve')!);
+    product = validateProduct(product);
+    for (const [key, value] of values) garment.push(`${key === 'legOpening' ? 'leg opening' : key}: ${value} cm`);
+  }
+
   // Clauses: a clause that names parts styles them; the others are read together as the whole garment's style.
   const available = new Set(partsOf(product));
   const clauses = text.split(/,|;|\band\b|\bwith\b|\bbut\b|\bplus\b/).map(clause => {
