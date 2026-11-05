@@ -81,7 +81,7 @@ function samplePack(product: Product, date: string): TechPack {
   for (const art of product.artwork) {
     const height = art.widthCm * art.height / art.width;
     bom.push({ item: `A${art.part === 'front' ? 1 : 2} Artwork`, description: `${art.name || 'Artwork'} — screen print or DTG`, color: 'Per artwork file',
-      placement: `${art.part === 'front' ? 'Front' : 'Back'}: ${cm(art.yCm)} below shoulder, ${art.xCm === 0 ? 'centred' : `${cm(Math.abs(art.xCm))} ${art.xCm > 0 ? 'toward wearer’s left' : 'toward wearer’s right'}`}${art.rotation ? `, ${Math.abs(art.rotation)}° ${art.rotation > 0 ? 'clockwise' : 'counterclockwise'} about its centre` : ''}`,
+      placement: `${art.part === 'front' ? 'Front' : 'Back'}: ${cm(art.yCm)} below shoulder, ${art.xCm === 0 ? 'centred' : `${cm(Math.abs(art.xCm))} ${art.xCm > 0 ? 'right' : 'left'} of centre when viewed from outside`}${art.rotation ? `, ${Math.abs(art.rotation)}° ${art.rotation > 0 ? 'clockwise' : 'counterclockwise'} about its centre` : ''}`,
       quantity: `${cm(art.widthCm)} × ${cm(height)}` });
   }
   // Points of measure for the sample size, graded by fixed increments per size step.

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { png, pngUrl } from './helpers/raster.ts';
 async function backup(page: Page) { const wait = page.waitForEvent('download'); await page.getByRole('button',{name:'Export project backup',exact:true}).click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }
 function unpack(bytes: Buffer) {
   const files = new Map<string, Buffer>(); let at = 0;
@@ -16,7 +17,11 @@ for (const width of [1280,390]) test(`outfit bundle downloads applied samples wi
   await page.getByRole('button',{name:'Templates',exact:true}).click(); await page.getByRole('button',{name:/^Use the Ringer tee template/}).click();
   await page.getByRole('button',{name:'Body & drape',exact:true}).click(); await page.getByRole('combobox',{name:'Wear with',exact:true}).selectOption({label:'Flared skirt'});
   const project=await backup(page), original=structuredClone(project); project.product.spec={styleNumber:'TOP',season:'Summer',sampleSize:'L'};project.wornWith.spec={styleNumber:'SKIRT',season:'Summer',sampleSize:'S'};
+  project.product.artwork=[{part:'front',name:'Print',dataUrl:pngUrl(8,4),width:8,height:4,xCm:0,yCm:12,widthCm:18,rotation:12}];
+  project.wornWith.motifs=[{id:'tile',name:'Repeat',dataUrl:pngUrl(5,5),width:5,height:5}];
+  project.wornWith.parts.front.print={motif:'upload:tile',color:'#aabbcc',scaleCm:8,layout:'mirror'};
   await page.getByLabel('Import project backup',{exact:true}).setInputFiles({name:'samples.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(project))});
+  await expect(page.locator('#message')).toContainText('Project backup restored');
   const before=await backup(page);
   await page.getByRole('combobox',{name:'Size shown',exact:true}).selectOption('XL');
   await page.getByRole('button',{name:'Patterns & measurements',exact:true}).click();
@@ -28,7 +33,12 @@ for (const width of [1280,390]) test(`outfit bundle downloads applied samples wi
   const undo=await page.getByRole('button',{name:'Undo',exact:true}).isEnabled(), wait=page.waitForEvent('download'); await bundle.click(); const download=await wait;
   expect(download.suggestedFilename()).toMatch(/-outfit-patterns-tech-packs\.zip$/);
   const files=unpack(await readFile((await download.path())!)), manifest=JSON.parse(files.get('manifest.json')!.toString());
-  expect(manifest.garments.map((g:{sampleSize:string})=>g.sampleSize)).toEqual(['L','S']); expect(files.size).toBe(10);
+  expect(manifest.garments.map((g:{sampleSize:string})=>g.sampleSize)).toEqual(['L','S']); expect(files.size).toBe(12);
+  const art=manifest.garments[0].artwork[0], repeat=manifest.garments[1].repeatMotifs[0];
+  expect(art).toMatchObject({part:'front',widthCm:18,heightCm:9,rotation:12});
+  expect(files.get(art.file)).toEqual(png(8,4));
+  expect(repeat.parts).toEqual([{part:'front',scaleCm:8,layout:'mirror'}]);
+  expect(files.get(repeat.file)).toEqual(png(5,5));
   expect(files.get(manifest.garments[0].files.html)!.toString()).toContain('<dd>TOP</dd>');
   expect(files.get(manifest.garments[1].files.html)!.toString()).toContain('<dd>SKIRT</dd>');
   expect(await backup(page)).toEqual(before); expect(await page.getByRole('button',{name:'Undo',exact:true}).isEnabled()).toBe(undo);
