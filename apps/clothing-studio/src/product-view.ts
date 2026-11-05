@@ -226,7 +226,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const shapeKey = (design: Product) => [design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline, partsOf(design).map(id => design.parts[id].material)];
   // A fabric comparison drapes on the same body; a skirt's or trousers' waist and hip are the ones their drape uses.
   const comparisonBody = (design: Product) => {
-    if (!isBottoms(design)) return {chest:chestFor(design),...shapeFor(design)};
+    if (!isBottoms(design)) return {chest:chestFor(design),...validateTopBodyShape(chestFor(design), drapeShapeFor(design))};
     const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
     return {chest:chestFor(design),waist:body.waist,hip:body.hip,...(bodyHipDepth===null?{}:{hipDepth:bodyHipDepth}),...(bodyHeight===null?{}:{height:bodyHeight})};
   };

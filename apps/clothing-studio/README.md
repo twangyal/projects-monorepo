@@ -33,6 +33,8 @@ Optional **upper-arm girth** sets the upper arm on the proxy without narrowing i
 
 Use **Edit worn garment** beside Wear with to switch between editing the two applied outfit garments. Both copies and shared body settings stay together; edits affect only the current garment. Switching is one Undo step, requires applied/discarded product drafts, and returns 3D and pattern export sizing to the new garment’s sample. The saved-library source stays separate.
 
+Fabric comparisons of a top worn with bottoms use the same resolved waist and hip girths as the outfit preview. The comparison isolates the top; it does not simulate contact with the other garment.
+
 **Drape time** offers Standard (3 simulated seconds) and Longer (12 simulated seconds per garment). Changing it restarts the preview on the same applied design and body. It is a session setting, and pending drafts stay untouched. More settling can reduce motion, but it takes more computation and does not guarantee convergence or physical fit. Matched fabric comparisons have their own time choice and report the actual shared solve settings in the download.
 
 ## Known gaps

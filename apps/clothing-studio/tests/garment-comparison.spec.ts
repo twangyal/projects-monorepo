@@ -55,3 +55,43 @@ test('trousers compare two fabrics on their own lower body, and one is chosen de
  await expect(page.locator('#garment-comparison-results img')).toHaveCount(4);
  await page.getByRole('button',{name:'Use Linen',exact:true}).click();const after=await backup(page);expect(after.product.parts.front.material).toBe('linen-170');expect(after.product.parts.back.material).toBe('linen-170');
 });
+
+for (const entered of [false, true]) test(`a top compares fabrics on the body resolved for its worn trousers (entered: ${entered})`, async ({ page }) => {
+  test.setTimeout(120000);
+  await page.addInitScript(() => {
+    const Native = Worker;
+    window.Worker = class extends Native {
+      constructor(...args: ConstructorParameters<typeof Worker>) {
+        super(...args);
+        if (String(args[0]).includes('garment-drape.worker')) this.addEventListener('message', event => {
+          if (event.data.kind === 'result' && event.data.result.companion) {
+            Object.assign(window, { outfitBody: event.data.result.body });
+          }
+        });
+      }
+    };
+  });
+  await open(page);
+  await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
+  if (entered) {
+    await page.locator('#top-body-shape summary').click();
+    await page.getByLabel('Body waist girth (cm, optional)', { exact: true }).fill('70');
+    await page.getByLabel('Body hip girth (cm, optional)', { exact: true }).fill('90');
+    await page.getByLabel('Upper-arm girth (cm, optional)', { exact: true }).fill('32');
+    await page.getByRole('button', { name: 'Apply body settings', exact: true }).click();
+  }
+  const before = await backup(page);
+  await page.getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  await expect(page.locator('#garment-drape-status')).toContainText('Worn over the Straight trousers', { timeout: 75000 });
+  const body = await page.evaluate(() => (window as unknown as { outfitBody: { chest: number; waist: number; hip: number } }).outfitBody);
+  await page.getByRole('button', { name: 'Compare garment fabrics', exact: true }).click();
+  await expect(page.locator('#garment-comparison-status')).toContainText('Comparison ready', { timeout: 75000 });
+  const wait = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download garment comparison', exact: true }).click();
+  const receipt = JSON.parse(await readFile((await (await wait).path())!, 'utf8'));
+  expect(receipt.body.waist).toBe(body.waist);
+  expect(receipt.body.hip).toBe(body.hip);
+  expect(receipt.body.chest).toBe(body.chest);
+  if (entered) expect(receipt.body).toMatchObject({ waist: 70, hip: 90, upperArmGirth: 32 });
+  expect(await backup(page)).toEqual(before);
+});
