@@ -673,3 +673,42 @@ test('camera startup finishing in a hidden tab does not start calibration dots',
   await typeInstruction(page, 'recalibrate');
   await expect(dot(page)).toHaveClass(/settling/);
 });
+
+for (const retire of ['recalibrate', 'resize', 'head', 'hide']) test(`a delayed drift-learning reply cannot save after ${retire}`, async ({ page }) => {
+  test.setTimeout(60000);
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.__learningSaves = 0; window.__learningReplies = 0; window.__holdLearning = false;
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => {
+      const camera = createLocalCamera(options), sample = camera.recordSample.bind(camera), save = camera.saveCalibration.bind(camera);
+      camera.recordSample = (x, y) => {
+        const kept = sample(x, y);
+        if (!window.__holdLearning) return kept;
+        window.__learningReplies++;
+        return new Promise(resolve => { window.__releaseLearning = () => resolve(kept); });
+      };
+      camera.saveCalibration = size => { window.__learningSaves++; save(size); };
+      return camera;
+    } });
+  });
+  await startCamera(page); await finishCalibration(page);
+  const before = await page.evaluate(() => window.__learningSaves), add = page.getByRole('button', { name: 'Add to cart' }).first();
+  await page.evaluate(() => { window.__holdLearning = true; });
+  await gazeAt(page, add); await typeInstruction(page, 'click add to cart');
+  await expect.poll(() => page.evaluate(() => window.__learningReplies)).toBe(1);
+  // The ordinary current reply is allowed to save the completed model.
+  await page.evaluate(() => window.__releaseLearning());
+  await expect.poll(() => page.evaluate(() => window.__learningSaves)).toBe(before + 1);
+  await page.clock.runFor(2100); await gazeAt(page, add); await typeInstruction(page, 'click add to cart');
+  await expect.poll(() => page.evaluate(() => window.__learningReplies)).toBe(2);
+  if (retire === 'recalibrate') await typeInstruction(page, 'recalibrate');
+  else if (retire === 'resize') await resizeViewport(page);
+  else if (retire === 'head') await typeInstruction(page, 'use head pointer');
+  else await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  await page.evaluate(() => window.__releaseLearning());
+  await page.clock.runFor(33);
+  expect(await page.evaluate(() => window.__learningSaves)).toBe(before + 1);
+});

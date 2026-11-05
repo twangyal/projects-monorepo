@@ -792,15 +792,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // one every LEARN_MS, saved like the calibration for later pages.
   let learnedAt = -Infinity;
   function learnFrom(aimed, used) {
-    if (!aimed?.element?.isConnected || settings.source !== 'camera' || camera.state !== 'ready' || calibration || !Number.isFinite(used?.x)) return;
+    if (!aimed?.element?.isConnected || settings.source !== 'camera' || camera.state !== 'ready' || !cameraCalibrated || calibration || document.hidden || !Number.isFinite(used?.x)) return;
     const now = Date.now();
     if (now - learnedAt < LEARN_MS) return;
     const rect = viewportRect(aimed.element, aimed.frames), x = (rect.left + rect.right) / 2, y = (rect.top + rect.bottom) / 2;
     if (Math.max(rect.width, rect.height) > radius() * 2 || Math.hypot(x - used.x, y - used.y) > radius() * 1.5) return;
     learnedAt = now;
-    const session = camera.session;
+    const session = camera.session, source = sourceGeneration, training = calibrationGeneration;
+    const width = window.innerWidth, height = window.innerHeight;
     Promise.resolve(camera.recordSample(x, y)).then(kept => {
-      if (kept && camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
+      // An extension-frame reply can arrive after the old model was reset or replaced in this same camera session.
+      if (kept && !stopped && !closing && !document.hidden && settings.source === 'camera' && camera.state === 'ready'
+        && cameraCalibrated && !calibration && camera.session === session && sourceGeneration === source && calibrationGeneration === training
+        && window.innerWidth === width && window.innerHeight === height) camera.saveCalibration({ width, height, now: Date.now() });
     }, () => {});
   }
 
