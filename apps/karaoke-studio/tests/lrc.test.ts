@@ -24,3 +24,7 @@ test('invalid local LRC refuses without skipping malformed words, offsets or out
 test('the final line reaches the exact clip end for audio durations between milliseconds', () => {
   for (const duration of [5.0004, 5.0008]) assert.deepEqual(parseLrc(bytes('[00:01.00]Hello'), duration), [{start:1,end:duration,text:'Hello'}]);
 });
+
+test('a precise clearing timestamp equal to the clip end does not compare above it', () => {
+  assert.deepEqual(parseLrc(bytes('[00:01.001]Last\n[00:01.128]'), 1.128), [{start:1.001,end:1.128,text:'Last'}]);
+});

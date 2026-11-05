@@ -1,7 +1,7 @@
 import unittest
 
 from karaoke.lrc import render_lrc
-from karaoke.model import create_project, update_project
+from karaoke.model import ValidationError, create_project, update_project
 
 
 class LrcTests(unittest.TestCase):
@@ -37,6 +37,42 @@ class LrcTests(unittest.TestCase):
         words = [dict(text=character, start=1.2 + 0.5 * index, end=1.5 + 0.5 * index) for index, character in enumerate('我爱你')]
         self.assertEqual(render_lrc(project, words).splitlines()[3],
                          '[00:01.00]<00:01.20>我<00:01.70>爱<00:02.20>你 <00:02.61>love')
+
+    def test_short_cues_and_gaps_keep_millisecond_boundaries(self):
+        project = update_project(create_project('d' * 32, 'Short', 4.008), 'Short',
+                                 [dict(start=1.001, end=1.003, text='One'),
+                                  dict(start=1.004, end=1.006, text='Two'),
+                                  dict(start=4.001, end=4.008, text='Last')], 0)
+        self.assertEqual(render_lrc(project).splitlines()[3:],
+                         ['[00:01.001]<00:01.001>One', '[00:01.003]',
+                          '[00:01.004]<00:01.004>Two', '[00:01.006]',
+                          '[00:04.001]<00:04.001>Last', '[00:04.008]'])
+
+    def test_final_clear_does_not_round_past_fractional_clip_end(self):
+        project = update_project(create_project('d' * 32, 'End', 4.0088), 'End',
+                                 [dict(start=4.001, end=4.0088, text='Last')], 0)
+        self.assertEqual(render_lrc(project).splitlines()[-1], '[00:04.008]')
+
+    def test_exact_millisecond_clip_end_is_not_floored_one_tick_early(self):
+        project = update_project(create_project('d' * 32, 'End', 1.001), 'End',
+                                 [dict(start=1.0, end=1.001, text='Last')], 0)
+        self.assertEqual(render_lrc(project).splitlines()[-1], '[00:01.001]')
+
+    def test_half_millisecond_ties_do_not_collapse_a_millisecond_line(self):
+        for start, end, stamps in [(1.0015, 1.0025, ('01.002', '01.003')),
+                                   (2.0025, 2.0035, ('02.003', '02.004'))]:
+            with self.subTest(start=start):
+                project = update_project(create_project('d' * 32, 'Ties', 4.0), 'Ties',
+                                         [dict(start=start, end=end, text='Short')], 0)
+                first, last = stamps
+                self.assertEqual(render_lrc(project).splitlines()[3:],
+                                 [f'[00:{first}]<00:{first}>Short', f'[00:{last}]'])
+
+    def test_unrepresentable_interval_refuses_instead_of_emitting_duplicate_stamps(self):
+        project = update_project(create_project('d' * 32, 'Short', 4.0), 'Short',
+                                 [dict(start=1.0001, end=1.0002, text='Short')], 0)
+        with self.assertRaisesRegex(ValidationError, 'Lyric line 1.*millisecond'):
+            render_lrc(project)
 
 
 if __name__ == '__main__':

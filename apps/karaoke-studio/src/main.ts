@@ -71,7 +71,7 @@ app.innerHTML = `
         <section id="tool-get" class="tool-panel" role="tabpanel" aria-labelledby="tab-get"><h3 class="tool-heading">Get lyrics</h3>
           ${lyricsLookupMarkup}
           <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
-          <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><label class="field">Import timed lyrics (LRC)<input id="lrc-file" type="file" accept=".lrc,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Lines start with [mm:ss.xx]; repeated timestamps and timed blank lines are supported. Each line ends at the next timestamp or clip end. Enhanced word tags supply words only; word highlighting is regenerated. Offset tags are not supported. Review before replacing current lyrics.</p></section>
+          <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><label class="field">Import timed lyrics (LRC)<input id="lrc-file" type="file" accept=".lrc,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Lines start with [mm:ss.xx] or [mm:ss.xxx]; repeated timestamps and timed blank lines are supported. Each line ends at the next timestamp or clip end. Enhanced word tags supply words only; word highlighting is regenerated. Offset tags are not supported. Review before replacing current lyrics.</p></section>
         </section>
         <section id="tool-timing" class="tool-panel" role="tabpanel" aria-labelledby="tab-timing"><h3 class="tool-heading">Timing</h3>
           <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
@@ -119,6 +119,7 @@ let followJobProject = true;
 let currentJob: Job | null = null;
 let currentTrack = 'backing';
 let videoUrl: string | null = null;
+let lrcExportGeneration: number | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let animation = 0;
 let projectGeneration = 0;
@@ -293,7 +294,8 @@ function controls() {
   element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('export-video').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
-  element<HTMLButtonElement>('lrc-download').disabled = element<HTMLButtonElement>('ass-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
+  element<HTMLButtonElement>('ass-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
+  element<HTMLButtonElement>('lrc-download').disabled = lrcExportGeneration === projectGeneration || element<HTMLButtonElement>('lyrics-download').disabled;
   element<HTMLSelectElement>('guide-vocal').disabled = element<HTMLButtonElement>('export-video').disabled;
   element<HTMLSelectElement>('video-size').disabled = element<HTMLButtonElement>('export-video').disabled;
   // Only a clip with a picture (from its song file, or chosen) can show it.
@@ -1614,7 +1616,25 @@ function download(url: string, suffix: string) {
 element('backing-download').addEventListener('click', () => { if (working) download(`/api/projects/${working.id}/audio/backing`, '-backing.wav'); });
 element('lyrics-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
 // Word-timed lyrics for music players and karaoke apps, timed like the preview and the video.
-element('lrc-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lrc`, '.lrc'); });
+element('lrc-download').addEventListener('click', async () => {
+  if (!working || dirty || timingOwner || loading || saving || lrcExportGeneration === projectGeneration) return;
+  const project = working, edit = editGeneration, generation = projectGeneration;
+  const current = () => working === project && edit === editGeneration && generation === projectGeneration && !loading && !saving && !dirty && !timingOwner;
+  lrcExportGeneration = generation; controls();
+  try {
+    const response = await fetch(`/api/projects/${project.id}/lrc`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+    if (!response.ok) {
+      const reply = await readReply(response) as { error?: unknown };
+      throw new Error(typeof reply?.error === 'string' ? reply.error : 'Could not export LRC lyrics.');
+    }
+    const blob = await response.blob();
+    if (!current()) return;
+    const url = URL.createObjectURL(blob);
+    download(url, '.lrc'); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    if (current()) message(error instanceof Error ? error.message : 'Could not export LRC lyrics.', true);
+  } finally { if (lrcExportGeneration === generation) lrcExportGeneration = null; controls(); }
+});
 element('ass-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/ass`, '.ass'); });
 element('video-download').addEventListener('click', () => { if (videoUrl && !timingOwner) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {

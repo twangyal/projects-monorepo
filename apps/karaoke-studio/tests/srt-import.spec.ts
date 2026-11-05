@@ -206,3 +206,63 @@ test('local LRC previews line timing, cancels safely, applies as one edit and su
   await expect(page.locator('#srt-status')).toContainText('offset');
   expect(await editorCues(page)).toEqual(after); await expect(page.locator('#srt-apply')).toBeDisabled();
 });
+
+test('downloaded LRC re-imports short cues and gaps without changing saved lyrics', async ({ page, request, clips }) => {
+  const project = await clips.create();
+  const cues = [{start:1.001,end:1.003,text:'One'}, {start:1.004,end:1.006,text:'Two'}, {start:3.994,end:4,text:'Last'}];
+  const token = (await (await request.get('/api/session')).json()).token;
+  const reply = await request.put(`/api/projects/${project.id}`, { headers:{'X-Karaoke-Token':token}, data:{revision:project.revision,title:project.title,cues} });
+  expect(reply.status()).toBe(200);
+  const saved = await reply.json() as OriginalProject;
+  await openClip(page, saved);
+  const wait = page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export word-timed LRC',exact:true}).click();
+  const file = await wait;
+  await page.getByLabel('Import timed lyrics (LRC)',{exact:true}).setInputFiles({name:file.suggestedFilename(),mimeType:'text/plain',buffer:await readFile((await file.path())!)});
+  await reviewReady(page, 3);
+  await expect(page.locator('#srt-summary')).toContainText('00:00:01,001');
+  await page.locator('#srt-apply').click();
+  expect(await editorCues(page)).toEqual(cues);
+  expect(await projectFromServer(request, project.id)).toEqual(saved);
+});
+
+test('LRC export explains an unrepresentable saved cue without downloading an error file', async ({page, request, clips}) => {
+  const project = await clips.create(), token = (await (await request.get('/api/session')).json()).token;
+  const reply = await request.put(`/api/projects/${project.id}`, {headers:{'X-Karaoke-Token':token},data:{revision:project.revision,title:project.title,cues:[{start:1.0001,end:1.0002,text:'Too short'}]}});
+  expect(reply.status()).toBe(200);
+  const saved = await reply.json() as OriginalProject;
+  await openClip(page, saved);
+  const downloads: string[] = [];
+  page.on('download', file => downloads.push(file.suggestedFilename()));
+  await page.getByRole('button',{name:'Export word-timed LRC',exact:true}).click();
+  await expect(page.locator('#message')).toContainText('Lyric line 1 collapses at LRC millisecond precision');
+  expect(downloads).toEqual([]);
+  expect(await projectFromServer(request, project.id)).toEqual(saved);
+});
+
+test('a held LRC reply cannot download after switching clips or block the new clip export', async ({page, clips}) => {
+  const first = await clips.create('First held LRC'), second = await clips.create('Second ready LRC');
+  let release!: () => void, entered!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  await page.route(`**/api/projects/${first.id}/lrc`, async route => {
+    const response = await route.fetch();
+    entered(); await held;
+    await route.fulfill({response});
+  });
+  await openClip(page, first);
+  const button = page.getByRole('button',{name:'Export word-timed LRC',exact:true});
+  const files: string[] = [];
+  page.on('download', file => files.push(file.suggestedFilename()));
+  await button.click(); await started;
+  await expect(button).toBeDisabled();
+  await page.locator('#projects').selectOption(second.id);
+  await expect(page.locator('#title')).toHaveValue(second.title);
+  await expect(button).toBeEnabled();
+  const reply = page.waitForResponse(response => response.url().endsWith(`/${first.id}/lrc`));
+  release(); await (await reply).finished();
+  const next = page.waitForEvent('download');
+  await button.click();
+  expect((await next).suggestedFilename()).toBe('Second-ready-LRC.lrc');
+  expect(files).toEqual(['Second-ready-LRC.lrc']);
+});

@@ -34,7 +34,7 @@ export function parseSyncedLyrics(lrc:string,duration:number,maxHold=MAX_HOLD):L
     }
     const text=tags[2]!.replace(/<\d{1,3}:\d{2}(?:[.:]\d{1,3})?>/g,'').replace(/\s+/g,' ').trim();
     for(const tag of tags[1]!.matchAll(/\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g)){
-      const fraction=tag[3]?Number(tag[3])/10**tag[3].length:0,time=Number(tag[1])*60+Number(tag[2])+fraction;
+      const milliseconds=(Number(tag[1])*60+Number(tag[2]))*1000+Number((tag[3]??'').padEnd(3,'0')),time=milliseconds/1000;
       if(Number(tag[2])>=60||time>duration||(text&&time===duration))return null;
       stamps.push({time,text});if(stamps.length>401)return null;
     }
