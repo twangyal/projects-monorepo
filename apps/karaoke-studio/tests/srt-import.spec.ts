@@ -294,3 +294,47 @@ test('a dense word-timed export re-imports locally while SRT and LRC file caps s
   await expect(first).toHaveValue('Draft before dense import');
   expect(await projectFromServer(request,project.id)).toEqual(saved);
 });
+
+for (const format of ['SRT', 'LRC']) test(`listen to a reviewed ${format} cue without changing current lyrics`, async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  const draft = page.getByLabel('Start line 1', { exact: true });
+  await draft.fill('');
+  if (format === 'SRT') await chooseSrt(page);
+  else await page.locator('#lrc-file').setInputFiles({ name: 'review.lrc', mimeType: 'text/plain', buffer: Buffer.from('[00:00.33]First\n[00:01.25]Second\n[00:02.50]\n[00:03.00]Third\n') });
+  await reviewReady(page);
+  const audio = page.locator('#audio');
+  const paused = () => audio.evaluate(node => (node as HTMLAudioElement).paused);
+  const time = () => audio.evaluate(node => (node as HTMLAudioElement).currentTime);
+  const listen = page.getByRole('button', { name: 'Listen to imported line 2', exact: true });
+  await listen.click();
+  await expect.poll(paused).toBe(false);
+  expect(await time()).toBeGreaterThanOrEqual(1.25);
+  await expect.poll(paused).toBe(true);
+  expect(await time()).toBeCloseTo(2.5, 2);
+  expect(await editorCues(page)).toEqual([{ ...BEFORE[0], start: 0 }, BEFORE[1]]);
+  await expect(draft).toHaveValue('');
+  await expect(page.locator('#undo-lyrics')).toBeEnabled();
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+
+  const third = page.getByRole('button', { name: 'Listen to imported line 3', exact: true });
+  await third.click();
+  await page.getByRole('button', { name: 'Stop imported line', exact: true }).click();
+  await expect.poll(paused).toBe(true);
+  if (format === 'LRC') {
+    await third.click();
+    await expect.poll(paused).toBe(false);
+    await page.locator('[data-track="vocals"]').click();
+    await expect(audio).toHaveAttribute('src', /\/audio\/vocals$/);
+    await expect.poll(paused).toBe(true);
+    await expect(third).toBeEnabled();
+  }
+  await third.click();
+  await expect.poll(paused).toBe(false);
+  await page.locator('#srt-cancel').click();
+  await expect.poll(paused).toBe(true);
+  await expect(page.locator('#srt-review')).toBeHidden();
+  await page.locator('#undo-lyrics').click();
+  expect(await editorCues(page)).toEqual(BEFORE);
+  await expect(page.locator('#undo-lyrics')).toBeDisabled();
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+});
