@@ -134,3 +134,65 @@ test('equivalent decimal dimensions agree across units, and chest and hem valida
   assert.deepEqual(skirt.product.measurements, { ...template('flared-skirt').measurements, hem: 160 });
   assert.deepEqual(skirt.ignored, []);
 });
+
+test('precise fitted skirt hip and waistband build a styled, measured pattern together', () => {
+  const source = template('blank'), before = structuredClone(source);
+  const reading = readDesignPrompt('navy pencil skirt, waist 80 cm, fitted hip 1040 mm, hem 96 cm, red waistband height 50 mm', source);
+  assert.deepEqual(reading.product.measurements, { waist: 80, hip: 104, hem: 96, slant: 60, waistbandHeight: 5 });
+  assert.equal(reading.product.parts.front.color, '#1f2a4f');
+  assert.equal(reading.product.parts.waistband.color, '#b23a2e');
+  assert.deepEqual(reading.ignored, []);
+  assert.deepEqual(source, before);
+  const removed = readDesignPrompt('waistband height 0 cm', reading.product).product;
+  assert.equal('waistbandHeight' in removed.measurements, false);
+  assert.equal(removed.parts.waistband, undefined);
+  assert.throws(() => readDesignPrompt('fitted hip 82 cm', reading.product), /hip must be at least 6 cm/i);
+  assert.throws(() => readDesignPrompt('waistband height 1 cm', reading.product), /waistband height/i);
+  const flared = readDesignPrompt('navy flared skirt, hip 104 cm', template('flared-skirt'));
+  assert.equal('hip' in flared.product.measurements, false);
+  assert.ok(flared.ignored.some(value => value.includes('hip 104 cm')));
+});
+
+test('described ankle cuffs follow trouser geometry and keep existing colorway styling', () => {
+  const source = template('joggers');
+  source.colorways = [{ id: 'other', name: 'Other', parts: structuredClone(source.parts), units: 1 }];
+  source.colorways[0].parts.cuffLeft.color = '#123456';
+  const before = structuredClone(source);
+  const reading = readDesignPrompt('inseam 64 cm, red ankle cuff height 50 mm', source);
+  assert.equal(legMeasurements(reading.product).inseam, 64);
+  assert.equal(legMeasurements(reading.product).cuffHeight, 5);
+  assert.equal(reading.product.parts.cuffLeft.color, '#b23a2e');
+  assert.equal(reading.product.colorways?.[0].parts.cuffLeft.color, '#123456');
+  assert.deepEqual(source, before);
+  const removed = readDesignPrompt('ankle cuff height 0 cm', reading.product).product;
+  assert.equal(legMeasurements(removed).cuffHeight, undefined);
+  assert.equal(removed.parts.cuffLeft, undefined);
+  assert.equal(removed.colorways?.[0].parts.cuffLeft, undefined);
+  assert.throws(() => readDesignPrompt('ankle cuff height 30 cm', source), /cuff height/i);
+});
+
+test('measured trim clauses never spread their style to another part or borrow another part’s style', () => {
+  const skirt = template('pencil-skirt'), joggers = template('joggers');
+  assert.equal(readDesignPrompt('red waistband height 0 cm', skirt).product.parts.front.color, skirt.parts.front.color);
+  assert.equal(readDesignPrompt('red ankle cuff height 0 cm', joggers).product.parts.front.color, joggers.parts.front.color);
+  assert.equal(readDesignPrompt('waistband height 5 cm, blue front', skirt).product.parts.waistband.color, skirt.parts.waistband.color);
+  assert.equal(readDesignPrompt('ankle cuff height 5 cm, blue front', joggers).product.parts.cuffLeft.color, joggers.parts.cuffLeft.color);
+  const unsupported = readDesignPrompt('red waistband height 5 cm', joggers);
+  assert.equal(unsupported.product.parts.front.color, joggers.parts.front.color);
+  assert.equal(unsupported.product.parts.waistband.color, '#b23a2e');
+  const tee = template('blank');
+  const fit = readDesignPrompt('navy tee, fitted hip 100 cm', tee);
+  assert.deepEqual(fit.product.measurements, tee.measurements);
+  assert.ok(fit.ignored.some(word => word.includes('fitted hip 100 cm')));
+});
+
+test('a fitted skirt brief uses its explicit dimensions before validating preset geometry', () => {
+  const source = { ...template('flared-skirt'), measurements: { waist: 50, hem: 165, slant: 60 } };
+  const reading = readDesignPrompt('pencil skirt, waist 80 cm, hip 104 cm, hem 96 cm', source);
+  assert.deepEqual(reading.product.measurements, { waist: 80, hip: 104, hem: 96, slant: 60 });
+  assert.deepEqual(reading.ignored, []);
+  assert.throws(() => readDesignPrompt('pencil skirt, waist 80 cm, hip 84 cm, hem 90 cm', source), /hip must be at least 6 cm/i);
+  const fallback = readDesignPrompt('navy pencil skirt', source);
+  assert.deepEqual(fallback.product.measurements, source.measurements);
+  assert.ok(fallback.ignored.some(word => word.includes('cannot be fitted')));
+});

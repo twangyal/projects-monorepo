@@ -171,3 +171,31 @@ test('a described fit opens in the linked pattern controls and Undo restores the
   await page.getByRole('button',{name:'Undo',exact:true}).click();
   expect((await backup(page)).product).toEqual(before);
 });
+
+test('described skirt hips and bands and ankle cuffs reach the editable patterns', async ({page}) => {
+  await page.goto('/');
+  const panel = editor(page), prompt = panel.getByLabel('Describe a style',{exact:true});
+  const apply = panel.getByRole('button',{name:'Apply to the garment',exact:true});
+  const before = (await backup(page)).product;
+  await prompt.fill('navy pencil skirt, waist 80 cm, fitted hip 1040 mm, hem 96 cm, red waistband height 50 mm');
+  await apply.click();
+  await expect(panel.getByLabel('Fitted hip (cm)', { exact: true })).toHaveValue('104');
+  await expect(panel.getByLabel('Skirt waistband height (cm)', { exact: true })).toHaveValue('5');
+  await expect(panel.locator('[data-piece="waistband"]')).toHaveAttribute('aria-label', 'Waistband, 80.0 by 10.0 cm');
+  const skirt = (await backup(page)).product;
+  expect(skirt.parts.waistband.color).toBe('#b23a2e');
+  await page.getByRole('button',{name:'Undo',exact:true}).click();
+  expect((await backup(page)).product).toEqual(before);
+
+  await prompt.fill('navy trousers, inseam 68 cm, red ankle cuff height 60 mm');
+  await apply.click();
+  await expect(panel.locator('#product-inseam')).toHaveValue('68');
+  await expect(panel.locator('#product-leg-cuff')).toHaveValue('6');
+  await expect(panel.locator('[data-piece="cuffLeft"]')).toBeVisible();
+  const trousers = (await backup(page)).product;
+  expect(trousers.parts.cuffLeft.color).toBe('#b23a2e');
+  await prompt.fill('ankle cuff height 0 cm'); await apply.click();
+  await expect(panel.locator('[data-piece="cuffLeft"]')).toHaveCount(0);
+  await page.getByRole('button',{name:'Undo',exact:true}).click();
+  expect((await backup(page)).product).toEqual(trousers);
+});

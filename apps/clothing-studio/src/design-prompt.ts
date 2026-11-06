@@ -8,7 +8,7 @@ import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts'
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
   BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
-  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
+  template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
 export interface DesignReading { product: Product; scopes: DesignScope[]; ignored: string[]; /** Words in quotes, to print on the garment. */ text?: TextRequest }
@@ -192,9 +192,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     }
   }
 
+  let skirtFitPreset: 'pencil' | 'straight' | null = null;
   // Fit sets sizes against the base's reference measurements, so describing the same fit twice changes nothing more.
   if (top) {
-    const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted)(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
+    const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
     if (chest !== null) next.chest = clampTo(LIMITS.chest as readonly [number, number], r.chest + chest);
@@ -217,7 +218,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const gathered = take(/\b(?:gathered|dirndl)(?: waist)?\b/), smooth = !gathered && take(/\b(?:smooth|flat|ungathered)(?: waist)?\b/);
     // A pencil, straight or fitted skirt follows the hip (about a third more than the waist), a pencil skirt narrowing
     // to its hem.
-    const pencil = take(/\b(?:pencil|wiggle|hobble)\b/), straight = !pencil && take(/\b(?:straight|fitted|tailored|tight)\b/), flowing = !pencil && !straight && take(/\b(?:flared|flowing|a-?line|circle)\b/);
+    const pencil = take(/\b(?:pencil|wiggle|hobble)\b/), straight = !pencil && take(/\b(?:straight|fitted(?! hip\b)|tailored|tight)\b/), flowing = !pencil && !straight && take(/\b(?:flared|flowing|a-?line|circle)\b/);
     const plain = take(/\b(?:unpleated|no pleats|without pleats)\b/), boxed = !plain && take(/\bbox[- ]?pleat(?:ed|s)?\b/);
     const knife = !plain && !boxed && take(/\b(?:knife[- ]?)?pleat(?:ed|s)\b/);
     const m = product.measurements as SkirtMeasures, bare: SkirtMeasures = { ...m };
@@ -237,11 +238,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       product.measurements = { ...bare, ...(m.gather ? { gather: m.gather } : {}) }; garment.push('no pleats');
     }
     if (pencil || straight) {
-      const now = product.measurements as SkirtMeasures, fitted: SkirtMeasures = { ...now };
-      delete fitted.gather; delete fitted.pleats;
-      const hip = now.hip ?? Math.round(now.waist * 1.36), hem = pencil ? hip - 6 : hip;
-      try { product.measurements = validateSkirtMeasures({ ...fitted, hip, hem, slant: Math.max(now.slant, 40) }); garment.push(`${pencil ? 'pencil' : 'straight'} skirt: fitted to a ${hip} cm hip with darts, ${hem} cm hem`); }
-      catch { notApplied.push(`${pencil ? 'pencil' : 'straight'} skirt (this waist cannot be fitted)`); }
+      // Wait for explicit dimensions before judging the fitted geometry.
+      skirtFitPreset = pencil ? 'pencil' : 'straight';
     } else if (flowing && (product.measurements as SkirtMeasures).hip !== undefined) {
       const flared: SkirtMeasures = { ...(product.measurements as SkirtMeasures) }; delete flared.hip;
       product.measurements = flared; garment.push('flared skirt: no longer fitted');
@@ -250,17 +248,21 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
 
   // Explicit garment dimensions override rough fit presets. Only a named measurement next to a unit is read;
   // a print repeat such as "stripes 6 cm" remains with the style interpreter.
-  const labels = [...Object.keys(TOP_FIT_LABELS), 'leg opening|sleeve length|sleeves?|chest|length|waist|hip|inseam|rise|hem|slant'].join('|');
+  const labels = [...Object.keys(TOP_FIT_LABELS), 'waistband(?: height)?|ankle cuffs?(?: height)?|fitted hip|leg opening|sleeve length|sleeves?|chest|length|waist|hip|inseam|rise|hem|slant'].join('|');
   const number = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)';
   const measured = new RegExp(`\\b(${labels})\\s*(?:of|:|=)?\\s*(${number})\\s*(cm|mm)\\b|(?<![\\w.+-])(?<!\\d,)(${number})\\s*(cm|mm)\\s+(${labels})\\b`, 'g');
   const values = new Map<string, number>(), fitValues = new Map<FitKey, number>();
+  const measuredParts: { start: number; parts: PartId[] }[] = [];
   const supported = new Set(top ? ['chest', 'length', 'sleeve'] : product.base === 'trousers'
-    ? ['waist', 'hip', 'inseam', 'rise', 'legOpening'] : ['waist', 'hem', 'slant']);
+    ? ['waist', 'hip', 'inseam', 'rise', 'legOpening', 'ankle cuff height']
+    : ['waist', 'hem', 'slant', 'waistband height', ...(skirtFitPreset || (product.measurements as SkirtMeasures).hip !== undefined ? ['hip'] : [])]);
   for (const match of text.matchAll(measured)) {
     const label = match[1] ?? match[6], raw = match[2] ?? match[4], unit = match[3] ?? match[5];
     // On skirts, "hem width" still describes the full hem, as in the existing hem measurement.
     const key = label.startsWith('sleeve') ? 'sleeve' : label === 'leg opening' ? 'legOpening'
-      : label === 'hem width' && supported.has('hem') ? 'hem' : label;
+      : label === 'hem width' && supported.has('hem') ? 'hem'
+      : label === 'fitted hip' && product.base === 'skirt' ? 'hip' : label.startsWith('waistband') ? 'waistband height'
+      : label.startsWith('ankle cuff') ? 'ankle cuff height' : label;
     // Convert the written decimal in one step so equivalent cm and mm values compare equally.
     const value = Number(unit === 'mm' ? `${raw}e-1` : raw);
     const fit = TOP_FIT_LABELS[label];
@@ -273,13 +275,32 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       values.set(key, value);
     }
     const start = match.index!;
-    // Keep the part scope in "red sleeves 25 cm" without changing later match positions.
+    // A measured trim scopes adjacent styling to that trim, even if it was removed or the height is unsupported.
+    if (key === 'waistband height') measuredParts.push({ start, parts: ['waistband'] });
+    if (key === 'ankle cuff height') measuredParts.push({ start, parts: ['cuffLeft', 'cuffRight'] });
     const remaining = key === 'sleeve' && supported.has(key) ? 'sleeves' : '';
     text = text.slice(0, start) + remaining.padEnd(match[0].length) + text.slice(start + match[0].length);
   }
+  if (skirtFitPreset) {
+    const m = product.measurements as SkirtMeasures, fitted: SkirtMeasures = { ...m };
+    delete fitted.gather; delete fitted.pleats;
+    const waist = values.get('waist') ?? m.waist, hip = values.get('hip') ?? m.hip ?? Math.round(waist * 1.36);
+    const hem = values.get('hem') ?? (skirtFitPreset === 'pencil' ? hip - 6 : hip);
+    const slant = values.get('slant') ?? Math.max(m.slant, 40);
+    try {
+      product.measurements = validateSkirtMeasures({ ...fitted, waist, hip, hem, slant });
+      garment.push(`${skirtFitPreset} skirt: fitted to a ${hip} cm hip with darts, ${hem} cm hem`);
+    } catch (error) {
+      if (['waist', 'hip', 'hem', 'slant'].some(key => values.has(key))) throw error;
+      notApplied.push(`${skirtFitPreset} skirt (this waist cannot be fitted)`);
+    }
+  }
   if (values.size) {
-    const measures = { ...product.measurements, ...Object.fromEntries(values) };
-    product.measurements = measures as Product['measurements'];
+    const { 'waistband height': waistband, 'ankle cuff height': cuff, ...dimensions } = Object.fromEntries(values);
+    product.measurements = { ...product.measurements, ...dimensions } as Product['measurements'];
+    // These change the available parts as well as the measurements. Apply after merging the other dimensions.
+    if (waistband !== undefined) product = withSkirtWaistband(product, waistband);
+    if (cuff !== undefined) product = withLegCuffs(product, cuff);
     if (top && values.has('sleeve')) product = withSleeveLength(product, values.get('sleeve')!);
     for (const [key, value] of values) garment.push(`${key === 'legOpening' ? 'leg opening' : key}: ${value} cm`);
   }
@@ -292,7 +313,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
 
   // Clauses: a clause that names parts styles them; the others are read together as the whole garment's style.
   const available = new Set(partsOf(product));
-  const clauses = text.split(/,|;|\band\b|\bwith\b|\bbut\b|\bplus\b/).map(clause => {
+  let clauseStart = 0;
+  const clauses = text.split(/(,|;|\band\b|\bwith\b|\bbut\b|\bplus\b)/).flatMap((clause, index) => {
+    const start = clauseStart;
+    clauseStart += clause.length;
+    if (index % 2) return [];
     let words = clause, parts: PartId[] = [];
     const named: string[] = [];
     for (const [pattern, resolve] of PART_WORDS) {
@@ -302,15 +327,17 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         parts.push(...resolve(available));
       }
     }
+    const measured = words.trim() ? measuredParts.filter(item => item.start >= start && item.start < clauseStart) : [];
+    parts.push(...measured.flatMap(item => item.parts));
     const missing = parts.filter(id => !available.has(id));
     for (const id of new Set(missing)) if (!notApplied.some(item => item.startsWith(PART_NAMES[id].toLowerCase()))) notApplied.push(`${PART_NAMES[id].toLowerCase()} (not on this ${BASE_NAMES[product.base].toLowerCase()})`);
     parts = [...new Set(parts.filter(id => available.has(id)))];
-    return { words: words.trim(), parts, named: named.length > 0 };
+    return [{ words: words.trim(), parts, named: named.length > 0 || measured.length > 0, explicit: named.length > 0 }];
   });
   const stylesSomething = (words: string) => !!words && readStylePrompt(words, product.parts.front, { allowUnapplied: true }).understood.length > 0;
   // "Navy sleeves and cuffs": a part clause without style words takes the next part clause's words, else the previous.
   clauses.forEach((clause, index) => {
-    if (!clause.named || stylesSomething(clause.words)) return;
+    if (!clause.explicit || stylesSomething(clause.words)) return;
     const later = clauses.slice(index + 1).find(other => other.named && stylesSomething(other.words));
     const earlier = clauses.slice(0, index).reverse().find(other => other.named && stylesSomething(other.words));
     const donor = later ?? earlier;
