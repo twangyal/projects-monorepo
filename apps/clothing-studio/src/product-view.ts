@@ -399,15 +399,30 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     } catch (error) { options.notice(error instanceof Error ? error.message : 'That garment cannot be worn with these.', true); renderWearWith(design); }
   });
   wearWith.addEventListener('change', () => {
-    const value = wearWith.value, design = product() ?? template('blank');
+    const value = wearWith.value, current = options.current(), design = current.product ?? template('blank');
     if (value === 'kept') return;
     const worn = value.startsWith('t:') ? template(value.slice(2)) : value.startsWith('s:') ? savedOutfits.get(value.slice(2)) : undefined;
-    const rest = { ...options.current() };
-    delete rest.wornWith; delete rest.wornAlso;
+    if (value && (!worn || !canWearTogether(design, worn))) {
+      options.notice('That garment is no longer available for this outfit.', true); renderWearWith(design); return;
+    }
+    const also = current.wornAlso;
+    const keepAlso = worn && also && threePiece([design, worn, also]) ? also : undefined;
+    if (also && !keepAlso) {
+      const question = worn
+        ? `“${also.name}” cannot stay with “${worn.name}” in this outfit. Remove the third garment and continue? You can undo this.`
+        : `Remove both worn garments, including “${also.name}”? You can undo this.`;
+      if (!window.confirm(question)) { renderWearWith(design); return; }
+    }
+    const rest = { ...current };
+    delete rest.wornWith; delete rest.wornAlso; delete rest.tucked;
+    const keepTucked = current.tucked && worn && !keepAlso && isBottoms(design) !== isBottoms(worn)
+      && canTuck(isBottoms(design) ? worn : design);
     retireAssets();
     try {
-      commit(worn ? { ...rest, wornWith: validateProduct(structuredClone(worn)) } : rest);
-      options.notice(worn ? `The ${design.name} is worn with the ${worn.name}.${draping ? '' : ' Drape on a body to see them together.'} You can undo this.` : `The ${design.name} is worn on its own. You can undo this.`);
+      commit(worn ? { ...rest, wornWith: validateProduct(structuredClone(worn)), ...(keepAlso ? { wornAlso: keepAlso } : {}), ...(keepTucked ? { tucked: true } : {}) } : rest);
+      options.notice(worn
+        ? `The ${design.name} is worn with the ${worn.name}${keepAlso ? ` and the ${keepAlso.name}` : ''}.${draping ? '' : ' Drape on a body to see them together.'} You can undo this.`
+        : `The ${design.name} is worn on its own. You can undo this.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'That garment cannot be worn with this one.', true); renderWearWith(design); }
   });
   const drapeTime = $('garment-drape-frames') as HTMLSelectElement;

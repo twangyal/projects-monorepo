@@ -57,3 +57,44 @@ test('switching during an outfit drape uses the new sample and exports both kept
   expect(json.nodes.some((n: { name?: string }) => n.name === 'Body')).toBe(false);
   expect(await backup(page)).toEqual(switched);
 });
+
+test('replacing an outfit companion keeps a compatible edited third garment', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#product-editor').getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  const also = page.getByRole('combobox', { name: 'And with', exact: true });
+  await wear.selectOption({ label: 'Straight trousers' });
+  await also.selectOption({ label: 'Crew sweatshirt' });
+  const edited = await backup(page); edited.wornAlso.name = 'My outer layer'; edited.wornAlso.parts.front.color = '#2244aa';
+  await page.getByLabel('Import project backup', { exact: true }).setInputFiles({ name: 'kept-layer.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(edited)) });
+  await expect(also.locator('option:checked')).toContainText('My outer layer');
+  await wear.selectOption({ label: 'Flared skirt' });
+  const replaced = await backup(page);
+  expect(replaced.wornWith.base).toBe('skirt');
+  expect(replaced.wornAlso).toEqual(edited.wornAlso);
+  await expect(also.locator('option:checked')).toContainText('My outer layer');
+
+  page.once('dialog', async dialog => { expect(dialog.message()).toContain('My outer layer'); await dialog.dismiss(); });
+  await wear.selectOption({ label: 'Pullover hoodie' });
+  expect(await backup(page)).toEqual(replaced);
+  await expect(wear.locator('option:checked')).toContainText('Flared skirt');
+  page.once('dialog', async dialog => { expect(dialog.message()).toContain('My outer layer'); await dialog.accept(); });
+  await wear.selectOption({ label: 'Pullover hoodie' });
+  const accepted = await backup(page);
+  expect(accepted.wornWith.base).toBe('hoodie'); expect(accepted.wornAlso).toBeUndefined();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect(await backup(page)).toEqual(replaced);
+});
+
+test('tucking follows compatible bottoms and clears when changing to two tops', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#product-editor').getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  const tuck = page.getByRole('checkbox', { name: 'Tuck the top in', exact: true });
+  await wear.selectOption({ label: 'Straight trousers' }); await tuck.check();
+  await wear.selectOption({ label: 'Flared skirt' });
+  await expect(tuck).toBeChecked(); expect((await backup(page)).tucked).toBe(true);
+  await wear.selectOption({ label: 'Pullover hoodie' });
+  await expect(tuck).toBeDisabled(); expect((await backup(page)).tucked).toBeUndefined();
+  await wear.selectOption({ label: 'Straight trousers' }); await expect(tuck).not.toBeChecked();
+});

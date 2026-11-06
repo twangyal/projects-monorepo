@@ -31,6 +31,8 @@ Optional **underbust girth** gives the body a bust: the chest is then measured r
 
 Optional **upper-arm girth** sets the upper arm on the proxy without narrowing it to fit the selected sleeve. It follows body profiles, project backups, outfits and matched fabric comparisons. Blank keeps automatic dimensions; forearms, wrists and shoulder placement stay assumed, and this does not validate fit.
 
+Changing **Wear with** keeps an edited third garment when it is compatible with the new outfit. If it cannot stay, the studio asks before removing it.
+
 Use **Edit worn garment** beside Wear with to switch between editing the two applied outfit garments. Both copies and shared body settings stay together; edits affect only the current garment. Switching is one Undo step, requires applied/discarded product drafts, and returns 3D and pattern export sizing to the new garment’s sample. The saved-library source stays separate.
 
 Fabric comparisons of a top worn with bottoms use the same resolved waist and hip girths as the outfit preview. The comparison isolates the top; it does not simulate contact with the other garment.
