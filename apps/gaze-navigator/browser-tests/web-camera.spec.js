@@ -736,3 +736,38 @@ for (const hiddenEstimate of [false, true]) test(`returning to the tab needs fre
   await expect(sort).toHaveValue('Title');
   expect(await page.evaluate(() => window.gazeNavigator.calibrating)).toBe(false);
 });
+
+test('a camera estimate produced while hidden cannot restore gaze after the tab returns', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => createLocalCamera({
+      ...options, onGaze: (...estimate) => {
+        if (window.__holdEstimate) window.__deliverEstimate = () => options.onGaze(...estimate);
+        else options.onGaze(...estimate);
+      },
+    }) });
+  });
+  await startCamera(page); await finishCalibration(page);
+  const sort = page.getByLabel('Sort by');
+  await gazeAt(page, sort);
+  await page.evaluate(() => {
+    window.__holdEstimate = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await gazeAt(page, sort);
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.__holdEstimate = false;
+    window.__deliverEstimate();
+  });
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Newest');
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Title');
+});

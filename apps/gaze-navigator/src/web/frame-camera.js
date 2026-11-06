@@ -65,7 +65,12 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
     }), 'The camera frame did not answer.');
     connection.onMessage.addListener(message => {
       if (message?.type === 'gaze') {
-        if (current === session && state === 'ready') onGaze(message.x, message.y, window.performance.now());
+        // Translate the capture frame's estimate time, rather than treating a queued reply as fresh.
+        if (current === session && state === 'ready' && Number.isFinite(message.sampledAt)) {
+          const time = message.sampledAt - window.performance.timeOrigin;
+          // The two contexts can round their clocks differently; allow a millisecond for this.
+          if (time >= 0 && time <= window.performance.now() + 1) onGaze(message.x, message.y, time);
+        }
         return;
       }
       if (message?.type === 'lost') {

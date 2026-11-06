@@ -25,7 +25,7 @@ const camera = createLocalCamera({
     saveCalibration: calibration => { chrome.storage.session.set({ [CALIBRATION]: calibration }).catch(() => {}); },
     clearCalibration: () => { chrome.storage.session.remove(CALIBRATION).catch(() => {}); },
   },
-  onGaze: (x, y) => port?.postMessage({ type: 'gaze', x, y }),
+  onGaze: (x, y, time) => port?.postMessage({ type: 'gaze', x, y, sampledAt: window.performance.timeOrigin + time }),
   onLost: reason => port?.postMessage({ type: 'lost', ...(reason === 'frozen' ? { reason } : {}) }),
 });
 

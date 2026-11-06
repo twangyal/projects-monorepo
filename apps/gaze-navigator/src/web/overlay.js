@@ -310,6 +310,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let cameraUnavailable = false;
   let cameraSilenceTimer = null;
   let cameraEstimateAt = null;
+  let cameraVisibleSince = null;
   let cameraCalibrated = false;
   let calibrationGeneration = 0;
   let viewport = { width: window.innerWidth, height: window.innerHeight };
@@ -602,6 +603,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
     if (stopped || closing || document.hidden) return;
+    if (settings.source === 'camera' && (!Number.isFinite(time) || (cameraVisibleSince !== null && time <= cameraVisibleSince))) return;
     if (settings.source === 'camera' && Number.isFinite(x) && Number.isFinite(y)) {
       const now = window.performance.now();
       // A resumed estimate must retire the old target before refreshing an overdue deadline.
@@ -1062,7 +1064,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.useHead.addEventListener('click', () => run('use head pointer', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
   const onVisibilityChange = () => {
-    if (!document.hidden || stopped || closing) return;
+    if (stopped || closing) return;
+    if (!document.hidden) {
+      cameraVisibleSince = window.performance.now();
+      return;
+    }
     const wasListening = speech.listening;
     const activeCalibration = calibration;
     const wasCalibrated = cameraCalibrated;
