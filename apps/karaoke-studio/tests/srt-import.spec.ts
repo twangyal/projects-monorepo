@@ -372,3 +372,37 @@ test('one imported line cannot overwrite multiple current lyric lines', async ({
   expect(await projectFromServer(request, project.id)).toEqual(project);
   await expect(page.locator('#undo-lyrics')).toBeDisabled();
 });
+
+for (const format of ['SRT', 'LRC']) test(`shift reviewed ${format} timing without changing current lyrics`, async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  if (format === 'SRT') await chooseSrt(page, Buffer.from('1\n00:00:01,000 --> 00:00:02,000\nShift me\n'));
+  else await page.locator('#lrc-file').setInputFiles({ name: 'offset.lrc', mimeType: 'text/plain',
+    buffer: Buffer.from('[00:01.000]Shift me\n[00:02.000]\n') });
+  await reviewReady(page, 1);
+  const row = page.locator('[data-srt-cue="0"] strong');
+  const field = page.getByLabel('Offset from file (seconds)', { exact: true });
+  const preview = page.getByRole('button', { name: 'Preview offset', exact: true });
+  await field.fill('.5'); await preview.click();
+  await expect(row).toContainText(/00:00:01[,.]500.*00:00:02[,.]500/);
+  const audio = page.locator('#audio');
+  await page.getByRole('button', { name: 'Listen to imported line 1' }).click();
+  await expect.poll(() => audio.evaluate(node => (node as HTMLAudioElement).paused)).toBe(false);
+  expect(await audio.evaluate(node => (node as HTMLAudioElement).currentTime)).toBeGreaterThanOrEqual(1.5);
+  await field.fill('10'); await preview.click();
+  await expect(page.locator('#import-offset-status')).toContainText('within the clip');
+  await expect(row).toContainText(/00:00:01[,.]500/);
+  await field.fill('-.5'); await preview.click();
+  await expect(row).toContainText(/00:00:00[,.]500.*00:00:01[,.]500/);
+  await expect.poll(() => audio.evaluate(node => (node as HTMLAudioElement).paused)).toBe(true);
+  expect(await editorCues(page)).toEqual(BEFORE);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.getByRole('button', { name: 'Reset to file times', exact: true }).click();
+  await expect(row).toContainText(/00:00:01[,.]000.*00:00:02[,.]000/);
+  await field.fill('.5'); await preview.click();
+  if (format === 'SRT') await page.locator('#srt-apply').click();
+  else await page.getByRole('button', { name: 'Apply imported line 1', exact: true }).click();
+  const shifted = { start: 1.5, end: 2.5, text: 'Shift me' };
+  expect(await editorCues(page)).toEqual(format === 'SRT' ? [shifted] : [BEFORE[0], shifted]);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
+});

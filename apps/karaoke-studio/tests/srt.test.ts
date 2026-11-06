@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_SRT_BYTES, parseSrt } from '../src/srt.ts';
+import { MAX_SRT_BYTES, parseSrt, shiftImportedCues } from '../src/srt.ts';
 import { MAX_DURATION } from '../src/lyrics.ts';
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
@@ -137,4 +137,14 @@ test('input subarray byte range is honored and successful outputs are detached',
   assert.equal(b[0].text, 'First line');
   assert.deepEqual(backing, before);
   assert.throws(() => parseSrt(null as unknown as Uint8Array, 2));
+});
+
+test('import timing offsets keep millisecond precision and accept an exact clip boundary', () => {
+  const cues = [{ start: .5, end: 1.102, text: 'Line' }];
+  assert.deepEqual(shiftImportedCues(cues, 4.1, '2.998'), { cues: [{ start: 3.498, end: 4.1, text: 'Line' }], offset: 2.998 });
+  assert.throws(() => shiftImportedCues(cues, 4.1, '2.999'), /within the clip/);
+  assert.throws(() => shiftImportedCues(cues, 4.1, '.0001'), /three decimal/);
+  assert.deepEqual(shiftImportedCues(cues, 4.1, '-.5').cues, [{ start: 0, end: .602, text: 'Line' }]);
+  const fractionalEnd = [{ start: .5, end: 1.1025, text: 'Tail' }];
+  assert.equal(shiftImportedCues(fractionalEnd, 1.1025, '-.1').cues[0].end, 1.1025 - .1);
 });
