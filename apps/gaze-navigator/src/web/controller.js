@@ -3,7 +3,7 @@
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { keyLabel } from './page-actions.js';
-import { NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
+import { captureActivationSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -86,6 +86,11 @@ export function createController({ window, actions = pageActions, interpret = in
     return null;
   }
 
+  function activationOf(action, target) {
+    return action.type === 'activate' && target?.element && !target.element.remote
+      ? target.activationSnapshot ?? captureActivationSnapshot(target.element) : null;
+  }
+
   function perform(action, context) {
     if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
@@ -94,12 +99,12 @@ export function createController({ window, actions = pageActions, interpret = in
       if (problem) return problem;
       // A control named far from the gaze is used only once the user agrees it is the one they meant.
       if (action.far) {
-        pending = { kind: 'confirm', action: { ...action, far: false }, context, farTarget: target, expiresAt: now() + confirmMs };
+        pending = { kind: 'confirm', action: { ...action, far: false }, context, farTarget: target, activation: activationOf(action, target), expiresAt: now() + confirmMs };
         const risk = confirmable(action, target) ? ' and may have consequences' : '';
         return reply(`"${target.name || target.role}" is not near your gaze${risk}; it is outlined on the page. Say confirm to use it, or cancel.`, 'question');
       }
       if (confirmable(action, target)) {
-        pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
+        pending = { kind: 'confirm', action, context, activation: activationOf(action, target), expiresAt: now() + confirmMs };
         const label = action.type === 'choose-option' ? `${action.optionName} in ${target.name || target.role}` : action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
         return reply(`"${label}" may have consequences. Say confirm to continue, or cancel.`, 'question');
       }
@@ -138,7 +143,7 @@ export function createController({ window, actions = pageActions, interpret = in
     return reply(result.message, result.ok ? 'success' : 'error');
   }
 
-  function execute(action, context) {
+  function execute(action, context, activation = null) {
     const executionTurn = turn;
     pending = null;
     if (BROWSER.has(action.type)) return runBrowser(action);
@@ -178,7 +183,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'select-radio': result = actions.selectRadio(element, target.radioSnapshot); break;
       case 'select-tab': result = actions.selectTab(element, target.tabSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'check': result = actions.setChecked(element, action.checked); break;
-      case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
+      case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus), ...(activation ? { confirmation: activation } : {}) }); break;
       case 'hover': result = actions.hover(element, target.name, hovered?.isConnected ? hovered : null); hovered = element; break;
       case 'double-click': result = actions.doubleClick(element, target.name); break;
       case 'context-menu': result = actions.contextMenu(element, target.name); break;
@@ -540,7 +545,7 @@ export function createController({ window, actions = pageActions, interpret = in
           pending = null;
           return reply('The focused page target changed. Give the shortcut again. No key was pressed.', 'error');
         }
-        return execute(confirmation.action, confirmation.context);
+        return execute(confirmation.action, confirmation.context, confirmation.activation);
       }
       pending = null;
       if (action.type === 'deny') return reply('Cancelled. Nothing was changed.', 'info', { cancelled: true });
@@ -602,7 +607,7 @@ export function createController({ window, actions = pageActions, interpret = in
       if (problem) return problem;
     }
     const risk = target && confirmable(offered, target) ? ' It may have consequences.' : '';
-    pending = { kind: 'confirm', action: offered, context, ...(target ? { farTarget: target } : {}), expiresAt: now() + confirmMs };
+    pending = { kind: 'confirm', action: offered, context, ...(target ? { farTarget: target } : {}), activation: activationOf(offered, target), expiresAt: now() + confirmMs };
     return reply(`Did you mean "${heardAs ?? (target.name || target.role)}"?${risk} Say confirm to do it, or cancel.`, 'question');
   }
 

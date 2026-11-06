@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { captureActivationSnapshot, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -718,12 +718,22 @@ export function writeValue(element, value, { caret = value.length } = {}) {
   }
 }
 
-export function activate(element, name, { preserveFocus = false } = {}) {
+const activationStillMatches = (element, snapshot) => {
+  const current = captureActivationSnapshot(element);
+  return current !== null && current.length === snapshot.length && snapshot.every((value, index) => value === current[index]);
+};
+const changedActivation = () => ({ ok: false, message: 'That control changed after confirmation was requested. Look at it again. Nothing was clicked.' });
+
+export function activate(element, name, { preserveFocus = false, confirmation = null } = {}) {
+  if (confirmation && !activationStillMatches(element, confirmation)) return changedActivation();
   const problem = linkProblem(element);
   if (problem) return { ok: false, message: problem };
   // Keyboard commands can select blur-dismissed suggestions without moving website focus.
   const editable = element.matches('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=image]):not([type=checkbox]):not([type=radio]), textarea, [contenteditable=""], [contenteditable="true"]');
   if (!preserveFocus || editable) element.focus({ preventScroll: true });
+  if (confirmation && !activationStillMatches(element, confirmation)) return changedActivation();
+  const focusedLinkProblem = linkProblem(element);
+  if (focusedLinkProblem) return { ok: false, message: focusedLinkProblem };
   if (editable) {
     return { ok: true, message: `${name || 'Field'} is ready for dictation.` };
   }

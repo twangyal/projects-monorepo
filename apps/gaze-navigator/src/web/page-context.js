@@ -423,6 +423,32 @@ export function captureTabSnapshot(element) {
       .map(tab => ({ element: tab, id: tab.id, name: accessibleName(tab), controls: tab.getAttribute('aria-controls'), type: tab.type })) : [] };
 }
 
+/** Capture the visible identity and native destination of a control awaiting a yes. */
+export function captureActivationSnapshot(element, name = null) {
+  if (!element?.getAttribute || !element.isConnected || !element.ownerDocument?.defaultView) return null;
+  const frames = [];
+  for (let document = element.ownerDocument; document.defaultView?.frameElement;) {
+    const frame = document.defaultView.frameElement;
+    if (!frame.isConnected || frame.contentDocument !== document) return null;
+    frames.push(frame, document); document = frame.ownerDocument;
+  }
+  const attr = name => element.getAttribute(name);
+  const link = element.tagName === 'A' && element.hasAttribute('href');
+  const submitter = ['BUTTON', 'INPUT'].includes(element.tagName) && ['submit', 'image'].includes(element.type);
+  const form = submitter ? element.form : null;
+  let destination = null;
+  if (form) {
+    const action = attr('formaction') ?? form.getAttribute('action');
+    try { destination = action?.trim() ? new URL(action, element.ownerDocument.baseURI).href : element.ownerDocument.URL; }
+    catch { destination = action; }
+  }
+  const baseTarget = () => element.ownerDocument.querySelector('base[target]')?.getAttribute('target') ?? null;
+  return [element.ownerDocument, element.getRootNode(), name ?? accessibleName(element), attr('role'), element.type, element.disabled, attr('aria-disabled'),
+    link ? element.href : null, link ? attr('target') || baseTarget() : null, attr('download'), form, destination,
+    form ? attr('formmethod') ?? form.getAttribute('method') : null,
+    form ? (attr('formtarget') ?? form.getAttribute('target')) || baseTarget() : null,
+    form ? attr('name') : null, form ? attr('value') : null, ...frames];
+}
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -433,7 +459,7 @@ function describe(element) {
     (element.tagName === 'INPUT' && ['submit', 'image'].includes(element.type));
   const name = accessibleName(element);
   const description = {
-    name, role, editable: isEditable(element), submits,
+    name, role, editable: isEditable(element), submits, activationSnapshot: captureActivationSnapshot(element, name),
     consequential: submits || CONSEQUENTIAL.test(name) || element.hasAttribute?.('download'),
   };
   const dateParts = datePartsOf(element);
