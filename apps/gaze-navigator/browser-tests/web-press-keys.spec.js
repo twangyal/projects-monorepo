@@ -44,3 +44,31 @@ test('keys said aloud reach the page: Escape closes a dialog, Tab moves focus, P
   await expect(status(page)).toContainText('Pressed Page Down: the page scrolled.');
   expect(await page.evaluate(() => scrollY)).toBeGreaterThan(before + 100);
 });
+
+test('confirming a modified Enter never retargets a different or detached focused field', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await page.evaluate(() => {
+    const fields = document.createElement('section');
+    fields.innerHTML = '<input id="original-composer"><input id="other-composer">';
+    document.body.prepend(fields);
+    window.sent = [];
+    document.addEventListener('keydown', event => {
+      if (event.ctrlKey && event.key === 'Enter') window.sent.push(event.target.id);
+    });
+  });
+  const first = page.locator('#original-composer'), other = page.locator('#other-composer');
+  await first.focus(); await say(page, 'press control enter');
+  await expect(status(page)).toContainText('Say confirm');
+  await other.focus(); await say(page, 'confirm');
+  await expect(status(page)).toContainText('focused page target changed');
+  expect(await page.evaluate(() => window.sent)).toEqual([]);
+
+  await first.focus(); await say(page, 'press control enter');
+  await first.evaluate(node => node.replaceWith(node.cloneNode()));
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('focused page target changed');
+  expect(await page.evaluate(() => window.sent)).toEqual([]);
+
+  await other.focus(); await say(page, 'press control enter'); await say(page, 'confirm');
+  expect(await page.evaluate(() => window.sent)).toEqual(['other-composer']);
+});

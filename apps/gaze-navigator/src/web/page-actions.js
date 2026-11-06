@@ -1012,9 +1012,12 @@ function scrollerOf(element, document) {
   }
   return document.scrollingElement ?? document.documentElement;
 }
+export function keyEventTarget(document, target, exclude = null) {
+  return target?.isConnected && !exclude?.contains(target) ? target : document.body;
+}
 export function pressKeys(document, target, combo, { exclude = null } = {}) {
   const { key, ctrl = false, alt = false, shift = false, meta = false } = combo, view = document.defaultView;
-  const to = target && target.isConnected && !exclude?.contains(target) ? target : document.body;
+  const to = keyEventTarget(document, target, exclude);
   const init = { ...keyInit(key), ctrlKey: ctrl, altKey: alt, shiftKey: shift, metaKey: meta };
   const taken = !to.dispatchEvent(new view.KeyboardEvent('keydown', init));
   to.dispatchEvent(new view.KeyboardEvent('keyup', init));

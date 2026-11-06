@@ -2,7 +2,7 @@
 // shadow root that is excluded from context capture.
 import { NUMBER_LIMIT, captureContext, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
-import { chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, planDetails, pressKeys, restoreDetails } from './page-actions.js';
+import { chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -293,7 +293,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
   };
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.

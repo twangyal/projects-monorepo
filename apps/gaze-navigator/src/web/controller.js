@@ -451,7 +451,7 @@ export function createController({ window, actions = pageActions, interpret = in
       if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
       if (!commands.keys) return reply('Pressing keys is not available here.', 'error');
       if (action.key === 'Enter' && (action.ctrl || action.meta || action.alt || action.shift)) {
-        pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
+        pending = { kind: 'confirm', action, context, keyTarget: commands.keyTarget?.(), expiresAt: now() + confirmMs };
         return reply(`${keyLabel(action)} often sends a message or a form. Say confirm to press it, or cancel.`, 'question');
       }
       pending = null;
@@ -535,6 +535,10 @@ export function createController({ window, actions = pageActions, interpret = in
         if (now() > confirmation.expiresAt) {
           pending = null;
           return reply('That confirmation expired. Give the instruction again.', 'error');
+        }
+        if (confirmation.action.type === 'key' && commands.keyTarget && commands.keyTarget() !== confirmation.keyTarget) {
+          pending = null;
+          return reply('The focused page target changed. Give the shortcut again. No key was pressed.', 'error');
         }
         return execute(confirmation.action, confirmation.context);
       }
