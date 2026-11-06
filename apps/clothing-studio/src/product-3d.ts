@@ -17,65 +17,22 @@ export type View = 'front' | 'back' | 'left' | 'right';
 /** A turntable export turns once in this many seconds, at this frame rate. */
 export const TURNTABLE_SECONDS = 6, TURNTABLE_FPS = 30, TURNTABLE_BACKDROP = 0xf1ebe0;
 
-export class ProductScene {
-  readonly renderer: THREE.WebGLRenderer;
-  private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
-  private controls: OrbitControls;
-  private group = new THREE.Group();
+/** Meshes, materials and texture assets shared by the view and renderer-free GLB export. */
+class ProductModel {
+  protected group = new THREE.Group();
   /** The body a drape was simulated on; kept out of `group` so exports carry only the garment. */
-  private body = new THREE.Group();
+  protected body = new THREE.Group();
   /** The garment worn with this one in an outfit drape; included only in explicit outfit exports, and not selectable. */
-  private worn = new THREE.Group();
-  private parts = new Map<PartId, THREE.Mesh>();
+  protected worn = new THREE.Group();
+  protected parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
   private provisional: THREE.Texture[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
-  private frame = 0;
-  private disposed = false;
-  private resizeObserver: ResizeObserver;
-  private height = 72;
-  private low = 0;
-  private view: View = 'front';
-
-  constructor(private canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.add(this.group); this.scene.add(this.body); this.scene.add(this.worn);
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a0, 1.6));
-    const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(60, 120, 160); this.scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(-120, 60, -140); this.scene.add(rim);
-    this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.enablePan = false; this.controls.minDistance = 90; this.controls.maxDistance = 400;
-    this.controls.addEventListener('change', () => this.requestRender());
-    this.resizeObserver = new ResizeObserver(() => this.resize());
-    this.resizeObserver.observe(canvas);
-    this.resize();
-    this.setView('front');
-  }
-
-  private resize() {
-    if (this.disposed) return;
-    const width = this.canvas.clientWidth || 600, height = this.canvas.clientHeight || 520;
-    this.renderer.setSize(width, height, false);
-    this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.requestRender();
-  }
-  requestRender() {
-    if (this.disposed || this.frame) return;
-    this.frame = requestAnimationFrame(() => { this.frame = 0; this.renderer.render(this.scene, this.camera); });
-  }
-  renderNow() { if (this.disposed) return; if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
-
-  setView(view: View) {
-    this.view = view;
-    // Taller products (a hood, trousers) are framed from further away.
-    const span = this.height - this.low, middle = this.low + span / 2 + 4;
-    const distance = 210 * Math.max(1, span / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
-    this.controls.target.set(0, middle, 0);
-    this.camera.position.set(direction[0] * distance, middle + direction[1] * distance, direction[2] * distance);
-    this.controls.update(); this.requestRender();
-  }
+  protected disposed = false;
+  protected height = 72;
+  protected low = 0;
+  protected reframe() { /* No camera in a model-only export. */ }
+  protected requestRender() { /* No renderer in a model-only export. */ }
 
   private texture(style: Product['parts'][PartId], motifs: Product['motifs'] = []): { texture: THREE.CanvasTexture; tileCm: number } {
     const motif = style.print?.motif.startsWith('upload:') ? motifs.find(m => `upload:${m.id}` === style.print!.motif)?.dataUrl ?? '' : '';
@@ -115,7 +72,7 @@ export class ProductScene {
       this.low = Math.min(0, low - 4); this.height = Math.max(this.height, high + (showBody ? 32 : 6));
     }
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
-    if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.setView(this.view);
+    if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.reframe();
     const wornMeshes = worn.map(({ garment, parts }) => {
       const rest = teeMesh(garment, Delaunator), meshes = new Map<PartId, THREE.Mesh>();
       for (const part of rest) {
@@ -287,6 +244,82 @@ export class ProductScene {
     holder.add(decal);
   }
 
+  async prepareArtwork() {
+    // Uploaded artwork decodes from its file; drawn textures (a zip) are ready already.
+    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image instanceof HTMLImageElement ? texture.image.decode() : undefined)));
+    for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
+  }
+
+  async glb(includeWorn = false): Promise<ArrayBuffer> {
+    const result = await new GLTFExporter().parseAsync(includeWorn ? [this.group, this.worn] : this.group, { binary: true, onlyVisible: true });
+    if (!(result instanceof ArrayBuffer)) throw new Error('The 3D model could not be exported.');
+    return result;
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.setBody(null);
+    for (const child of [...this.group.children, ...this.worn.children]) if (child instanceof THREE.Mesh) {
+      child.geometry.dispose();
+      for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
+    }
+    for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
+    this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+  }
+}
+
+export class ProductScene extends ProductModel {
+  readonly renderer: THREE.WebGLRenderer;
+  private scene = new THREE.Scene();
+  private camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
+  private controls: OrbitControls;
+  private frame = 0;
+  private resizeObserver: ResizeObserver;
+  private view: View = 'front';
+
+  constructor(private canvas: HTMLCanvasElement) {
+    super();
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.scene.add(this.group); this.scene.add(this.body); this.scene.add(this.worn);
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a0, 1.6));
+    const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(60, 120, 160); this.scene.add(key);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(-120, 60, -140); this.scene.add(rim);
+    this.controls = new OrbitControls(this.camera, canvas);
+    this.controls.enablePan = false; this.controls.minDistance = 90; this.controls.maxDistance = 400;
+    this.controls.addEventListener('change', () => this.requestRender());
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(canvas);
+    this.resize();
+    this.setView('front');
+  }
+
+  private resize() {
+    if (this.disposed) return;
+    const width = this.canvas.clientWidth || 600, height = this.canvas.clientHeight || 520;
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.requestRender();
+  }
+  protected override requestRender() {
+    if (this.disposed || this.frame) return;
+    this.frame = requestAnimationFrame(() => { this.frame = 0; this.renderer.render(this.scene, this.camera); });
+  }
+  renderNow() { if (this.disposed) return; if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
+
+  setView(view: View) {
+    this.view = view;
+    // Taller products (a hood, trousers) are framed from further away.
+    const span = this.height - this.low, middle = this.low + span / 2 + 4;
+    const distance = 210 * Math.max(1, span / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
+    this.controls.target.set(0, middle, 0);
+    this.camera.position.set(direction[0] * distance, middle + direction[1] * distance, direction[2] * distance);
+    this.controls.update(); this.requestRender();
+  }
+
+  protected override reframe() { this.setView(this.view); }
+
   /** The part under a viewport point, if any. */
   pick(clientX: number, clientY: number): PartId | null {
     const box = this.canvas.getBoundingClientRect();
@@ -305,12 +338,6 @@ export class ProductScene {
     if (!hit?.uv || hit.object.userData.part!==side) return null;
     const scale=hit.object.userData.tileCm as number;
     return {part:side,x:hit.uv.x*scale,y:hit.uv.y*scale};
-  }
-
-  async prepareArtwork() {
-    // Uploaded artwork decodes from its file; drawn textures (a zip) are ready already.
-    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image instanceof HTMLImageElement ? texture.image.decode() : undefined)));
-    for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
   }
 
   async png(view: View): Promise<Blob> {
@@ -363,49 +390,39 @@ export class ProductScene {
     return blob;
   }
 
-  async glb(includeWorn = false): Promise<ArrayBuffer> {
-    const result = await new GLTFExporter().parseAsync(includeWorn ? [this.group, this.worn] : this.group, { binary: true, onlyVisible: true });
-    if (!(result instanceof ArrayBuffer)) throw new Error('The 3D model could not be exported.');
-    return result;
-  }
-
-  dispose() {
+  override dispose() {
     if (this.disposed) return;
-    this.disposed = true;
     if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = 0; this.setBody(null); this.resizeObserver.disconnect(); this.controls.dispose();
-    for (const child of [...this.group.children, ...this.worn.children]) if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
-      for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
-    }
-    for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
-    this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+    this.frame = 0; this.resizeObserver.disconnect(); this.controls.dispose();
+    super.dispose();
     this.renderer.dispose(); this.renderer.forceContextLoss();
   }
 }
 
 /** Own one immutable scene for the full asynchronous export and always release its resources. */
-async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>, companion: Product | null = null, also: Product | null = null): Promise<T> {
+async function withProductSnapshot<T, M extends ProductModel>(create: () => M, product: Product, drape: GarmentDrapeResult | null, exportModel: (model: M) => Promise<T>, companion: Product | null = null, also: Product | null = null): Promise<T> {
   const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null, worn = companion ? structuredClone(companion) : null, third = also ? structuredClone(also) : null;
   if ((worn && !settled?.companion) || (third && !settled?.also)) throw new Error('Drape the outfit and wait for it to settle before exporting its garments together.');
   await Promise.all([prepareMotifImages(snapshot.motifs ?? []), prepareMotifImages(worn?.motifs ?? []), prepareMotifImages(third?.motifs ?? [])]);
-  const scene = new ProductScene(document.createElement('canvas'));
+  const model = create();
   try {
-    scene.setProduct(snapshot, null, settled, false, worn, third);
-    await scene.prepareArtwork();
-    return await exportScene(scene);
-  } finally { scene.dispose(); }
+    model.setProduct(snapshot, null, settled, false, worn, third);
+    await model.prepareArtwork();
+    return await exportModel(model);
+  } finally { model.dispose(); }
 }
 
+const renderSnapshot = () => new ProductScene(document.createElement('canvas'));
+
 export function productSnapshotRenders(product: Product, drape: GarmentDrapeResult | null = null): Promise<{ front: Blob; back: Blob }> {
-  return withProductSnapshot(product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
+  return withProductSnapshot(renderSnapshot, product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
 }
 export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
-  return withProductSnapshot(product, drape, scene => scene.png(view), companion, also);
+  return withProductSnapshot(renderSnapshot, product, drape, scene => scene.png(view), companion, also);
 }
 export function productSnapshotTurntable(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
-  return withProductSnapshot(product, drape, scene => scene.turntable(), companion, also);
+  return withProductSnapshot(renderSnapshot, product, drape, scene => scene.turntable(), companion, also);
 }
 export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<ArrayBuffer> {
-  return withProductSnapshot(product, drape, scene => scene.glb(!!companion), companion, also);
+  return withProductSnapshot(() => new ProductModel(), product, drape, model => model.glb(!!companion), companion, also);
 }

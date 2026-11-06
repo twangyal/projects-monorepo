@@ -51,7 +51,7 @@ Fabric comparisons of a top worn with bottoms use the same resolved waist and hi
 
 ## Run locally
 
-Prerequisites: Node.js 22.18+ (`engines`; CI uses 24) and npm. You need a current browser with WebGL, IndexedDB, Canvas and `createImageBitmap`. Without WebGL, pattern editing still works.
+Prerequisites: Node.js 22.18+ (`engines`; CI uses 24) and npm. You need a current browser with WebGL, IndexedDB, Canvas and `createImageBitmap`. Without WebGL, pattern editing and garment GLB export still work; the interactive 3D view, PNG renders and turntable video require WebGL.
 
 ```sh
 cd apps/clothing-studio

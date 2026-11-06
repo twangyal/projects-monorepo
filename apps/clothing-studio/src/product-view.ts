@@ -70,7 +70,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <p id="garment-size-status" class="fine-print" role="status"></p>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
-      <p id="product-status" class="fine-print" role="status"></p>
+      <p id="product-status" class="fine-print" role="status"></p><p class="fine-print" id="product-preview-unavailable" role="status" hidden>This browser could not start the 3D view. You can still edit patterns and download the garment as GLB.</p>
     </div>
     <aside class="product-inspector" aria-label="Selected part">
       <h4 id="inspector-heading">Front body</h4>
@@ -178,7 +178,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   };
   let selected: PartId = 'front', scene: import('./product-3d.ts').ProductScene | null = null, shown = '';
   const ready = import('./product-3d.ts').then(({ ProductScene }) => { scene = new ProductScene(canvas); shown = ''; render(options.current()); return scene; })
-    .catch(() => { $('product-status').textContent = 'This browser could not start the 3D view (WebGL is required). Pattern pieces and editing still work.'; return null; });
+    .catch(() => { $('product-preview-unavailable').hidden = false; return null; });
 
   // Draping on a body: simulated in a worker, and kept while the design's shape, fabrics and the body stay the same, so
   // recolouring keeps the drape and a change of measurements, fit, modules or fabric drapes again. The body is a view
@@ -919,7 +919,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (includeWorn && (!settled?.companion || (also && !settled.also))) throw new Error('Drape the outfit and wait for it to settle before exporting its garments together.');
       button.disabled = true;
       try {
-        if (!await ready) throw new Error('The 3D view is unavailable.');
+        if (kind !== 'glb' && !await ready) throw new Error('The 3D view is unavailable.');
         const exports = await import('./product-3d.ts');
         const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled, companion, also)], {type:'model/gltf-binary'})
           : kind === 'turntable' ? await exports.productSnapshotTurntable(design, settled, companion, also)

@@ -93,3 +93,70 @@ test('a held outfit render retains both garments and its title after the worn ga
   expect(await readFile((await file.path())!)).toEqual(original.bytes);
   expect(await backup(page)).toEqual(changed); await expect(page.locator('#product-png-front')).toBeEnabled();
 });
+
+async function disableWebGL(page: Page) {
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = new Proxy(getContext, {
+      apply(target, canvas, args) {
+        return /^(?:experimental-)?webgl2?$/.test(args[0]) ? null : Reflect.apply(target, canvas, args);
+      },
+    });
+  });
+}
+
+test('styled GLB exports valid garment meshes and textures when WebGL is unavailable', async ({ page }) => {
+  await disableWebGL(page);
+  await page.goto('/');
+  const editor = page.locator('#product-editor');
+  await editor.getByRole('button', { name: /^Use the Breton stripe template/ }).click();
+  expect(await page.evaluate(() => document.createElement('canvas').getContext('webgl2') === null)).toBe(true);
+  await expect(editor.locator('#product-preview-unavailable')).toContainText('download the garment as GLB');
+  await expect(editor.locator('#product-preview-unavailable')).toBeVisible();
+  const before = await backup(page);
+  const image = await page.evaluate(() => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 16;
+    const context = canvas.getContext('2d')!; context.fillStyle = '#ff0000'; context.fillRect(0, 0, 16, 16);
+    return canvas.toDataURL('image/png');
+  });
+  before.product.artwork = [{ part: 'front', name: 'red.png', dataUrl: image, width: 16, height: 16, widthCm: 14, xCm: 0, yCm: 14 }];
+  await page.getByLabel('Import project backup', { exact: true }).setInputFiles({ name: 'striped.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(before)) });
+  const saved = await backup(page);
+  const ready = page.waitForEvent('download', { timeout: 6000 });
+  await editor.locator('#product-glb').click();
+  const file = await ready, bytes = await readFile((await file.path())!);
+  expect(file.suggestedFilename()).toMatch(/\.glb$/);
+  expect(bytes.subarray(0, 4).toString()).toBe('glTF');
+  expect(bytes.readUInt32LE(4)).toBe(2);
+  expect(bytes.readUInt32LE(8)).toBe(bytes.length);
+  const { json, positions } = glb(bytes);
+  expect(positions('Front body').length).toBeGreaterThan(0);
+  expect(positions('Front artwork').length).toBeGreaterThan(0);
+  expect(json.images.length).toBeGreaterThanOrEqual(2);
+  expect(json.nodes.some((node: { name?: string }) => node.name === 'Body')).toBe(false);
+  expect(await backup(page)).toEqual(saved);
+  await editor.locator('#product-png-front').click();
+  await expect(page.locator('#message')).toContainText('The 3D view is unavailable');
+});
+
+test('settled outfit GLB keeps the worker geometry when WebGL is unavailable', async ({ page }) => {
+  test.setTimeout(90000);
+  await disableWebGL(page);
+  await capture(page);
+  await page.goto('/');
+  const editor = page.locator('#product-editor');
+  await editor.getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  await editor.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
+  await editor.getByRole('checkbox', { name: 'Include worn garment in PNG, GLB and video', exact: true }).check();
+  await editor.locator('#product-glb').click();
+  await expect(page.locator('#message')).toContainText('Drape the outfit');
+  await editor.getByRole('button', { name: 'Drape on a body', exact: true }).click();
+  await expect(editor.locator('#garment-drape-status')).toContainText('Worn over', { timeout: 60000 });
+  const result = await page.evaluate(() => (window as unknown as { outfitResult: Captured }).outfitResult);
+  const saved = await backup(page), { name, bytes } = await download(page, '#product-glb');
+  expect(name).toMatch(/-outfit\.glb$/);
+  const parsed = glb(bytes);
+  for (const part of result.parts) expect(parsed.positions(partName(saved.product, part.part))).toEqual(part.positions);
+  for (const part of result.companion.parts) expect(parsed.positions(`${saved.wornWith.name}: ${partName(saved.wornWith, part.part)}`)).toEqual(part.positions);
+  expect(parsed.json.nodes.some((node: { name?: string }) => node.name === 'Body')).toBe(false);
+});
