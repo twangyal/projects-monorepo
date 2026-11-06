@@ -149,3 +149,25 @@ for (const width of [1280, 390]) test(`named dimensions reshape linked patterns 
   await expect(prompt).toHaveValue('red tee, chest 10 cm');
   expect((await backup(page)).product).toEqual(shaped);
 });
+
+test('a described fit opens in the linked pattern controls and Undo restores the previous fit', async ({page}) => {
+  await page.goto('/');
+  await editor(page).getByRole('button',{name:/^Use the Ringer tee template/}).click();
+  const before = (await backup(page)).product;
+  const prompt = editor(page).getByLabel('Describe a style',{exact:true});
+  const apply = editor(page).getByRole('button',{name:'Apply to the garment',exact:true});
+  await prompt.fill('navy tee, shoulder width 46 cm, neck width 200 mm, front neck drop 12 cm, hem width 56 cm');
+  await apply.click();
+  await expect(editor(page).locator('#describe-result')).toContainText('shoulder width: 46 cm');
+  for (const [key,value] of Object.entries({shoulderWidth:46,neckWidth:20,frontNeckDrop:12,hemWidth:56})) {
+    await expect(editor(page).locator(`#fit-${key}`)).toHaveValue(String(value));
+  }
+  const applied = (await backup(page)).product;
+  expect(applied.fit).toMatchObject({shoulderWidth:46,neckWidth:20,frontNeckDrop:12,hemWidth:56});
+  await prompt.fill('red tee, shoulder width 30 cm, neck width 28 cm');
+  await apply.click();
+  await expect(page.locator('#message')).toContainText('neck must be at least 8 cm narrower');
+  expect((await backup(page)).product).toEqual(applied);
+  await page.getByRole('button',{name:'Undo',exact:true}).click();
+  expect((await backup(page)).product).toEqual(before);
+});

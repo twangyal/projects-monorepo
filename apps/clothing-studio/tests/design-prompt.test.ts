@@ -101,3 +101,36 @@ test('measured sleeves retain the color scope in the same clause', () => {
   assert.equal(reading.product.parts.sleeveRight.color, '#b23a2e');
   assert.deepEqual(reading.ignored, []);
 });
+
+test('named fit points in cm and mm shape a top and preserve its color scopes', () => {
+  const source = template('blank'), before = structuredClone(source);
+  const reading = readDesignPrompt('navy tee, shoulder width 46 cm, 40 mm shoulder drop, neck width 20 cm, front neck drop 12 cm, back neck drop 3 cm, armhole depth 23 cm, hem width 56 cm, red sleeves', source);
+  assert.deepEqual(reading.product.fit, {shoulderWidth:46,shoulderDrop:4,neckWidth:20,frontNeckDrop:12,backNeckDrop:3,armholeDepth:23,hemWidth:56});
+  assert.ok(scope(reading, 'Garment')?.includes('shoulder width: 46 cm'));
+  assert.equal(reading.product.parts.front.color,'#1f2a4f');
+  assert.equal(reading.product.parts.sleeveLeft.color,'#b23a2e');
+  assert.deepEqual(reading.ignored,[]);
+  assert.deepEqual(source,before);
+});
+
+test('combined fit points must be geometrically valid and unsupported points do not change repeat size', () => {
+  const source = template('blank'), before = structuredClone(source);
+  assert.throws(() => readDesignPrompt('red tee, shoulder width 30 cm, neck width 28 cm', source), /neck.*narrower/i);
+  assert.throws(() => readDesignPrompt('neck width 22 cm, 210 mm neck width', source), /conflicting/i);
+  assert.deepEqual(source,before);
+  const reading = readDesignPrompt('navy striped trousers, shoulder width 46 cm', template('trousers'));
+  assert.equal(reading.product.parts.front.print?.scaleCm,2);
+  assert.ok(reading.ignored.some(word=>word.includes('shoulder width 46 cm')));
+});
+
+test('equivalent decimal dimensions agree across units, and chest and hem validate together', () => {
+  const source = { ...template('blank'), measurements: { chest: 90, length: 70, sleeve: 21 }, fit: { hemWidth: 35 } };
+  assert.throws(() => readDesignPrompt('chest 130 cm', source), /hem width/i);
+  assert.throws(() => readDesignPrompt('hem width 90 cm', source), /hem width/i);
+  const reading = readDesignPrompt('chest 130 cm, hem width 90 cm, shoulder width 44.01 cm, 440.1 mm shoulder width', source);
+  assert.equal(topMeasurements(reading.product).chest, 130);
+  assert.deepEqual(reading.product.fit, { hemWidth: 90, shoulderWidth: 44.01 });
+  const skirt = readDesignPrompt('navy skirt, 160 cm hem width', template('flared-skirt'));
+  assert.deepEqual(skirt.product.measurements, { ...template('flared-skirt').measurements, hem: 160 });
+  assert.deepEqual(skirt.ignored, []);
+});

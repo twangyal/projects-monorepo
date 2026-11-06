@@ -7,11 +7,18 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_LENGTH, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
-  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type PartId, type Product, zipAllowed } from './product.ts';
+  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  template, topMeasurements, validateProduct, withLegCuffs, withOptions, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
 export interface DesignReading { product: Product; scopes: DesignScope[]; ignored: string[]; /** Words in quotes, to print on the garment. */ text?: TextRequest }
+
+// Named top pattern measurements, in the same units and conventions as the fit controls.
+const TOP_FIT_LABELS: Partial<Record<string, FitKey>> = {
+  'shoulder width': 'shoulderWidth', 'shoulder drop': 'shoulderDrop',
+  'neck width': 'neckWidth', 'front neck drop': 'frontNeckDrop', 'back neck drop': 'backNeckDrop',
+  'armhole depth': 'armholeDepth', 'hem width': 'hemWidth',
+};
 
 /** The template a garment word starts from, and its base. */
 const GARMENTS: [RegExp, string, Base][] = [
@@ -243,17 +250,24 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
 
   // Explicit garment dimensions override rough fit presets. Only a named measurement next to a unit is read;
   // a print repeat such as "stripes 6 cm" remains with the style interpreter.
-  const labels = 'leg opening|sleeve length|sleeves?|chest|length|waist|hip|inseam|rise|hem|slant';
+  const labels = [...Object.keys(TOP_FIT_LABELS), 'leg opening|sleeve length|sleeves?|chest|length|waist|hip|inseam|rise|hem|slant'].join('|');
   const number = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)';
   const measured = new RegExp(`\\b(${labels})\\s*(?:of|:|=)?\\s*(${number})\\s*(cm|mm)\\b|(?<![\\w.+-])(?<!\\d,)(${number})\\s*(cm|mm)\\s+(${labels})\\b`, 'g');
-  const values = new Map<string, number>();
+  const values = new Map<string, number>(), fitValues = new Map<FitKey, number>();
   const supported = new Set(top ? ['chest', 'length', 'sleeve'] : product.base === 'trousers'
     ? ['waist', 'hip', 'inseam', 'rise', 'legOpening'] : ['waist', 'hem', 'slant']);
   for (const match of text.matchAll(measured)) {
-    const label = match[1] ?? match[6], raw = Number(match[2] ?? match[4]), unit = match[3] ?? match[5];
-    const key = label.startsWith('sleeve') ? 'sleeve' : label === 'leg opening' ? 'legOpening' : label;
-    const value = raw / (unit === 'mm' ? 10 : 1);
-    if (!supported.has(key)) { notApplied.push(`${match[0]} (not a supported measurement on this garment)`); }
+    const label = match[1] ?? match[6], raw = match[2] ?? match[4], unit = match[3] ?? match[5];
+    // On skirts, "hem width" still describes the full hem, as in the existing hem measurement.
+    const key = label.startsWith('sleeve') ? 'sleeve' : label === 'leg opening' ? 'legOpening'
+      : label === 'hem width' && supported.has('hem') ? 'hem' : label;
+    // Convert the written decimal in one step so equivalent cm and mm values compare equally.
+    const value = Number(unit === 'mm' ? `${raw}e-1` : raw);
+    const fit = TOP_FIT_LABELS[label];
+    if (fit && top) {
+      if (fitValues.has(fit) && fitValues.get(fit) !== value) throw new Error(`Conflicting ${label} measurements. Give one value in cm or mm.`);
+      fitValues.set(fit, value);
+    } else if (!supported.has(key)) { notApplied.push(`${match[0]} (not a supported measurement on this garment)`); }
     else {
       if (values.has(key) && values.get(key) !== value) throw new Error(`Conflicting ${label} measurements. Give one value in cm or mm.`);
       values.set(key, value);
@@ -267,9 +281,14 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const measures = { ...product.measurements, ...Object.fromEntries(values) };
     product.measurements = measures as Product['measurements'];
     if (top && values.has('sleeve')) product = withSleeveLength(product, values.get('sleeve')!);
-    product = validateProduct(product);
     for (const [key, value] of values) garment.push(`${key === 'legOpening' ? 'leg opening' : key}: ${value} cm`);
   }
+
+  if (fitValues.size) {
+    product.fit = { ...product.fit, ...Object.fromEntries(fitValues) };
+    for (const [key, value] of fitValues) garment.push(`${FIT_NAMES[key].toLowerCase()}: ${value} cm`);
+  }
+  if (values.size || fitValues.size) product = validateProduct(product);
 
   // Clauses: a clause that names parts styles them; the others are read together as the whole garment's style.
   const available = new Set(partsOf(product));
