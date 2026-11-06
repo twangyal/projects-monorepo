@@ -17,7 +17,7 @@ import { fitCues } from './cue-fit.ts';
 import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, type CuePassage } from './cue-edit.ts';
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode, type PracticeRange } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
-import { applyReviewedPassage, applyReviewedLine, reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
+import { applyReviewedPassage, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
 import { lineList, similarLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
@@ -336,8 +336,8 @@ function draftSnapshot(): LyricDraft {
 function changed(group: string | null = null, keepReview: SrtOwner | null = null) {
   retirePractice('The lyric editor changed. Practice stopped.');
   if (!working) return;
-  const keeping = keepReview && automaticReview && srtReview?.owner === keepReview && srtCurrent(keepReview);
-  if (!keeping) retireSrt('The lyric editor changed. Choose the SRT file again to review current work.');
+  const keeping = keepReview && srtReview?.owner === keepReview && srtCurrent(keepReview);
+  if (!keeping) retireSrt('The lyric editor changed. Open a new review to continue.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.cancelGesture(); editGeneration++;
   if (keeping) keepReview.edit = editGeneration;
@@ -623,7 +623,7 @@ function practiceControls(): void {
   element('practice-pause').textContent = practice.paused ? 'Resume practice' : 'Pause practice';
   element<HTMLButtonElement>('practice-stop').disabled = !practice.active;
   element('practice-status').textContent = practice.status;
-  automaticReviewControls(); importListenControls();
+  automaticReviewControls(); importReviewControls();
   findControls();
 }
 function startPractice(mode: PracticeMode, singleLine?: number): void {
@@ -683,7 +683,7 @@ function srtControls() {
   element('automatic-review-error').textContent = reviewError;
   element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
   element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
-  automaticReviewControls(); importListenControls();
+  automaticReviewControls(); importReviewControls();
 }
 function retireSrt(text: string) {
   if (!srtOwner && !srtReview) return;
@@ -766,11 +766,12 @@ function startReviewAudition(owner: SrtOwner, range: Readonly<PracticeRange>, mo
     && working?.duration === range.clipDuration && Number.isFinite(audio.duration)
     && Math.abs(audio.duration - range.clipDuration) <= 1 / 44100 && !timingBusy() && !timingOwner);
 }
-function importListenControls(): void {
+function importReviewControls(): void {
   if (element('import-listen-tools').hidden) return;
   const live = !automaticReview && !!srtReview && srtCurrent(srtReview.owner);
   const ready = live && srtAllowed() && practiceMediaReady(false);
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-import-listen]')) button.disabled = !ready;
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-import-apply]')) button.disabled = !live || !srtAllowed();
   const owned = live && reviewAuditionOwner === srtReview?.owner;
   element<HTMLButtonElement>('import-listen-stop').disabled = !owned || !practice.active;
   element('import-listen-status').textContent = owned ? practice.status : 'Listen to an imported line on the selected track before replacing lyrics.';
@@ -918,13 +919,30 @@ function applyAutomaticLine(owner: SrtOwner, index: number) {
   try { result = applyReviewedLine(working.cues, automaticReviewDraft, index, working.duration); }
   catch (error) { element(`automatic-apply-status-${index}`).textContent = error instanceof Error ? error.message : 'Check this reviewed line.'; return; }
   if (!result.changed) { srtControls(); return; }
+  commitReviewedLine(working, lyricHistory, owner, result);
+  message(`Applied automatic line ${index + 1} as one unsaved edit. Other lyric lines and staged review drafts were kept. Undo restores it; finish any pasted draft before saving.`);
+}
+function applyImportedLine(owner: SrtOwner, index: number) {
+  if (automaticReview || srtReview?.owner !== owner || !srtCurrent(owner) || !srtAllowed() || !working || !lyricHistory) return;
+  const cue = srtReview.cues[index], status = element(`import-apply-status-${index}`);
+  if (!cue) return;
+  for (const notice of document.querySelectorAll('[data-import-apply-status]')) notice.textContent = '';
+  try {
+    const result = applySingleReviewedCue(working.cues, cue, working.duration);
+    if (!result.changed) { status.textContent = `Imported line ${index + 1} already matches current lyrics.`; return; }
+    commitReviewedLine(working, lyricHistory, owner, result);
+    status.textContent = `Applied imported line ${index + 1} as one unsaved edit. Other lyrics are kept. Undo restores the edit; use Save lyrics when ready.`;
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : 'Could not apply the imported line.';
+  }
+}
+function commitReviewedLine(project: Project, history: LyricHistory, owner: SrtOwner, result: ReturnType<typeof applyReviewedLine>) {
   retirePractice('Applying a reviewed line stopped practice.');
   timeline.cancelGesture();
   const raw = captureTimingDrafts(), cue = result.cues[result.index];
-  lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+  history.record(draftSnapshot()); history.endGroup();
   raw.splice(result.index, result.replaced ? 1 : 0, {start:cue.start,end:cue.end,startText:String(cue.start),endText:String(cue.end)});
-  working.cues = result.cues; renderCues(raw); changed(null, owner);
-  message(`Applied automatic line ${index + 1} as one unsaved edit. Other lyric lines and staged review drafts were kept. Undo restores it; finish any pasted draft before saving.`);
+  project.cues = result.cues; renderCues(raw); changed(null, owner);
 }
 function selectedAutomaticPassage(): ReturnType<typeof applyReviewedPassage> {
   if (!working) throw new Error('Choose a clip first.');
@@ -1093,7 +1111,7 @@ for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).addEven
     return;
   }
   const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working!.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
-  const duration = working!.duration, title = working!.title, previousCount = working!.cues.length;
+  const duration = working!.duration, title = working!.title;
   srtOwner = owner; element('srt-status').textContent = 'Reading and validating all timed lyric cues. Current editor values are kept.'; srtControls();
   srtTimer = setTimeout(() => { if (srtCurrent(owner) && !srtReview) retireSrt('Timed lyrics reading took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); }, 10000);
   try {
@@ -1106,7 +1124,7 @@ for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).addEven
     if (performance.now() >= owner.deadline) { retireSrt('Timed lyrics validation took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
     clearTimeout(srtTimer); srtTimer = undefined;
     srtReview = { owner, cues, applied: 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.' };
-    element('srt-summary').textContent = `${file.name} · ${cues.length} imported cues to replace ${previousCount} current cues for “${title}” (${formatTime(duration)}). First start ${srtTime(cues[0].start)}; last end ${srtTime(cues.at(-1)!.end)}.${isLrc ? ' LRC line timings only; word highlighting is regenerated.' : ''}`;
+    element('srt-summary').textContent = `${file.name} · ${cues.length} imported cues for “${title}” (${formatTime(duration)}). First start ${srtTime(cues[0].start)}; last end ${srtTime(cues.at(-1)!.end)}.${isLrc ? ' LRC line timings only; word highlighting is regenerated.' : ''}`;
     const list = element('srt-review-list'); list.replaceChildren();
     for (const [index, cue] of cues.entries()) {
       const row = document.createElement('li'); row.dataset.srtCue = String(index);
@@ -1116,10 +1134,17 @@ for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).addEven
       listen.dataset.importListen = String(index); listen.textContent = 'Listen';
       listen.setAttribute('aria-label', `Listen to imported line ${index + 1}`);
       listen.addEventListener('click', () => listenToImport(owner, index));
-      row.append(time, text, listen); list.append(row);
+      const apply = document.createElement('button'); apply.type = 'button'; apply.className = 'quiet';
+      apply.dataset.importApply = String(index); apply.textContent = `Apply imported line ${index + 1}`;
+      const notice = document.createElement('p'); notice.className = 'fine'; notice.id = `import-apply-status-${index}`;
+      notice.dataset.importApplyStatus = ''; notice.setAttribute('role', 'status');
+      apply.setAttribute('aria-describedby', notice.id);
+      apply.addEventListener('click', () => applyImportedLine(owner, index));
+      const actions = document.createElement('div'); actions.className = 'timing-actions'; actions.append(listen, apply);
+      row.append(time, text, actions, notice); list.append(row);
     }
     if (performance.now() >= owner.deadline) { retireSrt('Timed lyrics review took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
-    element('srt-review').hidden = false; element('import-listen-tools').hidden = false; element('srt-status').textContent = 'All cues validated. Review every cue, then replace lyric cues when ready. Nothing has been saved.'; srtControls();
+    element('srt-review').hidden = false; element('import-listen-tools').hidden = false; element('srt-status').textContent = 'All cues validated. Apply one line to replace at most one overlapping line or insert it in a gap, or replace all lyric cues. Nothing has been saved.'; srtControls();
   } catch (error) {
     if (!srtCurrent(owner)) return;
     retireSrt(`${error instanceof Error ? error.message : 'The timed lyrics file could not be read.'} Current lyrics and editor values were kept.`);

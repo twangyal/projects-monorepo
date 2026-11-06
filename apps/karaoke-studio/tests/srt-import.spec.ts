@@ -338,3 +338,37 @@ for (const format of ['SRT', 'LRC']) test(`listen to a reviewed ${format} cue wi
   await expect(page.locator('#undo-lyrics')).toBeDisabled();
   expect(await projectFromServer(request, project.id)).toEqual(project);
 });
+
+for (const format of ['SRT', 'LRC']) test(`apply just one imported ${format} line, keeping other lyrics and the review`, async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied words');
+  if (format === 'SRT') await chooseSrt(page, Buffer.from('1\n00:00:00,400 --> 00:00:01,000\nUpdated first\n\n2\n00:00:01,250 --> 00:00:02,000\nNew in gap\n'));
+  else await page.locator('#lrc-file').setInputFiles({ name: 'partial.lrc', mimeType: 'text/plain',
+    buffer: Buffer.from('[00:00.400]Updated first\n[00:01.000]\n[00:01.250]New in gap\n[00:02.000]\n') });
+  await reviewReady(page, 2);
+  const first = { start: .4, end: 1, text: 'Updated first' }, second = { start: 1.25, end: 2, text: 'New in gap' };
+  await page.getByRole('button', { name: 'Apply imported line 1', exact: true }).click();
+  expect(await editorCues(page)).toEqual([first, BEFORE[1]]);
+  await reviewReady(page, 2);
+  await page.getByRole('button', { name: 'Apply imported line 2', exact: true }).click();
+  expect(await editorCues(page)).toEqual([first, second, BEFORE[1]]);
+  await expect(page.locator('#lyric-draft')).toHaveValue('Unapplied words');
+  await expect(page.locator('#title')).toHaveValue(project.title);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.locator('#undo-lyrics').click();
+  expect(await editorCues(page)).toEqual([first, BEFORE[1]]);
+  await expect(page.locator('#srt-review')).toBeHidden();
+  await page.locator('#undo-lyrics').click();
+  expect(await editorCues(page)).toEqual(BEFORE);
+});
+
+test('one imported line cannot overwrite multiple current lyric lines', async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  await chooseSrt(page, Buffer.from('1\n00:00:00,400 --> 00:00:03,000\nToo wide\n'));
+  await reviewReady(page, 1);
+  await page.getByRole('button', { name: 'Apply imported line 1', exact: true }).click();
+  await expect(page.locator('#import-apply-status-0')).toContainText('overlaps more than one current line');
+  expect(await editorCues(page)).toEqual(BEFORE);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await expect(page.locator('#undo-lyrics')).toBeDisabled();
+});
