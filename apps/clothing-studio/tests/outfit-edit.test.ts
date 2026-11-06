@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { switchOutfitEditing } from '../src/outfit-edit.ts';
+import { replaceOutfitProduct, switchOutfitEditing } from '../src/outfit-edit.ts';
 import { createProject, validateProject } from '../src/model.ts';
 import { template } from '../src/product.ts';
 
@@ -19,4 +19,20 @@ test('switching refuses missing or incompatible outfit members without creating 
   for (const input of [createProject(), { ...createProject(), wornWith: template('trousers') }, { ...createProject(), product: template('blank') }, { ...createProject(), product: template('blank'), wornWith: template('ringer') }]) {
     const before = structuredClone(input); assert.throws(() => switchOutfitEditing(input)); assert.deepEqual(input, before);
   }
+});
+
+test('primary replacement keeps compatible copies, or promotes a third if the first no longer fits', () => {
+  const product = template('blank'), first = template('trousers'), second = template('crew-sweat');
+  const current = { ...createProject(), product, wornWith: first, wornAlso: second };
+  const kept = replaceOutfitProduct(current, template('ringer'));
+  assert.deepEqual(kept.removed, []);
+  assert.equal(kept.project.wornWith, first);
+  assert.equal(kept.project.wornAlso, second);
+  const promoted = replaceOutfitProduct(current, template('flared-skirt'));
+  assert.deepEqual(promoted.removed, [first]);
+  assert.equal(promoted.project.wornWith, second);
+  assert.equal(promoted.project.wornAlso, undefined);
+  assert.equal(current.product, product);
+  assert.equal(current.wornWith, first);
+  assert.equal(current.wornAlso, second);
 });

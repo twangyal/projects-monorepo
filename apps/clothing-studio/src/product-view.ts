@@ -1,5 +1,5 @@
 import { buildOutfitBundle } from './outfit-bundle.ts';
-import { switchOutfitEditing } from './outfit-edit.ts';
+import { replaceOutfitProduct, switchOutfitEditing } from './outfit-edit.ts';
 import { FITTED_HIP_DEPTH, GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, skirtBandHeight, skirtDraft, skirtFit, skirtGather, skirtPleats, type PleatStyle } from './product-skirt.ts';
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
@@ -480,12 +480,21 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const refuseDrafts = () => { options.notice('Apply or discard pending product edits before replacing the design. Your drafts are kept.', true); };
   const product = () => options.current().product ?? null;
   const label = (part: PartId) => partName(product() ?? template('blank'), part);
+  const removedOutfit = (removed: Product[]) => removed.length
+    ? ` This also removes ${removed.map(item => `“${item.name}”`).join(' and ')} from this outfit.` : '';
   function update(mutate: (draft: Product) => void, text: string, appliedGroup?: DraftGroup) {
     const current = product() ?? template('blank');
     const draft = structuredClone(current);
     const savedDrafts = new Map(drafts);
     try {
-      mutate(draft); const next = validateProject({ ...options.current(), product: validateProduct(draft) });
+      mutate(draft);
+      const edited = validateProduct(draft), previous = options.current();
+      const changingBase = edited.base !== current.base;
+      if (changingBase && hasDrafts()) { refuseDrafts(); return false; }
+      const replace = changingBase || (previous.tucked && !isBottoms(edited) && !canTuck(edited));
+      const plan = replace ? replaceOutfitProduct(previous, edited) : { project: { ...previous, product: edited }, removed: [] };
+      if (plan.removed.length && !window.confirm(`Change the edited garment to “${edited.name}”?${removedOutfit(plan.removed)} You can undo this.`)) return false;
+      const next = validateProject(plan.project);
       if (appliedGroup) for (const id of drafts.keys()) if (groupOf(id) === appliedGroup) drafts.delete(id);
       commit(next); options.notice(text); return true;
     }
@@ -666,10 +675,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (hasDrafts()) { refuseDrafts(); return; }
     const current = product();
     const name = TEMPLATES.find(item => item.id === button.dataset.template)?.name ?? 'chosen';
-    if (current && !window.confirm(`Replace “${current.name}” with the ${name} template? You can undo this.`)) return;
     // Colours picked from a photo stay for the next garment.
     const next = { ...template(button.dataset.template!), ...(current?.palette ? { palette: current.palette } : {}) };
-    commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
+    const plan = replaceOutfitProduct(options.current(), next);
+    if ((current || plan.removed.length) && !window.confirm(`${current ? `Replace “${current.name}” with the ${name} template?` : `Use the ${name} template?`}${removedOutfit(plan.removed)} You can undo this.`)) return;
+    commit(plan.project); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
   $('edit-worn-garment').addEventListener('click', () => {
@@ -724,7 +734,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const describe = (garment: boolean) => {
     const prompt = ($('style-prompt') as HTMLInputElement).value;
     let summary = '';
-    update(draft => {
+    const applied = update(draft => {
       if (garment) {
         const reading = readDesignPrompt(prompt, draft);
         for (const key of Object.keys(draft) as (keyof Product)[]) delete draft[key];
@@ -741,7 +751,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       draft.parts[selected] = reading.style;
       summary = `Understood: ${reading.understood.join('; ')}.${reading.ignored.length ? ` Not understood: ${reading.ignored.join(', ')}.` : ''}`;
     }, garment ? 'The description now shapes the garment. You can undo this.' : `${label(selected)} restyled from the description. You can undo this.`);
-    $('describe-result').textContent = summary;
+    $('describe-result').textContent = applied ? summary : '';
   };
   $('describe-part').addEventListener('click', () => describe(false));
   $('describe-all').addEventListener('click', () => describe(true));

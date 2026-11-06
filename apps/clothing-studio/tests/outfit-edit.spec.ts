@@ -98,3 +98,50 @@ test('tucking follows compatible bottoms and clears when changing to two tops', 
   await expect(tuck).toBeDisabled(); expect((await backup(page)).tucked).toBeUndefined();
   await wear.selectOption({ label: 'Straight trousers' }); await expect(tuck).not.toBeChecked();
 });
+
+for (const method of ['template', 'description']) test(`changing the primary by ${method} asks before removing an incompatible outfit piece`, async ({page}) => {
+  await page.goto('/');
+  const editor = page.locator('#product-editor');
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  const also = page.getByRole('combobox', { name: 'And with', exact: true });
+  await editor.getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  await wear.selectOption({ label: 'Straight trousers' });
+  await also.selectOption({ label: 'Crew sweatshirt' });
+  const before = await backup(page);
+  const prompt = editor.getByLabel('Describe a style',{exact:true});
+  const choose = method === 'template' ? editor.getByRole('button', { name: /^Use the Flared skirt template/ })
+    : editor.getByRole('button', { name: 'Apply to the garment', exact: true });
+  if (method === 'description') {
+    await prompt.fill('navy flared skirt');
+    await editor.locator('#product-length').fill('72');
+    await choose.click();
+    await expect(page.locator('#message')).toContainText('Apply or discard pending product edits');
+    await expect(editor.locator('#product-length')).toHaveValue('72');
+    expect(await backup(page)).toEqual(before);
+    await editor.getByRole('button', { name: 'Discard all product drafts', exact: true }).click();
+  }
+  const confirm = async (accept: boolean) => {
+    const waiting = page.waitForEvent('dialog');
+    const click = choose.click();
+    const dialog = await waiting;
+    const message = dialog.message();
+    if (accept) await dialog.accept(); else await dialog.dismiss();
+    await click;
+    expect(message).toContain(before.wornWith.name);
+    expect(message).not.toContain(before.wornAlso.name);
+  };
+  await confirm(false);
+  expect(await backup(page)).toEqual(before);
+  if (method === 'description') {
+    await expect(prompt).toHaveValue('navy flared skirt');
+    await expect(editor.locator('#describe-result')).toHaveText('');
+  }
+  await confirm(true);
+  const changed = await backup(page);
+  expect(changed.product.base).toBe('skirt');
+  expect(changed.wornWith).toEqual(before.wornAlso);
+  expect(changed.wornAlso).toBeUndefined();
+  await expect(wear.locator('option:checked')).toContainText(before.wornAlso.name);
+  await page.getByRole('button', {name:'Undo',exact:true}).click();
+  expect(await backup(page)).toEqual(before);
+});
