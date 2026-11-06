@@ -601,7 +601,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
-    if (stopped || closing) return;
+    if (stopped || closing || document.hidden) return;
     if (settings.source === 'camera' && Number.isFinite(x) && Number.isFinite(y)) {
       const now = window.performance.now();
       // A resumed estimate must retire the old target before refreshing an overdue deadline.
@@ -1073,6 +1073,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     keyboard.cancel();
     spokenContext = null; spokenInvalid = false; promptContext = null;
     speech.stop(); controller.cancel();
+    // Keep the calibration, but do not act on where the user was looking before the tab left view.
+    loseCameraContext(false);
     renderListening(false);
     if (wasListening) {
       ui.transcript.textContent = '';

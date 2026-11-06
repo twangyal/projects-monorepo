@@ -712,3 +712,27 @@ for (const retire of ['recalibrate', 'resize', 'head', 'hide']) test(`a delayed 
   await page.clock.runFor(33);
   expect(await page.evaluate(() => window.__learningSaves)).toBe(before + 1);
 });
+
+for (const hiddenEstimate of [false, true]) test(`returning to the tab needs fresh gaze (hidden estimate: ${hiddenEstimate})`, async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await startCamera(page);
+  await finishCalibration(page);
+  const sort = page.getByLabel('Sort by');
+  await gazeAt(page, sort);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  if (hiddenEstimate) await gazeAt(page, sort);
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Newest');
+  await expect(status(page)).toContainText(/tracking|fresh gaze/i);
+  await gazeAt(page, sort);
+  await typeInstruction(page, 'choose title');
+  await expect(sort).toHaveValue('Title');
+  expect(await page.evaluate(() => window.gazeNavigator.calibrating)).toBe(false);
+});
