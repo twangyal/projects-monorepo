@@ -630,7 +630,7 @@ export function createController({ window, actions = pageActions, interpret = in
   return {
     handle,
     // Performs an already interpreted and confirmed action (used by an embedded frame for the top navigator).
-    run: (action, context) => execute(action, context),
+    run: (action, context) => execute(action, context, activationOf(action, targetOf(context, action.targetId))),
     get paused() { return paused; },
     get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null, farTarget: pending.farTarget ?? null }; },
     cancel() { return handle('cancel', { elements: [] }); },

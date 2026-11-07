@@ -69,7 +69,7 @@ export function createEmbeddedFrames({ window, runtime }) {
     let pending = 0;
     const later = () => { pending ||= window.setTimeout(() => { pending = 0; discover(); }, 300); };
     // A frame that loads a new page needs a new agent.
-    const onLoad = event => { if (/^I?FRAME$/.test(event.target?.tagName ?? '')) { frameIds.delete(event.target); injected.delete(event.target); later(); } };
+    const onLoad = event => { if (/^I?FRAME$/.test(event.target?.tagName ?? '')) { frameIds.delete(event.target); injected.delete(event.target); answers.delete(event.target); later(); } };
     const observer = new window.MutationObserver(later);
     observer.observe(document, { subtree: true, childList: true });
     document.addEventListener('load', onLoad, true);
@@ -96,7 +96,7 @@ export function createEmbeddedFrames({ window, runtime }) {
 
   /** Adds the controls of reachable embedded frames in `context.unreachable` to `context`; calls `changed` after each. */
   function extend(context, { isCurrent = () => true, changed = () => {} } = {}) {
-    const add = (embedded, frameId, elements, origin) => {
+    const add = (embedded, { frameId, captureId, elements }, origin) => {
       let id = Math.max(0, ...context.elements.map(element => element.id));
       for (const remote of elements) {
         if (id >= LAST_ID) break;
@@ -104,7 +104,7 @@ export function createEmbeddedFrames({ window, runtime }) {
         const frame = embedded.frame;
         context.elements.push({ ...remote, id: ++id, rect, frames: [], embeddedIn: embedded.name,
           element: { get isConnected() { return frame.isConnected; },
-            remote: { id: remote.id, run: action => send({ type: 'gaze:frame-act', frameId, action }).then(result => result ?? { ok: false, message: 'The embedded page is not reachable.' }) } } });
+            remote: { id: remote.id, run: action => send({ type: 'gaze:frame-act', frameId, captureId, action }).then(result => result ?? { ok: false, message: 'The embedded page is not reachable.' }) } } });
       }
       context.unreachable = context.unreachable.filter(entry => entry !== embedded);
     };
@@ -114,7 +114,7 @@ export function createEmbeddedFrames({ window, runtime }) {
       const origin = contentOrigin(frame, frames), x = context.x - origin.left, y = context.y - origin.top;
       const recent = answers.get(frame);
       if (recent && window.performance.now() - recent.time < REUSE_MS && Math.hypot(recent.x - x, recent.y - y) < REUSE_PX && recent.radius === context.radius) {
-        add(embedded, recent.frameId, recent.elements, origin);
+        add(embedded, recent, origin);
         continue;
       }
       (async () => {
@@ -125,10 +125,12 @@ export function createEmbeddedFrames({ window, runtime }) {
         }
         if (frameId === null || !isCurrent()) return;
         const reply = await send({ type: 'gaze:frame-capture', frameId, x, y, radius: context.radius });
-        if (!reply?.ok) { frameIds.delete(frame); return; }
-        answers.set(frame, { frameId, x, y, radius: context.radius, time: window.performance.now(), elements: reply.elements });
+        if (frameIds.get(frame) !== frameId) return;
+        if (!reply?.ok || typeof reply.captureId !== 'string' || !Array.isArray(reply.elements)) { frameIds.delete(frame); return; }
+        const answer = { frameId, captureId: reply.captureId, x, y, radius: context.radius, time: window.performance.now(), elements: reply.elements };
+        answers.set(frame, answer);
         if (!isCurrent() || !context.unreachable.includes(embedded)) return;
-        add(embedded, frameId, reply.elements, contentOrigin(frame, frames));
+        add(embedded, answer, contentOrigin(frame, frames));
         changed();
       })().catch(() => {});
     }
