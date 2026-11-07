@@ -381,7 +381,7 @@ for (const format of ['SRT', 'LRC']) test(`shift reviewed ${format} timing witho
   await reviewReady(page, 1);
   const row = page.locator('[data-srt-cue="0"] strong');
   const field = page.getByLabel('Offset from file (seconds)', { exact: true });
-  const preview = page.getByRole('button', { name: 'Preview offset', exact: true });
+  const preview = page.getByRole('button', { name: format === 'LRC' ? 'Preview timing' : 'Preview offset', exact: true });
   await field.fill('.5'); await preview.click();
   await expect(row).toContainText(/00:00:01[,.]500.*00:00:02[,.]500/);
   const audio = page.locator('#audio');
@@ -403,6 +403,38 @@ for (const format of ['SRT', 'LRC']) test(`shift reviewed ${format} timing witho
   else await page.getByRole('button', { name: 'Apply imported line 1', exact: true }).click();
   const shifted = { start: 1.5, end: 2.5, text: 'Shift me' };
   expect(await editorCues(page)).toEqual(format === 'SRT' ? [shifted] : [BEFORE[0], shifted]);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
+});
+
+test('an LRC without a final timestamp can shift later and end before the outro', async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  await page.locator('#lrc-file').setInputFiles({ name: 'outro.lrc', mimeType: 'text/plain',
+    buffer: Buffer.from('[00:01.000]Last line\n') });
+  await reviewReady(page, 1);
+  const row = page.locator('[data-srt-cue="0"] strong');
+  const offset = page.getByLabel('Offset from file (seconds)', { exact: true });
+  const end = page.getByLabel('Last line end in clip (seconds)', { exact: true });
+  const preview = page.getByRole('button', { name: 'Preview timing', exact: true });
+  await offset.fill('.5'); await preview.click();
+  await expect(page.locator('#import-offset-status')).toContainText('Set the last line end');
+  await end.fill('2.5'); await preview.click();
+  await expect(row).toContainText(/00:00:01[,.]500.*00:00:02[,.]500/);
+  await end.fill('1.5'); await preview.click();
+  await expect(page.locator('#import-offset-status')).toContainText('must end after its shifted start');
+  await expect(row).toContainText(/00:00:01[,.]500.*00:00:02[,.]500/);
+  await page.getByRole('button', { name: 'Reset to file times', exact: true }).click();
+  await expect(end).toHaveValue('');
+  await expect(offset).toHaveValue('0');
+  await expect(row).toContainText(/00:00:01[,.]000.*00:00:04[,.]000/);
+  await offset.fill('.5'); await end.fill('2.5'); await preview.click();
+  await page.getByRole('button', { name: 'Listen to imported line 1' }).click();
+  await expect(page.locator('#import-listen-status')).toContainText('Practice complete');
+  const audio = await page.locator('#audio').evaluate(node => ({ paused: (node as HTMLAudioElement).paused, time: (node as HTMLAudioElement).currentTime }));
+  expect(audio.paused).toBe(true);
+  expect(audio.time).toBeCloseTo(2.5, 3);
+  await page.locator('#srt-apply').click();
+  expect(await editorCues(page)).toEqual([{ start: 1.5, end: 2.5, text: 'Last line' }]);
   expect(await projectFromServer(request, project.id)).toEqual(project);
   await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
 });

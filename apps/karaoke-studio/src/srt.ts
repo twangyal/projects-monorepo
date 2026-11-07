@@ -64,7 +64,7 @@ export function parseSrt(bytes: Uint8Array, duration: number): Cue[] {
 }
 
 /** Preview a local SRT/LRC offset at the same millisecond precision as the review. */
-export function shiftImportedCues(cues: Cue[], duration: number, raw: string): { cues: Cue[]; offset: number } {
+export function shiftImportedCues(cues: Cue[], duration: number, raw: string, finalEnd = ''): { cues: Cue[]; offset: number } {
   if (!/^[+-]?(?:\d+(?:\.\d{0,3})?|\.\d{1,3})$/.test(raw)) throw new Error('Enter an offset in seconds with at most three decimal places.');
   const milliseconds = Math.round(Number(raw) * 1000);
   if (!Number.isSafeInteger(milliseconds)) throw new Error('Enter a finite offset in seconds.');
@@ -74,5 +74,17 @@ export function shiftImportedCues(cues: Cue[], duration: number, raw: string): {
     // A final LRC cue can end at a fractional clip boundary rather than a file timestamp.
     return time === duration && time !== sourceMs / 1000 ? time + offset : (sourceMs + milliseconds) / 1000;
   };
-  return { offset, cues: milliseconds ? validateCues(cues.map(cue => ({ ...cue, start: move(cue.start), end: move(cue.end) })), duration) : cues };
+  let lastEnd: number | undefined;
+  if (finalEnd !== '') {
+    if (!/^\d+(?:\.\d{0,3})?$|^\.\d{1,3}$/.test(finalEnd) || !Number.isFinite(Number(finalEnd))) {
+      throw new Error('Enter the last line end in seconds with at most three decimal places, or leave it blank.');
+    }
+    lastEnd = Number(finalEnd);
+    if (lastEnd > duration || lastEnd <= move(cues.at(-1)!.start)) {
+      throw new Error('The last line must end after its shifted start and within the clip.');
+    }
+  }
+  return { offset, cues: milliseconds || lastEnd !== undefined ? validateCues(cues.map((cue, index) => ({
+    ...cue, start: move(cue.start), end: index === cues.length - 1 && lastEnd !== undefined ? lastEnd : move(cue.end),
+  })), duration) : cues };
 }

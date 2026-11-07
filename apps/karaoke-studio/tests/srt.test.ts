@@ -148,3 +148,14 @@ test('import timing offsets keep millisecond precision and accept an exact clip 
   const fractionalEnd = [{ start: .5, end: 1.1025, text: 'Tail' }];
   assert.equal(shiftImportedCues(fractionalEnd, 1.1025, '-.1').cues[0].end, 1.1025 - .1);
 });
+
+test('an explicit imported last end is in clip time, after the shifted start', () => {
+  const cues = [{ start: .5, end: 1, text: 'First' }, { start: 1, end: 4.1, text: 'Last' }];
+  const review = shiftImportedCues(cues, 4.1, '0.25', '2.5');
+  assert.deepEqual(review.cues, [{ start: .75, end: 1.25, text: 'First' }, { start: 1.25, end: 2.5, text: 'Last' }]);
+  assert.equal(cues[1].end, 4.1);
+  for (const invalid of ['1.25', '4.101', '2.5001']) {
+    assert.throws(() => shiftImportedCues(cues, 4.1, '0.25', invalid));
+  }
+  assert.equal(shiftImportedCues(cues, 4.1, '0', '2.5').cues[1].end, 2.5);
+});
