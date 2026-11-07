@@ -438,3 +438,16 @@ test('an LRC without a final timestamp can shift later and end before the outro'
   expect(await projectFromServer(request, project.id)).toEqual(project);
   await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
 });
+
+test('an imported passage replaces its own time window in one Undo step', async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  await chooseSrt(page, Buffer.from('1\n00:00:00,200 --> 00:00:00,700\nFirst half\n\n2\n00:00:00,700 --> 00:00:01,400\nSecond half\n'));
+  await reviewReady(page, 2);
+  await page.getByText('Apply a reviewed passage', { exact: true }).click();
+  await page.getByRole('combobox', { name: 'Last imported line in passage', exact: true }).selectOption('1');
+  await expect(page.locator('#automatic-passage-status')).toContainText('Replace 1 current lines with 2 included lines.');
+  await page.getByRole('button', { name: 'Apply reviewed passage', exact: true }).click();
+  expect(await editorCues(page)).toEqual([{ start: 0.2, end: 0.7, text: 'First half' }, { start: 0.7, end: 1.4, text: 'Second half' }, BEFORE[1]]);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
+});

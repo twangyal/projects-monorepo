@@ -266,3 +266,31 @@ test('preview a published offset before listening and applying', async ({ page }
   await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
   expect(await lines(page)).toEqual(before);
 });
+
+test('apply a shifted published passage without replacing outside corrections', async ({ page }) => {
+  const synced = '[00:00.50] Published opening\n[00:03.10] Published chorus\n[00:06.10]\n[00:09.25] Published ending\n[00:13.00]';
+  const plainLyrics = 'Published opening\nPublished chorus\nPublished ending';
+  await page.route('https://lrclib.net/api/get?**', route => route.fulfill({ json: { ...record, plainLyrics, syncedLyrics: synced }, headers: { 'access-control-allow-origin': '*' } }));
+  await setup(page);
+  await page.getByLabel('Lyric line 3', { exact: true }).fill('Keep my corrected ending');
+  const before = await lines(page);
+  await page.getByRole('button', { name: 'Look up lyrics', exact: true }).click();
+  await page.getByRole('button', { name: 'Review published timings', exact: true }).click();
+  await page.getByText('Apply a reviewed passage', { exact: true }).click();
+  await page.getByRole('combobox', { name: 'Last published line in passage', exact: true }).selectOption('1');
+  const offset = page.getByLabel('Offset from published times (seconds)', { exact: true });
+  const preview = page.getByRole('button', { name: 'Preview timing', exact: true });
+  const apply = page.getByRole('button', { name: 'Apply reviewed passage', exact: true });
+  await offset.fill('0.5'); await preview.click();
+  await expect(apply).toBeDisabled();
+  await expect(page.locator('#automatic-passage-status')).toContainText('cuts through current line 1');
+  expect(await lines(page)).toEqual(before);
+  await offset.fill('0.1'); await preview.click();
+  await expect(page.locator('#automatic-passage-status')).toContainText('0.6 → 6.2 seconds. Replace 2 current lines with 2 included lines.');
+  await apply.click();
+  expect(await lines(page)).toEqual(['Published opening', 'Published chorus', before[2]]);
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0.6');
+  await expect(page.getByLabel('End line 2', { exact: true })).toHaveValue('6.2');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  expect(await lines(page)).toEqual(before);
+});

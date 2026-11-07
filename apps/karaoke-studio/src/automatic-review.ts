@@ -66,9 +66,9 @@ export function applySingleReviewedCue(current: Cue[], selected: Cue, duration: 
 }
 
 /** Replace a complete reviewed interval; never trim a corrected line at its edges. */
-export function applyReviewedPassage(current: Cue[], rows: readonly ReviewedCue[], first: number, last: number, duration: number): {cues:Cue[];index:number;removed:number;start:number;end:number;changed:boolean} {
+export function applyReviewedPassage(current: Cue[], rows: readonly ReviewedCue[], first: number, last: number, duration: number, canEditBoundaries = true): {cues:Cue[];index:number;removed:number;start:number;end:number;changed:boolean} {
   if (!Array.isArray(rows) || rows.length > MAX_CUES || !Number.isInteger(first) || !Number.isInteger(last)
-    || first < 0 || last < first || last >= rows.length) throw new Error('Choose an existing first and last automatic line for the passage.');
+    || first < 0 || last < first || last >= rows.length) throw new Error('Choose an existing first and last reviewed line for the passage.');
   let cues: Cue[];
   try { cues = validateCues(current, duration); }
   catch (error) { throw new Error(`Check current lyrics first: ${error instanceof Error ? error.message : 'Invalid lyric cues.'}`); }
@@ -77,11 +77,11 @@ export function applyReviewedPassage(current: Cue[], rows: readonly ReviewedCue[
   catch (error) {
     throw new Error((error instanceof Error ? error.message : 'Check the reviewed passage.').replace(/Line (\d+)/g, (_, number) => `Line ${Number(number) + first}`));
   }
-  if (!selected.length) throw new Error('Include at least one automatic line in the selected passage.');
+  if (!selected.length) throw new Error('Include at least one reviewed line in the selected passage.');
   const start = selected[0].start, end = selected[selected.length - 1].end;
   const overlaps = cues.flatMap((cue, index) => cue.start < end && start < cue.end ? [index] : []);
   for (const index of overlaps) {
-    if (cues[index].start < start || cues[index].end > end) throw new Error(`The passage cuts through current line ${index + 1}. Adjust reviewed boundary times or choose a wider passage; current lyrics are unchanged.`);
+    if (cues[index].start < start || cues[index].end > end) throw new Error(`The passage cuts through current line ${index + 1}. ${canEditBoundaries ? 'Adjust reviewed boundary times' : 'Preview a different timing offset'} or choose a wider passage; current lyrics are unchanged.`);
   }
   let index = overlaps.length ? overlaps[0] : cues.findIndex(cue => cue.start >= end);
   if (index < 0) index = cues.length;
