@@ -696,6 +696,8 @@ function retireSrt(text: string) {
   element('srt-cancel').textContent = 'Cancel lyric import';
   element('import-listen-stop').textContent = 'Stop imported line';
   element('srt-status').textContent = text; srtControls();
+  // The caller may claim a replacement review in this same turn. Sync against the final owner.
+  queueMicrotask(() => lyricsLookup.sync());
 }
 function reviewedAutomaticCues(): Project['cues'] {
   if (!srtReview || !working || automaticReviewDraft.length !== srtReview.cues.length) throw new Error('Review every automatic lyric line before applying.');
@@ -1228,8 +1230,13 @@ element('srt-cancel').addEventListener('click', () => {
   retireSrt(`${published ? 'Published timing review' : 'Lyric import'} cancelled. Current lyrics and editor values were kept.`);
   lyricsLookup.sync();
   if (published) {
-    const button = element('lookup-review-timed');
-    workspace.reveal(button); button.focus();
+    const button = element<HTMLButtonElement>('lookup-review-timed');
+    if (!button.disabled && !button.hidden) {
+      workspace.reveal(button); element<HTMLDetailsElement>('lyrics-lookup').open = true; button.focus();
+    } else {
+      const list = element('cue-list');
+      workspace.reveal(list); list.querySelector('textarea')?.focus();
+    }
   }
 });
 // Reviewing automatic lyrics from the keyboard, without leaving the line being corrected for the mouse: from any field

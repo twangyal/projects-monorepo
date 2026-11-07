@@ -201,7 +201,13 @@ test('audition a published cue and apply just that line', async ({ page }) => {
   await setup(page);
   const before = await lines(page);
   await page.getByRole('button', { name: 'Look up lyrics', exact: true }).click();
-  await page.getByRole('button', { name: 'Review published timings', exact: true }).click();
+  const review = page.getByRole('button', { name: 'Review published timings', exact: true });
+  await review.click();
+  await page.locator('#srt-file').setInputFiles({ name: 'empty.srt', mimeType: 'text/plain', buffer: Buffer.alloc(0) });
+  await expect(page.locator('#srt-status')).toContainText('Choose a nonempty');
+  await page.locator('#lookup-found-review').click();
+  await expect(review).toBeEnabled();
+  await review.click();
   await expect(page.locator('#srt-summary')).toContainText('Published timings');
   await page.getByRole('button', { name: 'Listen to published line 1', exact: true }).click();
   await expect(page.locator('#import-listen-status')).toContainText('Playing the selected range');
@@ -213,6 +219,8 @@ test('audition a published cue and apply just that line', async ({ page }) => {
   await page.getByRole('button', { name: 'Apply published line 1', exact: true }).click();
   await expect(page.locator('#import-apply-status-0')).toContainText('Applied published line 1');
   expect(await lines(page)).toEqual(['Hello, little world!', ...before.slice(1)]);
+  await page.getByRole('button', { name: 'Cancel published timing review', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
   expect(await lines(page)).toEqual(before);
 });
