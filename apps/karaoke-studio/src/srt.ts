@@ -63,7 +63,7 @@ export function parseSrt(bytes: Uint8Array, duration: number): Cue[] {
   return validateCues(cues, duration);
 }
 
-/** Preview a local SRT/LRC offset at the same millisecond precision as the review. */
+/** Preview an offset from a timed source at the same millisecond precision as the review. */
 export function shiftImportedCues(cues: Cue[], duration: number, raw: string, finalEnd = ''): { cues: Cue[]; offset: number } {
   if (!/^[+-]?(?:\d+(?:\.\d{0,3})?|\.\d{1,3})$/.test(raw)) throw new Error('Enter an offset in seconds with at most three decimal places.');
   const milliseconds = Math.round(Number(raw) * 1000);
@@ -71,7 +71,7 @@ export function shiftImportedCues(cues: Cue[], duration: number, raw: string, fi
   const offset = milliseconds / 1000;
   const move = (time: number) => {
     const sourceMs = Math.round(time * 1000);
-    // A final LRC cue can end at a fractional clip boundary rather than a file timestamp.
+    // A final synced cue can end at a fractional clip boundary rather than a file timestamp.
     return time === duration && time !== sourceMs / 1000 ? time + offset : (sourceMs + milliseconds) / 1000;
   };
   let lastEnd: number | undefined;
