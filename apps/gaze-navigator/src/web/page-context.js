@@ -284,14 +284,29 @@ function scrollAxes(node) {
   };
 }
 
+export function regionSupportsAxis(node, axis) {
+  return Boolean(node?.isConnected && node.ownerDocument.defaultView && scrollAxes(node)[axis]);
+}
+
 // Scrolling regions anywhere on screen, for requests that name one ("scroll the list down") when the gaze is not on
 // it: a coarse grid of hit tests over the viewport, so only painted regions count and big pages stay cheap.
-function screenScrollRegions(document, exclude) {
+function screenScrollRegions(document, exclude, x, y, radius) {
   const view = document.defaultView, found = new Set(), axes = new Map(), step = 60;
-  for (let x = step / 2; x < view.innerWidth; x += step) {
-    for (let y = step / 2; y < view.innerHeight; y += step) for (const region of scrollRegionsAt(document, x, y, exclude, axes)) found.add(region);
+  for (let left = step / 2; left < view.innerWidth; left += step) {
+    for (let top = step / 2; top < view.innerHeight; top += step) for (const region of scrollRegionsAt(document, left, top, exclude, axes)) found.add(region);
   }
-  return [...found].map(element => ({ element, rect: viewportRect(element), ...axes.get(element) }));
+  for (const { element, vertical, horizontal } of nearbyScrollRegions(document, x, y, radius, exclude)) {
+    if (!found.has(element)) { found.add(element); axes.set(element, { vertical, horizontal }); }
+  }
+  return [...found].map(element => {
+    const frames = [];
+    for (let owner = element.ownerDocument; owner !== document;) {
+      const frame = owner.defaultView?.frameElement;
+      if (!frame) break;
+      frames.push(frame); owner = frame.ownerDocument;
+    }
+    return { element, rect: viewportRect(element, frames), ...axes.get(element) };
+  });
 }
 
 const described = element => `${element.id} ${element.getAttribute('class') ?? ''} ${element.getAttribute('aria-label') ?? ''}`;
@@ -724,8 +739,9 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const pageRegion = document.scrollingElement ?? document.documentElement;
   const region = scrollRegionAt(document, x, y, exclude);
   let regions = null;
-  const screenRegions = () => regions ??= screenScrollRegions(document, exclude);
-  return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, screenRegions, unreachable, region, pageRegion,
+  const screenRegions = () => regions ??= screenScrollRegions(document, exclude, x, y, radius);
+  const regionsAtGaze = () => scrollRegionsAt(document, x, y, exclude);
+  return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, screenRegions, regionsAtGaze, unreachable, region, pageRegion,
     scrollRegions: region === pageRegion ? nearbyScrollRegions(document, x, y, radius, exclude) : [],
     pageSearch: findPageSearch(document, exclude) };
 }

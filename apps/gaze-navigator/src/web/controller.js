@@ -3,7 +3,7 @@
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { keyLabel } from './page-actions.js';
-import { captureActivationSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs } from './page-context.js';
+import { captureActivationSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -175,7 +175,7 @@ export function createController({ window, actions = pageActions, interpret = in
     // original field since capture. Refusal must precede history, events or submit.
     const problem = writingProblem(action, element, context);
     if (problem) return problem;
-    let result;
+    let result, namedScrollRegion;
     const remembered = UNDOABLE.has(action.type) && actions.rememberChange ? actions.rememberChange(action.type, element) : null;
     const keep = outcome => { if (outcome.ok && remembered) changed = { change: remembered, at: now() }; };
     switch (action.type) {
@@ -280,9 +280,29 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'choose-option': result = actions.chooseListOption(element, action.optionName, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'scroll': {
         let region = action.scope === 'page' ? null : context.region;
-        let recovered = false;
-        if (action.scope !== 'page' && region === context.pageRegion && context.scrollRegions?.length) {
-          const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';
+        const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';
+        // When a command names a region, gaze only breaks ties between places matching that name.
+        let namedMatch = null, recovered = false;
+        if (action.kind && action.scope !== 'page') {
+          const matches = element => regionSupportsAxis(element, axis) && regionIs(element, action.kind);
+          const repeatRegion = context.repeatScrollRegion;
+          if (repeatRegion && !matches(repeatRegion)) {
+            return reply('The last scrolling region changed. Look at it and say what to do.', 'error', { performed: null });
+          }
+          const onMatch = repeatRegion ?? context.regionsAtGaze?.().find(matches);
+          if (onMatch) region = onMatch;
+          else {
+            const matching = (context.screenRegions?.() ?? []).filter(candidate => candidate[axis] && matches(candidate.element));
+            const distance = item => distanceToRect(context.x, context.y, item.rect);
+            // Prefer the nearer pane; if nested panes are equally near, use the inner one.
+            const nearest = matching.sort((a, b) => distance(a) - distance(b) ||
+              (composedContains(a.element, b.element) ? 1 : composedContains(b.element, a.element) ? -1 : 0))[0];
+            if (!nearest) return reply(`No visible ${action.kind} can scroll ${action.direction}. Look directly at the area and say “scroll ${action.direction}”, or ask to scroll the page.`, 'error', { performed: null });
+            region = nearest.element;
+            namedMatch = distance(nearest) > context.radius ? 'away from the gaze circle' : 'near your gaze';
+          }
+          namedScrollRegion = region;
+        } else if (action.scope !== 'page' && region === context.pageRegion && context.scrollRegions?.length) {
           const candidates = context.scrollRegions.filter(candidate => candidate[axis]);
           // Nested scroll containers describe one place; retain its innermost region.
           const inner = candidates.filter(candidate => !candidates.some(other => other !== candidate &&
@@ -290,19 +310,9 @@ export function createController({ window, actions = pageActions, interpret = in
           if (inner.length > 1) return reply('More than one scrolling region touches the gaze circle. Look further inside the one you mean, or say “scroll the page down”.', 'error', { performed: null });
           if (inner.length === 1) { region = inner[0].element; recovered = true; }
         }
-        // A named region ("scroll the list down") the gaze is not on: the nearest such region on screen. Scrolling
-        // changes nothing on the page, so it needs no confirmation; the reply says which region moved.
-        let away = false;
-        if (action.kind && region === context.pageRegion && context.screenRegions) {
-          const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';
-          const matching = context.screenRegions().filter(candidate => candidate[axis] && regionIs(candidate.element, action.kind));
-          const inner = matching.filter(candidate => !matching.some(other => other !== candidate && composedContains(candidate.element, other.element)));
-          const nearest = inner.sort((a, b) => distanceToRect(context.x, context.y, a.rect) - distanceToRect(context.x, context.y, b.rect))[0];
-          if (nearest) { region = nearest.element; away = true; }
-        }
         result = actions.scroll(region, action.direction, action.amount, window);
         if (recovered && result.ok) result.message += ' Found at the edge of the gaze circle.';
-        if (away && result.ok) result.message += ` It was the ${action.kind} away from the gaze circle.`;
+        if (namedMatch && result.ok) result.message += ` It was the ${action.kind} ${namedMatch}.`;
         break;
       }
       case 'back':
@@ -321,7 +331,9 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     keep(result);
     if (result.ok && target) previous = { target, at: now() };
-    if (result.ok && (['scroll', 'back', 'forward'].includes(action.type) || (action.type === 'activate' && target && !confirmable(action, target)))) last = { action, context, at: now() };
+    if (result.ok && (['scroll', 'back', 'forward'].includes(action.type) || (action.type === 'activate' && target && !confirmable(action, target)))) {
+      last = { action, context: namedScrollRegion ? { ...context, repeatScrollRegion: namedScrollRegion } : context, at: now() };
+    }
     // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
     const aimed = result.ok && POINTING.has(action.type) && context.elements.includes(target) ? target : null;
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null, aimed });
@@ -566,7 +578,7 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type === 'again') {
       if (!last || now() - last.at > AGAIN_MS) return reply('There is nothing to do again. Say the instruction itself.', 'info');
       const { action: repeated, context: where } = last;
-      const gone = repeated.targetId != null ? !targetOf(where, repeated.targetId)?.element?.isConnected : repeated.type === 'scroll' && where.region?.isConnected === false;
+      const gone = repeated.targetId != null ? !targetOf(where, repeated.targetId)?.element?.isConnected : repeated.type === 'scroll' && (where.repeatScrollRegion ?? where.region)?.isConnected === false;
       if (gone) { last = null; return reply('What was used last is no longer on the page. Look at it and say what to do.', 'error'); }
       return perform(repeated, where);
     }

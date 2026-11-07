@@ -188,11 +188,74 @@ test('a named region away from the gaze is scrolled, and the reply says so', asy
   expect(await page.evaluate(() => [scrollY, document.querySelector('#side').scrollTop])).toEqual([0, 150]);
 });
 
-test('unnamed requests and names with no matching region still scroll the page', async ({ page }) => {
+test('the spoken region wins over a different pane under the gaze', async ({ page }) => {
+  await setup(page, sidebar + '<section id="comments" class="vertical" style="left:25px;top:50px;width:150px;height:220px"><div style="height:650px">Comment thread</div></section>');
+  const result = await page.evaluate(() => window.say('scroll the comments down a bit', window.capture(innerWidth - 90, 110)));
+  expect(result.performed).toBe('scroll');
+  expect(result.message).toContain('comments away from the gaze');
+  expect(await page.evaluate(() => [scrollY, document.querySelector('#side').scrollTop, document.querySelector('#comments').scrollTop])).toEqual([0, 0, 55]);
+});
+
+test('a named region that cannot scroll in the requested direction leaves the page and the gazed pane still', async ({ page }) => {
   await setup(page, sidebar);
-  for (const said of ['scroll down a bit', 'scroll the comments down a bit']) {
-    expect((await page.evaluate(said => window.say(said, window.capture(80, 420)), said)).performed).toBe('scroll');
-  }
-  expect(await page.locator('#side').evaluate(element => element.scrollTop)).toBe(0);
+  const result = await page.evaluate(() => window.say('scroll the sidebar right a bit', window.capture(innerWidth - 90, 110)));
+  expect(result.performed).toBeNull();
+  expect(result.message).toContain('No visible sidebar can scroll right');
+  expect(await page.evaluate(() => [scrollY, document.querySelector('#side').scrollLeft])).toEqual([0, 0]);
+});
+
+test('an unmatched name leaves the page still and an unnamed request scrolls it', async ({ page }) => {
+  await setup(page, sidebar);
+  const missing = await page.evaluate(() => window.say('scroll the comments down a bit', window.capture(80, 420)));
+  expect(missing.performed).toBeNull();
+  expect(missing.message).toContain('No visible comments can scroll down');
+  expect(await page.evaluate(() => [scrollY, document.querySelector('#side').scrollTop])).toEqual([0, 0]);
+  expect((await page.evaluate(() => window.say('scroll down a bit', window.capture(80, 420)))).performed).toBe('scroll');
   expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
+});
+
+test('a nearer outer pane wins over its farther matching child', async ({ page }) => {
+  await setup(page, '<aside id="outer" class="vertical" style="left:40px;top:30px;width:190px;height:300px"><div style="height:600px"><div id="inner" class="vertical" style="left:20px;top:190px;width:120px;height:80px"><div style="height:400px">Nested content</div></div></div></aside>');
+  const result = await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(25, 40)));
+  expect(result.performed).toBe('scroll');
+  expect(await page.evaluate(() => [document.querySelector('#outer').scrollTop, document.querySelector('#inner').scrollTop])).toEqual([75, 0]);
+});
+
+test('a matching pane hidden after capture does not block another visible match', async ({ page }) => {
+  const other = '<aside id="left-sidebar" class="vertical" style="left:20px;top:50px;width:150px;height:220px"><div style="height:650px">Other sidebar</div></aside>';
+  await setup(page, sidebar + other);
+  const result = await page.evaluate(() => {
+    const captured = window.capture(innerWidth - 90, 110);
+    document.querySelector('#side').style.visibility = 'hidden';
+    return window.say('scroll the sidebar down a bit', captured);
+  });
+  expect(result.performed).toBe('scroll');
+  expect(await page.evaluate(() => [document.querySelector('#side').scrollTop, document.querySelector('#left-sidebar').scrollTop])).toEqual([0, 55]);
+});
+
+test('again keeps the previously used named pane and does not switch after removal', async ({ page }) => {
+  const other = '<aside id="left-sidebar" class="vertical" style="left:20px;top:50px;width:150px;height:220px"><div style="height:650px">Other sidebar</div></aside>';
+  await setup(page, sidebar + other);
+  const result = await page.evaluate(() => {
+    const left = () => window.capture(80, 110);
+    const first = window.say('scroll the sidebar down a bit', window.capture(innerWidth - 90, 110));
+    const again = window.say('again', left());
+    const position = document.querySelector('#side').scrollTop;
+    document.querySelector('#side').remove();
+    const removed = window.say('again', left());
+    return [first.performed, again.performed, position, removed.tone, document.querySelector('#left-sidebar').scrollTop];
+  });
+  expect(result).toEqual(['scroll', 'scroll', 150, 'error', 0]);
+});
+
+test('nearest named pane uses top-page coordinates for a same-origin frame', async ({ page }) => {
+  const markup = '<aside id="near-left" class="vertical" style="left:25px;top:30px;width:120px;height:180px"><div style="height:450px">Left sidebar</div></aside>' +
+    '<iframe id="sidebar-frame" style="position:absolute;left:240px;top:30px;width:130px;height:200px;border:0" srcdoc="<body style=\'margin:0\'><aside id=\'frame-pane\' style=\'width:120px;height:180px;overflow-y:auto\'><div style=\'height:450px\'>Frame sidebar</div></aside></body>"></iframe>';
+  await setup(page, markup);
+  const pane = page.frameLocator('#sidebar-frame').locator('#frame-pane');
+  await expect(pane).toBeVisible();
+  const result = await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(205, 100)));
+  expect(result.performed).toBe('scroll');
+  expect(await pane.evaluate(node => node.scrollTop)).toBe(45);
+  expect(await page.locator('#near-left').evaluate(node => node.scrollTop)).toBe(0);
 });
