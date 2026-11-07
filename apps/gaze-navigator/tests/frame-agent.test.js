@@ -87,6 +87,7 @@ test('the embedded controller refuses activation if the captured link changes', 
   const action = { type: 'activate', targetId: 1 };
   attrs.set('href', '/replacement');
   assert.match(controller.run(action, context).message, /changed.*Nothing was clicked/);
+  assert.match(controller.run({ ...action, type: 'double-click' }, context, { confirmed: true }).message, /changed.*Nothing was clicked/);
   attrs.set('href', '/original');
   attrs.set('aria-label', 'Buy something else');
   assert.match(controller.run(action, context).message, /changed.*Nothing was clicked/);

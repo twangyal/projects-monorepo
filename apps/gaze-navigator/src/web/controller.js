@@ -87,7 +87,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function activationOf(action, target) {
-    return action.type === 'activate' && target?.element && !target.element.remote
+    return (action.type === 'activate' || action.type === 'double-click') && target?.element && !target.element.remote
       ? target.activationSnapshot ?? captureActivationSnapshot(target.element) : null;
   }
 
@@ -143,7 +143,7 @@ export function createController({ window, actions = pageActions, interpret = in
     return reply(result.message, result.ok ? 'success' : 'error');
   }
 
-  function execute(action, context, activation = null) {
+  function execute(action, context, activation = null, confirmed = false) {
     const executionTurn = turn;
     pending = null;
     if (BROWSER.has(action.type)) return runBrowser(action);
@@ -158,7 +158,7 @@ export function createController({ window, actions = pageActions, interpret = in
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
     if (element?.remote) {
-      const followUp = Promise.resolve(element.remote.run({ ...action, targetId: element.remote.id }))
+      const followUp = Promise.resolve(element.remote.run({ ...action, targetId: element.remote.id }, { confirmed }))
         .catch(() => ({ ok: false, message: 'The embedded page could not be reached. Look at it again.' }))
         .then(later => executionTurn === turn && !paused ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
       return reply('Working in the embedded page…', 'info', { performed: null, followUp });
@@ -185,7 +185,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'check': result = actions.setChecked(element, action.checked); break;
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus), ...(activation ? { confirmation: activation } : {}) }); break;
       case 'hover': result = actions.hover(element, target.name, hovered?.isConnected ? hovered : null); hovered = element; break;
-      case 'double-click': result = actions.doubleClick(element, target.name); break;
+      case 'double-click': result = actions.doubleClick(element, target.name, { confirmation: activation }); break;
       case 'context-menu': result = actions.contextMenu(element, target.name); break;
       case 'submit': result = actions.submit(element); break;
       case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
@@ -545,7 +545,7 @@ export function createController({ window, actions = pageActions, interpret = in
           pending = null;
           return reply('The focused page target changed. Give the shortcut again. No key was pressed.', 'error');
         }
-        return execute(confirmation.action, confirmation.context, confirmation.activation);
+        return execute(confirmation.action, confirmation.context, confirmation.activation, true);
       }
       pending = null;
       if (action.type === 'deny') return reply('Cancelled. Nothing was changed.', 'info', { cancelled: true });
@@ -630,7 +630,8 @@ export function createController({ window, actions = pageActions, interpret = in
   return {
     handle,
     // Performs an already interpreted and confirmed action (used by an embedded frame for the top navigator).
-    run: (action, context) => execute(action, context, activationOf(action, targetOf(context, action.targetId))),
+    run: (action, context, { confirmed = false } = {}) => execute(action, context,
+      action.type === 'activate' || confirmed ? activationOf(action, targetOf(context, action.targetId)) : null),
     get paused() { return paused; },
     get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null, farTarget: pending.farTarget ?? null }; },
     cancel() { return handle('cancel', { elements: [] }); },

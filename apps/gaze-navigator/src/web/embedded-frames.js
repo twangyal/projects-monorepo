@@ -104,7 +104,7 @@ export function createEmbeddedFrames({ window, runtime }) {
         const frame = embedded.frame;
         context.elements.push({ ...remote, id: ++id, rect, frames: [], embeddedIn: embedded.name,
           element: { get isConnected() { return frame.isConnected; },
-            remote: { id: remote.id, run: action => send({ type: 'gaze:frame-act', frameId, captureId, action }).then(result => result ?? { ok: false, message: 'The embedded page is not reachable.' }) } } });
+            remote: { id: remote.id, run: (action, { confirmed } = {}) => send({ type: 'gaze:frame-act', frameId, captureId, action, confirmed }).then(result => result ?? { ok: false, message: 'The embedded page is not reachable.' }) } } });
       }
       context.unreachable = context.unreachable.filter(entry => entry !== embedded);
     };

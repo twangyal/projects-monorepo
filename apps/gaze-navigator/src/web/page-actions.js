@@ -787,20 +787,51 @@ export function hover(element, name, previous = null, { wait = ms => new Promise
   });
   return { ok: true, message: `Pointing at ${label}…`, followUp };
 }
+// The browser can activate a containing link or submit button even if the picked element is a child.
+function hasNativeClickDestination(element) {
+  const todo = [element], seen = new Set();
+  for (const node of todo) {
+    if (!node || seen.has(node)) continue;
+    seen.add(node);
+    if (['a', 'area'].includes(node.localName) || node.tagName === 'A') return true;
+    const submitter = node.localName === 'label' ? node.control : node;
+    if (['BUTTON', 'INPUT'].includes(submitter?.tagName) && ['submit', 'image'].includes(submitter.type) && submitter.form) return true;
+    todo.push(node.assignedSlot, node.parentElement, node.getRootNode?.().host);
+  }
+  return false;
+}
+
 // A double-click: the presses, releases and clicks a mouse makes, then dblclick, at the control's centre.
-export function doubleClick(element, name) {
+export function doubleClick(element, name, { confirmation = null } = {}) {
+  if (confirmation && !activationStillMatches(element, confirmation)) return changedActivation();
   const problem = linkProblem(element);
   if (problem) return { ok: false, message: problem };
+  // Native navigation or submission can happen inside dispatchEvent, after the page's click handlers.
+  // We cannot check a rewritten destination between those handlers and the browser's default action.
+  const nativeRefusal = () => ({ ok: false, message: 'A confirmed double-click cannot safely open a link or submit a form. Say “click” for a single activation. Nothing was clicked.' });
+  if (confirmation && hasNativeClickDestination(element)) return nativeRefusal();
   const { view, init } = pointerAt(element);
+  let clicks = 0;
+  const dispatch = (type, detail, pressed = false) => {
+    const native = confirmation && hasNativeClickDestination(element);
+    if (confirmation && (native || !activationStillMatches(element, confirmation))) {
+      return clicks === 0 ? (native ? nativeRefusal() : changedActivation()) : { ok: false, message: clicks === 1
+        ? 'The control changed during the action. Only the first click was sent. Look at it again.'
+        : 'The control changed during the action. Both clicks were sent, but the final double-click event was stopped. Look at it again.' };
+    }
+    const options = { ...init, detail, button: 0, ...(pressed ? { buttons: 1 } : {}) };
+    element.dispatchEvent(type.startsWith('pointer') ? pointerEvent(view, type, options) : new view.MouseEvent(type, options));
+    if (type === 'click') clicks++;
+    return null;
+  };
+  // Site handlers run synchronously and can repurpose the control between any two events.
   for (const detail of [1, 2]) {
-    element.dispatchEvent(pointerEvent(view, 'pointerdown', { ...init, detail, button: 0, buttons: 1 }));
-    element.dispatchEvent(new view.MouseEvent('mousedown', { ...init, detail, button: 0, buttons: 1 }));
-    element.dispatchEvent(pointerEvent(view, 'pointerup', { ...init, detail, button: 0 }));
-    element.dispatchEvent(new view.MouseEvent('mouseup', { ...init, detail, button: 0 }));
-    element.dispatchEvent(new view.MouseEvent('click', { ...init, detail, button: 0 }));
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      const stopped = dispatch(type, detail, type.endsWith('down'));
+      if (stopped) return stopped;
+    }
   }
-  element.dispatchEvent(new view.MouseEvent('dblclick', { ...init, detail: 2, button: 0 }));
-  return { ok: true, message: `Double-clicked ${name || 'the control'}.` };
+  return dispatch('dblclick', 2) ?? { ok: true, message: `Double-clicked ${name || 'the control'}.` };
 }
 // A right-click. A page that shows its own menu cancels the event; otherwise only the browser's own menu, which a script
 // cannot open, would have appeared, and the reply says so.

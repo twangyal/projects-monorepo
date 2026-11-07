@@ -87,7 +87,7 @@ if (window !== window.top && !globalThis.__gazeFrameAgent) {
           return respond({ ok: false, message: 'That control was not in the embedded page capture. Look at it again.' });
         }
         controller ??= control.createController({ window });
-        const reply = controller.run(message.action, snapshot);
+        const reply = controller.run(message.action, snapshot, { confirmed: message.confirmed === true });
         const later = reply.followUp ? await reply.followUp : reply;
         respond(later ? { ok: later.tone === 'success', message: later.message } : { ok: false, message: 'The action was stopped.' });
       }).catch(() => respond({ ok: false, message: 'The embedded page could not be controlled.' }));

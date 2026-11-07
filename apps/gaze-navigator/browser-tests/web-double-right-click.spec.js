@@ -32,3 +32,70 @@ test('a file opens on a spoken double-click, and a folder\'s own right-click men
   await say(page, 'right click trip notes');
   await expect(status(page)).toContainText('has no menu of its own on this page');
 });
+
+test('confirmed double-click stops before sending events to a renamed or repurposed control', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await page.evaluate(() => {
+    const link = document.createElement('a');
+    link.id = 'buy-tickets'; link.href = '#original'; link.textContent = 'Buy tickets';
+    document.body.prepend(link);
+    window.purchaseEvents = [];
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'dblclick']) {
+      link.addEventListener(type, () => { window.purchaseEvents.push(type); });
+    }
+  });
+  const link = page.locator('#buy-tickets');
+  const box = await link.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await say(page, 'double click buy tickets');
+  await expect(status(page)).toContainText('Say confirm');
+  await link.evaluate(node => { node.href = '#changed'; });
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('Nothing was clicked');
+  expect(await page.evaluate(() => window.purchaseEvents)).toEqual([]);
+
+  await link.evaluate(node => node.addEventListener('click', () => { node.href = '#unapproved'; }));
+  await say(page, 'double click buy tickets');
+  await expect(status(page)).toContainText('Say confirm');
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('cannot safely open a link');
+  expect(await page.evaluate(() => [location.hash, window.purchaseEvents])).toEqual(['', []]);
+
+  await link.evaluate(node => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.id = node.id; button.textContent = node.textContent;
+    node.replaceWith(button);
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'dblclick']) {
+      button.addEventListener(type, () => window.purchaseEvents.push(type));
+    }
+    button.addEventListener('click', () => { button.textContent = 'Buy another ticket'; }, { once: true });
+  });
+  const nextBox = await link.boundingBox();
+  await page.mouse.move(nextBox.x + nextBox.width / 2, nextBox.y + nextBox.height / 2);
+  await say(page, 'double click buy tickets');
+  await expect(status(page)).toContainText('Say confirm');
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('Only the first click was sent');
+  expect(await page.evaluate(() => window.purchaseEvents)).toEqual(['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+
+  await link.evaluate(node => { node.textContent = 'Buy tickets'; window.purchaseEvents = []; });
+  await say(page, 'double click buy tickets');
+  await expect(status(page)).toContainText('Say confirm');
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('Double-clicked Buy tickets');
+  const one = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
+  expect(await page.evaluate(() => window.purchaseEvents)).toEqual([...one, ...one, 'dblclick']);
+
+  await link.evaluate(node => {
+    window.purchaseEvents = [];
+    node.addEventListener('pointerdown', () => {
+      const parent = document.createElement('a'); parent.href = '#unapproved';
+      node.before(parent); parent.append(node);
+    }, { once: true });
+  });
+  await say(page, 'double click buy tickets');
+  await expect(status(page)).toContainText('Say confirm');
+  await say(page, 'confirm');
+  await expect(status(page)).toContainText('Nothing was clicked');
+  expect(await page.evaluate(() => [location.hash, window.purchaseEvents])).toEqual(['', ['pointerdown']]);
+});
