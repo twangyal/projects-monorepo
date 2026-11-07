@@ -65,7 +65,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <p id="garment-drape-time-help" class="fine-print">Times are simulated, per garment. Longer restarts the drape and takes more time to run. The result can still show motion or excessive stretch.</p>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
         <label class="field">Size shown<select id="garment-size" aria-describedby="garment-size-status"></select></label>
-        <label class="field">Wear with<select id="garment-wear-with"></select></label><label class="field">And with<select id="garment-wear-also" disabled aria-describedby="wear-also-help"></select></label><p id="wear-also-help" class="fine-print">A third garment: a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.</p><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><label id="outfit-edit-picker" class="field" hidden>Garment to edit<select id="outfit-edit-layer" aria-describedby="edit-worn-help"></select></label><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping the outfit together. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
+        <label class="field">Wear with<select id="garment-wear-with"></select></label><button type="button" id="remove-outfit-companion" class="quiet" hidden>Remove worn garment</button><label class="field">And with<select id="garment-wear-also" disabled aria-describedby="wear-also-help"></select></label><p id="wear-also-help" class="fine-print">A third garment: a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.</p><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><label id="outfit-edit-picker" class="field" hidden>Garment to edit<select id="outfit-edit-layer" aria-describedby="edit-worn-help"></select></label><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping the outfit together. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
         <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <p id="garment-size-status" class="fine-print" role="status"></p>
@@ -353,19 +353,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   });
   // Wear with: templates of the other kind, the kept copy, and saved designs of the other kind (read when the list opens).
   const wearWith = $('garment-wear-with') as HTMLSelectElement, wearAlso = $('garment-wear-also') as HTMLSelectElement;
+  const removeCompanion = $('remove-outfit-companion') as HTMLButtonElement;
   let savedOutfits = new Map<string, Product>(), loadingSaved = false;
   function renderWearWith(design: Product) {
-    const kept = options.current().wornWith, companion = companionOf(design), other = (item: Product) => canWearTogether(item, design);
+    const companion = companionOf(design), also = alsoOf(design), other = (item: Product) => canWearTogether(item, design);
     const option = (value: string, text: string) => `<option value="${value}">${escapeHtml(text)}</option>`;
-    const html = option('', 'Nothing else') + (companion ? option('kept', `${kept!.name} (kept with this design)`) : '')
+    const html = option('', also ? 'Remove both worn garments' : 'Nothing else') + (companion ? option('kept', `${companion.name} (kept with this design)`) : '')
       + `<optgroup label="Templates">${TEMPLATES.filter(item => other(item.product)).map(item => option(`t:${item.id}`, item.name)).join('')}</optgroup>`
       + ([...savedOutfits].some(([, item]) => other(item)) ? `<optgroup label="Saved designs">${[...savedOutfits].filter(([, item]) => other(item)).map(([id, item]) => option(`s:${id}`, item.name)).join('')}</optgroup>` : '');
     if (wearWith.dataset.html !== html) { wearWith.dataset.html = html; wearWith.innerHTML = html; }
     wearWith.value = companion ? 'kept' : '';
     // And with: a third garment, when these two can be worn with one.
-    const kept3 = options.current().wornAlso, also = alsoOf(design), third = (item: Product) => !!companion && !!threePiece([design, companion, item]);
+    removeCompanion.hidden = !also;
+    if (also && companion) removeCompanion.textContent = `Remove only ${companion.name}`;
+    const third = (item: Product) => !!companion && !!threePiece([design, companion, item]);
     const thirds = TEMPLATES.filter(item => third(item.product)), savedThirds = [...savedOutfits].filter(([, item]) => third(item));
-    const alsoHtml = option('', 'Nothing else') + (also ? option('kept', `${kept3!.name} (kept with this design)`) : '')
+    const alsoHtml = option('', 'Nothing else') + (also ? option('kept', `${also.name} (kept with this design)`) : '')
       + (thirds.length ? `<optgroup label="Templates">${thirds.map(item => option(`t:${item.id}`, item.name)).join('')}</optgroup>` : '')
       + (savedThirds.length ? `<optgroup label="Saved designs">${savedThirds.map(([id, item]) => option(`s:${id}`, item.name)).join('')}</optgroup>` : '');
     if (wearAlso.dataset.html !== alsoHtml) { wearAlso.dataset.html = alsoHtml; wearAlso.innerHTML = alsoHtml; }
@@ -397,6 +400,20 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       commit(worn ? { ...rest, wornAlso: validateProduct(structuredClone(worn)) } : rest);
       options.notice(worn ? `The ${design.name} is worn with the ${companion.name} and the ${worn.name}.${draping ? '' : ' Drape on a body to see them together.'} You can undo this.` : `The ${design.name} is worn with the ${companion.name} only. You can undo this.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'That garment cannot be worn with these.', true); renderWearWith(design); }
+  });
+  removeCompanion.addEventListener('click', () => {
+    const current = options.current();
+    const design = current.product ?? template('blank');
+    const { wornWith: removed, wornAlso: kept } = current;
+    if (!removed || !kept || !threePiece([design, removed, kept]) || !canWearTogether(design, kept)) return;
+    const next = { ...current, wornWith: kept };
+    delete next.wornAlso; delete next.tucked;
+    retireAssets();
+    try {
+      commit(next);
+      wearWith.focus();
+      options.notice(`Removed ${removed.name}. The ${kept.name} stays in the outfit. You can undo this.`);
+    } catch (error) { options.notice(error instanceof Error ? error.message : 'Could not remove that worn garment.', true); }
   });
   wearWith.addEventListener('change', () => {
     const value = wearWith.value, current = options.current(), design = current.product ?? template('blank');

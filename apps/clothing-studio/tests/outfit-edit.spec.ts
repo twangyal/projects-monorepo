@@ -145,3 +145,57 @@ for (const method of ['template', 'description']) test(`changing the primary by 
   await page.getByRole('button', {name:'Undo',exact:true}).click();
   expect(await backup(page)).toEqual(before);
 });
+
+test('remove only the Wear with garment and keep the edited third piece', async ({ page }) => {
+  await page.goto('/');
+  const editor = page.locator('#product-editor');
+  await editor.getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  const also = page.getByRole('combobox', { name: 'And with', exact: true });
+  await wear.selectOption({ label: 'Straight trousers' });
+  await also.selectOption({ label: 'Crew sweatshirt' });
+  const edited = await backup(page);
+  edited.wornAlso.name = 'My outer layer';
+  edited.wornAlso.parts.front.color = '#2244aa';
+  edited.topBody = { chest: 100, waist: 76, hip: 100, chestDepth: 24, height: 178, hipDepth: 20 };
+  await page.getByLabel('Import project backup', { exact: true }).setInputFiles({ name: 'three-pieces.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(edited)) });
+  await expect(also.locator('option:checked')).toContainText('My outer layer');
+  const before = await backup(page);
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toContain('Remove both worn garments');
+    await dialog.dismiss();
+  });
+  await wear.selectOption({ label: 'Remove both worn garments' });
+  expect(await backup(page)).toEqual(before);
+  await editor.locator('#product-chest').fill('115');
+  await page.getByRole('button', { name: 'Remove only Straight trousers', exact: true }).click();
+  await expect(wear).toBeFocused();
+  await expect(wear.locator('option:checked')).toContainText('My outer layer');
+  await expect(also).toHaveValue('');
+  await expect(editor.locator('#product-chest')).toHaveValue('115');
+  const after = await backup(page);
+  expect(after.product).toEqual(before.product);
+  expect(after.wornWith).toEqual(before.wornAlso);
+  expect(after.wornAlso).toBeUndefined();
+  expect(after.topBody).toEqual(before.topBody);
+  await page.getByRole('button', { name: 'Discard all product drafts', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect(await backup(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  expect(await backup(page)).toEqual(after);
+});
+
+test('remove one outfit piece with the initial Blank tee before choosing a template', async ({ page }) => {
+  await page.goto('/');
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  await wear.selectOption({ label: 'Straight trousers' });
+  await page.getByRole('combobox', { name: 'And with', exact: true }).selectOption({ label: 'Crew sweatshirt' });
+  const before = await backup(page);
+  expect(before.product).toBeUndefined();
+  await page.getByRole('button', { name: 'Remove only Straight trousers', exact: true }).click();
+  await expect(wear.locator('option:checked')).toContainText('Crew sweatshirt');
+  const after = await backup(page);
+  expect(after.product).toBeUndefined();
+  expect(after.wornWith).toEqual(before.wornAlso);
+  expect(after.wornAlso).toBeUndefined();
+});
