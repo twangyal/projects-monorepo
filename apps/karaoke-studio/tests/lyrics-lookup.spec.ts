@@ -194,3 +194,25 @@ test('an untagged file named "Title - Artist" is looked up from its name, the ot
   // Nothing is used without a click.
   await expect(page.getByRole('button',{name:'Use lyrics and align',exact:true})).toBeVisible();
 });
+
+test('audition a published cue and apply just that line', async ({ page }) => {
+  const synced = '[00:01.50] Hello, little world!\n[00:03.00]\n[00:05.00] This is our chorus\n[00:09.25] Sing it back to me\n[00:13.00]';
+  await page.route('https://lrclib.net/api/get?**', route => route.fulfill({ json: { ...record, syncedLyrics: synced }, headers: { 'access-control-allow-origin': '*' } }));
+  await setup(page);
+  const before = await lines(page);
+  await page.getByRole('button', { name: 'Look up lyrics', exact: true }).click();
+  await page.getByRole('button', { name: 'Review published timings', exact: true }).click();
+  await expect(page.locator('#srt-summary')).toContainText('Published timings');
+  await page.getByRole('button', { name: 'Listen to published line 1', exact: true }).click();
+  await expect(page.locator('#import-listen-status')).toContainText('Playing the selected range');
+  expect(await lines(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Cancel published timing review', exact: true }).click();
+  expect(await lines(page)).toEqual(before);
+  await expect(page.getByRole('button', { name: 'Review published timings', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Review published timings', exact: true }).click();
+  await page.getByRole('button', { name: 'Apply published line 1', exact: true }).click();
+  await expect(page.locator('#import-apply-status-0')).toContainText('Applied published line 1');
+  expect(await lines(page)).toEqual(['Hello, little world!', ...before.slice(1)]);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  expect(await lines(page)).toEqual(before);
+});

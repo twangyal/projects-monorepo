@@ -8,15 +8,16 @@ export const lyricsLookupMarkup=`<details id="lyrics-lookup"><summary>Look up ex
 <p id="lookup-status" class="fine" role="status" aria-live="polite">Choose a clip, then enter its song title and artist.</p>
 <section id="lookup-review" aria-label="Review found lyrics" hidden><p id="lookup-match" class="fine"></p><a id="lookup-source" target="_blank" rel="noopener noreferrer">Source: LRCLIB</a><pre id="lookup-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto"></pre>
 <p id="lookup-timing-notice" class="fine" role="status"></p><section id="lookup-timing-review" aria-label="Published words and line timings" hidden><h3>Published words and line timings</h3><pre id="lookup-timing-preview" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto"></pre></section>
-<p class="fine">Review the words and song edition. Use lyrics replaces the lyric draft and aligns to locally recognized vocals. Without recognized words, timing is estimated. Current cues change as one unsaved edit; Undo restores them and Save lyrics is separate. Finish or discard any pasted draft first.</p><p id="lookup-timed-note" class="fine" hidden>This edition also has published line timings. Review their words and times above before using them. Lines end at the next timestamp or instrumental gap and are held at most eight seconds. Word highlighting uses local recognition where it heard the words.</p><p id="lookup-readiness" class="fine" role="status"></p><div class="timing-actions"><button id="lookup-use-timed" hidden disabled>Use lyrics with published timings</button><button id="lookup-use" disabled>Use lyrics and align</button></div></section></details>`;
+<p class="fine">Review the words and song edition. Use lyrics replaces the lyric draft and aligns to locally recognized vocals. Without recognized words, timing is estimated. Current cues change as one unsaved edit; Undo restores them and Save lyrics is separate. Finish or discard any pasted draft first.</p><p id="lookup-timed-note" class="fine" hidden>This edition also has published line timings. Review their words and times above before using them. Lines end at the next timestamp or instrumental gap and are held at most eight seconds. Word highlighting uses local recognition where it heard the words.</p><p id="lookup-readiness" class="fine" role="status"></p><div class="timing-actions"><button id="lookup-review-timed" class="quiet" hidden disabled>Review published timings</button><button id="lookup-use-timed" hidden disabled>Use lyrics with published timings</button><button id="lookup-use" disabled>Use lyrics and align</button></div></section></details>`;
 interface Context {key:string;projectId:string;duration:number;busy:boolean;pastedDirty:boolean;alignmentState:'loading'|'ready'|'error'}
-interface Options {context:()=>Context|null;useLyrics:(text:string)=>void;useTimedLyrics:(cues:LyricsCue[])=>void;suggest:()=>{title:string;artist:string;fromName?:boolean}|null;
+interface Options {context:()=>Context|null;useLyrics:(text:string)=>void;useTimedLyrics:(cues:LyricsCue[])=>void;reviewTimedLyrics:(cues:LyricsCue[])=>void;suggest:()=>{title:string;artist:string;fromName?:boolean}|null;
   /** Brings the lookup into view where the studio shows one tool at a time. */
   reveal?:()=>void}
 /** Lookup owns only its metadata/result; it never writes cues or audio itself. */
 export function mountLyricsLookup(options:Options):{sync:()=>void} {
   const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
   const title=el<HTMLInputElement>('lookup-title'),artist=el<HTMLInputElement>('lookup-artist'),find=el<HTMLButtonElement>('lookup-find'),use=el<HTMLButtonElement>('lookup-use'),useTimed=el<HTMLButtonElement>('lookup-use-timed');
+  const reviewTimed=el<HTMLButtonElement>('lookup-review-timed');
   const review=el('lookup-review'),status=el('lookup-status'),cancel=el<HTMLButtonElement>('lookup-cancel');
   let request:AbortController|null=null,epoch=0,owner='',result:LyricsRecord|null=null,suggestedFor='',tagged=false,automatic=false,fromName=false;
   // Automatic lookup is an opt-in kept in this browser; each clip is looked up automatically at most once.
@@ -51,8 +52,8 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
     find.disabled=!context||context.busy||!!request;title.disabled=artist.disabled=!context||context.busy;
     use.disabled=!result||!context||context.key!==owner||context.busy||context.pastedDirty||context.alignmentState!=='ready';
     // Published timings need no alignment, so they do not wait for recognition information.
-    useTimed.hidden=el('lookup-timed-note').hidden=el('lookup-timing-review').hidden=!result?.cues;
-    useTimed.disabled=!result?.cues||!context||context.key!==owner||context.busy||context.pastedDirty;
+    reviewTimed.hidden=useTimed.hidden=el('lookup-timed-note').hidden=el('lookup-timing-review').hidden=!result?.cues;
+    reviewTimed.disabled=useTimed.disabled=!result?.cues||!context||context.key!==owner||context.busy||context.pastedDirty;
     el('lookup-readiness').textContent=context?.alignmentState==='loading'?'Waiting for this clip’s local recognition information before alignment.':context?.alignmentState==='error'?'Recognized words could not be read. Refresh projects for local alignment. Published timings, when offered, can still be used.':'';cancel.hidden=!request;
   }
   for(const input of [title,artist])input.addEventListener('input',()=>{tagged=false;fromName=false;clear('Metadata changed. Look up lyrics when ready.');sync();});
@@ -84,6 +85,10 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
       if(wasAutomatic){el<HTMLDetailsElement>('lyrics-lookup').open=true;status.textContent=`Found automatically from the song file’s ${fromName?'name':'title and artist'}. ${status.textContent}`;}
     }catch(error){if(ticket===epoch)status.textContent=error instanceof Error?error.message:'Lyrics lookup failed. Current words are unchanged.';}
     finally{if(ticket===epoch){request=null;sync();}}
+  });
+  reviewTimed.addEventListener('click',()=>{
+    const context=current();if(!result?.cues||!context||context.key!==owner||context.busy||context.pastedDirty){sync();return;}
+    options.reviewTimedLyrics(structuredClone(result.cues));sync();
   });
   useTimed.addEventListener('click',()=>{
     const context=current();if(!result?.cues||!context||context.key!==owner||context.busy||context.pastedDirty){sync();return;}
