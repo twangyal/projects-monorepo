@@ -64,3 +64,13 @@ test('a project keeps a third garment only with a second, untucked, and editing 
   assert.deepEqual([next.product?.name, next.wornWith?.name, next.wornAlso?.name], ['Blank tee', 'Joggers', 'Zip hoodie']);
   assert.deepEqual([switchOutfitEditing(switchOutfitEditing(next)).product?.name], ['Zip hoodie']);
 });
+
+test('editing the bottoms directly keeps both applied top layers and the shared body', () => {
+  const outer = template('zip-hoodie'), inner = template('blank'), bottoms = template('joggers');
+  const project = validateProject({ ...createProject(), product: outer, wornWith: inner, wornAlso: bottoms,
+    topBody: { chest: 100, waist: 76, hip: 100, chestDepth: 24, height: 178, hipDepth: 20 } });
+  const next = switchOutfitEditing(project, 'bottoms');
+  assert.deepEqual([next.product, next.wornWith, next.wornAlso], [project.wornAlso, project.product, project.wornWith]);
+  assert.deepEqual(next.topBody, project.topBody);
+  assert.deepEqual(switchOutfitEditing(next, 'outer'), project);
+});

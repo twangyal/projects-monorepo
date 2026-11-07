@@ -1,5 +1,5 @@
 import { buildOutfitBundle } from './outfit-bundle.ts';
-import { replaceOutfitProduct, switchOutfitEditing } from './outfit-edit.ts';
+import { replaceOutfitProduct, switchOutfitEditing, type OutfitLayer } from './outfit-edit.ts';
 import { FITTED_HIP_DEPTH, GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, skirtBandHeight, skirtDraft, skirtFit, skirtGather, skirtPleats, type PleatStyle } from './product-skirt.ts';
 import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
@@ -65,7 +65,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <p id="garment-drape-time-help" class="fine-print">Times are simulated, per garment. Longer restarts the drape and takes more time to run. The result can still show motion or excessive stretch.</p>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
         <label class="field">Size shown<select id="garment-size" aria-describedby="garment-size-status"></select></label>
-        <label class="field">Wear with<select id="garment-wear-with"></select></label><label class="field">And with<select id="garment-wear-also" disabled aria-describedby="wear-also-help"></select></label><p id="wear-also-help" class="fine-print">A third garment: a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.</p><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping both in the outfit. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
+        <label class="field">Wear with<select id="garment-wear-with"></select></label><label class="field">And with<select id="garment-wear-also" disabled aria-describedby="wear-also-help"></select></label><p id="wear-also-help" class="fine-print">A third garment: a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.</p><button id="edit-worn-garment" class="quiet" disabled aria-describedby="edit-worn-help">Edit worn garment</button><label id="outfit-edit-picker" class="field" hidden>Garment to edit<select id="outfit-edit-layer" aria-describedby="edit-worn-help"></select></label><p id="edit-worn-help" class="fine-print">Switch which garment you edit, keeping the outfit together. Apply or discard product drafts first. You can undo the switch.</p><label class="check-field"><input id="garment-tuck" type="checkbox" disabled aria-describedby="garment-tuck-help"> Tuck the top in</label><p id="garment-tuck-help" class="fine-print">Choose bottoms with Wear with to tuck a top in.</p>
         <p class="fine-print">Another size is the design graded from its sample size, shown and draped on the same body to compare fit; the tech pack measures every size the same way. A top drapes over shorts, trousers or a skirt on the same body. The other garment is kept with this design as a copy: choose a saved design again to pick up its later changes.</p>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <p id="garment-size-status" class="fine-print" role="status"></p>
@@ -682,10 +682,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     commit(plan.project); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
-  $('edit-worn-garment').addEventListener('click', () => {
+  const editLayer = $('outfit-edit-layer') as HTMLSelectElement;
+  let currentLayer: OutfitLayer | null = null;
+  function editOutfitGarment(layer?: OutfitLayer) {
     if (hasDrafts()) { refuseDrafts(); return; }
     try {
-      const next = switchOutfitEditing(options.current());
+      const next = switchOutfitEditing(options.current(), layer);
       retireAssets();
       shownSize = null; patternSize = null; selected = 'front'; shown = '';
       $('garment-size-status').textContent = '';
@@ -693,6 +695,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       options.notice(next.wornAlso ? `Editing the ${next.product!.name}. The ${next.wornWith!.name} and the ${next.wornAlso.name} stay in this outfit; you can undo the switch.`
         : `Editing the ${next.product!.name}. The ${next.wornWith!.name} stays in this outfit. Both garments are kept; you can undo the switch.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'The worn garment cannot be edited.', true); }
+  }
+  $('edit-worn-garment').addEventListener('click', () => editOutfitGarment());
+  editLayer.addEventListener('change', () => {
+    const layer = editLayer.value;
+    if (!currentLayer || layer === currentLayer || (layer !== 'inner' && layer !== 'outer' && layer !== 'bottoms')) return;
+    // Restore the displayed selection before switching; a refused draft leaves it on the active garment.
+    editLayer.value = currentLayer;
+    editOutfitGarment(layer);
   });
 
   $('garment-tuck').addEventListener('change', () => {
@@ -1288,7 +1298,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
-    ($('edit-worn-garment') as HTMLButtonElement).disabled = !project.product || !companion;
+    const pieces = project.product ? piecesOf(design) : null;
+    const editWorn = $('edit-worn-garment') as HTMLButtonElement;
+    editWorn.hidden = !!pieces; editWorn.disabled = !project.product || !companion || !!pieces;
+    $('outfit-edit-picker').hidden = !pieces; editLayer.disabled = !pieces;
+    if (pieces) {
+      const rows = [['inner', 'Inner layer'], ['outer', 'Outer layer'], ['bottoms', 'Bottoms']] as const;
+      currentLayer = rows.find(([role]) => pieces[role] === design)?.[0] ?? null;
+      const html = rows.map(([role, label]) => `<option value="${role}">${label}: ${escapeHtml(pieces[role].name)}</option>`).join('');
+      if (editLayer.dataset.html !== html) { editLayer.dataset.html = html; editLayer.innerHTML = html; }
+      editLayer.value = currentLayer ?? '';
+    } else { currentLayer = null; }
     const tuckBox = $('garment-tuck') as HTMLInputElement, top = outfitTop(design), layered = !!layersOf(design), tuckable = !!project.product && !!companion && !layered && !!top && canTuck(top);
     const alsoWorn = alsoOf(design);
     tuckBox.disabled = !tuckable; tuckBox.checked = tuckable && tuckedFor(design);

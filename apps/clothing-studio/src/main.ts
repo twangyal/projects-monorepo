@@ -238,7 +238,9 @@ function travel(direction: 'undo' | 'redo') {
 element('undo').addEventListener('click', () => travel('undo'));
 element('redo').addEventListener('click', () => travel('redo'));
 document.addEventListener('keydown', event => {
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
+  // Choosing an outfit layer commits an edit immediately, so Undo is available without leaving its picker.
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement ||
+      (event.target instanceof HTMLSelectElement && event.target.id !== 'outfit-edit-layer')) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); travel(event.shiftKey ? 'redo' : 'undo'); }
 });
 
