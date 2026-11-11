@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { reviewedCues, reviewedRange } from '../src/automatic-review.ts';
+import { reviewedCues, reviewedRange, reviewedPassageRange } from '../src/automatic-review.ts';
 
 const draft = () => [{ start: '0.8500', end: '2.75', text: 'Hello 🎵\nworld' }, { start: '4.', end: '5.95e0', text: 'Chorus' }];
 test('review converts literal numeric drafts without mutating text or raw spellings', () => {
@@ -26,4 +26,16 @@ test('audition admits only the chosen staged interval even with other invalid dr
   assert.throws(() => reviewedRange(rows, 16, 0), /Line 1/);
   assert.throws(() => reviewedRange(rows, 16, 2), /existing/);
   rows[1].end = '6'; assert.throws(() => reviewedRange(rows, 16, 1), /Line 2/);
+});
+
+test('passage audition uses included reviewed times, gaps and no outside draft validation', () => {
+  const rows = [{ start: '', end: '', text: 'Bad outside' }, { start: '1', end: '2', text: '', excluded: true },
+    { start: '3.125', end: '4', text: '' }, { start: '6', end: '7.875', text: '' }, { start: '', end: '', text: 'Bad outside' }];
+  const before = structuredClone(rows), range = reviewedPassageRange(rows, 16, 1, 3);
+  assert.equal(range.start, 3.125); assert.equal(range.end, 7.875);
+  assert.equal(range.clipDuration, 16);
+  assert.deepEqual(rows, before);
+  assert.throws(() => reviewedPassageRange(rows, 16, 1, 1), /Include/);
+  assert.throws(() => reviewedPassageRange(rows, 16, 0, 3), /Line 1/);
+  assert.throws(() => reviewedPassageRange(rows, 16, 3, 2), /first and last/);
 });

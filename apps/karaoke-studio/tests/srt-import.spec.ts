@@ -451,3 +451,32 @@ test('an imported passage replaces its own time window in one Undo step', async 
   expect(await projectFromServer(request, project.id)).toEqual(project);
   await page.locator('#undo-lyrics').click(); expect(await editorCues(page)).toEqual(BEFORE);
 });
+
+test('reviewed passage audio uses staged bounds without applying and stops on selection change', async ({ page, request, clips }) => {
+  const project = await clips.create(); await openClip(page, project);
+  await chooseSrt(page, Buffer.from('1\n00:00:00,200 --> 00:00:00,700\nOpening\n\n2\n00:00:00,900 --> 00:00:01,400\nEnding\n'));
+  await reviewReady(page, 2);
+  await page.getByText('Apply a reviewed passage', { exact: true }).click();
+  const listen = page.getByRole('button', { name: 'Listen to reviewed passage', exact: true });
+  const repeat = page.getByRole('button', { name: 'Repeat reviewed passage', exact: true });
+  const last = page.getByRole('combobox', { name: 'Last imported line in passage', exact: true });
+  const audio = page.locator('#audio');
+  // A boundary cutting a current cue prevents Apply, but hearing that proposal is still useful.
+  await expect(page.getByRole('button', { name: 'Apply reviewed passage', exact: true })).toBeDisabled();
+  await listen.click();
+  await expect(page.locator('#review-passage-audio-status')).toContainText('Practice complete');
+  expect(await audio.evaluate(node => (node as HTMLAudioElement).currentTime)).toBeCloseTo(0.7, 3);
+  await last.selectOption('1');
+  await audio.evaluate(node => { const media = node as HTMLAudioElement; media.dataset.passageSeeks = '0'; media.addEventListener('seeking', () => { media.dataset.passageSeeks = String(Number(media.dataset.passageSeeks) + 1); }); });
+  await repeat.click();
+  await expect.poll(() => audio.evaluate(node => Number((node as HTMLAudioElement).dataset.passageSeeks))).toBeGreaterThanOrEqual(2);
+  await last.selectOption('0');
+  await expect.poll(() => audio.evaluate(node => (node as HTMLAudioElement).paused)).toBe(true);
+  expect(await editorCues(page)).toEqual(BEFORE);
+  expect(await projectFromServer(request, project.id)).toEqual(project);
+  await expect(page.locator('#undo-lyrics')).toBeDisabled();
+  await expect(listen).toBeEnabled();
+  await repeat.click();
+  await page.getByRole('button', { name: 'Cancel lyric import', exact: true }).click();
+  await expect.poll(() => audio.evaluate(node => (node as HTMLAudioElement).paused)).toBe(true);
+});

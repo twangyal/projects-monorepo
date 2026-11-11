@@ -39,6 +39,21 @@ export function reviewedRange(rows: readonly ReviewedCue[], duration: number, in
   }
 }
 
+/** Listen to the included passage even before words or current cue boundaries are corrected. */
+export function reviewedPassageRange(rows: readonly ReviewedCue[], duration: number, first: number, last: number): Readonly<PracticeRange> {
+  if (!Array.isArray(rows) || rows.length > MAX_CUES || !Number.isInteger(first) || !Number.isInteger(last)
+      || first < 0 || last < first || last >= rows.length) throw new Error('Choose an existing first and last reviewed line.');
+  const times = rows.slice(first, last + 1).map(row => ({ ...row, text: 'Reviewed line' }));
+  let included: Cue[];
+  try { included = reviewedCues(times, duration); }
+  catch (error) {
+    throw new Error((error instanceof Error ? error.message : 'Check the reviewed passage timing.')
+      .replace(/Line (\d+)/g, (_, number) => `Line ${Number(number) + first}`));
+  }
+  if (!included.length) throw new Error('Include at least one reviewed line to listen.');
+  return Object.freeze({ ...createPracticeRange(included, duration, 0, included.length - 1), firstIndex: first, lastIndex: last });
+}
+
 /** Apply just one reviewed cue. Never infer that several corrected current lines should be removed. */
 export function applyReviewedLine(current: Cue[], rows: readonly ReviewedCue[], index: number, duration: number): {cues:Cue[];index:number;replaced:boolean;changed:boolean} {
   if (!Array.isArray(rows) || rows.length > MAX_CUES || !Number.isInteger(index) || index < 0 || index >= rows.length) throw new Error('Choose an existing reviewed lyric line.');

@@ -104,3 +104,23 @@ test('regrouped passage refuses partial boundary cuts, preserves outside current
   await expect(page.locator('#automatic-passage-status')).toContainText('Check current lyrics');
   await expect(page.getByLabel('Start line 3',{exact:true})).toHaveValue('');
 }));
+
+test('listen to an included automatic passage while unrelated drafts are invalid', async ({ page }) => withClip(page, async id => {
+  const before = await (await page.request.get(`/api/projects/${id}`)).json();
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByLabel('Exclude automatic line 1', { exact: true }).check();
+  await page.getByLabel('Reviewed start line 1 (seconds)', { exact: true }).fill('');
+  await page.getByLabel('Reviewed start line 2 (seconds)', { exact: true }).fill('1.25');
+  await page.getByLabel('Reviewed end line 2 (seconds)', { exact: true }).fill('1.75');
+  await page.getByText('Apply a reviewed passage', { exact: true }).click();
+  await page.getByRole('combobox', { name: 'Last automatic line in passage', exact: true }).selectOption('1');
+  await expect(page.getByRole('button', { name: 'Apply reviewed passage', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Listen to reviewed passage', exact: true }).click();
+  await expect(page.locator('#review-passage-audio-status')).toContainText('Practice complete');
+  expect(await page.locator('#audio').evaluate(node => (node as HTMLAudioElement).currentTime)).toBeCloseTo(1.75, 3);
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(before);
+  await expect(page.getByRole('button', { name: 'Undo lyric edit', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Repeat reviewed passage', exact: true }).click();
+  await page.getByLabel('Reviewed end line 2 (seconds)', { exact: true }).fill('1.8');
+  await expect.poll(() => page.locator('#audio').evaluate(node => (node as HTMLAudioElement).paused)).toBe(true);
+}));
