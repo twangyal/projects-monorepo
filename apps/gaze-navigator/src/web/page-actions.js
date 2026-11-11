@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { captureActivationSnapshot, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { captureActivationSnapshot, captureSubmissionSnapshot, submissionBinding, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -964,11 +964,18 @@ export function setMultipleOption(element, optionIndex, selected, snapshot) {
     matches(true) ? { ok: true, message: `${intended.label.trim()} ${selected ? 'added to' : 'removed from'} the selection.` } : changed()) };
 }
 
-export function submit(element) {
-  const form = element.form ?? element.closest('form');
+export function submit(element, { confirmation = null } = {}) {
+  if (confirmation) {
+    const current = captureSubmissionSnapshot(element);
+    if (!current || current.length !== confirmation.length || confirmation.some((value, index) => value !== current[index])) {
+      return { ok: false, message: 'The form changed after confirmation was requested. Look at it again. Nothing was submitted.' };
+    }
+  }
+  const { form, submitter } = submissionBinding(element);
   if (form) {
-    if (element.matches('button, input[type=submit], input[type=image]')) form.requestSubmit(element);
-    else form.requestSubmit();
+    const requestSubmit = form.ownerDocument.defaultView.HTMLFormElement.prototype.requestSubmit;
+    if (submitter) requestSubmit.call(form, submitter);
+    else requestSubmit.call(form);
     return { ok: true, message: 'Form submitted.' };
   }
   const view = element.ownerDocument.defaultView;

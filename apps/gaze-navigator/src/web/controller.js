@@ -3,7 +3,7 @@
 import { applyEdit, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { keyLabel } from './page-actions.js';
-import { captureActivationSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
+import { captureActivationSnapshot, captureSubmissionSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -87,7 +87,9 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function activationOf(action, target) {
-    return (action.type === 'activate' || action.type === 'double-click') && target?.element && !target.element.remote
+    if (!target?.element || target.element.remote) return null;
+    if (action.type === 'submit') return target.submissionSnapshot ?? captureSubmissionSnapshot(target.element);
+    return action.type === 'activate' || action.type === 'double-click'
       ? target.activationSnapshot ?? captureActivationSnapshot(target.element) : null;
   }
 
@@ -187,7 +189,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'hover': result = actions.hover(element, target.name, hovered?.isConnected ? hovered : null); hovered = element; break;
       case 'double-click': result = actions.doubleClick(element, target.name, { confirmation: activation }); break;
       case 'context-menu': result = actions.contextMenu(element, target.name); break;
-      case 'submit': result = actions.submit(element); break;
+      case 'submit': result = actions.submit(element, { confirmation: activation }); break;
       case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
       case 'select-option': result = typeof action.selected === 'boolean'

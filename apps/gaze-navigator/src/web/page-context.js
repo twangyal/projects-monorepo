@@ -464,6 +464,32 @@ export function captureActivationSnapshot(element, name = null) {
     form ? (attr('formtarget') ?? form.getAttribute('target')) || baseTarget() : null,
     form ? attr('name') : null, form ? attr('value') : null, ...frames];
 }
+// Native form ownership can be set by a form attribute rather than an ancestor.
+export function submissionBinding(element) {
+  const form = 'form' in element ? element.form : element.closest('form');
+  const submitter = form && ['BUTTON', 'INPUT'].includes(element.tagName) && ['submit', 'image'].includes(element.type) ? element : null;
+  return { form, submitter };
+}
+
+export function captureSubmissionSnapshot(element, identity = captureActivationSnapshot(element)) {
+  if (!identity) return null;
+  const disabled = element.matches(':disabled');
+  const { form, submitter } = submissionBinding(element);
+  if (!form) return [...identity, disabled, null];
+  if (!form.isConnected || form.ownerDocument !== element.ownerDocument) return null;
+  const override = (button, property) => submitter?.getAttribute(button) ?? form.getAttribute(property);
+  const action = override('formaction', 'action');
+  let destination;
+  try { destination = action ? new URL(action, form.ownerDocument.baseURI).href : form.ownerDocument.URL; }
+  catch { destination = action; }
+  const target = override('formtarget', 'target') || form.ownerDocument.querySelector('base[target]')?.getAttribute('target') || null;
+  const method = override('formmethod', 'method');
+  const dialog = method?.toLowerCase() === 'dialog' ? form.closest('dialog') : null;
+  return [...identity, disabled, form, form.getRootNode(), submitter, action, destination, target,
+    method, dialog, dialog?.open, override('formenctype', 'enctype'), form.getAttribute('accept-charset'), form.getAttribute('rel'),
+    form.hasAttribute('novalidate'), submitter?.hasAttribute('formnovalidate') ?? false];
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -479,6 +505,7 @@ function describe(element) {
   };
   const dateParts = datePartsOf(element);
   if (dateParts) description.dateParts = dateParts;
+  if (description.editable || submits) description.submissionSnapshot = captureSubmissionSnapshot(element, description.activationSnapshot);
   const holds = description.editable ? fieldKind(element, name) : null;
   if (holds) description.holds = holds;
   if (element.tagName === 'SELECT') {
