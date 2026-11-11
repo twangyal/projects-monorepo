@@ -1,3 +1,5 @@
+import type { Cue } from './lyrics.ts';
+
 // Choruses and refrains repeat, but recognition often hears each repeat differently ("this is our chorus", "this is
 // a chorus"). Once one repeat is corrected, the others that were heard like it, or like the correction, can take the
 // same wording in one step. Lines the person has already changed are never offered.
@@ -50,4 +52,13 @@ export function similarLines(heard: readonly string[], drafts: readonly string[]
 export function lineList(indices: readonly number[]): string {
   const numbers = indices.map(index => String(index + 1));
   return numbers.length === 1 ? `line ${numbers[0]}` : `lines ${numbers.slice(0, -1).join(', ')} and ${numbers.at(-1)}`;
+}
+
+
+/** Match applied cues to recognized intervals, so inserted, split and retimed lines cannot redirect a correction. */
+export function repeatedCueLines(heard: readonly Cue[], current: readonly Cue[], index: number): number[] {
+  if (!current[index]) return [];
+  const originals = current.map(cue => heard.find(original => original.start === cue.start && original.end === cue.end)?.text ?? '');
+  if (!originals[index]) return [];
+  return similarLines(originals, current.map(cue => cue.text), index, current[index].text);
 }

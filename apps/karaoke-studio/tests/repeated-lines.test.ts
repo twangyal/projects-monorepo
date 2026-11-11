@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heardAlike, lineList, lineWords, similarLines } from '../src/repeated-lines.ts';
+import { heardAlike, lineList, lineWords, similarLines, repeatedCueLines } from '../src/repeated-lines.ts';
 
 test('a repeat heard differently is found from the corrected line or from the correction itself', () => {
   const heard = ['This is our chorus', 'Sing it back to me', 'This is a chorus', 'Diss is our course tonight', 'Goodbye'];
@@ -28,4 +28,27 @@ test('line lists read naturally', () => {
   assert.equal(lineList([2]), 'line 3');
   assert.equal(lineList([4, 8]), 'lines 5 and 9');
   assert.equal(lineList([1, 3, 6]), 'lines 2, 4 and 7');
+});
+
+
+test('current repeats match recognized intervals rather than shifted array indices', () => {
+  const heard=['This is our horus','Sing it back to me','This is a chorus','This is our chorus'].map((text,i)=>({start:i*4,end:i*4+2,text}));
+  const current=[{start:0,end:2,text:'This is our chorus tonight'},{start:2,end:3,text:'Inserted correction'},...structuredClone(heard.slice(1))];
+  const before=structuredClone(current);
+  assert.deepEqual(repeatedCueLines(heard,current,0),[3,4]);
+  current[3].text='My separately corrected chorus';
+  assert.deepEqual(repeatedCueLines(heard,current,0),[4]);
+  current[4].start+=.25;
+  assert.deepEqual(repeatedCueLines(heard,current,0),[]);
+  assert.deepEqual(before.slice(0,3),current.slice(0,3));
+  assert.equal(heard[0].text,'This is our horus');
+});
+
+test('unrecognized, retimed, split and unchanged source wording produces no current repeat offer', () => {
+  const heard=[{start:0,end:2,text:'This is our horus'},{start:4,end:6,text:'This is a chorus'}];
+  assert.deepEqual(repeatedCueLines(heard,heard,0),[]);
+  assert.deepEqual(repeatedCueLines(heard,[{...heard[0],start:.1,text:'This is our chorus'},heard[1]],0),[]);
+  assert.deepEqual(repeatedCueLines(heard,[{...heard[0],end:1,text:'This is our chorus'},heard[1]],0),[]);
+  assert.deepEqual(repeatedCueLines(heard,[{start:2,end:3,text:'This is our chorus'},heard[1]],0),[]);
+  assert.deepEqual(repeatedCueLines(heard,heard,99),[]);
 });

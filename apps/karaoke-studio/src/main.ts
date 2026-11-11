@@ -18,7 +18,7 @@ import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replace
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode, type PracticeRange } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, type ReviewedCue } from './automatic-review.ts';
-import { lineList, similarLines } from './repeated-lines.ts';
+import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
@@ -1625,6 +1625,40 @@ element('line-insert-apply').addEventListener('click', () => {
   element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${result.insertIndex}"] textarea`)?.focus();
 });
 
+/** Offer explicit reuse of a correction in untouched, time-matched automatic repeats. */
+function offerCurrentRepeats(index: number, host: HTMLElement): void {
+  host.replaceChildren(); host.hidden = true;
+  if (!working || !srtAllowed() || !transcript?.value.available || transcript.projectId !== working.id) return;
+  const project = working, recognition = transcript, heard = transcript.value.cues, source = { ...working.cues[index] };
+  try { validateCues([source], working.duration); } catch { return; }
+  const targets = repeatedCueLines(heard, working.cues, index);
+  if (!targets.length) return;
+  const note = document.createElement('p'); note.className = 'fine'; note.setAttribute('role', 'status');
+  const lines = lineList(targets);
+  note.textContent = `Heard similarly in ${lines}. Only unchanged recognized words and times are eligible.`;
+  const apply = document.createElement('button'); apply.type = 'button'; apply.className = 'quiet';
+  apply.textContent = `Use corrected wording in ${lines}`;
+  apply.addEventListener('click', () => {
+    if (!host.isConnected || working !== project || transcript !== recognition || !recognition.value.available || !srtAllowed()) return;
+    const live = working.cues[index];
+    if (!live || live.start !== source.start || live.end !== source.end || live.text !== source.text) {
+      note.textContent = 'The source line changed. Leave its words field to review a fresh offer.'; apply.remove(); return;
+    }
+    const eligible = new Set(repeatedCueLines(heard, working.cues, index));
+    const selected = targets.filter(target => eligible.has(target));
+    if (!selected.length) { note.textContent = 'Those lines changed since the offer; their words and times were kept.'; apply.remove(); return; }
+    const raw = captureTimingDrafts();
+    let next: Cue[];
+    try { next = validateCues(working.cues.map((cue, target) => selected.includes(target) ? { ...cue, text: source.text } : cue), working.duration); }
+    catch (error) { message(error instanceof Error ? error.message : 'Check the current lyrics before reusing wording.', true); return; }
+    working.cues = next; renderCues(raw); changed();
+    message(`Corrected wording used in ${lineList(selected)} as one unsaved edit. Timings and other corrections were kept. Undo restores it; Save lyrics is separate.`);
+    const focus = element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${index}"] textarea`);
+    focus?.focus();
+  });
+  host.append(note, apply); host.hidden = false;
+}
+
 function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Add a lyric line or paste your words above and create draft timings to begin.'; list.append(empty); return; }
@@ -1655,10 +1689,13 @@ function renderCues(rawTimings: RawTiming[] = []) {
       merge.title = 'Join literal text with a newline and include any instrumental gap between these lines.';
       merge.addEventListener('click', () => editCueStructure(index, 'merge')); actions.append(merge);
     }
-    row.append(actions); list.append(row);
+    const repeats = document.createElement('div'); repeats.className = 'repeat-offer'; repeats.hidden = true;
+    repeats.setAttribute('role', 'group'); repeats.setAttribute('aria-label', `Current repeats of line ${index + 1}`);
+    text.querySelector('textarea')!.addEventListener('change', () => offerCurrentRepeats(index, repeats));
+    row.append(actions, repeats); list.append(row);
   }
   const hint = document.createElement('p'); hint.className = 'fine';
-  hint.textContent = 'Split: place a caret between words and seek the playhead inside that line. Merge with next: joins words with a newline and includes any gap. Each action is one unsaved Undo/Redo edit.';
+  hint.textContent = 'Corrected automatic lines offer similar untouched repeats when you leave their words field. Reusing wording is one unsaved Undo/Redo edit; Save lyrics is separate. Split: place a caret between words and seek the playhead inside that line. Merge with next: joins words with a newline and includes any gap. Each action is one unsaved Undo/Redo edit.';
   list.append(hint);
   controls(); draw();
 }

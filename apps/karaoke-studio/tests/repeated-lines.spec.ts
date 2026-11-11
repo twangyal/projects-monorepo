@@ -78,3 +78,49 @@ test('a line typed over after the offer keeps its own words', async ({ page }) =
   await expect(line(4)).toHaveValue('This is our chorus');
   await expect(offer.getByRole('status')).toHaveText('Line 4 now reads “This is our chorus”.');
 }));
+
+
+for (const width of [1280,390]) test(`main-editor chorus wording is one undoable saved correction at ${width}px`, async ({page}) => withClip(page, async id => {
+  await page.setViewportSize({width,height:900});
+  const line=(n:number)=>page.getByLabel(`Lyric line ${n}`,{exact:true});
+  const before=(await (await page.request.get(`/api/projects/${id}`)).json()).cues;
+  await page.getByLabel('End line 4',{exact:true}).fill(Number(before[3].end).toFixed(3));
+  await page.getByLabel('Paste lyrics, one line per cue',{exact:true}).fill('Unapplied private draft');
+  await line(1).fill('This is our chorus'); await line(1).press('Tab');
+  const offer=page.getByRole('group',{name:'Current repeats of line 1',exact:true});
+  await expect(offer).toContainText('Heard similarly in lines 3 and 4');
+  await offer.getByRole('button',{name:'Use corrected wording in lines 3 and 4',exact:true}).click();
+  await expect(line(3)).toHaveValue('This is our chorus'); await expect(line(4)).toHaveValue('This is our chorus');
+  await expect(line(2)).toHaveValue('Sing it back to me');
+  await expect(page.getByLabel('End line 4',{exact:true})).toHaveValue(Number(before[3].end).toFixed(3));
+  await expect(page.getByLabel('Paste lyrics, one line per cue',{exact:true})).toHaveValue('Unapplied private draft');
+  await page.locator('#undo-lyrics').click();
+  await expect(line(1)).toHaveValue('This is our chorus'); await expect(line(3)).toHaveValue(before[2].text); await expect(line(4)).toHaveValue(before[3].text);
+  await page.locator('#redo-lyrics').click(); await expect(line(3)).toHaveValue('This is our chorus'); await expect(line(4)).toHaveValue('This is our chorus');
+  expect((await (await page.request.get(`/api/projects/${id}`)).json()).cues).toEqual(before);
+  await page.getByRole('button',{name:'Discard pasted draft',exact:true}).click();
+  await page.getByRole('button',{name:'Save lyrics',exact:true}).click(); await expect(page.locator('#message')).toContainText('saved locally');
+  const saved=(await (await page.request.get(`/api/projects/${id}`)).json()).cues;
+  expect(saved.map((c:{start:number,end:number})=>[c.start,c.end])).toEqual(before.map((c:{start:number,end:number})=>[c.start,c.end]));
+  await page.reload(); await expect(line(3)).toHaveValue('This is our chorus'); await expect(line(4)).toHaveValue('This is our chorus');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+}));
+
+test('main-editor repeat offers recheck changed target words and timings before applying', async ({page}) => withClip(page, async id => {
+  const line=(n:number)=>page.getByLabel(`Lyric line ${n}`,{exact:true});
+  const before=(await (await page.request.get(`/api/projects/${id}`)).json()).cues;
+  await line(1).fill('This is our chorus'); await line(1).press('Tab');
+  const offer=page.getByRole('group',{name:'Current repeats of line 1',exact:true});
+  await expect(offer).toContainText('lines 3 and 4');
+  await line(3).fill('My own corrected chorus');
+  await page.getByLabel('Start line 4',{exact:true}).fill(String(before[3].start+.25));
+  await offer.getByRole('button',{name:'Use corrected wording in lines 3 and 4',exact:true}).click();
+  await expect(offer.getByRole('status')).toContainText('Those lines changed since');
+  await expect(line(3)).toHaveValue('My own corrected chorus'); await expect(line(4)).toHaveValue(before[3].text);
+  await expect(page.getByLabel('Start line 4',{exact:true})).toHaveValue(String(before[3].start+.25));
+  // A fresh offer can still correct the remaining untouched repeat without overwriting line 3.
+  await page.getByLabel('Start line 4',{exact:true}).fill(String(before[3].start));
+  await line(1).fill('This is our chorus tonight'); await line(1).press('Tab');
+  await offer.getByRole('button',{name:'Use corrected wording in line 4',exact:true}).click();
+  await expect(line(3)).toHaveValue('My own corrected chorus'); await expect(line(4)).toHaveValue('This is our chorus tonight');
+}));
