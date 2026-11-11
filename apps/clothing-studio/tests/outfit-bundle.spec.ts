@@ -48,3 +48,26 @@ for (const width of [1280,390]) test(`outfit bundle downloads applied samples wi
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.getByRole('button',{name:'Undo',exact:true}).click(); expect(await backup(page)).toEqual(original);
 });
+
+test('default-tee outfits download complete bundles without applying a template', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Wear with', exact: true }).selectOption({ label: 'Straight trousers' });
+  for (const three of [false, true]) {
+    if (three) await page.getByRole('combobox', { name: 'And with', exact: true }).selectOption({ label: 'Crew sweatshirt' });
+    const before = await backup(page);
+    expect(before.product).toBeUndefined();
+    const undo = await page.getByRole('button', { name: 'Undo', exact: true }).isEnabled();
+    await page.getByRole('button', { name: 'Exports', exact: true }).click();
+    const wait = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download outfit patterns and tech packs (ZIP) ↓', exact: true }).click();
+    const files = unpack(await readFile((await (await wait).path())!));
+    const manifest = JSON.parse(files.get('manifest.json')!.toString());
+    expect(manifest.garments.map((g: { name: string }) => g.name)).toEqual(three ? ['Blank tee', 'Straight trousers', 'Crew sweatshirt'] : ['Blank tee', 'Straight trousers']);
+    expect(files.get('01-tee/pattern.svg')!.toString()).toContain('<svg');
+    expect(files.get('01-tee/tech-pack.xlsx')!.length).toBeGreaterThan(100);
+    expect(await backup(page)).toEqual(before);
+    expect(await page.getByRole('button', { name: 'Undo', exact: true }).isEnabled()).toBe(undo);
+    await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
+  }
+});

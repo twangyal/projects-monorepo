@@ -90,3 +90,14 @@ test('outfit handoff supplies placed artwork and only applied repeat tiles with 
   assert.doesNotMatch(text(files.get('manifest.json')!), /Private reference|Unused tile|Alternate/);
   assert.deepEqual(project,before);
 });
+
+test('implicit Blank tee outfits export identically to applied samples without creating a primary', () => {
+  for (const third of [false, true]) {
+    const project = { ...createProject(), wornWith: template('trousers'), ...(third ? { wornAlso: template('crew-sweat') } : {}) };
+    const before = structuredClone(project), date = '2026-11-11';
+    const files = unpack(buildOutfitBundle(project, date));
+    const applied = unpack(buildOutfitBundle({ ...project, product: template('blank') }, date));
+    assert.deepEqual(files, applied);
+    assert.deepEqual(project, before);
+  }
+});

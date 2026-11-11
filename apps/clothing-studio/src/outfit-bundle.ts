@@ -1,5 +1,5 @@
 import { validateProject, type Project } from './model.ts';
-import { canWearTogether, LIMITS, partsOf } from './product.ts';
+import { canWearTogether, LIMITS, partsOf, template } from './product.ts';
 import { validateRasterHeader, type RasterAsset } from './media.ts';
 import { threePiece } from './garment-drape.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
@@ -7,8 +7,8 @@ import { buildTechPack, measurementDiagram, techPackHtml, techPackXlsx, zip } fr
 
 /** Each applied outfit garment keeps its own sample measurements and spec; view/export grades are not inputs. */
 export function buildOutfitBundle(project: Project, date: string): Uint8Array<ArrayBuffer> {
-  const current = validateProject(project), first = current.product, second = current.wornWith, third = current.wornAlso;
-  if (!first || !second) throw new Error('Choose an outfit with Wear with before downloading its patterns and tech packs.');
+  const current = validateProject(project), first = current.product ?? template('blank'), second = current.wornWith, third = current.wornAlso;
+  if (!second) throw new Error('Choose an outfit with Wear with before downloading its patterns and tech packs.');
   if (!canWearTogether(first, second) || (third && !threePiece([first, second, third]))) throw new Error('Choose compatible outfit garments before exporting.');
   const garments = third ? [first, second, third] : [first, second], encoder = new TextEncoder();
   const files: { name: string; data: Uint8Array }[] = [];
