@@ -16,7 +16,7 @@ test('switching outfit editing preserves the complete independent garments and s
 });
 
 test('switching refuses missing or incompatible outfit members without creating a primary', () => {
-  for (const input of [createProject(), { ...createProject(), wornWith: template('trousers') }, { ...createProject(), product: template('blank') }, { ...createProject(), product: template('blank'), wornWith: template('ringer') }]) {
+  for (const input of [createProject(), { ...createProject(), wornWith: template('ringer') }, { ...createProject(), product: template('blank') }, { ...createProject(), product: template('blank'), wornWith: template('ringer') }]) {
     const before = structuredClone(input); assert.throws(() => switchOutfitEditing(input)); assert.deepEqual(input, before);
   }
 });

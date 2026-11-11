@@ -1315,9 +1315,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // A skirt's or trousers' body is its waist and hip; the chest and chest depth belong to tops.
     const companion = companionOf(design), onTop = !bottoms || !!companion;
     renderWearWith(design); renderSizeSelect(design); renderPatternSize(design);
-    const pieces = project.product ? piecesOf(design) : null;
+    const pieces = piecesOf(design);
     const editWorn = $('edit-worn-garment') as HTMLButtonElement;
-    editWorn.hidden = !!pieces; editWorn.disabled = !project.product || !companion || !!pieces;
+    editWorn.hidden = !!pieces; editWorn.disabled = !companion || !!pieces;
     $('outfit-edit-picker').hidden = !pieces; editLayer.disabled = !pieces;
     if (pieces) {
       const rows = [['inner', 'Inner layer'], ['outer', 'Outer layer'], ['bottoms', 'Bottoms']] as const;

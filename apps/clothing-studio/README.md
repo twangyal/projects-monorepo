@@ -33,7 +33,7 @@ Optional **upper-arm girth** sets the upper arm on the proxy without narrowing i
 
 Changing **Wear with** keeps an edited third garment when it is compatible with the new outfit. If it cannot stay, the studio asks before removing it. Changing the edited garment’s type by template or description also keeps compatible pieces and asks before removing any that no longer go with it.
 
-Use **Edit worn garment** for a pair or **Garment to edit** for three pieces. The applied copies and shared body settings stay together; edits affect only the current garment. Switching is one Undo step, requires applied/discarded product drafts, and returns 3D and pattern export sizing to the new garment’s sample. The saved-library source stays separate.
+Use **Edit worn garment** for a pair or **Garment to edit** for three pieces, including outfits built around the initial Blank tee. The applied copies and shared body settings stay together; edits affect only the current garment. Switching is one Undo step, requires applied/discarded product drafts, and returns 3D and pattern export sizing to the new garment’s sample. The saved-library source stays separate.
 
 Fabric comparisons of a top worn with bottoms use the same resolved waist and hip girths as the outfit preview. The comparison isolates the top; it does not simulate contact with the other garment.
 

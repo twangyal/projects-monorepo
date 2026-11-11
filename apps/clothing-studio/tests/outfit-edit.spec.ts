@@ -199,3 +199,32 @@ test('remove one outfit piece with the initial Blank tee before choosing a templ
   expect(after.wornWith).toEqual(before.wornAlso);
   expect(after.wornAlso).toBeUndefined();
 });
+
+test('edit worn pieces around the initial tee and undo to the implicit sample', async ({ page }) => {
+  await page.goto('/');
+  const wear = page.getByRole('combobox', { name: 'Wear with', exact: true });
+  await wear.selectOption({ label: 'Straight trousers' });
+  const two = await backup(page);
+  expect(two.product).toBeUndefined();
+  await page.getByRole('button', { name: 'Edit worn garment', exact: true }).click();
+  expect((await backup(page)).wornWith.name).toBe('Blank tee');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  expect(await backup(page)).toEqual(two);
+  await page.getByRole('combobox', { name: 'And with', exact: true }).selectOption({ label: 'Crew sweatshirt' });
+  const before = await backup(page), picker = page.getByRole('combobox', { name: 'Garment to edit', exact: true });
+  await expect(picker).toHaveValue('inner');
+  await page.locator('#product-chest').fill('115');
+  await picker.selectOption('outer');
+  await expect(picker).toHaveValue('inner');
+  await expect(page.locator('#product-chest')).toHaveValue('115');
+  expect(await backup(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Discard all product drafts', exact: true }).click();
+  await picker.selectOption('outer');
+  const after = await backup(page);
+  expect(after.product).toEqual(before.wornAlso);
+  expect(after.wornWith.name).toBe('Blank tee');
+  expect(after.wornAlso).toEqual(before.wornWith);
+  await picker.press('ControlOrMeta+z');
+  await expect(picker).toHaveValue('inner');
+  expect(await backup(page)).toEqual(before);
+});

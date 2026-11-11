@@ -74,3 +74,14 @@ test('editing the bottoms directly keeps both applied top layers and the shared 
   assert.deepEqual(next.topBody, project.topBody);
   assert.deepEqual(switchOutfitEditing(next, 'outer'), project);
 });
+
+test('an outfit built around the initial tee can switch to either worn garment', () => {
+  const outer = template('zip-hoodie'), bottoms = template('joggers');
+  const project = validateProject({ ...createProject(), wornWith: outer, wornAlso: bottoms });
+  assert.equal(project.product, undefined);
+  assert.deepEqual(switchOutfitEditing(project, 'inner'), project);
+  const next = switchOutfitEditing(project, 'bottoms');
+  assert.deepEqual([next.product, next.wornWith, next.wornAlso], [bottoms, template('blank'), outer]);
+  const pair = switchOutfitEditing(validateProject({ ...createProject(), wornWith: bottoms }));
+  assert.deepEqual([pair.product, pair.wornWith], [bottoms, template('blank')]);
+});
