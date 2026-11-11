@@ -476,3 +476,16 @@ test('"it" refers back to the control just used, while "this" stays with the gaz
   controller.handle('click pricing', { elements: [describe(1, page.node('Pricing'), { role: 'link' })] });
   assert.match(controller.handle('untick it', { elements: [] }).message, /No checkbox is inside the gaze circle/);
 });
+
+for (const interruption of ['pause','cancel']) test(`search does not submit after ${interruption} during query entry`, () => {
+  const page=fakePage(), field=page.node('Search books');
+  const context={elements:[describe(1,field,{role:'searchbox',editable:true})]};
+  const original=page.actions.writeValue;
+  let controller;
+  page.actions.writeValue=(element,value)=>{original(element,value);controller.handle(interruption,context);};
+  controller=createController({window:{},actions:page.actions});
+  const reply=controller.handle('search for river',context);
+  assert.equal(reply.performed,null);
+  assert.match(reply.message,/Search stopped/);
+  assert.deepEqual(page.log,[['write','Search books','river']]);
+});

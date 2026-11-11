@@ -88,7 +88,7 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function activationOf(action, target) {
     if (!target?.element || target.element.remote) return null;
-    if (action.type === 'submit') return target.submissionSnapshot ?? captureSubmissionSnapshot(target.element);
+    if (action.type === 'submit' || action.type === 'search') return target.submissionSnapshot ?? captureSubmissionSnapshot(target.element);
     return action.type === 'activate' || action.type === 'double-click'
       ? target.activationSnapshot ?? captureActivationSnapshot(target.element) : null;
   }
@@ -196,9 +196,24 @@ export function createController({ window, actions = pageActions, interpret = in
         ? actions.setMultipleOption(element, action.optionIndex, action.selected, target.selectSnapshot)
         : actions.selectOption(element, action.optionIndex, target.selectSnapshot); break;
       case 'search': {
+        const intended = activation ?? target.submissionSnapshot ?? captureSubmissionSnapshot(element);
+        const matches = snapshot => !intended || (snapshot && snapshot.length === intended.length && intended.every((value, index) => value === snapshot[index]));
+        if (!matches(captureSubmissionSnapshot(element))) {
+          result = { ok: false, message: 'The search form changed. Look at it again. No text was entered. Nothing was submitted.' };
+          break;
+        }
         remember(element);
         actions.writeValue(element, action.text);
-        result = actions.submit(element);
+        if (turn !== executionTurn || paused) {
+          result = { ok: false, message: 'Search stopped during query entry. Nothing was submitted.' };
+          break;
+        }
+        const afterWrite = captureSubmissionSnapshot(element);
+        if (!element.isConnected || !matches(afterWrite) || writingProblem(action, element, context)) {
+          result = { ok: false, message: 'The search form changed during query entry. Look at it again. Nothing was submitted.' };
+          break;
+        }
+        result = actions.submit(element, { confirmation: captureSubmissionSnapshot(element) });
         if (result.ok) result = { ok: true, message: `Searching for "${action.text}".` };
         break;
       }
