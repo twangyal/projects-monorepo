@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { gradedProduct } from '../src/size-grades.ts';
+import { patternSvg, patternDxf } from '../src/pattern-export.ts';
+import { template } from '../src/product.ts';
 import { png, pngUrl } from './helpers/raster.ts';
 async function backup(page: Page) { const wait = page.waitForEvent('download'); await page.getByRole('button',{name:'Export project backup',exact:true}).click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }
 function unpack(bytes: Buffer) {
@@ -70,4 +73,46 @@ test('default-tee outfits download complete bundles without applying a template'
     expect(await page.getByRole('button', { name: 'Undo', exact: true }).isEnabled()).toBe(undo);
     await page.getByRole('button', { name: 'Body & drape', exact: true }).click();
   }
+});
+
+
+for (const width of [1280,390]) test(`chosen outfit size exports mixed samples and refuses invalid grades at ${width}px`, async ({page}) => {
+  await page.setViewportSize({width,height:900}); await page.goto('/');
+  const project=await backup(page);
+  project.product=template('hoodie'); project.wornWith=template('blank'); project.wornAlso=template('trousers');
+  [project.product,project.wornWith,project.wornAlso].forEach((g,i)=>{g.spec={styleNumber:`GARMENT-${i}`,season:'',sampleSize:['L','S','M'][i]};});
+  await page.getByLabel('Import project backup',{exact:true}).setInputFiles({name:'outfit.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(project))});
+  await expect(page.locator('#message')).toContainText('Project backup restored');
+  const before=await backup(page);
+  await page.getByRole('button',{name:'Body & drape',exact:true}).click();
+  await page.getByRole('combobox',{name:'Size shown',exact:true}).selectOption('XL');
+  await page.getByRole('button',{name:'Patterns & measurements',exact:true}).click();
+  await page.getByRole('combobox',{name:'Pattern export size',exact:true}).selectOption('XS');
+  await page.getByRole('button',{name:'Exports',exact:true}).click();
+  const size=page.getByRole('combobox',{name:'Outfit export size',exact:true});
+  await expect(size).toHaveValue(''); await size.selectOption('S');
+  const wait=page.waitForEvent('download'); await page.locator('#outfit-bundle').click(); const download=await wait;
+  expect(download.suggestedFilename()).toMatch(/-size-S-outfit-patterns-tech-packs\.zip$/);
+  const files=unpack(await readFile((await download.path())!)), manifest=JSON.parse(files.get('manifest.json')!.toString());
+  expect(manifest.garments.map((g:{sampleSize:string,exportSize:string})=>[g.sampleSize,g.exportSize])).toEqual([['L','S'],['S','S'],['M','S']]);
+  for (const [i,sample] of [before.product,before.wornWith,before.wornAlso].entries()) {
+    const garment=gradedProduct(sample,'S'), entry=manifest.garments[i];
+    expect(files.get(entry.files.svg)!.toString()).toBe(patternSvg(garment));
+    expect(files.get(entry.files.dxf)!.toString()).toBe(patternDxf(garment));
+    expect(files.get(entry.files.html)!.toString()).toContain('<dd>S</dd>');
+  }
+  expect(await backup(page)).toEqual(before);
+  await page.getByRole('button',{name:'Body & drape',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'Size shown',exact:true})).toHaveValue('XL');
+  await page.getByRole('button',{name:'Patterns & measurements',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'Pattern export size',exact:true})).toHaveValue('XS');
+  await page.getByRole('button',{name:'Exports',exact:true}).click(); await expect(size).toHaveValue('S');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  project.wornAlso.name='Small trousers'; project.wornAlso.measurements.waist=56;
+  await page.getByLabel('Import project backup',{exact:true}).setInputFiles({name:'small.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(project))});
+  await expect(page.locator('#message')).toContainText('Project backup restored');
+  await expect(size).toHaveValue(''); await size.selectOption('XS');
+  const downloads:string[]=[]; page.on('download',download=>downloads.push(download.suggestedFilename()));
+  await page.locator('#outfit-bundle').click(); await expect(page.locator('#message')).toContainText('Small trousers: Size XS');
+  expect(downloads).toEqual([]); expect(await backup(page)).toEqual(project);
 });

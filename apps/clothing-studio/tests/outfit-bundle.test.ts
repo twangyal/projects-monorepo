@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOutfitBundle } from '../src/outfit-bundle.ts';
 import { createProject } from '../src/model.ts';
+import { gradedProduct } from '../src/size-grades.ts';
 import { template } from '../src/product.ts';
 import { png, pngUrl } from './helpers/raster.ts';
 import { patternDxf, patternSvg } from '../src/pattern-export.ts';
@@ -100,4 +101,36 @@ test('implicit Blank tee outfits export identically to applied samples without c
     assert.deepEqual(files, applied);
     assert.deepEqual(project, before);
   }
+});
+
+
+test('one export size grades each outfit garment from its own sample with matching production files', () => {
+  const product = template('hoodie'), wornWith = template('blank'), wornAlso = template('flared-skirt');
+  product.spec = {styleNumber:'OUTER',season:'',sampleSize:'L'};
+  wornWith.spec = {styleNumber:'INNER',season:'',sampleSize:'S'};
+  wornAlso.spec = {styleNumber:'SKIRT',season:'',sampleSize:'M'};
+  wornWith.artwork = [{part:'front',name:'Print',dataUrl:pngUrl(4,2),width:4,height:2,xCm:0,yCm:72,widthCm:18}];
+  const project = {...createProject(),product,wornWith,wornAlso}, before = structuredClone(project), date = '2026-11-11';
+  const files = unpack(buildOutfitBundle(project, date, 'XS')), manifest = JSON.parse(text(files.get('manifest.json')!));
+  for (const [i, original] of [product,wornWith,wornAlso].entries()) {
+    const entry = manifest.garments[i], garment = gradedProduct(original,'XS'), pack = buildTechPack(garment,date);
+    assert.equal(entry.sampleSize,original.spec!.sampleSize);
+    assert.equal(entry.exportSize,'XS');
+    assert.equal(text(files.get(entry.files.svg)!),patternSvg(garment));
+    assert.equal(text(files.get(entry.files.dxf)!),patternDxf(garment));
+    assert.deepEqual(files.get(entry.files.xlsx),techPackXlsx(pack));
+    assert.equal(text(files.get(entry.files.html)!),techPackHtml(pack,{diagram:measurementDiagram(garment)}));
+  }
+  assert.equal(manifest.garments[1].artwork[0].yCm,gradedProduct(wornWith,'XS').artwork[0].yCm);
+  assert.ok(manifest.garments[1].artwork[0].yCm < 72);
+  assert.deepEqual(project,before);
+});
+
+test('an unsupported companion grade refuses the whole bundle and identifies the garment', () => {
+  const product=template('blank'), wornWith=template('trousers');
+  wornWith.name='Small trousers';
+  wornWith.measurements={...wornWith.measurements,waist:56};
+  const project={...createProject(),product,wornWith}, before=structuredClone(project);
+  assert.throws(()=>buildOutfitBundle(project,'2026-11-11','XS'), /Small trousers.*Size XS/);
+  assert.deepEqual(project,before);
 });
