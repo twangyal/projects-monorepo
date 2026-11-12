@@ -1,8 +1,10 @@
+import Delaunator from 'delaunator';
+import { simulateOutfit, outfitShape, defaultBodyChest } from '../src/garment-drape.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gradedProduct } from '../src/size-grades.ts';
+import { gradedProduct, gradedOutfit } from '../src/size-grades.ts';
 import { buildTechPack } from '../src/techpack.ts';
-import { SIZES, withSkirtWaistband, patternPieces, fitValues, legMeasurements, template, topMeasurements, type Product } from '../src/product.ts';
+import { SIZES, teeMesh, withSkirtWaistband, patternPieces, fitValues, legMeasurements, template, topMeasurements, type Product } from '../src/product.ts';
 
 test('a size step grades a top by its chest, length and sleeve, and edited fit points by their own increments', () => {
   const tee: Product = { ...template('blank'), fit: { shoulderWidth: 46, backNeckDrop: 2.5 } };
@@ -89,4 +91,39 @@ test('skirt size charts retain admitted decimal measurements instead of rounding
   const pack=buildTechPack(design,'2026-10-29');
   assert.deepEqual(pack.poms.map(p=>p.values.M),[80.2,140.2,60.234,6.234]);
   assert.deepEqual(pack.poms.map(p=>p.values.L),[84.2,146.2,60.234,6.234]);
+});
+
+
+test('whole outfit grading derives every garment independently from its own sample', () => {
+  const product=template('hoodie'), companion=template('blank'), also=template('flared-skirt');
+  product.spec={styleNumber:'OUTER',season:'',sampleSize:'L'};
+  companion.spec={styleNumber:'INNER',season:'',sampleSize:'S'};
+  const before=structuredClone({product,companion,also});
+  const result=gradedOutfit(product,companion,also,'M');
+  assert.deepEqual(result.product,gradedProduct(product,'M'));
+  assert.deepEqual(result.companion,gradedProduct(companion,'M'));
+  assert.deepEqual(result.also,gradedProduct(also,'M'));
+  assert.deepEqual({product,companion,also},before);
+  assert.deepEqual(gradedOutfit(product,null,null,'M'),{product:gradedProduct(product,'M'),companion:null,also:null});
+});
+
+test('an unsupported companion size refuses the entire outfit with its garment name', () => {
+  const product=template('blank'), companion=template('trousers');
+  companion.name='Small trousers'; companion.measurements={...companion.measurements,waist:56};
+  const before=structuredClone({product,companion});
+  assert.throws(()=>gradedOutfit(product,companion,null,'XS'), /Small trousers.*Size XS/);
+  assert.deepEqual({product,companion},before);
+});
+
+
+test('grading the companion top and bottoms retains the complete applied body assembly', () => {
+  const product=template('trousers'), companion=template('blank'), chest=defaultBodyChest(companion);
+  const shape=outfitShape(product,chest,{height:170}), bodyProducts={top:companion,bottoms:product};
+  const solve=(size:'M'|'XL')=>{
+    const view=gradedOutfit(product,companion,null,size);
+    return simulateOutfit(view.product,teeMesh(view.product,Delaunator),view.companion!,teeMesh(view.companion!,Delaunator),chest,{frames:46,substeps:1,bodyShape:shape,bodyProducts});
+  };
+  const sample=solve('M'), larger=solve('XL');
+  assert.deepEqual(larger.body,sample.body);
+  assert.notEqual(larger.metrics.ease,sample.metrics.ease);
 });

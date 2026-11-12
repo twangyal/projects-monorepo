@@ -67,3 +67,13 @@ export function gradedProduct(product: Product, size: Size): Product {
 }
 
 const round = (value: number) => Math.round(value * 100) / 100;
+
+
+/** Derive one size for every worn piece from its own applied sample; never change the source garments. */
+export function gradedOutfit(product: Product, companion: Product | null, also: Product | null, size: Size): { product: Product; companion: Product | null; also: Product | null } {
+  const grade = (garment: Product) => {
+    try { return gradedProduct(garment, size); }
+    catch (error) { throw new Error(`${garment.name}: ${error instanceof Error ? error.message : 'That size cannot be shown.'}`); }
+  };
+  return { product: grade(product), companion: companion ? grade(companion) : null, also: also ? grade(also) : null };
+}
