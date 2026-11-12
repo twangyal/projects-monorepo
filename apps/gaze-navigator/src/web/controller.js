@@ -1,6 +1,6 @@
 // Coordinates interpretation, clarification, confirmation and execution for one page.
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
-import { applyEdit, interpret as interpretRules } from './interpreter.js';
+import { applyEdit, dictated, dictationControl, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { keyLabel } from './page-actions.js';
 import { captureActivationSnapshot, captureSubmissionSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
@@ -38,6 +38,7 @@ function targetOf(context, id) {
 // its answer arrives later as `followUp` and is dropped if any newer instruction came first.
 export function createController({ window, actions = pageActions, interpret = interpretRules, commands = {}, assistant = null, now = () => Date.now(), confirmMs = CONFIRM_MS }) {
   let paused = false;
+  let dictation = null;
   let pending = null;
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
@@ -80,7 +81,7 @@ export function createController({ window, actions = pageActions, interpret = in
       !(context.focusIsCurrent ? context.focusIsCurrent(element) : actions.ownsFocus?.(element)))) {
       return reply('The focused field changed or is protected. Focus the text field again before continuing. No text was changed.', 'error');
     }
-    if (['edit', 'search'].includes(action.type) && actions.canWrite?.(element) === false) {
+    if (['edit', 'search', 'dictation'].includes(action.type) && actions.canWrite?.(element) === false) {
       return reply('That field is not writable or does not support text editing. Look at a writable field and try again.', 'error');
     }
     return null;
@@ -94,7 +95,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
+    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'dictation', 'edit', 'date-parts', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element, context);
@@ -159,6 +160,7 @@ export function createController({ window, actions = pageActions, interpret = in
     const target = targetOf(context, action.targetId);
     const element = target?.element;
     // A control in an embedded frame from another site: its frame's controller performs the confirmed action.
+    if (element?.remote && action.type === 'dictation') return reply('Continuous dictation is not available in this embedded page. Use “type” followed by the words instead.', 'error');
     if (element?.remote) {
       const followUp = Promise.resolve(element.remote.run({ ...action, targetId: element.remote.id }, { confirmed }))
         .catch(() => ({ ok: false, message: 'The embedded page could not be reached. Look at it again.' }))
@@ -170,7 +172,7 @@ export function createController({ window, actions = pageActions, interpret = in
       hovered = null;
       return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? 'unhover' : null });
     }
-    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'hover', 'double-click', 'context-menu', 'submit', 'dictation', 'edit', 'search', 'select-option', 'select-text', 'delete-selection', 'range', 'choose-option', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -181,6 +183,15 @@ export function createController({ window, actions = pageActions, interpret = in
     const remembered = UNDOABLE.has(action.type) && actions.rememberChange ? actions.rememberChange(action.type, element) : null;
     const keep = outcome => { if (outcome.ok && remembered) changed = { change: remembered, at: now() }; };
     switch (action.type) {
+      case 'dictation': {
+        if (target.sensitive || actions.isSensitive?.(element)) return reply('Dictation needs a regular, unprotected text field.', 'error');
+        result = actions.selectText(element, 'end');
+        if (result.ok && turn === executionTurn && !paused && element.isConnected && !actions.isSensitive?.(element) && actions.canWrite?.(element) !== false && actions.ownsFocus?.(element)) {
+          dictation = { ...target, id: 198 };
+          result = { ok: true, message: `Dictating into ${target.name || 'the field'}. Speak your words; say “undo typing” to take back a phrase, or “stop dictation” to return to commands.` };
+        } else result = { ok: false, message: 'That field could not keep focus for dictation. Focus a writable field and try again.' };
+        break;
+      }
       case 'disclosure': result = actions.setExpanded(element, action.expanded, target.disclosureSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
       case 'select-radio': result = actions.selectRadio(element, target.radioSnapshot); break;
       case 'select-tab': result = actions.selectTab(element, target.tabSnapshot, { isCurrent: () => turn === executionTurn && !paused }); break;
@@ -392,6 +403,27 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function handle(utterance, context, { alternatives = [] } = {}) {
     const current = ++turn;
+    if (dictation) {
+      const control = dictationControl(utterance);
+      if (control) {
+        dictation = null;
+        return decide(utterance, context, control, current);
+      }
+      const target = dictation, element = target.element;
+      if (context.trackingUnavailable || !element.isConnected || actions.isSensitive?.(element) || actions.canWrite?.(element) === false ||
+        !(context.focusIsCurrent ? context.focusIsCurrent(element) : actions.ownsFocus?.(element))) {
+        dictation = null;
+        return reply('Dictation stopped because tracking or the selected field changed. No text was entered. Start dictation again when ready.', 'error');
+      }
+      const undo = /^undo typing[.!]*$/i.test(utterance.trim());
+      const text = dictated(utterance);
+      if (!undo && !text) return reply('Dictation is still active. Speak some words, or say “stop dictation”.');
+      const response = perform({ type: 'edit', targetId: 198, requireFocus: true,
+        edit: undo ? { kind: 'undo' } : { kind: 'append', text, raw: /^[\s.,;:?!…)”]/u.test(text) } }, { ...context, elements: [target] });
+      if (response.tone === 'error' && !undo) dictation = null;
+      return response;
+    }
+
     const recent = previous && now() - previous.at <= PREVIOUS_MS && previous.target.element?.isConnected !== false ? { ...previous.target, id: PREVIOUS_ID } : null;
     if (recent) context = { ...context, previous: recent };
     if (hovered?.isConnected) context = { ...context, hovering: true };
@@ -429,7 +461,12 @@ export function createController({ window, actions = pageActions, interpret = in
         .catch(() => ({ ok: false, message: 'The website state could not be checked. Check the control before continuing.' }))
         .then(later => (turnNow === turn && !paused ? said(later) : null)) });
     }
+    if (action.type === 'stop-dictation') {
+      dictation = null; pending = null;
+      return reply('Dictation stopped. Look at something and say what to do.');
+    }
     if (action.type === 'cancel') {
+      dictation = null;
       const had = pending;
       pending = null;
       // "Cancel" always stops the navigator and never presses anything; with nothing to stop and the website's own
@@ -439,6 +476,7 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     if (action.type === 'pause') {
       paused = true;
+      dictation = null;
       pending = null;
       // "Pause" alone pauses the navigator; a video it leaves playing is pointed out.
       const playing = context.media?.().some(item => item.playing);
@@ -661,6 +699,8 @@ export function createController({ window, actions = pageActions, interpret = in
     // Performs an already interpreted and confirmed action (used by an embedded frame for the top navigator).
     run: (action, context, { confirmed = false } = {}) => execute(action, context,
       action.type === 'activate' || confirmed ? activationOf(action, targetOf(context, action.targetId)) : null),
+    get dictation() { return dictation; },
+    endDictation() { dictation = null; },
     get paused() { return paused; },
     get pending() { return pending && { kind: pending.kind, candidates: pending.candidates ?? null, farTarget: pending.farTarget ?? null }; },
     cancel() { return handle('cancel', { elements: [] }); },

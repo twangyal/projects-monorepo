@@ -1,8 +1,8 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NUMBER_LIMIT, captureContext, composedContains, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
-import { chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
+import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -47,7 +47,7 @@ const STYLE = `
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
 /* Hidden, the panel keeps its answers and any question, so instructions still get feedback. */
 .panel.collapsed { width: min(300px, calc(100vw - 24px)); }
-.panel.collapsed .body > :not(.status):not(.prompt) { display: none; }
+.panel.collapsed .body > :not(.status):not(.prompt):not(.dictation) { display: none; }
 .panel.left { right: auto; left: 12px; }
 .panel.top { bottom: auto; top: 12px; }
 @media (max-height: 700px) { .panel { max-height: 45vh; padding: 10px; } }
@@ -169,6 +169,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     <div class="body">
       <p class="status" role="status" aria-live="polite"></p>
       <p class="transcript" aria-live="off"></p>
+      <p class="dictation hint" role="status" hidden></p>
       <div class="prompt" role="group" aria-label="Answer the question"></div>
       <div class="row">
         <button class="listen" aria-pressed="false">Start listening</button>
@@ -203,7 +204,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
       <p class="hint">Keep website suggestions open: focus the page, press Alt+Shift+G, type a command, then Enter. Escape cancels. Use direct keyboard characters or paste.</p>
-        <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "add option Jazz to Genres", "remove option Jazz from Genres", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
+        <p class="hint">"Open pricing", "click the second one", "type hello into search", "start dictation into Message" (then speak phrases; "stop dictation" returns to commands), "delete last word", "replace Tuesday with Friday", "choose large", "add option Jazz to Genres", "remove option Jazz from Genres", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
         <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit. After looking away, say "continue typing" and more words to append in the focused regular field; "undo typing" can recover it when no text field is in the circle.</p>
         <p class="hint">Selected text: say "delete selected text" or "remove highlighted text" to remove only a native selected range. Say "undo" to restore it. Select words first; changed or unavailable selections refuse.</p>
         <p class="hint">This panel: say "hide the navigator" to keep only its answers, "show the navigator" to bring it back, or "move the navigator to the top left" (any corner, or up and down). "Place the navigator automatically" lets it move out of the way of website controls again.</p>
@@ -221,7 +222,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   </section>`;
   const $ = selector => shadow.querySelector(selector);
   const ui = {
-    circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), transcript: $('.transcript'),
+    circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), dictation: $('.dictation'), transcript: $('.transcript'),
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
@@ -327,6 +328,39 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   const radius = () => RADII[settings.size] ?? RADII.medium;
 
+  let observedDictation = null;
+  const dictationScopes = [];
+  const dictationObserver = new window.MutationObserver(records => {
+    const target = controller.dictation?.element;
+    if (!target) return;
+    const restricted = new Set(['readonly', 'disabled', 'aria-disabled', 'aria-readonly', 'inert', 'type', 'autocomplete', 'contenteditable']);
+    // Even a lock and unlock in one mutation batch retires the explicit choice. A later phrase needs a restart.
+    const bindingChanged = records.some(record => record.type === 'attributes'
+      ? restricted.has(record.attributeName) && composedContains(record.target, target)
+      : [...record.removedNodes].some(node => dictationScopes.some(scope => node === scope || node.contains(scope))));
+    if (bindingChanged || !target.isConnected || !canWrite(target) || isSensitive(target)) {
+      controller.endDictation();
+      feedback({ message: 'Dictation stopped because the selected field changed. Start dictation again when ready.' });
+    }
+  });
+
+  function renderDictation() {
+    const active = controller.dictation;
+    if ((active?.element ?? null) !== observedDictation) {
+      dictationObserver.disconnect(); dictationScopes.length = 0;
+      observedDictation = active?.element ?? null;
+      for (let scope = observedDictation; scope;) {
+        dictationScopes.push(scope);
+        const root = scope.getRootNode();
+        dictationObserver.observe(root, { subtree: true, childList: true, attributes: true });
+        scope = root.host ?? scope.ownerDocument.defaultView.frameElement;
+      }
+    }
+    const text = active ? `Dictating into ${active.name || 'the field'}. Say “stop dictation” for commands, “undo typing” for the last phrase, or pause/cancel.` : '';
+    if (ui.dictation.textContent !== text) ui.dictation.textContent = text;
+    ui.dictation.hidden = !active;
+  }
+
   function feedback({ message, tone = 'info' }) {
     ui.status.textContent = message;
     ui.status.className = `status ${tone}`;
@@ -338,6 +372,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
 
   function renderPrompt() {
+    renderDictation();
     const pending = controller.pending;
     ui.prompt.replaceChildren();
     if (!pending) return;
@@ -364,6 +399,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.outlines.append(box);
   }
   function renderOutlines() {
+    renderDictation();
     const pending = controller.pending;
     const question = pending?.kind === 'clarify' ? new Map() : null;
     for (const candidate of question ? pending.candidates : []) {
@@ -433,9 +469,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // following correction ("change Tuesday to Friday") still means the page field that had it before.
   let lastPageFocus = null;
   const inPanel = active => active === host || active?.getRootNode?.() === shadow;
-  const onFocusIn = () => { pageChanged = true; const active = deepActiveElement(document); if (!inPanel(active)) lastPageFocus = active; };
+  const onFocusIn = () => {
+    pageChanged = true;
+    const active = deepActiveElement(document);
+    if (!inPanel(active)) {
+      lastPageFocus = active;
+      if (controller.dictation && controller.dictation.element !== active) {
+        controller.endDictation();
+        feedback({ message: 'Dictation stopped because the website focus changed. Start dictation again when ready.' });
+      }
+    }
+  };
   // Focus leaving to nothing (a click on the page background) forgets the field.
-  const onFocusOut = event => { if (!event.relatedTarget) lastPageFocus = null; };
+  const onFocusOut = event => { if (!event.relatedTarget) { lastPageFocus = null; controller.endDictation(); renderDictation(); } };
   const pageFocus = () => { const active = deepActiveElement(document); return inPanel(active) ? lastPageFocus : active; };
 
   // The panel sits in the top layer, so it would hide fixed website controls under it (cookie banners, chat
@@ -701,6 +747,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       watchedFrames.add(frameDocument);
       keyboard.attach(frameDocument);
       frameDocument.addEventListener('load', onFrameLoad, true);
+      frameDocument.addEventListener('focusin', onFocusIn, true);
+      frameDocument.addEventListener('focusout', onFocusOut, true);
       const listener = event => {
         if (settings.source !== 'pointer') return;
         frozen = false;
@@ -1052,7 +1100,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       on = false;
     }
     if (on && !speech.listening && !speech.start()) on = false;
-    if (!on) { spokenContext = null; spokenInvalid = false; speech.stop(); }
+    if (!on) { spokenContext = null; spokenInvalid = false; speech.stop(); controller.endDictation(); renderDictation(); }
     settings.listening = on;
     store.save(settings);
     renderListening(on);
@@ -1341,9 +1389,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       for (const [frameDocument, listener] of frameListeners) {
         frameDocument.removeEventListener('pointermove', listener, true);
         frameDocument.removeEventListener('load', onFrameLoad, true);
+        frameDocument.removeEventListener('focusin', onFocusIn, true);
+        frameDocument.removeEventListener('focusout', onFocusOut, true);
       }
       window.removeEventListener('scroll', refresh, true);
       pageObserver.disconnect();
+      dictationObserver.disconnect();
       document.removeEventListener('focusin', onFocusIn, true);
       document.removeEventListener('focusout', onFocusOut, true);
       window.removeEventListener('resize', onViewportResize);

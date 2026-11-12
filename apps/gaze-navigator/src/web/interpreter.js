@@ -423,7 +423,7 @@ export function punctuate(text) {
     .replace(/ {2,}/g, ' ').replace(/^ +| +$/g, '');
 }
 // The words of a dictation as typed: quoted words exactly, others with their spoken punctuation.
-const dictated = text => (/^["“](.*)["”]$/.test(text.trim()) ? unquote(text) : punctuate(text.trim()));
+export const dictated = text => (/^["“](.*)["”]$/.test(text.trim()) ? unquote(text) : punctuate(text.trim()));
 
 // Native value fields that "set <name> to <value>" can reach by name or kind, with what to say.
 const TYPED_FIELDS = [
@@ -475,6 +475,13 @@ const MISHEARD = [
 ];
 // A corrected instruction that only scrolls, cancels or pauses is done; anything else is asked first.
 const HARMLESS = new Set(['scroll', 'cancel', 'pause']);
+
+// Dictation reserves deliberate stop phrases only. Command mishearing recovery must never turn literal words
+// (such as “cancer” or “council”) into cancellation and silently discard the phrase.
+export function dictationControl(utterance) {
+  const action = interpretInCircle(utterance, { elements: [] });
+  return ['cancel', 'pause', 'stop-dictation'].includes(action.type) ? action : null;
+}
 
 export function interpret(utterance, context = { elements: [] }) {
   const action = interpretHeard(utterance, context);
@@ -950,6 +957,10 @@ function interpretInCircle(utterance, context) {
     if (nearby.length) return deictic(nearby, act, 'search field');
     if (context.pageSearch) return act(context.pageSearch);
     return chooseField(null, context, act, { recover: true });
+  }
+  if (/^(?:stop|end|finish) dictat(?:ing|ion)[.!]*$/i.test(raw.trim())) return { type: 'stop-dictation' };
+  if ((match = /^(?:start|begin) dictat(?:ing|ion)(?:\s+(?:in|into)\s+(?:the\s+)?(.+?))?[.!]*$/i.exec(raw.trim()))) {
+    return chooseField(match[1]?.replace(/\s+(field|box|input)$/i, ''), context, element => ({ type: 'dictation', targetId: element.id }));
   }
   if ((match = /^(?:continue|keep)\s+(?:typing|writing|dictating)(?:\s+(.+))?$/i.exec(raw))) {
     if (!match[1]?.trim()) return { type: 'unknown', message: 'Say “continue typing” followed by the words to add to the focused field.' };

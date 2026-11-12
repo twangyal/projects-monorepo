@@ -683,7 +683,9 @@ function writeRichText(element, value) {
   selection?.addRange(range);
   let native = false;
   try {
-    native = selection?.rangeCount === 1 && document.execCommand(inserted ? 'insertText' : 'delete', false, inserted);
+    // Native multiline insertText creates block elements whose line breaks disappear from textContent,
+    // the offsets used by correction and Undo. Keep explicit newlines as text with visible whitespace.
+    native = !before.includes('\n') && !inserted.includes('\n') && selection?.rangeCount === 1 && document.execCommand(inserted ? 'insertText' : 'delete', false, inserted);
   } catch {
     native = false;
   }
@@ -692,7 +694,8 @@ function writeRichText(element, value) {
   if (element.textContent !== before) return true;
   range.deleteContents();
   if (inserted) {
-    const node = document.createTextNode(inserted);
+    const node = inserted.includes('\n') ? document.createElement('span') : document.createTextNode(inserted);
+    if (node.nodeType === 1) { node.style.whiteSpace = 'pre-wrap'; node.textContent = inserted; }
     range.insertNode(node);
     range.setStartAfter(node);
     range.collapse(true);
