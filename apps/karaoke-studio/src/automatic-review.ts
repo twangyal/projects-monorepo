@@ -1,4 +1,5 @@
 import { MAX_CUES, validateCues, type Cue } from './lyrics.ts';
+import { splitCue, mergeCue } from './cue-edit.ts';
 import { createPracticeRange, type PracticeRange } from './practice.ts';
 
 export interface ReviewedCue { start: string; end: string; text: string; excluded?: boolean }
@@ -107,4 +108,24 @@ export function applyReviewedPassage(current: Cue[], rows: readonly ReviewedCue[
   });
   cues.splice(index, removed, ...selected);
   return { cues:validateCues(cues, duration), index, removed, start, end, changed };
+}
+
+
+function groupingRows(rows: readonly ReviewedCue[], index: number, count: number, duration: number): Cue[] {
+  if (!Array.isArray(rows) || rows.length > MAX_CUES || !Number.isInteger(index) || index < 0 || index + count > rows.length) throw new Error('Choose existing adjacent reviewed lyric lines.');
+  for (let at = index; at < index + count; at++) if (rows[at].excluded) throw new Error(`Include reviewed line ${at + 1} before applying its line grouping.`);
+  try { return reviewedCues(rows.slice(index, index + count), duration); }
+  catch (error) { throw new Error((error instanceof Error ? error.message : 'Check the reviewed lines.').replace(/Line (\d+)/g, (_, number) => `Line ${Number(number) + index}`)); }
+}
+function applyGrouping(current: Cue[], proposal: Cue[], duration: number): ReturnType<typeof applyReviewedPassage> {
+  return applyReviewedPassage(current, proposal.map(cue => ({start:String(cue.start),end:String(cue.end),text:cue.text})), 0, proposal.length - 1, duration);
+}
+
+/** Apply a corrected line break without discarding the remaining staged review. */
+export function applyReviewedSplit(current: Cue[], rows: readonly ReviewedCue[], index: number, caret: number, playhead: number, duration: number): ReturnType<typeof applyReviewedPassage> {
+  return applyGrouping(current, splitCue(groupingRows(rows, index, 1, duration), 0, caret, playhead, duration), duration);
+}
+/** Explicitly join adjacent reviewed lines, including their gap, as one undoable current-lyric edit. */
+export function applyReviewedMerge(current: Cue[], rows: readonly ReviewedCue[], index: number, duration: number): ReturnType<typeof applyReviewedPassage> {
+  return applyGrouping(current, mergeCue(groupingRows(rows, index, 2, duration), 0, duration), duration);
 }
