@@ -1,6 +1,6 @@
 # Project Ideas
 
-These 17 projects are listed in my personal priority order. The descriptions reflect the concepts we refined and their intended use as portfolio projects.
+These 18 projects are listed in my personal priority order. The descriptions reflect the concepts we refined and their intended use as portfolio projects.
 
 ## 1. Eye detector with agentic AI
 
@@ -105,6 +105,12 @@ Description: A photo editor that approximates how an existing image would look u
 Path: N/A
 Status: IDEA
 Description: A horror game that uses heart-rate readings from a supported smartwatch to influence character composure. Changes from the player's baseline become a gameplay tension signal, affecting actions through shaky aim, louder breathing, or fumbling a key during an escape. Frightening encounters can make subsequent actions harder, making composure part of surviving. The signal is a deliberate game mechanic rather than a diagnosis of the player's emotional state. A first portfolio version would include one supported smartwatch, a short escape scenario, bounded effects on character performance, and simulated readings so people can try the demo without a watch.
+
+## 18. Wikipedia rabbit-hole game
+
+Path: N/A
+Status: IDEA
+Description: A browser extension that turns the Wikipedia article a player opens into the starting point for a race to a target article. Players can follow only internal Wikipedia article links. Each `starting article → target article` pair has a leaderboard ranked by fewest jumps, with fastest completion time breaking ties. Other players' routes stay hidden until the player finishes or gives up. The MVP would detect article pages, assign targets from a curated pool, and show the target, jump count, timer, and run progress in a lightweight HUD. It would track each article visited in order, detect arrival at the target, save the full route and result with jump count and elapsed time, and show the completed path as a node graph. The MVP would also include pair-specific leaderboards and a global Daily Challenge with the same start and target for everyone. A companion site could later host profiles, run history, daily challenges, leaderboards, stats, and route graphs. Aggregate routes could reveal common knowledge highways, unusual shortcuts, popular intermediary articles, and where players get stuck.
 
 ## Technical references
 
