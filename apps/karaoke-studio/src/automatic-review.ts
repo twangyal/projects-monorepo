@@ -129,3 +129,14 @@ export function applyReviewedSplit(current: Cue[], rows: readonly ReviewedCue[],
 export function applyReviewedMerge(current: Cue[], rows: readonly ReviewedCue[], index: number, duration: number): ReturnType<typeof applyReviewedPassage> {
   return applyGrouping(current, mergeCue(groupingRows(rows, index, 2, duration), 0, duration), duration);
 }
+
+
+/** Bounded staged words for audition, with original row numbers after exclusions. */
+export function reviewedPreview(rows: readonly ReviewedCue[], duration: number, first: number, last: number): { cues: Cue[]; indices: number[] } {
+  if (!Array.isArray(rows) || rows.length > MAX_CUES || !Number.isInteger(first) || !Number.isInteger(last) || first < 0 || last < first || last >= rows.length) throw new Error('Choose existing reviewed lines for preview.');
+  let cues: Cue[];
+  try { cues = reviewedCues(rows.slice(first, last + 1), duration); }
+  catch (error) { throw new Error((error instanceof Error ? error.message : 'Check reviewed words and times.').replace(/Line (\d+)/g, (_, number) => `Line ${Number(number) + first}`)); }
+  if (!cues.length) throw new Error('Include at least one reviewed line to preview.');
+  return { cues, indices: rows.slice(first, last + 1).flatMap((row, index) => row.excluded ? [] : [first + index]) };
+}

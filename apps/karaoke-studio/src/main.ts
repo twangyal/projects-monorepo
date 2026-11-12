@@ -17,7 +17,7 @@ import { fitCues } from './cue-fit.ts';
 import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, type CuePassage } from './cue-edit.ts';
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode, type PracticeRange } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
-import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, type ReviewedCue } from './automatic-review.ts';
+import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, reviewedPreview, type ReviewedCue } from './automatic-review.ts';
 import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
@@ -36,7 +36,7 @@ app.innerHTML = `
     <div class="workspace-grid">
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><h3 id="stage-heading">Listen &amp; preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
-        <p id="bidi-status" class="fine" role="status" hidden>Lyrics containing right-to-left text use whole-line highlighting in preview and MP4 to preserve reading order and joined letters. Word times remain available in word-timed LRC.</p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
+        <p id="review-preview-status" class="fine" role="status" hidden></p><p id="bidi-status" class="fine" role="status" hidden>Lyrics containing right-to-left text use whole-line highlighting in preview and MP4 to preserve reading order and joined letters. Word times remain available in word-timed LRC.</p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p>
       </section>
@@ -132,6 +132,7 @@ let automaticReview = false;
 let automaticReviewDraft: ReviewedCue[] = [];
 const automaticChecked = new Set<number>();
 let reviewAuditionOwner: SrtOwner | null = null;
+let reviewAuditionRange: Readonly<PracticeRange> | null = null;
 interface ReviewTiming { original: Project['cues']; label: string; note: string; offset: number; source: 'srt' | 'lrc' | 'published'; finalEnd: string }
 let srtReview: { owner: SrtOwner; cues: Project['cues']; applied: string; timing?: ReviewTiming } | null = null;
 let srtTimer: ReturnType<typeof setTimeout> | undefined;
@@ -157,7 +158,7 @@ let archiveJobRevision: number | null = null;
 let practiceEpoch = 0;
 let practiceProject = -1;
 let practiceCount = -1;
-const practice = new PracticeController(audio, () => practiceControls());
+const practice = new PracticeController(audio, () => { practiceControls(); draw(); });
 interface ArchiveFocus {
   node: HTMLInputElement | HTMLTextAreaElement;
   projectId: string;
@@ -466,6 +467,13 @@ function previewCover(): HTMLImageElement | null {
   return coverImage.image;
 }
 const lyricStyle = (): LyricStyle => { const value = element<HTMLSelectElement>('lyric-style').value; return value in LYRIC_STYLES ? value as LyricStyle : 'classic'; };
+function auditionPreview(): { cues: Cue[]; indices: number[]; source: string; error: string } | null {
+  if (!reviewAuditionOwner || !reviewAuditionRange || !practice.active || !srtReview || srtReview.owner !== reviewAuditionOwner || !srtCurrent(reviewAuditionOwner) || !working) return null;
+  const source = automaticReview ? 'automatic-review' : srtReview.timing?.source === 'published' ? 'published-review' : 'imported-review';
+  const rows = automaticReview ? automaticReviewDraft : srtReview.cues.map(cue => ({start:String(cue.start),end:String(cue.end),text:cue.text}));
+  try { return {...reviewedPreview(rows, working.duration, reviewAuditionRange.firstIndex, reviewAuditionRange.lastIndex),source,error:''}; }
+  catch (error) { return {cues:[],indices:[],source,error:error instanceof Error ? error.message : 'Check reviewed words and times.'}; }
+}
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
   const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
@@ -480,32 +488,40 @@ function draw() {
     context.globalAlpha = 0.62; context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720); context.globalAlpha = 1;
   }
   context.textAlign = 'center'; context.textBaseline = 'middle';
-  const invalid = validateWorking();
-  element('bidi-status').hidden = !!invalid || !working?.cues.some(cue => textLayout(cue.text).wholeLine);
+  const review = auditionPreview(), cues = review ? review.cues : working?.cues ?? [];
+  stage.dataset.previewSource = review?.source ?? 'current';
+  element('review-preview-status').hidden = !review;
+  const reviewNotice = review ? 'Previewing selected reviewed lyrics — not applied or saved. Words are highlighted one line at a time.' : '';
+  if (element('review-preview-status').textContent !== reviewNotice) element('review-preview-status').textContent = reviewNotice;
+  element('word-timing-status').toggleAttribute('data-review-hidden', !!review);
+  const invalid = review ? review.error : validateWorking();
+  element('bidi-status').hidden = !!invalid || !cues.some(cue => textLayout(cue.text).wholeLine);
   if (invalid) {
     // Keep the complete invalid draft in its editor/history, but never send
     // unbounded input to native canvas layout, including during playback.
-    drawBlock('Preview paused', 240, 44, 24, 100, look.accent, undefined, look.accent);
-    drawBlock('Correct the title or lyric draft to resume.', 330, 28, 22, 100, look.main, undefined, look.accent);
+    drawBlock(review ? 'Review preview paused' : 'Preview paused', 240, 44, 24, 100, look.accent, undefined, look.accent);
+    drawBlock(review ? 'Correct the selected reviewed words or times.' : 'Correct the title or lyric draft to resume.', 330, 28, 22, 100, look.main, undefined, look.accent);
     drawBlock(invalid, 430, 24, 18, 160, look.muted, undefined, look.accent);
     stage.dataset.activeCue = '-1';
-    const paused = 'Preview paused — correct the title or lyric draft to resume.';
+    const paused = review ? 'Review preview paused — correct the selected reviewed words or times.' : 'Preview paused — correct the title or lyric draft to resume.';
+    stage.dataset.wordTiming = 'none'; stage.dataset.sung = ''; stage.dataset.countIn = '';
+    for (const row of element('srt-review-list').querySelectorAll<HTMLElement>('[data-srt-cue]')) row.classList.remove('review-active');
     if (element('current-line').textContent !== paused) element('current-line').textContent = paused;
     element('clock').textContent = `${formatTime(audio.currentTime || 0)} / ${formatTime(working?.duration || 0)}`;
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.remove('active');
     return;
   }
-  drawBlock((working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, look.main, undefined, look.accent);
-  const time = audio.currentTime || 0, index = working ? activeCue(working.cues, time) : -1;
-  const current = index >= 0 ? working!.cues[index].text : 'Instrumental break';
-  const upcoming = working?.cues.find(cue => cue.start > time);
-  const fetched = working ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
+  drawBlock((review ? 'Reviewing timed lyrics' : working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, look.main, undefined, look.accent);
+  const time = audio.currentTime || 0, index = activeCue(cues, time);
+  const current = index >= 0 ? cues[index].text : 'Instrumental break';
+  const upcoming = cues.find(cue => cue.start > time);
+  const fetched = working && !review ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
   if (timing) drawBlock(current, 320, Math.floor(44 * scale), Math.floor(24 * scale), 300, look.main, sungCharacters(timing.lines[index], time), look.accent);
   else drawBlock(current, 320, Math.floor(44 * scale), Math.floor(24 * scale), 300, index >= 0 ? look.accent : look.main, undefined, look.accent);
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
   stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
   // After a break, dots count singers in to the next line.
-  const count = working ? countIn(working.cues, time) : null;
+  const count = countIn(cues, time);
   stage.dataset.countIn = count ? String(count) : '';
   if (count) {
     context.fillStyle = look.main;
@@ -513,10 +529,11 @@ function draw() {
   }
   if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
   context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
-  stage.dataset.activeCue = String(index);
+  stage.dataset.activeCue = String(review && index >= 0 ? review.indices[index] : index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
   element('clock').textContent = `${formatTime(time)} / ${formatTime(working?.duration || 0)}`;
-  for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('active', Number(row.dataset.cue) === index);
+  for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('active', !review && Number(row.dataset.cue) === index);
+  for (const row of element('srt-review-list').querySelectorAll<HTMLElement>('[data-srt-cue]')) row.classList.toggle('review-active', !!review && index >= 0 && Number(row.dataset.srtCue) === review.indices[index]);
 }
 function animate() { draw(); if (!audio.paused && !audio.ended) animation = requestAnimationFrame(animate); }
 audio.addEventListener('play', () => { cancelAnimationFrame(animation); animate(); });
@@ -578,7 +595,7 @@ function track(kind: string) {
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-track]')) button.addEventListener('click', () => track(button.dataset.track!));
 
 function retirePractice(text = 'Practice stopped. The playhead and lyric edits are kept.'): void {
-  reviewAuditionOwner = null;
+  reviewAuditionOwner = null; reviewAuditionRange = null;
   practiceEpoch++; practice.stop(text);
 }
 function selectedPracticeRange() {
@@ -685,7 +702,7 @@ function srtControls() {
   element('automatic-review-error').textContent = reviewError;
   element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
   element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
-  automaticReviewControls(); importReviewControls(); passageControls();
+  automaticReviewControls(); importReviewControls(); passageControls(); draw();
 }
 function retireSrt(text: string) {
   if (!srtOwner && !srtReview) return;
@@ -766,7 +783,7 @@ function startAutomaticAudition(owner: SrtOwner, epoch: number, index: number, m
 }
 function startReviewAudition(owner: SrtOwner, range: Readonly<PracticeRange>, mode: PracticeMode, reviewCurrent: () => boolean): void {
   retirePractice(); timeline.cancelGesture();
-  reviewAuditionOwner = owner;
+  reviewAuditionOwner = owner; reviewAuditionRange = range;
   const session = practiceEpoch, media = mediaGeneration, trackName = currentTrack, source = audio.src;
   practice.start(range, mode, () => reviewAuditionOwner === owner && practiceEpoch === session
     && srtCurrent(owner) && reviewCurrent() && mediaGeneration === media
