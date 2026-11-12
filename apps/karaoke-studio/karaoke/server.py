@@ -8,6 +8,7 @@ import errno
 import sys
 from collections.abc import Callable
 import hmac
+import hashlib
 import fcntl
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -46,7 +47,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|transcribe|align|word-timings|cover))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|transcribe|align|word-timings|cover))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -55,6 +56,7 @@ MAX_SEMITONES = 6
 VIDEO_STYLES = ("classic", "contrast", "large", "light")
 VIDEO_SIZES = ("720p", "1080p")
 _TRANSCRIPT = "transcript.json"
+_RECOGNITION_PREVIEW = "recognition-preview.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
 _AUDIO_FILES = {"original": "source.wav", "vocals": "vocals.wav", "backing": "backing.wav"}
@@ -96,6 +98,15 @@ def _rename_noreplace(source_fd: int, source_name: str, destination_fd: int, des
         if code in {errno.ENOSYS, errno.EINVAL, errno.EOPNOTSUPP}:
             raise RuntimeError("This filesystem does not support atomic no-replace restore.")
         raise RuntimeError("The restored clip could not be published; existing clips were preserved.")
+
+
+def _invalidate_recognition_exports(directory_fd):
+    # Rendered highlighting and portable recognition can change without a lyric revision change.
+    for name in ('archive.karaoke.zip', 'video-revision.json'):
+        try:
+            os.unlink(name, dir_fd=directory_fd)
+        except FileNotFoundError:
+            pass
 
 
 def _atomic_json(path: Path, value: dict, *, directory_fd=None):
@@ -338,11 +349,11 @@ class KaraokeServer(ThreadingHTTPServer):
         except Exception:
             return False
 
-    def read_transcript(self, project):
+    def read_transcript(self, project, *, preview=False):
         """The stored recognized words for a project, or None when it has not been transcribed."""
         from .transcription import validate_transcript
         try:
-            source = self.project_file(project["id"], _TRANSCRIPT)
+            source = self.project_file(project["id"], _RECOGNITION_PREVIEW if preview else _TRANSCRIPT)
         except FileNotFoundError:
             return None
         with source:
@@ -353,6 +364,52 @@ class KaraokeServer(ThreadingHTTPServer):
             return validate_transcript(json.loads(raw), project["duration"])
         except (ValueError, UnicodeError):
             raise RequestError(409, "The stored lyric transcript is invalid. Transcribe the clip again.") from None
+
+    @staticmethod
+    def transcript_identity(transcript):
+        if transcript is None:
+            return None
+        return hashlib.sha256(json.dumps(transcript, ensure_ascii=False, sort_keys=True,
+                                         separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+
+    def recognition_preview(self, project):
+        candidate = self.read_transcript(project, preview=True)
+        if candidate is None:
+            return {"available": False}
+        current = self.read_transcript(project)
+        return {"available": True, "candidateId": self.transcript_identity(candidate),
+                "referenceId": self.transcript_identity(current),
+                "current": self.transcript_reply(current, project),
+                "candidate": self.transcript_reply(candidate, project)}
+
+    @staticmethod
+    def transcript_reply(transcript, project):
+        if transcript is None:
+            return {"available": False}
+        return {"available": True, "model": transcript["model"], "words": len(transcript["words"]),
+                "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)}
+
+    def update_recognition_preview(self, project, value, *, keep):
+        if self._closing or self.uploading or self.jobs.busy():
+            raise RequestError(409, "Wait for media work to finish before keeping or discarding a recognition retry.")
+        candidate = self.read_transcript(project, preview=True)
+        current = self.read_transcript(project)
+        if (candidate is None or value["candidateId"] != self.transcript_identity(candidate)
+                or value["referenceId"] != self.transcript_identity(current)):
+            raise RequestError(409, "The recognition candidate or current reference changed. Reopen the comparison before choosing.")
+        fd = self._open_project(project["id"])
+        try:
+            if keep:
+                _invalidate_recognition_exports(fd)
+                # Publish the validated snapshot, never a path that could have been replaced since the read.
+                _atomic_json(self.projects_dir / project["id"] / _TRANSCRIPT, candidate, directory_fd=fd)
+            try:
+                os.unlink(_RECOGNITION_PREVIEW, dir_fd=fd)
+            except FileNotFoundError:
+                pass
+        finally:
+            os.close(fd)
+        return {"kept": keep}
 
     def read_alignment(self, project):
         """How likely each letter is in every 20 ms of the clip's vocals, measured when it was transcribed; None when
@@ -647,11 +704,13 @@ class KaraokeServer(ThreadingHTTPServer):
             cleanup()
             raise
 
-    def start_transcribe(self, project: dict, model_choice: str = 'auto'):
+    def start_transcribe(self, project: dict, model_choice: str = 'auto', *, review_only=False):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before transcribing.")
         if not self.lyrics_ready():
             raise RequestError(409, "Lyric recognition is not set up. Run scripts/setup_lyrics_model.py with this studio's model directory, then try again.")
+        # Decide from stored state under the publication lock, never from a browser's incomplete or failed read.
+        review_only = review_only and self.optional_transcript(project) is not None
         work_dir = self.new_work()
 
         def work(cancel, stage):
@@ -665,6 +724,19 @@ class KaraokeServer(ThreadingHTTPServer):
                         self.transcribe(owned_project / "vocals.wav", owned_work / _TRANSCRIPT,
                                         self.model_dir, project["duration"], cancel, stage,
                                         **({"model_choice": model_choice} if model_choice != "auto" else {}))
+                    if review_only:
+                        from .transcription import validate_transcript
+                        fd = os.open(_TRANSCRIPT, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=work_fd)
+                        with os.fdopen(fd, "rb") as candidate:
+                            if not stat.S_ISREG(os.fstat(candidate.fileno()).st_mode):
+                                raise RuntimeError("Lyric recognition produced an invalid transcript.")
+                            raw = candidate.read(MAX_TRANSCRIPT_BYTES + 1)
+                        try:
+                            if len(raw) > MAX_TRANSCRIPT_BYTES:
+                                raise ValueError("Oversized transcript.")
+                            validate_transcript(json.loads(raw), project["duration"])
+                        except (ValueError, UnicodeError):
+                            raise RuntimeError("Lyric recognition produced an invalid transcript.") from None
                     self.check_storage()
                 finally:
                     os.close(project_fd)
@@ -677,11 +749,12 @@ class KaraokeServer(ThreadingHTTPServer):
                 try:
                     work_fd = self._open_work(work_dir)
                     try:
+                        if review_only:
+                            os.replace(_TRANSCRIPT, _RECOGNITION_PREVIEW, src_dir_fd=work_fd, dst_dir_fd=fd)
+                            # Candidate letter measurements are discarded with work; accepted alignment stays intact.
+                            return f'/api/projects/{project["id"]}/recognition-preview'
                         # Recognition is part of portable recovery even when lyric revision stays unchanged.
-                        try:
-                            os.unlink('archive.karaoke.zip', dir_fd=fd)
-                        except FileNotFoundError:
-                            pass
+                        _invalidate_recognition_exports(fd)
                         os.replace(_TRANSCRIPT, _TRANSCRIPT, src_dir_fd=work_fd, dst_dir_fd=fd)
                         # The letters measured from the same vocals stay valid when a new pass measured none.
                         try:
@@ -1124,9 +1197,17 @@ class Handler(BaseHTTPRequestHandler):
             elif self.command == "POST" and resource == "transcribe":
                 value = self._read_json()
                 model_choice = value.get("modelChoice", "auto")
-                if (set(value) - {"modelChoice"} or not isinstance(model_choice, str)
+                review_only = value.get("reviewOnly", False)
+                if (type(review_only) is not bool or set(value) - {"modelChoice", "reviewOnly"} or not isinstance(model_choice, str)
                         or model_choice not in CHOICES):
                     raise RequestError(400, "Choose a recognition model, or an explicit Chinese, Cantonese, Japanese or Korean retry.")
+            elif self.command in ("POST", "DELETE") and resource == "recognition-preview":
+                value = self._read_json()
+                def digest(item):
+                    return isinstance(item, str) and re.fullmatch(r"[0-9a-f]{64}", item) is not None
+                if (set(value) != {"candidateId", "referenceId"} or not digest(value["candidateId"])
+                        or (value["referenceId"] is not None and not digest(value["referenceId"]))):
+                    raise RequestError(400, "Provide the recognition candidate and reference from this comparison.")
             elif self.command == "POST" and resource == "word-timings":
                 value = self._read_json()
                 if set(value) != {"cues"} or not isinstance(value["cues"], list):
@@ -1209,7 +1290,11 @@ class Handler(BaseHTTPRequestHandler):
                             source.close()
                         raise RequestError(409, "This clip has no separated tracks to preview.") from None
                 if self.command == "POST" and resource == "transcribe":
-                    job = server.start_transcribe(project, model_choice)
+                    job = server.start_transcribe(project, model_choice, review_only=review_only)
+                if resource == "recognition-preview":
+                    if not read and self.command not in ("POST", "DELETE"):
+                        raise RequestError(405, "Recognition comparison supports read, keep or discard.")
+                    preview = server.recognition_preview(project) if read else server.update_recognition_preview(project, value, keep=self.command == "POST")
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
                 if self.command == "POST" and resource == "align" and alignable(value["lines"]):
@@ -1258,12 +1343,11 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "key-preview":
                 self._bytes(server.render_key_preview(preview_sources, project["duration"], start, semitones, guide), "audio/wav")
                 return
+            if resource == "recognition-preview":
+                self._json(preview)
+                return
             if read and resource == "transcript":
-                if transcript is None:
-                    self._json({"available": False})
-                else:
-                    self._json({"available": True, "model": transcript["model"], "words": len(transcript["words"]),
-                                "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)})
+                self._json(server.transcript_reply(transcript, project))
                 return
             if self.command == "POST" and resource == "word-timings":
                 words = transcript["words"] if transcript else []

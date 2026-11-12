@@ -146,9 +146,11 @@ test('retry choice refreshes recognition while corrections survive until deliber
   await choice.selectOption('multilingual');
   const requested = page.waitForRequest(request => request.url().endsWith('/transcribe') && request.method() === 'POST');
   await page.getByRole('button', { name: 'Transcribe again', exact: true }).click();
-  expect((await requested).postDataJSON()).toEqual({ modelChoice: 'multilingual' });
+  expect((await requested).postDataJSON()).toEqual({ modelChoice: 'multilingual', reviewOnly: true });
   await expect(choice).toBeDisabled();
   await expect(page.locator('#message')).toContainText('Lyrics recognized', { timeout: 15000 });
+  await expect(page.locator('#auto-status')).toContainText('English recognition model');
+  await page.getByRole('button', { name: 'Keep retry as automatic reference', exact: true }).click();
   await expect(page.locator('#auto-status')).toContainText('multilingual recognition model');
   expect(await lines(page)).toEqual(['Hello little world', 'My corrected chorus', 'Sing it back to me']);
   await expect(page.locator('#save-state')).toContainText('Unsaved lyric edits');
@@ -242,7 +244,7 @@ test('an explicit Japanese retry keeps corrections until reviewed and exposes al
     await choice.selectOption('japanese');
     const sent=page.waitForRequest(r=>r.url().endsWith('/transcribe')&&r.method()==='POST');
     await page.getByRole('button',{name:'Transcribe again',exact:true}).click();
-    expect((await sent).postDataJSON()).toEqual({modelChoice:'japanese'});
+    expect((await sent).postDataJSON()).toEqual({modelChoice:'japanese',reviewOnly:true});
     await expect(page.locator('#message')).toContainText('Lyrics recognized',{timeout:15000});
     expect(await lines(page)).toEqual(['Hello little world','私の修正した歌詞','Sing it back to me']);
     await page.getByRole('button',{name:'Review automatic lyrics',exact:true}).click();

@@ -45,6 +45,8 @@ test('transcribing refreshes cached estimated word timing without changing lyric
 
   await page.getByRole('button', { name: 'Transcribe again', exact: true }).click();
   await expect(page.locator('#message')).toContainText('Lyrics recognized', { timeout: 15000 });
+  expect(timingRequests).toBe(1);
+  await page.getByRole('button', { name: 'Keep retry as automatic reference', exact: true }).click();
   expect(await lines(page)).toEqual(before);
   await seek(page, 4.5);
   await expect.poll(() => timingRequests).toBeGreaterThanOrEqual(2);

@@ -965,3 +965,5 @@ button {
 
 #srt-review-list li.review-active { box-shadow: inset 3px 0 #5e8171; background: #edf5ef; }
 #word-timing-status[data-review-hidden] { display: none; }
+
+#recognition-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
