@@ -259,3 +259,113 @@ test('nearest named pane uses top-page coordinates for a same-origin frame', asy
   expect(await pane.evaluate(node => node.scrollTop)).toBe(45);
   expect(await page.locator('#near-left').evaluate(node => node.scrollTop)).toBe(0);
 });
+
+const thinSidebar = '<aside id="thin" style="position:absolute;left:5px;top:5px;width:16px;height:140px;overflow-y:auto"><div style="height:600px">Sidebar content</div></aside>';
+
+test('a narrow named sidebar between viewport samples scrolls without gaze or page movement', async ({ page }) => {
+  await setup(page, thinSidebar);
+  const result = await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)));
+  expect(result.performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('a short horizontal grid between viewport samples scrolls only on its supported axis', async ({ page }) => {
+  await setup(page, '<div id="thin" role="grid" style="position:absolute;left:125px;top:1px;width:150px;height:16px;overflow-x:auto;overflow-y:hidden"><div style="width:900px;height:12px">Table columns</div></div>');
+  const result = await page.evaluate(() => window.say('scroll the table right a bit', window.capture(200, 420)));
+  expect(result.performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+  expect((await page.evaluate(() => window.say('scroll the table down a bit', window.capture(200, 420)))).performed).toBeNull();
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('narrow named scroll panes are found inside open shadow roots and same-origin frames', async ({ page }) => {
+  for (const surface of ['shadow', 'frame']) {
+    await setup(page, surface === 'shadow' ? '<div id="host"></div>' : '<iframe id="frame" style="position:absolute;left:3px;top:3px;width:22px;height:150px;border:0"></iframe>');
+    await page.evaluate(({ surface, html }) => {
+      const root = surface === 'shadow' ? document.querySelector('#host').attachShadow({ mode:'open' }) : document.querySelector('#frame').contentDocument.body;
+      root.innerHTML = html;
+    }, { surface, html: thinSidebar });
+    const pane = surface === 'shadow' ? page.locator('#thin') : page.frameLocator('#frame').locator('#thin');
+    const result = await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)));
+    expect(result.performed, surface).toBe('scroll');
+    expect(await pane.evaluate(node => node.scrollTop), surface).toBe(35);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await page.unroute('**/scroll-fixture');
+  }
+});
+
+test('a list inside an unlabelled narrow scroll wrapper reveals its scrollable ancestor', async ({ page }) => {
+  await setup(page, '<div id="thin" style="position:absolute;left:5px;top:5px;width:16px;height:140px;overflow:auto"><ul style="margin:0;padding:0">' + Array.from({ length:40 }, (_, i) => `<li>Row ${i}</li>`).join('') + '</ul></div>');
+  expect((await page.evaluate(() => window.say('scroll the list down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('a partially clipped narrow sidebar is discovered in its painted portion', async ({ page }) => {
+  await setup(page, '<div style="position:absolute;left:3px;top:3px;width:8px;height:100px;overflow:hidden">' + thinSidebar + '</div>');
+  expect((await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('unpainted and navigator-owned narrow panes never receive a named scroll or move the page', async ({ page }) => {
+  for (const body of [
+    thinSidebar.replace('left:5px', 'display:none;left:5px'),
+    thinSidebar.replace('left:5px', 'visibility:hidden;left:5px'),
+    thinSidebar.replace('left:5px', 'opacity:0;left:5px'),
+    thinSidebar.replace('left:5px', 'left:-50px'),
+    thinSidebar + '<div style="position:absolute;left:0;top:0;width:25px;height:150px;background:white">Cover</div>',
+    '<div style="position:absolute;left:3px;top:300px;width:8px;height:100px;overflow:hidden">' + thinSidebar.replace('top:5px', 'top:150px') + '</div>',
+    '<aside id="navigator">' + thinSidebar + '</aside>',
+    '<aside style="position:absolute;left:5px;top:5px;width:16px;height:140px">No overflow</aside>',
+  ]) {
+    await setup(page, body);
+    const result = await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)));
+    expect(result.performed).toBeNull();
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    if (await page.locator('#thin').count()) expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(0);
+    await page.unroute('**/scroll-fixture');
+  }
+});
+
+test('a visible narrow sidebar can override inherited visibility hiding', async ({ page }) => {
+  await setup(page, '<div style="visibility:hidden">' + thinSidebar.replace('left:5px', 'visibility:visible;left:5px') + '</div>');
+  expect((await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+for (const display of ['contents', 'inline']) test(`a ${display} ancestor does not clip a narrow sidebar to an empty box`, async ({ page }) => {
+  await setup(page, `<div style="display:${display};overflow:hidden">` + thinSidebar + '</div>');
+  expect((await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('excluded navigator labels cannot consume the page pane discovery budget', async ({ page }) => {
+  await setup(page, '<aside id="navigator">' + Array.from({ length:420 }, (_, i) => `<span aria-label="Navigator label ${i}"></span>`).join('') + '</aside>' + thinSidebar);
+  expect((await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('a detached frame in a captured named-region context refuses without throwing', async ({ page }) => {
+  await setup(page, '<iframe id="frame" style="position:absolute;left:3px;top:3px;width:22px;height:150px;border:0"></iframe>');
+  await page.evaluate(html => { document.querySelector('#frame').contentDocument.body.innerHTML = html; }, thinSidebar);
+  const result = await page.evaluate(() => {
+    const context = window.capture(200, 420);
+    window.detachedPane = document.querySelector('#frame').contentDocument.querySelector('#thin');
+    document.querySelector('#frame').remove();
+    return window.say('scroll the sidebar down a bit', context);
+  });
+  expect(result.performed).toBeNull();
+  expect(await page.evaluate(() => [scrollY, window.detachedPane.scrollTop])).toEqual([0, 0]);
+});
+
+test('a border clipping a sidebar to a painted sliver does not hide that scroll pane', async ({ page }) => {
+  await setup(page, '<div style="position:absolute;left:0;top:0;width:8px;height:140px;border:5px solid;overflow:hidden">' + thinSidebar.replace('left:5px;top:5px', 'left:-15px;top:0') + '</div>');
+  expect((await page.evaluate(() => window.say('scroll the sidebar down a bit', window.capture(200, 420)))).performed).toBe('scroll');
+  expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});

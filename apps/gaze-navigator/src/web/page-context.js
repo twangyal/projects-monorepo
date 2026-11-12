@@ -289,14 +289,67 @@ export function regionSupportsAxis(node, axis) {
 }
 
 // Scrolling regions anywhere on screen, for requests that name one ("scroll the list down") when the gaze is not on
-// it: a coarse grid of hit tests over the viewport, so only painted regions count and big pages stay cheap.
-function screenScrollRegions(document, exclude, x, y, radius) {
+// it: a coarse grid plus semantic anchors for panes too narrow or short to cross a grid point. Both paths use hit
+// tests, so covered panes cannot compete. Semantic discovery is bounded and runs only for a named scroll request.
+const REGION_ANCHORS = [
+  'aside', 'nav', 'ul', 'ol', 'table', '[aria-label]', '[aria-labelledby]',
+  ...['complementary', 'navigation', 'menu', 'menubar', 'list', 'listbox', 'tree', 'grid', 'table', 'region', 'log']
+    .map(role => `[role=${role}]`),
+  ...['sidebar', 'side-bar', 'sidenav', 'side-nav', 'aside', 'menu', 'nav', 'comment', 'reply', 'replies', 'chat', 'message', 'conversation', 'result']
+    .flatMap(word => [`[id*="${word}" i]`, `[class*="${word}" i]`]),
+].join(',');
+const REGION_ANCHOR_LIMIT = 400;
+
+// Intersect with clipping ancestors in each document, including frame viewports. Actual paint is still checked
+// afterwards: a rectangle alone does not establish visibility or reveal content through an overlay.
+function visibleRegionRect(element, frames, view, styles) {
+  if (!element.isConnected || !element.ownerDocument.defaultView) return null;
+  let { left, top, right, bottom } = viewportRect(element, frames);
+  left = Math.max(0, left); top = Math.max(0, top);
+  right = Math.min(view.innerWidth, right); bottom = Math.min(view.innerHeight, bottom);
+  for (let node = element; node; node = composedParent(node)) {
+    if (node.nodeType !== 1) continue;
+    const ownerView = node.ownerDocument.defaultView;
+    if (!node.isConnected || !ownerView) return null;
+    if (!styles.has(node)) styles.set(node, ownerView.getComputedStyle(node));
+    const style = styles.get(node);
+    // Visibility can be overridden by a descendant; display:none and an ancestor's box opacity cannot.
+    if (style.display === 'none' || (node === element && ['hidden', 'collapse'].includes(style.visibility))) return null;
+    if (style.display === 'contents') continue;
+    if (Number(style.opacity) === 0) return null;
+    if (node === element) continue;
+    const frameIndex = frames.findIndex(frame => frame.ownerDocument === node.ownerDocument);
+    const rect = viewportRect(node, frameIndex < 0 ? frames : frames.slice(0, frameIndex));
+    const frame = /^I?FRAME$/.test(node.tagName);
+    if (!frame && style.display === 'inline') continue; // Overflow does not clip non-replaced inline boxes.
+    const sx = node.offsetWidth ? rect.width / node.offsetWidth : 1, sy = node.offsetHeight ? rect.height / node.offsetHeight : 1;
+    const clipLeft = rect.left + node.clientLeft * sx, clipTop = rect.top + node.clientTop * sy;
+    if (frame || /(auto|scroll|hidden|clip)/.test(style.overflowX)) { left = Math.max(left, clipLeft); right = Math.min(right, clipLeft + node.clientWidth * sx); }
+    if (frame || /(auto|scroll|hidden|clip)/.test(style.overflowY)) { top = Math.max(top, clipTop); bottom = Math.min(bottom, clipTop + node.clientHeight * sy); }
+  }
+  return right > left && bottom > top ? { left, top, right, bottom } : null;
+}
+
+function screenScrollRegions(document, exclude, x, y, radius, scopes) {
   const view = document.defaultView, found = new Set(), axes = new Map(), step = 60;
   for (let left = step / 2; left < view.innerWidth; left += step) {
     for (let top = step / 2; top < view.innerHeight; top += step) for (const region of scrollRegionsAt(document, left, top, exclude, axes)) found.add(region);
   }
   for (const { element, vertical, horizontal } of nearbyScrollRegions(document, x, y, radius, exclude)) {
     if (!found.has(element)) { found.add(element); axes.set(element, { vertical, horizontal }); }
+  }
+  let remaining = REGION_ANCHOR_LIMIT;
+  const styles = new Map();
+  anchors: for (const { root, frames } of scopes) for (const element of root.querySelectorAll(REGION_ANCHORS)) {
+    if (composedContains(exclude, element)) continue;
+    if (!remaining--) break anchors;
+    const rect = visibleRegionRect(element, frames, view, styles);
+    if (!rect) continue;
+    const { left, right, top, bottom } = rect, dx = Math.min(2, (right - left) / 2), dy = Math.min(2, (bottom - top) / 2);
+    for (const [px, py] of [[(left + right) / 2, (top + bottom) / 2], [left + dx, top + dy], [right - dx, top + dy], [left + dx, bottom - dy], [right - dx, bottom - dy]]) {
+      if (!composedContains(element, deepElementFromPoint(document, px, py))) continue;
+      for (const region of scrollRegionsAt(document, px, py, exclude, axes)) found.add(region);
+    }
   }
   return [...found].map(element => {
     const frames = [];
@@ -766,7 +819,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const pageRegion = document.scrollingElement ?? document.documentElement;
   const region = scrollRegionAt(document, x, y, exclude);
   let regions = null;
-  const screenRegions = () => regions ??= screenScrollRegions(document, exclude, x, y, radius);
+  const screenRegions = () => regions ??= screenScrollRegions(document, exclude, x, y, radius, scopes);
   const regionsAtGaze = () => scrollRegionsAt(document, x, y, exclude);
   return { x, y, radius, elements, disclosureElements, nearby, onScreen, focusedField, screenRegions, regionsAtGaze, unreachable, region, pageRegion,
     scrollRegions: region === pageRegion ? nearbyScrollRegions(document, x, y, radius, exclude) : [],
