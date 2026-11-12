@@ -1,9 +1,9 @@
-import {validateBodyChest,validateBodyUpperArmGirth,validateBodyUnderbust,validateBodyHeight,validateBodyHipDepth,validateTopBodyShape} from './garment-drape.ts';
+import {validateBodyChest,validateBodyUpperArmGirth,validateBodyNeckGirth,validateBodyUnderbust,validateBodyHeight,validateBodyHipDepth,validateTopBodyShape} from './garment-drape.ts';
 export const PROFILE_KEY='clothing-studio:top-body-profiles:v1';
 export const PROFILE_BYTES=65536;
 /** `height` is optional; bodies saved before it existed have none. */
 /** With `underbust`, the body has a bust and `chest` is measured over it. */
-export interface ProfileBody {chest:number;waist:number|null;hip:number|null;chestDepth:number|null;height?:number|null;hipDepth?:number|null;upperArmGirth?:number|null;underbust?:number|null}
+export interface ProfileBody {chest:number;waist:number|null;hip:number|null;chestDepth:number|null;height?:number|null;hipDepth?:number|null;upperArmGirth?:number|null;neckGirth?:number|null;underbust?:number|null}
 export interface BodyProfile {name:string;body:ProfileBody}
 export interface BodyProfiles {schema:1;kind:'clothing-top-body-profiles';profiles:BodyProfile[]}
 type Store=Pick<Storage,'getItem'|'setItem'>;
@@ -12,15 +12,16 @@ function record(value:unknown,keys:string[]):Record<string,unknown>{
  return value as Record<string,unknown>;
 }
 export function validateProfileBody(value:unknown):ProfileBody{
- const keys=['chest','waist','hip','chestDepth',...(value&&typeof value==='object'&&Object.hasOwn(value,'height')?['height']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'hipDepth')?['hipDepth']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'upperArmGirth')?['upperArmGirth']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'underbust')?['underbust']:[])];
+ const keys=['chest','waist','hip','chestDepth',...(value&&typeof value==='object'&&Object.hasOwn(value,'height')?['height']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'hipDepth')?['hipDepth']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'upperArmGirth')?['upperArmGirth']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'neckGirth')?['neckGirth']:[]),...(value&&typeof value==='object'&&Object.hasOwn(value,'underbust')?['underbust']:[])];
  const b=record(value,keys),chest=validateBodyChest(b.chest);
  for(const key of ['waist','hip','chestDepth'])if(b[key]!==null&&(typeof b[key]!=='number'||!Number.isFinite(b[key])))throw new Error('Use finite body dimensions, or null for proportional dimensions.');
   const height=b.height===undefined||b.height===null?b.height:validateBodyHeight(b.height);
   const hipDepth=b.hipDepth===undefined||b.hipDepth===null?b.hipDepth:validateBodyHipDepth(b.hipDepth);
   const upperArmGirth=b.upperArmGirth===undefined||b.upperArmGirth===null?b.upperArmGirth:validateBodyUpperArmGirth(b.upperArmGirth);
+  const neckGirth=b.neckGirth===undefined||b.neckGirth===null?b.neckGirth:validateBodyNeckGirth(b.neckGirth);
   const underbust=b.underbust===undefined||b.underbust===null?b.underbust:validateBodyUnderbust(b.underbust,chest);
-  const body={chest,waist:b.waist as number|null,hip:b.hip as number|null,chestDepth:b.chestDepth as number|null,...(height===undefined?{}:{height:height as number|null}),...(hipDepth===undefined?{}:{hipDepth:hipDepth as number|null}),...(upperArmGirth===undefined?{}:{upperArmGirth:upperArmGirth as number|null}),...(underbust===undefined?{}:{underbust:underbust as number|null})};
-  validateTopBodyShape(chest,{waist:body.waist??undefined,hip:body.hip??undefined,chestDepth:body.chestDepth??undefined,hipDepth:body.hipDepth??undefined,upperArmGirth:body.upperArmGirth??undefined,underbust:body.underbust??undefined});
+  const body={chest,waist:b.waist as number|null,hip:b.hip as number|null,chestDepth:b.chestDepth as number|null,...(height===undefined?{}:{height:height as number|null}),...(hipDepth===undefined?{}:{hipDepth:hipDepth as number|null}),...(upperArmGirth===undefined?{}:{upperArmGirth:upperArmGirth as number|null}),...(neckGirth===undefined?{}:{neckGirth:neckGirth as number|null}),...(underbust===undefined?{}:{underbust:underbust as number|null})};
+  validateTopBodyShape(chest,{waist:body.waist??undefined,hip:body.hip??undefined,chestDepth:body.chestDepth??undefined,hipDepth:body.hipDepth??undefined,upperArmGirth:body.upperArmGirth??undefined,neckGirth:body.neckGirth??undefined,underbust:body.underbust??undefined});
  return body;
 }
 export function validateBodyProfiles(value:unknown):BodyProfiles{
