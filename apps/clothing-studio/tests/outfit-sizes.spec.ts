@@ -51,7 +51,7 @@ for(const width of [1280,390]) test(`whole outfit size reaches real drape and GL
   const input=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeInput!));
   const graded=gradedOutfit(before.product,before.wornWith,before.wornAlso,'L');
   expect([input.product,input.companion,input.also]).toEqual([graded.product,graded.companion,graded.also]);
-  const result=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeResult!)) as {parts:{part:PartId;positions:number[]}[];companion:{part:PartId;positions:number[]}[];also:{part:PartId;positions:number[]}[]};
+  const result=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeResult!)) as {body:unknown;parts:{part:PartId;positions:number[]}[];companion:{part:PartId;positions:number[]}[];also:{part:PartId;positions:number[]}[]};
   await page.getByRole('checkbox',{name:'Include worn garment in PNG, GLB and video',exact:true}).check();
   const wait=page.waitForEvent('download');await page.locator('#product-glb').click();const bytes=await readFile((await (await wait).path())!);
   for(const [garment,parts,prefix] of [[graded.product,result.parts,''],[graded.companion!,result.companion,`${graded.companion!.name}: `],[graded.also!,result.also,`${graded.also!.name}: `]] as const)
@@ -60,10 +60,11 @@ for(const width of [1280,390]) test(`whole outfit size reaches real drape and GL
   const next=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeInput!));
   expect([next.product.spec.sampleSize,next.companion.spec.sampleSize,next.also.spec?.sampleSize??'M']).toEqual(['M','M','M']);
   expect([next.bodyChest,next.bodyShape]).toEqual([input.bodyChest,input.bodyShape]);
-  expect((await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeResult!))).body).toEqual((result as unknown as {body:unknown}).body);
+  expect((await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeResult!))).body).toEqual(result.body);
   await whole.uncheck();await expect(page.locator('#garment-drape-status')).toContainText('Size M, graded from L.',{timeout:150000});
   const single=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeInput!));
   expect(single.companion).toEqual(before.wornWith);expect(single.also).toEqual(before.wornAlso);
+  expect((await page.evaluate(()=>JSON.parse(document.documentElement.dataset.outfitSizeResult!))).body).toEqual(result.body);
   expect(await backup(page)).toEqual(before);expect(await page.getByRole('button',{name:'Undo',exact:true}).isEnabled()).toBe(undo);
   await expect(page.getByRole('combobox',{name:'Pattern export size',exact:true})).toHaveValue('XS');
   await expect(page.getByRole('combobox',{name:'Outfit export size',exact:true})).toHaveValue('XL');

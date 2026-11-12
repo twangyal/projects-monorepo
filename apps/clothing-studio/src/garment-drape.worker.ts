@@ -1,5 +1,5 @@
 import Delaunator from 'delaunator';
-import { simulateGarment, simulateOutfit, previewDrapeFrames, threePiece, type TopBodyShape } from './garment-drape.ts';
+import { simulateGarment, simulateOutfit, garmentBody, previewDrapeFrames, threePiece, type TopBodyShape } from './garment-drape.ts';
 import { isBottoms, layerOrder, sleeveAngleOf, teeMesh, validateProduct, withSleeveAngle, type Product } from './product.ts';
 
 /** One garment drape per worker; the owner terminates it to cancel or when the design changes. */
@@ -23,7 +23,7 @@ self.onmessage = (event: MessageEvent<{ product: Product; bodyReference?: Produc
     };
     const result = companion ? simulateOutfit(product, teeMesh(product, Delaunator), companion, teeMesh(companion, Delaunator), event.data.bodyChest,
       { ...options, tucked: event.data.tucked === true, ...(also ? { also: { product: also, meshes: teeMesh(also, Delaunator) } } : {}) })
-      : simulateGarment(product, teeMesh(product, Delaunator), event.data.bodyChest, options);
+      : simulateGarment(product, teeMesh(product, Delaunator), event.data.bodyChest, { ...options, ...(reference?.[0] ? { body: garmentBody(reference[0], event.data.bodyChest, event.data.bodyShape) } : {}) });
     const parts = [...result.parts, ...result.companion?.parts ?? [], ...result.also?.parts ?? []];
     self.postMessage({ kind: 'result', result }, { transfer: parts.map(part => part.positions.buffer as ArrayBuffer) });
   } catch (error) {

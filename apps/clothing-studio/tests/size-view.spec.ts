@@ -44,3 +44,30 @@ test('an applied edit that invalidates the viewed grade explicitly returns to th
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   expect((await backup(page)).product.measurements.chest).toBe(104);
 });
+
+for (const width of [1280,390]) for (const id of ['blank','flared-skirt','trousers']) test(`single ${id} size comparison keeps the complete body at ${width}px`,async({page})=>{
+  test.setTimeout(90000);
+  await page.addInitScript(()=>{
+    const Native=Worker;
+    window.Worker=class extends Native {
+      constructor(...args:ConstructorParameters<typeof Worker>){
+        super(...args);
+        if(String(args[0]).includes('garment-drape.worker'))this.addEventListener('message',event=>{
+          if(event.data.kind==='result')document.documentElement.dataset.sizeBody=JSON.stringify(event.data.result.body);
+        });
+      }
+    };
+  });
+  page.on('dialog',dialog=>dialog.accept());await page.setViewportSize({width,height:900});await page.goto('/');
+  const names:Record<string,string>={blank:'Blank tee','flared-skirt':'Flared skirt',trousers:'Straight trousers'};
+  await editor(page).getByRole('button',{name:new RegExp(`^Use the ${names[id]} template`)}).click();
+  const before=await backup(page),size=page.getByRole('combobox',{name:'Size shown',exact:true});
+  await page.getByRole('button',{name:'Drape on a body',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.dataset.sizeBody),{timeout:60000}).toBeTruthy();
+  const original=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.sizeBody!));
+  await size.selectOption('L');
+  await expect(page.locator('#garment-drape-status')).toContainText('Size L, graded from M.',{timeout:60000});
+  const larger=await page.evaluate(()=>JSON.parse(document.documentElement.dataset.sizeBody!));
+  expect(larger).toEqual(original);
+  expect(await backup(page)).toEqual(before);
+});

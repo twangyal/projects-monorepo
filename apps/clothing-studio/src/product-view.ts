@@ -229,13 +229,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     return shapeFor(design);
   };
   const shapeKey = (design: Product) => [design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline, partsOf(design).map(id => design.parts[id].material)];
+  const appliedBodyReference = (design: Product) => wholeOutfitSize || shownSize !== null
+    ? [design, ...(companionOf(design) ? [companionOf(design)!] : []), ...(alsoOf(design) ? [alsoOf(design)!] : [])]
+    : null;
   // A fabric comparison drapes on the same body; a skirt's or trousers' waist and hip are the ones their drape uses.
   const comparisonBody = (design: Product) => {
     if (!isBottoms(design)) return {chest:chestFor(design),...validateTopBodyShape(chestFor(design), drapeShapeFor(design))};
     const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
     return {chest:chestFor(design),waist:body.waist,hip:body.hip,...(bodyHipDepth===null?{}:{hipDepth:bodyHipDepth}),...(bodyHeight===null?{}:{height:bodyHeight})};
   };
-  const drapeKeyOf = (design: Product) => { const { product: shownProduct, companion, also } = outfitViewed(design); return JSON.stringify([shapeKey(shownProduct), companion ? shapeKey(companion) : null, also ? shapeKey(also) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design), drapeFrames, wholeOutfitSize ? [shapeKey(design), shapeKey(companionOf(design)!), ...(alsoOf(design) ? [shapeKey(alsoOf(design)!)] : [])] : null]); };
+  const drapeKeyOf = (design: Product) => { const { product: shownProduct, companion, also } = outfitViewed(design); return JSON.stringify([shapeKey(shownProduct), companion ? shapeKey(companion) : null, also ? shapeKey(also) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design), drapeFrames, appliedBodyReference(design)?.map(shapeKey) ?? null]); };
   const currentDrape = (design: Product) => (draping && drape?.key === drapeKeyOf(design) ? drape.result : null);
   function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
   function startDrape(design: Product) {
@@ -259,8 +262,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         else { failedDrapeKey = key; $('garment-drape-status').textContent = `${data.message} Choose Drape again to retry, or Show styling shell.`; }
       };
       worker.onerror = () => { if (worker === drapeWorker) { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run. Choose Drape again to retry, or Show styling shell.'; } };
-      const { product: shownProduct, companion, also } = outfitViewed(design);
-      try { worker.postMessage({ product: shownProduct, ...(wholeOutfitSize ? { bodyReference: [design, companionOf(design)!, ...(alsoOf(design) ? [alsoOf(design)!] : [])] } : {}), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), ...(also ? { also } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design), frames: drapeFrames }); }
+      const { product: shownProduct, companion, also } = outfitViewed(design), bodyReference = appliedBodyReference(design);
+      try { worker.postMessage({ product: shownProduct, ...(bodyReference ? { bodyReference } : {}), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), ...(also ? { also } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design), frames: drapeFrames }); }
       catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not receive this design. Choose Drape again to retry.'; }
     }, 250);
   }
