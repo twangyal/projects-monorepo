@@ -264,18 +264,22 @@ export function createController({ window, actions = pageActions, interpret = in
         break;
       }
       case 'edit': {
-        if (action.requireFocus) {
-          // Leaving the navigator's command UI restores page focus and can run site handlers. Recheck before
-          // reading the edit's new value or consuming history; a handler may lock, replace or redirect the field.
-          const beforeFocus = actions.readValue(element);
-          element.focus({ preventScroll: true });
-          const problem = writingProblem(action, element, context);
-          if (problem) return problem;
-          if (!element.isConnected || !actions.ownsFocus?.(element) || actions.readValue(element) !== beforeFocus) {
-            return reply('The field changed while focusing it. Focus it again before continuing. No text was changed.', 'error');
-          }
+        // Ordinary typing also focuses the field. Website focus handlers run before any edit is computed or
+        // history consumed, just as for explicit continuation; never overwrite a lock, redirection or new value.
+        const beforeFocus = actions.readValue(element), beforeType = element.type;
+        const beforeSensitive = Boolean(actions.isSensitive?.(element));
+        // Focusing a rich editor can collapse the live selection after command entry used another input.
+        // Keep the user's intended offsets; unchanged text and the focus checks below validate their meaning.
+        const selection = action.edit.kind === 'insert-selection' ? actions.readSelection?.(element) ?? null : null;
+        element.focus?.({ preventScroll: true });
+        const problem = writingProblem(action, element, context);
+        if (problem) return problem;
+        if (turn !== executionTurn || paused || !element.isConnected ||
+          (actions.ownsFocus && !actions.ownsFocus(element)) || element.type !== beforeType ||
+          Boolean(actions.isSensitive?.(element)) !== beforeSensitive || actions.readValue(element) !== beforeFocus) {
+          return reply('The field changed while focusing it. Focus it again before continuing. No text was changed.', 'error');
         }
-        result = edit(element, target.name, action.edit, Boolean(target.sensitive || actions.isSensitive?.(element)));
+        result = edit(element, target.name, action.edit, Boolean(target.sensitive || actions.isSensitive?.(element)), selection);
         break;
       }
       case 'month':
@@ -397,10 +401,9 @@ export function createController({ window, actions = pageActions, interpret = in
     history.set(element, values);
   }
 
-  function edit(element, name, change, sensitive = false) {
+  function edit(element, name, change, sensitive = false, selection = null) {
     const before = actions.readValue(element) ?? '';
     const values = history.get(element) ?? [];
-    const selection = change.kind === 'insert-selection' ? actions.readSelection(element) : null;
     if (change.kind === 'insert-selection' && !selection) {
       return { ok: false, message: 'Insertion commands need a writable text field. This field does not support them.' };
     }
@@ -420,7 +423,7 @@ export function createController({ window, actions = pageActions, interpret = in
     actions.writeValue(element, after, change.kind === 'insert-selection'
       ? { caret: selection.start + change.text.length } : undefined);
     // A sensitive field's text is never echoed: the message is shown, announced and may be spoken aloud.
-    if (sensitive) return { ok: true, message: after ? `${label} updated. Its text is hidden.` : `${label} cleared.` };
+    if (sensitive || actions.isSensitive?.(element)) return { ok: true, message: after ? `${label} updated. Its text is hidden.` : `${label} cleared.` };
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 
