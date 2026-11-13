@@ -103,25 +103,38 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
 
 // Printable SVG at 1:1 (user units are centimetres), with a 10 cm square to check the print scale.
 const xml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+function pieceSvg(item: LaidOutPiece, labels = true): string {
+  const points = (list: Pt[]) => list.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const [a, b] = item.grain;
+  return `<g data-piece="${item.piece.part}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
+    `<polygon points="${points(item.sewing)}" fill="none" stroke="#666" stroke-width="0.04" stroke-dasharray="0.4 0.3"/>` +
+    `<line x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
+    (item.foldLine ? `<line data-fold="${item.piece.part}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
+    (item.darts ?? []).map(dart => `<polyline data-dart="${item.piece.part}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
+    (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${item.piece.part}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +
+      `<line data-pleat-placement="${item.piece.part}" x1="${pleat.placement[0].x.toFixed(2)}" y1="${pleat.placement[0].y.toFixed(2)}" x2="${pleat.placement[1].x.toFixed(2)}" y2="${pleat.placement[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05" stroke-dasharray="0.6 0.4"/>`).join('') +
+    (labels ? `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" font-size="1.6" text-anchor="middle" font-family="sans-serif">${xml(item.label)}</text>` +
+    `<text x="${cx.toFixed(2)}" y="${(cy + 1.6).toFixed(2)}" font-size="0.7" text-anchor="middle" font-family="sans-serif">${xml(item.detail)}</text>` : '') + '</g>';
+}
+
 export function patternSvg(product: Product, allowance = SEAM_ALLOWANCE_CM): string {
   const { pieces, width, height } = layoutPattern(product, allowance), total = { w: width, h: height + 16 };
-  const points = (list: Pt[]) => list.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-  const body = pieces.map(item => {
-    const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const [a, b] = item.grain;
-    return `<g data-piece="${item.piece.part}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
-      `<polygon points="${points(item.sewing)}" fill="none" stroke="#666" stroke-width="0.04" stroke-dasharray="0.4 0.3"/>` +
-      `<line x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
-      (item.foldLine ? `<line data-fold="${item.piece.part}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
-      (item.darts ?? []).map(dart => `<polyline data-dart="${item.piece.part}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
-      (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${item.piece.part}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +
-        `<line data-pleat-placement="${item.piece.part}" x1="${pleat.placement[0].x.toFixed(2)}" y1="${pleat.placement[0].y.toFixed(2)}" x2="${pleat.placement[1].x.toFixed(2)}" y2="${pleat.placement[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05" stroke-dasharray="0.6 0.4"/>`).join('') +
-      `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" font-size="1.6" text-anchor="middle" font-family="sans-serif">${xml(item.label)}</text>` +
-      `<text x="${cx.toFixed(2)}" y="${(cy + 1.6).toFixed(2)}" font-size="0.7" text-anchor="middle" font-family="sans-serif">${xml(item.detail)}</text></g>`;
-  }).join('');
+  const body = pieces.map(item => pieceSvg(item)).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${total.w.toFixed(2)}cm" height="${total.h.toFixed(2)}cm" viewBox="0 0 ${total.w.toFixed(2)} ${total.h.toFixed(2)}">` +
     `<defs><marker id="grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="1.2" markerHeight="1.2" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#111"/></marker></defs>` +
     `<title>${xml(product.name)} pattern</title>${body}` +
     `<g transform="translate(${allowance} ${(height + 2).toFixed(2)})"><rect width="10" height="10" fill="none" stroke="#111" stroke-width="0.05"/>` +
     `<text x="11" y="5" font-size="0.8" font-family="sans-serif">10 cm square: print at 100% and check it. Solid: cutting line (${allowance} cm seam allowance). Dashed: sewing line. Arrow: grainline.${pieces.some(p=>p.foldLine) ? ' Red dash-dot: fold.' : ''}${pieces.some(p => p.pleats?.length) ? ' Blue solid: pleat fold line, folded over to the blue dashed placement line beside it.' : ''}${pieces.some(p => p.darts?.length) ? ' V from the waist: a dart, sewn leg to leg to its point.' : ''}</text></g></svg>`;
+}
+
+/** Each cutting piece in its own positive centimetre viewport; tile headers supply its labels. */
+export function patternPieceSvgs(product: Product, allowance = SEAM_ALLOWANCE_CM) {
+  return layoutPattern(product, allowance).pieces.map(item => {
+    const minX = Math.min(...item.cutting.map(p => p.x)) - 1, minY = Math.min(...item.cutting.map(p => p.y)) - 1;
+    const width = Math.max(...item.cutting.map(p => p.x)) - minX + 1, height = Math.max(...item.cutting.map(p => p.y)) - minY + 1;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}cm" height="${height}cm" viewBox="0 0 ${width} ${height}">` +
+      `<defs><marker id="grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="1.2" markerHeight="1.2" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#111"/></marker></defs><g transform="translate(${-minX} ${-minY})">${pieceSvg(item, false)}</g></svg>`;
+    return { part: item.piece.part, label: item.label, detail: item.detail, svg };
+  });
 }

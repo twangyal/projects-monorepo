@@ -19,6 +19,7 @@ import {
 import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
+import { tiledProductPatternHtml } from './product-print-pattern.ts';
 import { readStylePrompt } from './style-prompt.ts';
 import { paletteColorway, photoColours } from './photo-colours.ts';
 import { readDesignPrompt } from './design-prompt.ts';
@@ -121,7 +122,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
   </div>
   <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div>
     <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
-    <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
+    <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button><button id="pattern-a4" class="product-export">Download A4 tiled pattern (HTML) ↓</button><button id="pattern-letter" class="product-export">Download US Letter tiled pattern (HTML) ↓</button></div><p class="fine-print">Tiled HTML prints each piece separately at full scale, with a calibration page, cut counts, row/column labels and 1 cm overlap. Open the file and print at 100% on its labelled paper; disable fit-to-page and browser headers/footers, and measure the 5 cm square first. Up to 256 pattern tiles and 2 MB; large patterns may need SVG or DXF. Apply or discard product drafts before tiled printing.</p>
     <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
   <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label><label class="field">Outfit export size<select id="outfit-export-size" aria-describedby="outfit-bundle-help"><option value="">Each garment’s sample</option>${SIZES.map(size => `<option value="${size}">${size}</option>`).join('')}</select></label><button id="outfit-bundle" class="product-export" aria-describedby="outfit-bundle-help">Download outfit patterns and tech packs (ZIP) ↓</button></div><p id="outfit-bundle-help" class="fine-print">All outfit garments at their own applied sample sizes or graded to the chosen outfit size: SVG, DXF, Excel and printable tech packs with measurement diagrams, plus applied artwork and uploaded repeat images. Apply or discard drafts first. No drape is needed.</p><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
   <p class="fine-print">PNG, GLB and video use the size shown in 3D: the styling shell, or the current settled drape. The turntable video records one turn in real time, so it takes a few seconds. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
@@ -1073,12 +1074,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     draft.costing = { currency: ($('cost-currency') as HTMLSelectElement).value as Costing['currency'], retail: number('cost-retail'), make: number('cost-make'),
       trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
   }, 'Costing applied to the range plan.', 'costing'));
-  for (const format of ['dxf', 'svg'] as const) $('pattern-' + format).addEventListener('click', () => void exporting(async () => {
+  for (const format of ['dxf', 'svg', 'a4', 'letter'] as const) $('pattern-' + format).addEventListener('click', () => void exporting(async () => {
+    const tiled = format === 'a4' || format === 'letter';
+    if (tiled && hasDrafts()) throw new Error('Apply or discard pending product edits before tiled printing. Your drafts are kept.');
     const design = product() ?? template('blank'), size = patternSize ?? sampleOf(design);
     // Validate again against the latest applied measurements. Never substitute sample geometry for an invalid grade.
     const graded = gradedProduct(design, size), suffix = size === sampleOf(design) ? '' : `-size-${size}`;
-    const content = format === 'dxf' ? patternDxf(graded) : patternSvg(graded);
-    options.download(new Blob([content], { type: format === 'dxf' ? 'application/dxf' : 'image/svg+xml' }), `${suffix}-pattern.${format}`);
+    const content = tiled ? tiledProductPatternHtml(graded, format) : format === 'dxf' ? patternDxf(graded) : patternSvg(graded);
+    options.download(new Blob([content], { type: tiled ? 'text/html;charset=utf-8' : format === 'dxf' ? 'application/dxf' : 'image/svg+xml' }), tiled ? `${suffix}-pattern-${format}-tiles.html` : `${suffix}-pattern.${format}`);
+    if (tiled) options.notice('Tiled pattern exported. Print at 100% on the labelled paper and measure the 5 cm square before assembling each piece.');
   }));
   $('range-xlsx').addEventListener('click', () => void exporting(async () => {
     options.download(new Blob([rangePlanXlsx(product() ?? template('blank'), today())], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-range-plan.xlsx');
