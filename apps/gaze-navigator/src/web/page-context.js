@@ -98,7 +98,17 @@ function datePartsOf(element) {
     if (!kind || parts[kind]) return null;
     parts[kind] = input;
   }
-  return { ...parts, legend: clean(group.querySelector('legend')?.textContent ?? '') };
+  return { ...parts, legend: clean(group.querySelector('legend')?.textContent ?? ''),
+    snapshot: captureDatePartsSnapshot(parts), values: [parts.day.value, parts.month.value, parts.year.value] };
+}
+
+// Keep a captured date bound to the same three inputs and meaning, even while focus and input handlers run.
+export function captureDatePartsSnapshot(parts) {
+  return ['day', 'month', 'year'].flatMap(kind => {
+    const field = parts[kind], group = field.closest('fieldset');
+    return [field, group, clean(group?.querySelector('legend')?.textContent ?? ''), field.form, field.getRootNode(), field.type, field.id, field.name,
+      field.getAttribute('autocomplete'), accessibleName(field), ...(group?.querySelectorAll('input') ?? [])];
+  });
 }
 
 export function accessibleName(element) {

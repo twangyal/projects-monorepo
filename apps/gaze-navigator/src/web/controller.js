@@ -3,7 +3,7 @@
 import { applyEdit, dictated, dictationControl, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { keyLabel } from './page-actions.js';
-import { captureActivationSnapshot, captureSubmissionSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
+import { captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -231,13 +231,35 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'date-parts': {
         const parts = target.dateParts, [year, month, day] = action.value.split('-');
         const fields = [[parts?.day, String(Number(day))], [parts?.month, String(Number(month))], [parts?.year, year]];
-        if (fields.some(([field]) => !field?.isConnected || actions.canWrite?.(field) === false)) {
-          result = { ok: false, message: 'The date boxes changed or cannot be written. Look at them again. No date was entered.' };
+        const expected = fields.map(([field], index) => parts?.values?.[index] ?? (field && actions.readValue(field)));
+        let wrote = 0;
+        const valid = () => turn === executionTurn && !paused && fields.every(([field], index) =>
+          field?.isConnected && actions.canWrite?.(field) !== false && !actions.isSensitive?.(field) && actions.readValue(field) === expected[index]) &&
+          (!parts.snapshot || (() => {
+            const current = captureDatePartsSnapshot(parts);
+            return current.length === parts.snapshot.length && current.every((value, index) => value === parts.snapshot[index]);
+          })());
+        const stopped = () => ({ ok: false, message: wrote
+          ? 'Date entry stopped because the instruction or date boxes changed. Values already entered remain; check the partial date before continuing.'
+          : 'The date boxes changed or cannot be written. Look at them again. No date was entered.' });
+        if (!valid()) {
+          result = stopped();
           break;
         }
-        for (const [field, value] of fields) { remember(field); actions.writeValue(field, value); }
         const spoken = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-        result = { ok: true, message: `${parts.legend || target.name || 'Date'}: ${spoken} (day ${Number(day)}, month ${Number(month)}, year ${year}).` };
+        result = { message: 'Entering and checking the date…', followUp: (async () => {
+          for (const [index, [field, value]] of fields.entries()) {
+            if (!valid()) return stopped();
+            const written = actions.writeValue(field, value, { isCurrent: valid, onWrite: before => {
+              remember(field, before); editedAt = now(); expected[index] = value; wrote++;
+            } });
+            if (written === false) return stopped();
+            // Let the website settle before touching another box or reporting success.
+            await new Promise(resolve => window.setTimeout(resolve, 0));
+            if (!valid() || actions.readValue(field) !== value) return stopped();
+          }
+          return { ok: true, message: `${parts.legend || target.name || 'Date'}: ${spoken} (day ${Number(day)}, month ${Number(month)}, year ${year}).` };
+        })() };
         break;
       }
       case 'edit': {

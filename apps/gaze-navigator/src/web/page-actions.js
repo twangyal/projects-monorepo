@@ -705,20 +705,26 @@ function writeRichText(element, value) {
   return false;
 }
 
-export function writeValue(element, value, { caret = value.length } = {}) {
+export function writeValue(element, value, { caret = value.length, isCurrent, onWrite } = {}) {
+  if (isCurrent && !isCurrent()) return false;
   element.focus({ preventScroll: true });
+  if (isCurrent && (!isCurrent() || !ownsFocus(element))) return false;
   const view = element.ownerDocument.defaultView;
   if (!('value' in element && element.tagName !== 'BUTTON') && element.isContentEditable) {
     if (!writeRichText(element, value)) element.dispatchEvent(new view.InputEvent('input', { bubbles: true, inputType: 'insertText' }));
     return;
   }
+  onWrite?.(readValue(element));
   if ('value' in element && element.tagName !== 'BUTTON') setNativeValue(element, value);
   else element.textContent = value;
   element.dispatchEvent(new view.InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+  if (isCurrent && !isCurrent()) return true;
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  if (isCurrent && !isCurrent()) return true;
   if (typeof element.setSelectionRange === 'function' && element.type !== 'number' && element.type !== 'email') {
     element.setSelectionRange(caret, caret);
   }
+  return true;
 }
 
 const activationStillMatches = (element, snapshot) => {
