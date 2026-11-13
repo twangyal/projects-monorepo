@@ -17,3 +17,10 @@ export function addressedSpeech(text, alternatives = [], required = false) {
   if (!addressed) return null;
   return { text: addressed, alternatives: alternatives.map(body).filter(Boolean) };
 }
+
+/** Keep spoken reply guidance consistent with the rule without changing button or typed replies. */
+export function addressedFeedback(message, pending, required) {
+  if (!required || !pending) return message;
+  const example = pending.kind === 'confirm' ? 'Navigator confirm' : pending.kind === 'clarify' ? 'Navigator 1' : null;
+  return example ? `${message} For a spoken reply, begin with “Navigator”, for example “${example}”.` : message;
+}

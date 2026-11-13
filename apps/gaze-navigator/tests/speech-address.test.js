@@ -22,3 +22,11 @@ test('addressing has explicit hands-free settings commands', () => {
   assert.deepEqual(interpret('require navigator prefix', { elements: [] }), { type: 'speech-prefix', required: true });
   assert.deepEqual(interpret('turn off navigator prefix', { elements: [] }), { type: 'speech-prefix', required: false });
 });
+
+test('pending feedback gives the required spoken address without changing other feedback', async () => {
+  const { addressedFeedback } = await import('../src/web/speech-address.js');
+  assert.match(addressedFeedback('Confirm?', { kind: 'confirm' }, true), /Navigator confirm/);
+  assert.match(addressedFeedback('Which one?', { kind: 'clarify' }, true), /Navigator 1/);
+  assert.equal(addressedFeedback('Confirm?', { kind: 'confirm' }, false), 'Confirm?');
+  assert.equal(addressedFeedback('Done.', null, true), 'Done.');
+});

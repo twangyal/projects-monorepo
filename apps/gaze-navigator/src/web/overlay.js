@@ -5,7 +5,7 @@ import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
-import { addressedSpeech } from './speech-address.js';
+import { addressedSpeech, addressedFeedback } from './speech-address.js';
 import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createLocalCamera } from './camera-source.js';
@@ -365,7 +365,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.dictation.hidden = !active;
   }
 
-  function feedback({ message, tone = 'info' }) {
+  function feedback({ message, tone = 'info', pending = null }) {
+    message = addressedFeedback(message, pending, settings.requireAddress);
     ui.status.textContent = message;
     ui.status.className = `status ${tone}`;
     renderPrompt();

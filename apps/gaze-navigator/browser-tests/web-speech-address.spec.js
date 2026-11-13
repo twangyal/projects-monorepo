@@ -79,7 +79,7 @@ test('confirmation requires an address and changing the setting retires a pendin
   await hear(page, 'require navigator prefix');
   await look(page, page.locator('#speech-delete'));
   await hear(page, 'Navigator click delete draft');
-  await expect(panel(page).locator('.status')).toContainText('confirm');
+  await expect(panel(page).locator('.status')).toContainText('Navigator confirm');
   await hear(page, 'confirm');
   expect(await page.evaluate(() => window.deletedDrafts)).toBe(0);
   await hear(page, 'Navigator confirm');
@@ -109,4 +109,23 @@ test('dictation requires an address for every phrase and keeps the remaining wor
   await hear(page, 'cancel', { final: false });
   await expect(panel(page).locator('.dictation')).toBeHidden();
   await hear(page, 'Navigator unexpected words'); await expect(field).toHaveValue('Draft more words Navigator of the ship');
+});
+
+test('clarification teaches an addressed number while unaddressed answers stay ignored', async ({ page }) => {
+  await page.evaluate(() => {
+    window.chosenItem = 0;
+    for (const n of [1, 2]) {
+      const button = document.createElement('button'); button.id = `speech-choice-${n}`; button.textContent = 'Review item';
+      button.style.cssText = `position:fixed;left:12px;top:${25 + 35 * n}px;z-index:2`;
+      button.onclick = () => window.chosenItem = n; document.body.append(button);
+    }
+  });
+  await panel(page).getByRole('button', { name: 'Start listening', exact: true }).click();
+  await hear(page, 'require navigator prefix');
+  await look(page, page.locator('#speech-choice-1'));
+  await expect(panel(page).locator('.context li').filter({ hasText: 'Review item' })).toHaveCount(2);
+  await hear(page, 'Navigator click review item');
+  await expect(panel(page).locator('.status')).toContainText('Navigator 1');
+  await hear(page, '1'); expect(await page.evaluate(() => window.chosenItem)).toBe(0);
+  await hear(page, 'Navigator 1'); expect(await page.evaluate(() => window.chosenItem)).toBe(1);
 });
