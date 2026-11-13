@@ -209,6 +209,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
+      <p class="hint">Ask “what can I say?” for short help about the current controls or question. During dictation, say “help with the navigator” to get help without typing it; dictation stays active. When speech addressing is enabled, begin these requests with “Navigator”.</p>
       <p class="hint">Keep website suggestions open: focus the page, press Alt+Shift+G, type a command, then Enter. Escape cancels. Use direct keyboard characters or paste.</p>
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "start dictation into Message" (then speak phrases; "stop dictation" returns to commands), "delete last word", "replace Tuesday with Friday", "choose large", "add option Jazz to Genres", "remove option Jazz from Genres", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
         <p class="hint">To correct words in a text field: "select text Tuesday", then "replace selected text with Friday". For repeated words, say "select second occurrence of Tuesday". "Undo" restores the last text edit. After looking away, say "continue typing" and more words to append in the focused regular field; "undo typing" can recover it when no text field is in the circle.</p>
@@ -373,8 +374,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function resetSpeechCapture() { spokenContext = null; spokenInvalid = false; spokenDuringFeedback = false; speechCaptureActive = false; }
   const feedbackWait = 'Spoken feedback is playing or overlapped this phrase; speech ignored. Wait for it to finish, or say pause or cancel. Typed instructions remain available.';
 
-  function feedback({ message, tone = 'info', pending = null }) {
-    message = addressedFeedback(message, pending, settings.requireAddress);
+  function feedback({ message, tone = 'info', pending = null, help = false }) {
+    message = addressedFeedback(message, pending ?? (help ? { kind: 'help' } : null), settings.requireAddress);
     ui.status.textContent = message;
     ui.status.className = `status ${tone}`;
     renderPrompt();

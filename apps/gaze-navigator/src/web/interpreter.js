@@ -479,6 +479,7 @@ const HARMLESS = new Set(['scroll', 'cancel', 'pause']);
 // Dictation reserves deliberate stop phrases only. Command mishearing recovery must never turn literal words
 // (such as “cancer” or “council”) into cancellation and silently discard the phrase.
 export function dictationControl(utterance) {
+  if (/^help with (?:the )?navigator[.!?]*$/i.test(utterance.trim())) return { type: 'help' };
   const action = interpretInCircle(utterance, { elements: [] });
   return ['cancel', 'pause', 'stop-dictation'].includes(action.type) ? action : null;
 }
@@ -716,6 +717,8 @@ function interpretInCircle(utterance, context) {
   const command = everydayCommand(raw.replace(TRAILING_FILLER, '') || raw, normalize);
   const text = normalize(command);
   if (!text) return { type: 'unknown', message: 'No instruction was heard.' };
+
+  if (/^what can i say(?: here)?$|^help with (?:the )?navigator$/.test(text)) return { type: 'help' };
 
   if (/^(cancel|stop|never ?mind|forget it)(?: (?:that|it|this))?$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on|wait|wait a (?:second|moment|minute)|one moment)$/.test(text)) return { type: 'pause' };

@@ -2,6 +2,7 @@
 // Tracking and speech supply contexts and instructions; this module owns what happens next.
 import { applyEdit, dictated, dictationControl, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
+import { commandHelp } from './command-help.js';
 import { keyLabel } from './page-actions.js';
 import { captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
@@ -428,7 +429,7 @@ export function createController({ window, actions = pageActions, interpret = in
     if (dictation) {
       const control = dictationControl(utterance);
       if (control) {
-        dictation = null;
+        if (control.type !== 'help') dictation = null;
         return decide(utterance, context, control, current);
       }
       const target = dictation, element = target.element;
@@ -466,6 +467,13 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function decide(utterance, context, action, current) {
+    // Help is a navigator request, not an answer or a new page action. Keep the task and its original deadline.
+    if (action.type === 'help') {
+      const expired = pending && now() >= pending.expiresAt;
+      if (expired) pending = null;
+      const guidance = commandHelp({ context, pending, paused, dictation });
+      return reply(`${expired ? 'The previous question expired. Give the instruction again. ' : ''}${guidance}`, 'info', { help: true, keepPrompt: true });
+    }
     // "Undo" straight after a fill of saved details takes back the whole fill.
     const fill = filled;
     if (action.type !== 'confirm') filled = null;
