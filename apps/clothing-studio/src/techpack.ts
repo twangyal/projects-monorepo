@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -99,7 +99,7 @@ function samplePack(product: Product, date: string): TechPack {
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
     ...(product.base === 'hoodie' ? [pom('K', 'Hood side height', 'Side pattern base to top; no seam allowance; 3D crown is illustrative', dims.hoodHeight, 0.5, 1)]
       : (modules.collar || modules.buttons) && product.base === 'tee' ? [
-        modules.collar ? pom('K', 'Collar height', 'Finished, neckline seam to the folded edge at centre back', COLLAR_CM, 0, 0.25) : pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25),
+        modules.collar ? pom('K', 'Collar height', 'Flat draft, neckline sewing edge to outer fall edge at centre back', COLLAR_CM, 0, 0.25) : pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25),
         pom('W', 'Placket length', 'Neckline seam at centre front to the bottom of the placket', placket.length, 0, 0.5)]
       : modules.collar ? [pom('K', 'Collar height', 'Finished rib stand collar, neckline seam to top edge', STAND_COLLAR_CM, 0, 0.25)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
@@ -138,10 +138,10 @@ function samplePack(product: Product, date: string): TechPack {
         : { area: 'Placket', operation: 'Cut the centre-front opening; attach the folded placket pieces, lap left over right and box-stitch the base',
           detail: `${cm(placket.width)} wide × ${cm(placket.length)} long finished; ${placket.buttons} buttonholes on the wearer's left, buttons on the right` },
       !modules.collar ? { area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `Its ends are caught in the placket; rib ${cm(dims.ribLength)} long, ${cm(dims.ribHeight)} finished` }
-        : modules.buttons ? { area: 'Collar', operation: 'Fuse the collar, sew and turn it, then set it to the neckline between the placket edges and topstitch',
-          detail: `Collar ${cm(COLLAR_CM)} finished, in the shirt fabric, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` }
+        : isWovenCollar(product) ? { area: 'Collar', operation: 'Fuse the collar, sew and turn it, then set it to the neckline between the placket edges and topstitch',
+          detail: `Cut 2, upper and under collar, ${product.parts.collar.material === product.parts.front.material ? 'in the shirt fabric' : 'in the chosen collar fabric'}; ${cm(COLLAR_CM)} finished. The shaped fall is wider than the sampled neck edge; fold at the marked stand/fall line. Allow for interfacing separately` }
         : { area: 'Collar', operation: 'Overlock the flat-knit collar to the neckline between the placket edges, then cover the seam with back-neck tape',
-          detail: `Collar ${cm(COLLAR_CM)} finished, as long as the neckline between the placket edges; it stands about 2 cm, then folds down` },
+          detail: `Cut 1 flat-knit collar, ${cm(COLLAR_CM)} finished, matching the sampled neckline between the placket edges; fold at the marked stand/fall line` },
     ] : [
       ...(modules.zip ? [{ area: 'Centre-front zip', operation: 'Set the open-end zip between the front halves through the hem band; topstitch 0.6 cm each side',
         detail: `Fronts cut 2 (a mirrored pair); zip ${cm(zipLength(product))}, top stop at the ${modules.collar ? 'top of the collar' : 'neckline seam'}` }] : []),
@@ -321,6 +321,12 @@ export function measurementDiagram(product: Product): string {
   const d = teeDimensions(product), w = front.width, gap = 14, sx = w + gap;
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
+  const collar = product.base === 'tee' ? pieces.find(piece => piece.part === 'collar') : undefined;
+  const collarY = Math.max(front.height, sleeve.height) + 10;
+  const collarSketch = collar ? `<g data-piece="collar" transform="translate(0 ${collarY})"><polygon points="${collar.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`
+    + (collar.foldLine ? `<line data-fold="collar" x1="${collar.foldLine[0].x}" y1="${collar.foldLine[0].y}" x2="${collar.foldLine[1].x}" y2="${collar.foldLine[1].y}" stroke="#b5452b" stroke-width="0.25" stroke-dasharray="1 0.6"/>` : '')
+    + arrow(collar.width / 2, 0, collar.width / 2, collar.height, 'K', collar.width / 2 + 2, collar.height / 2)
+    + `<text x="0" y="${collar.height + 5}" font-size="2.5">Collar · cut ${collar.cutCount}${collar.cutCount === 2 ? ' (upper and under)' : ' flat-knit'} · dashed: stand/fall fold</text></g>` : '';
   const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`;
   // Marks are drawn on the unflared body (the group below shifts them onto a flared piece).
   const half = d.half, body = d.panelWidth, chest = chestLine(product), armY = chest.y;
@@ -331,7 +337,7 @@ export function measurementDiagram(product: Product): string {
     + arrow(px + d.chestPocketWidth + 1.5, py, px + d.chestPocketWidth + 1.5, py + d.chestPocketHeight, 'Q', px + d.chestPocketWidth + 2.5, py + d.chestPocketHeight / 2) : '';
   const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
   const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${sx + sleeve.width + 12} ${Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${Math.max(sx + sleeve.width, collar?.width ?? 0) + 12} ${collar ? collarY + collar.height + 12 : Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 ${outline(front, 0)}${sleeve.outline.length ? outline(sleeve as typeof front, sx) : ''}<g transform="translate(${flare(product)} 0)">
 ${arrow(chest.left - flare(product), armY, chest.right - flare(product), armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
 ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulderDrop + 0.8, 'E', half + d.shoulderX - 7, d.shoulderDrop + 4.5)}${arrow(half - d.neckHalf, -2, half + d.neckHalf, -2, 'F', half - 1.5, -3)}
@@ -340,7 +346,7 @@ ${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D'
 ${arrow(body + 2.5, 0, body + 2.5, d.shoulderDrop, 'U', body + 4, d.shoulderDrop / 2)}
 ${pocketMarks}${hemMarks}</g>
 ${sleeve.outline.length ? `${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}` : ''}
-</svg>`;
+${collarSketch}</svg>`;
 }
 
 /** Shorts and trousers: the front and back leg panels with their measurements. */

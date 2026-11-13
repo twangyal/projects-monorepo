@@ -173,7 +173,7 @@ export function chestPocketAllowed(base: Base): boolean { return base === 'tee' 
 export function zipAllowed(base: Base): boolean { return base === 'hoodie' || base === 'sweatshirt'; }
 export function collarAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 export function buttonsAllowed(base: Base): boolean { return base === 'tee'; }
-/** A polo's flat-knit collar, its finished height from the neckline seam to its folded edge, and its placket, cm. */
+/** A polo/shirt collar's flat height from neck sewing edge to outer fall edge, and the polo placket, cm. */
 export const COLLAR_CM = 7, PLACKET_CM = { length: 14, width: 3, buttons: 3 } as const;
 /** A sweatshirt's rib stand collar (a bomber jacket's), its finished height, cm. */
 export const STAND_COLLAR_CM = 6;
@@ -683,7 +683,7 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
   const rectangle = [{ x: left, y: top }, { x: right, y: top }, { x: right, y: bottom }, { x: left, y: bottom }];
   // A front cut as halves for a zip or button front is checked whole, and the pocket must clear the opening.
   const { zip, buttons } = optionsOf(design), split = !!zip || !!buttons;
-  const outline = patternPieces(split ? { ...design, options: { ...optionsOf(design), zip: false, buttons: false, zipOpen: false } } : design).find(piece => piece.part === 'front')!.outline;
+  const outline = topBodyOutline(design, true);
   const clear = (buttons && design.base === 'tee' ? placketOf(design).width / 2 : ZIP_CLEAR) + 0.5, centre = flare(design) + d.half;
   if (split && left < centre + clear && right > centre - clear) fail(`Keep the chest pocket at least ${clear} cm from the centre front, clear of the ${buttons ? 'button placket' : 'zip'}.`);
   const cross = (a: Pt, b: Pt, c: Pt) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -902,6 +902,11 @@ function bodyOutline(product: Product, front: boolean, length: number) {
   };
 }
 
+function topBodyOutline(product: Product, front: boolean, length = panelSize(topMeasurements(product)).length): Pt[] {
+  const o = bodyOutline(product, front, length);
+  return [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, o.neckRight, ...o.neckline];
+}
+
 /**
  * A top's sleeve piece in pattern cm: the cap from one underarm point over the top to the other, then the opening from
  * the end of the first underarm seam to the end of the second. A banded sleeve ends above its cuff and is cut 4 cm wider
@@ -966,10 +971,7 @@ export function patternPieces(product: Product): PatternPiece[] {
   if (product.base === 'skirt') return skirtPieces(product);
   if (isBottoms(product)) return trouserPieces(product);
   const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product);
-  const body = (front: boolean, length = panel.length) => {
-    const o = bodyOutline(product, front, length);
-    return [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, o.neckRight, ...o.neckline];
-  };
+  const body = (front: boolean, length = panel.length) => topBodyOutline(product, front, length);
   const sleevePiece = () => { const s = sleeveOutline(product); return [...s.cap, s.opening[1], s.opening[0]]; };
   const rect = (wd: number, ht: number) => [{ x: 0, y: 0 }, { x: wd, y: 0 }, { x: wd, y: ht }, { x: 0, y: ht }];
   // Chest pocket: finished size plus the folded-down facing at the top.
@@ -983,7 +985,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     // A polo's or shirt's collar is as long as the neckline between the placket's edges; the placket is cut as a folded
     // pair. A button front's front is cut as a mirrored pair of halves, which the placket joins.
     const { collar, buttons } = optionsOf(product), placket = placketOf(product);
-    const neck = [...(collar ? [make('collar', rect(dims.ribLength / NECK_RIB_RATIO - placket.width, COLLAR_CM), 1)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
+    const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
       ...(collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
     const front = buttons ? make('front', leftOf(body(true), panel.width / 2), 2) : make('front', body(true), 1);
     return [front, make('back', body(false), 1), ...sleeves, ...neck, ...modules];
@@ -1086,10 +1088,8 @@ export function teeMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[
  * the wearer's left, in cm. UVs are each piece's flat pattern position in cm (mirrored on the back so prints read left
  * to right from behind).
  */
-function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
+function topFrame(product: Product) {
   const m = topMeasurements(product), depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
-  const groups = new Map<PartId, PartMesh>();
-  for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
   // Body pieces centred: x across from the centre line, y down from the neck points.
   const centre = flare(product) + panelSize(m).width / 2, centred = (p: Pt) => ({ x: p.x - centre, y: p.y });
   const outline = (front: boolean) => {
@@ -1104,6 +1104,13 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   // Rounding-level distances are on a seam: snap them so the front and back coincide exactly there.
   const rise = (p: Pt) => { const d = Math.min(depth, ...seams.map(([a, b]) => segmentDistance(p, a, b))); return d < 1e-6 ? 0 : depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
   const shell = (p: Pt, sign: number): P3 => ({ x: p.x, y: top - p.y, z: sign * rise(p) });
+  return { m, top, dims, front, back, rise, shell };
+}
+
+function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
+  const frame = topFrame(product), { m, top, dims, front, back, rise, shell } = frame;
+  const groups = new Map<PartId, PartMesh>();
+  for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
   // A zip front worn open: its front halves (and hem band, and a sweatshirt's neck rib or collar) part at the centre front.
   const zipped = zipAllowed(product.base) && !!optionsOf(product).zip, buttoned = product.base === 'tee' && !!optionsOf(product).buttons;
   const open = (zipped || buttoned) && !!optionsOf(product).zipOpen;
@@ -1189,8 +1196,7 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
   if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, neck, new Set(front.neck.map((_, i) => i)), dims, hoodOutline(product));
   else if (product.base === 'tee' && optionsOf(product).collar) {
-    const woven = !KNIT_TEXTURES.has(material(product.parts.collar?.material ?? product.parts.front.material).texture);
-    collarMesh(groups.get('collar')!, neck, [...[...front.neck].reverse(), ...back.neck], front.neck.length, COLLAR_CM, placketOf(product).width, woven);
+    groups.set('collar', collarDraft(product, frame));
   }
   else {
     // A neck rib or stand collar stands up from the neckline. Above a zip it runs from one side of the zip round the back
@@ -1294,6 +1300,29 @@ const COLLAR_STAND = 1.8;
 /** Knitted fabrics, which stretch round a collar's fall; the others are woven. */
 const CURVE_SHARE = 0.5;
 const KNIT_TEXTURES: ReadonlySet<string> = new Set(['jersey', 'rib', 'pique', 'slub', 'terry']);
+/** A tee collar's actual fabric, independently of whether the front has buttons. */
+export function isWovenCollar(product: Product): boolean {
+  return product.base === 'tee' && !!optionsOf(product).collar && !KNIT_TEXTURES.has(material(product.parts.collar?.material ?? product.parts.front.material).texture);
+}
+
+function collarDraft(product: Product, frame = topFrame(product)): PartMesh {
+  const { front, back, shell } = frame, flat = [...[...front.neck].reverse(), ...back.neck];
+  const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
+  const mesh: PartMesh = { part: 'collar', positions: [], uvs: [], indices: [] };
+  collarMesh(mesh, neck, flat, front.neck.length, COLLAR_CM, placketOf(product).width, isWovenCollar(product));
+  return mesh;
+}
+
+/** The same flat cloth used for collar rest lengths, translated to a positive pattern origin. */
+function collarPattern(product: Product): PatternPiece {
+  const mesh = collarDraft(product), columns = mesh.uvs.length / 6;
+  const left = Math.min(...mesh.uvs.filter((_, i) => i % 2 === 0));
+  const point = (row: number, column: number): Pt => ({ x: mesh.uvs[(row * columns + column) * 2]! - left, y: mesh.uvs[(row * columns + column) * 2 + 1]! });
+  // Rows are straight in the flat draft; the woven fall is wider, with a bend at its stand/fall fold.
+  const outline = [point(0, 0), point(0, columns - 1), point(1, columns - 1), point(2, columns - 1), point(2, 0), point(1, 0)];
+  return { ...makePiece('collar', outline, isWovenCollar(product) ? 2 : 1), foldLine: [point(1, 0), point(1, columns - 1)] };
+}
+
 function collarMesh(collar: PartMesh, ring: P3[], flatRing: Pt[], frontCount: number, height: number, opening: number, curved = false) {
   const indices = ring.map((_, i) => i), front = indices.slice(0, frontCount);
   const crossing = front.findIndex((i, k) => k > 0 && Math.sign(ring[i]!.x) !== Math.sign(ring[front[k - 1]!]!.x));
