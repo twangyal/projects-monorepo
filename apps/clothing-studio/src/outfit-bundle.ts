@@ -3,11 +3,12 @@ import { canWearTogether, LIMITS, partsOf, template, SIZES, type Size } from './
 import { validateRasterHeader, type RasterAsset } from './media.ts';
 import { gradedProduct } from './size-grades.ts';
 import { threePiece } from './garment-drape.ts';
-import { patternDxf, patternSvg } from './pattern-export.ts';
+import { patternDxf, patternSvg, SEAM_ALLOWANCE_CM, validatePatternAllowance } from './pattern-export.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackXlsx, zip } from './techpack.ts';
 
 /** Export applied samples or grade every garment independently to one chosen size, without editing the project. */
-export function buildOutfitBundle(project: Project, date: string, size?: Size): Uint8Array<ArrayBuffer> {
+export function buildOutfitBundle(project: Project, date: string, size?: Size, allowance = SEAM_ALLOWANCE_CM): Uint8Array<ArrayBuffer> {
+  allowance = validatePatternAllowance(allowance);
   const current = validateProject(project), first = current.product ?? template('blank'), second = current.wornWith, third = current.wornAlso;
   if (!second) throw new Error('Choose an outfit with Wear with before downloading its patterns and tech packs.');
   if (!canWearTogether(first, second) || (third && !threePiece([first, second, third]))) throw new Error('Choose compatible outfit garments before exporting.');
@@ -24,8 +25,8 @@ export function buildOutfitBundle(project: Project, date: string, size?: Size): 
     const folder = `${String(index + 1).padStart(2, '0')}-${garment.base}`;
     const paths = { svg: `${folder}/pattern.svg`, dxf: `${folder}/pattern.dxf`, xlsx: `${folder}/tech-pack.xlsx`, html: `${folder}/tech-pack.html` };
     const pack = buildTechPack(garment, date);
-    files.push({ name: paths.svg, data: encoder.encode(patternSvg(garment)) },
-      { name: paths.dxf, data: encoder.encode(patternDxf(garment)) },
+    files.push({ name: paths.svg, data: encoder.encode(patternSvg(garment, allowance)) },
+      { name: paths.dxf, data: encoder.encode(patternDxf(garment, allowance)) },
       { name: paths.xlsx, data: techPackXlsx(pack) },
       { name: paths.html, data: encoder.encode(techPackHtml(pack, { diagram: measurementDiagram(garment) })) });
     const includeRaster = (asset: RasterAsset, label: string, maxBytes: number, maxEdge: number) => {
@@ -55,7 +56,7 @@ export function buildOutfitBundle(project: Project, date: string, size?: Size): 
       ...(artwork.length ? { artwork } : {}), ...(repeatMotifs.length ? { repeatMotifs } : {}) };
 
   });
-  files.unshift({ name: 'manifest.json', data: encoder.encode(JSON.stringify({ format: 'clothing-studio-outfit', version: 2, title: current.title, date, garments: entries }, null, 2)) },
-    { name: 'README.txt', data: encoder.encode('OUTFIT PATTERNS AND TECH PACKS\n\nEach numbered folder holds one garment at its exportSize in manifest.json; sampleSize records the original applied sample. The outfit export size either keeps each applied sample or grades every garment from its own sample to the chosen size. Patterns, tech-pack tables and measurement diagrams describe that exported garment; the tech pack calls it the sample for its own size chart. Temporary 3D size previews and individual pattern export sizes do not change this bundle.\n\npattern.svg: printable 1:1 pattern; print at 100% scale.\npattern.dxf: CAD pattern in millimetres.\ntech-pack.xlsx: measurements, materials and construction.\ntech-pack.html: printable tech pack with a measurement diagram (no front/back render images).\nartwork-* and repeat-*: applied raster artwork and uploaded repeat source images, when used. The manifest lists placements and repeats. Artwork x is the centre offset (positive toward the right when viewing that panel from outside), y is the unrotated top edge below the shoulder, and positive rotation is clockwise viewed from outside. Repeat scale is the width of the four-cell square, not one image; the source image is fitted to 85% of each cell’s longest edge. Unused images and reference photos are not included.\n\nThis is an export bundle, not a restorable project backup.\n') });
+  files.unshift({ name: 'manifest.json', data: encoder.encode(JSON.stringify({ format: 'clothing-studio-outfit', version: 2, title: current.title, date, seamAllowanceCm: allowance, garments: entries }, null, 2)) },
+    { name: 'README.txt', data: encoder.encode(`Pattern seam allowance: ${allowance} cm (uniform cutting offset). Finished measurements and tech-pack consumption estimates are unchanged. Inspect corners and validate hem/closure construction and fit with a toile.\n\n` + 'OUTFIT PATTERNS AND TECH PACKS\n\nEach numbered folder holds one garment at its exportSize in manifest.json; sampleSize records the original applied sample. The outfit export size either keeps each applied sample or grades every garment from its own sample to the chosen size. Patterns, tech-pack tables and measurement diagrams describe that exported garment; the tech pack calls it the sample for its own size chart. Temporary 3D size previews and individual pattern export sizes do not change this bundle.\n\npattern.svg: printable 1:1 pattern; print at 100% scale.\npattern.dxf: CAD pattern in millimetres.\ntech-pack.xlsx: measurements, materials and construction.\ntech-pack.html: printable tech pack with a measurement diagram (no front/back render images).\nartwork-* and repeat-*: applied raster artwork and uploaded repeat source images, when used. The manifest lists placements and repeats. Artwork x is the centre offset (positive toward the right when viewing that panel from outside), y is the unrotated top edge below the shoulder, and positive rotation is clockwise viewed from outside. Repeat scale is the width of the four-cell square, not one image; the source image is fitted to 85% of each cell’s longest edge. Unused images and reference photos are not included.\n\nThis is an export bundle, not a restorable project backup.\n') });
   return zip(files);
 }

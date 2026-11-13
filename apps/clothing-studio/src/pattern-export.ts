@@ -4,6 +4,11 @@ import { garmentName, material, partName, patternPieces, type PatternPiece, type
 
 type Pt = { x: number; y: number };
 export const SEAM_ALLOWANCE_CM = 1;
+/** Uniform export offset only; finished measurements and simulation do not change. */
+export function validatePatternAllowance(value: unknown = SEAM_ALLOWANCE_CM): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 2) throw new Error('Choose a pattern seam allowance from 0 to 2 cm.');
+  return value;
+}
 const GAP_CM = 6;
 
 function signedArea(points: Pt[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return s / 2; }
@@ -44,6 +49,7 @@ export interface LaidOutPiece { piece: PatternPiece; label: string; detail: stri
 
 /** Pieces with their cutting lines, laid out left to right with a gap, origin at the top-left of the layout. */
 export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): { pieces: LaidOutPiece[]; width: number; height: number } {
+  allowance = validatePatternAllowance(allowance);
   let x = allowance;
   const size = product.spec?.sampleSize ?? 'M', laid: LaidOutPiece[] = [];
   for (const piece of patternPieces(product)) {
@@ -53,7 +59,7 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     const xs = sewing.map(p => p.x), ys = sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, top = Math.min(...ys), bottom = Math.max(...ys);
     const grain: [Pt, Pt] = [shift({ x: cx, y: top + (bottom - top) * 0.2 }), shift({ x: cx, y: top + (bottom - top) * 0.8 })];
     const fabric = material(product.parts[piece.part].material).name;
-    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric}`,
+    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · ${allowance} cm uniform seam allowance`,
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}),
       ...(piece.pleats ? { pleats: piece.pleats.map(line => ({ fold: line.fold.map(shift) as [Pt, Pt], placement: line.placement.map(shift) as [Pt, Pt] })) } : {}),
       ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}), at: { x, y: allowance } });
