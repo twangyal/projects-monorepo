@@ -489,3 +489,20 @@ for (const interruption of ['pause','cancel']) test(`search does not submit afte
   assert.match(reply.message,/Search stopped/);
   assert.deepEqual(page.log,[['write','Search books','river']]);
 });
+
+test('speech addressing settings clear pending actions and remain available while paused', () => {
+  const page = fakePage(), choices = [];
+  const controller = createController({ window: {}, actions: page.actions, commands: { speechPrefix: required => { choices.push(required); return { ok: true, message: 'Changed speech addressing.' }; } } });
+  const context = { elements: [describe(1, page.node('Place order'), { consequential: true })] };
+  controller.handle('place order', context);
+  assert.ok(controller.pending);
+  assert.equal(controller.handle('require navigator prefix', context).tone, 'success');
+  assert.deepEqual(choices, [true]);
+  assert.equal(controller.pending, null);
+  controller.handle('pause', context);
+  assert.equal(controller.handle('turn off navigator prefix', context).tone, 'success');
+  assert.deepEqual(choices, [true, false]);
+  assert.equal(controller.paused, true);
+  controller.handle('resume', context); controller.handle('confirm', context);
+  assert.deepEqual(page.log, []);
+});

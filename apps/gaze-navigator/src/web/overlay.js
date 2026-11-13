@@ -5,6 +5,7 @@ import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
+import { addressedSpeech } from './speech-address.js';
 import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createLocalCamera } from './camera-source.js';
@@ -150,7 +151,8 @@ export function pageBrowser(window) {
 }
 
 export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null, browser = pageBrowser(window) } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', cameraMode: 'eyes', assist: false, ...store.load() };
+  const settings = { size: 'medium', listening: false, speak: false, requireAddress: false, source: 'pointer', cameraMode: 'eyes', assist: false, ...store.load() };
+  settings.requireAddress = settings.requireAddress === true;
   // The camera follows the eyes (WebGazer's gaze estimate) or the head (head-pointer.js).
   const following = () => (settings.cameraMode === 'head' ? 'head' : 'eyes');
   const host = document.createElement('div');
@@ -191,6 +193,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
           <label><input type="checkbox" class="speak" /> Speak feedback</label>
         </div>
+        <label><input type="checkbox" class="speech-address" /> Require “Navigator” before spoken instructions</label>
+        <p class="hint">When enabled, begin every spoken instruction, confirmation and dictation phrase with “Navigator”, for example “Navigator, open help”. Pause, stop and cancel still work alone. Say “require navigator prefix” to enable, or “Navigator turn off navigator prefix” to disable. Typed instructions stay available. This routes recognized words; it does not identify who spoke or guarantee that background speech is ignored.</p>
         <div class="assist-row">
           <label><input type="checkbox" class="assist" /> Smarter target matching</label>
           <p class="hint assist-note">Understands names that do not match exactly, such as "show the ratings" for Reviews, using the WaterSheep model on this device. It downloads 158 MB once; instructions are not sent anywhere.</p>
@@ -224,7 +228,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const ui = {
     circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), dictation: $('.dictation'), transcript: $('.transcript'),
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
-    instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
+    instruction: $('.instruction'), speechAddress: $('.speech-address'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
     recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
     speechMode: $('.speech-mode'), speechInstall: $('.speech-install'),
@@ -294,7 +298,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
   };
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, speechPrefix: setSpeechAddress, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
@@ -356,7 +360,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         scope = root.host ?? scope.ownerDocument.defaultView.frameElement;
       }
     }
-    const text = active ? `Dictating into ${active.name || 'the field'}. Say “stop dictation” for commands, “undo typing” for the last phrase, or pause/cancel.` : '';
+    const text = active ? `Dictating into ${active.name || 'the field'}. ${settings.requireAddress ? 'Begin every spoken phrase with “Navigator”. ' : ''}Say “stop dictation” for commands, “undo typing” for the last phrase, or pause/cancel.` : '';
     if (ui.dictation.textContent !== text) ui.dictation.textContent = text;
     ui.dictation.hidden = !active;
   }
@@ -868,16 +872,22 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       ui.transcript.textContent = `Listening… ${context.elements.length} element${context.elements.length === 1 ? '' : 's'} captured.`;
     },
     onReset() { spokenContext = null; spokenInvalid = false; },
-    onInterim(text) { ui.transcript.textContent = `Heard: ${text}`; },
+    onInterim(text) { ui.transcript.textContent = settings.requireAddress && !addressedSpeech(text, [], true) ? 'Waiting for a “Navigator” address…' : `Heard: ${text}`; },
     onImmediate(text) {
       ui.transcript.textContent = `Heard: ${text}`;
       run(text, { elements: [] }, 'speech');
     },
     onFinal(text, alternatives = []) {
       expireCameraSilence();
-      ui.transcript.textContent = `Heard: ${text}`;
+      const addressed = addressedSpeech(text, alternatives, settings.requireAddress);
       const invalid = spokenInvalid; spokenInvalid = false;
-      if (text) run(text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech', alternatives);
+      if (!addressed) {
+        spokenContext = null;
+        ui.transcript.textContent = 'No “Navigator” address heard; speech ignored. Begin the next instruction with “Navigator”.';
+        return;
+      }
+      ui.transcript.textContent = `Heard: ${text}`;
+      if (addressed.text) run(addressed.text, invalid ? { elements: [], region: null, trackingUnavailable: true } : null, 'speech', addressed.alternatives);
       else spokenContext = null;
     },
     onError(message) {
@@ -1305,6 +1315,23 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.assistRow.hidden = !loadAssistant;
   ui.assist.addEventListener('change', () => void setAssist(ui.assist.checked));
   if (settings.assist && loadAssistant) void setAssist(true);
+  function setSpeechAddress(required) {
+    const wasListening = speech.listening;
+    // Retire queued native results and captured gaze before accepting phrases under the new rule.
+    setListening(false);
+    spokenContext = null; spokenInvalid = false; promptContext = null;
+    settings.requireAddress = required; ui.speechAddress.checked = required;
+    store.save(settings);
+    if (wasListening) setListening(true);
+    return { ok: true, message: required
+      ? 'Begin every spoken instruction, confirmation and dictation phrase with “Navigator”. Pause, stop and cancel still work alone. Typed instructions are unchanged.'
+      : 'Spoken instructions no longer require “Navigator”. Typed instructions are unchanged.' };
+  }
+  ui.speechAddress.checked = settings.requireAddress;
+  ui.speechAddress.addEventListener('change', () => {
+    show(controller.cancel(), { elements: [] });
+    feedback(setSpeechAddress(ui.speechAddress.checked));
+  });
   ui.speak.checked = settings.speak;
   ui.speak.addEventListener('change', () => {
     settings.speak = ui.speak.checked;

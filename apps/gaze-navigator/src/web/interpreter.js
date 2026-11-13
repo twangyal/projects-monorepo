@@ -740,6 +740,8 @@ function interpretInCircle(utterance, context) {
   if (circleSize) return { type: 'circle-size', size: circleSize[1] };
   const circleStep = /^make (?:the )?(?:gaze )?circle (bigger|larger|smaller)$/.exec(text);
   if (circleStep) return { type: 'circle-size', size: circleStep[1] === 'smaller' ? 'smaller' : 'larger' };
+  if (/^(?:require|turn on) (?:the )?navigator prefix$/.test(text)) return { type: 'speech-prefix', required: true };
+  if (/^(?:stop requiring|turn off) (?:the )?navigator prefix$/.test(text)) return { type: 'speech-prefix', required: false };
   // The navigator's own panel: hidden to a status line, shown again, or moved to another corner of the screen.
   const navigator = '(?:the )?(?:gaze )?navigator(?: panel)?';
   if (new RegExp(`^(?:hide|minimi[sz]e|shrink|collapse) ${navigator}$`).test(text)) return { type: 'panel', change: 'collapse' };

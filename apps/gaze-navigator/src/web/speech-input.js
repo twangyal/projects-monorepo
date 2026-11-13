@@ -1,3 +1,5 @@
+import { immediateSpeech } from './speech-address.js';
+
 // Speech stage: wraps the browser's SpeechRecognition. Where the browser can recognize speech on this device
 // (Chrome, once its language pack is installed), it does, and no audio leaves the device; recognition can then
 // also be biased toward expected phrases, such as the names of the controls around the gaze. Otherwise recognition
@@ -12,7 +14,6 @@ const ERRORS = {
 };
 const FATAL = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported']);
 // Said alone, these stop or pause the navigator as soon as they are heard, before speech is final.
-const IMMEDIATE = /^\s*(cancel|stop|pause|abort|hold on|hang on|never ?mind)\s*$/i;
 // Phrases are favoured this much (0 to 10; 1 is neutral), at most MAX_PHRASES of them.
 const PHRASE_BOOST = 3, MAX_PHRASES = 50;
 // New phrases are taken up by restarting a session that has heard nothing for this long, at most this often.
@@ -88,6 +89,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
       failures = 0;
       heardAt = window.performance?.now?.() ?? Date.now();
       for (let index = event.resultIndex; index < event.results.length; index++) {
+        if (!wanted || recognition !== current) return;
         const result = event.results[index];
         const transcript = result[0]?.transcript ?? '';
         if (!started.has(index)) {
@@ -99,9 +101,9 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
           continue;
         }
         if (result.isFinal) onFinal?.(transcript.trim(), readings(result, transcript));
-        else if (IMMEDIATE.test(transcript)) {
+        else if (immediateSpeech(transcript)) {
           handled.add(index);
-          onImmediate?.(transcript.trim());
+          onImmediate?.(immediateSpeech(transcript));
         } else onInterim?.(transcript);
       }
     };

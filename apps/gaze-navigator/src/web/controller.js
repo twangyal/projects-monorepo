@@ -487,6 +487,12 @@ export function createController({ window, actions = pageActions, interpret = in
       return reply('Resumed. Look at something and say what to do.', 'info', { paused: false });
     }
     // Navigator settings stay available while paused; changing scope retires old targets.
+    if (action.type === 'speech-prefix') {
+      pending = null;
+      if (!commands.speechPrefix) return reply('Speech addressing is not available here.', 'error');
+      const result = commands.speechPrefix(action.required);
+      return reply(result.message, result.ok ? 'success' : 'error');
+    }
     if (action.type === 'panel') {
       // Moving or hiding the panel keeps any question open: it is still answered the same way.
       if (!commands.panel) return reply('The navigator panel cannot be changed here.', 'error');

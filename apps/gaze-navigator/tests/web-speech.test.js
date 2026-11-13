@@ -217,3 +217,14 @@ test('a final result carries the recogniser\'s other readings, without repeats',
   emit(recognition, 0, readings);
   assert.deepEqual(heard, [['click signing', ['click sign in', 'quick sign in']]]);
 });
+
+test('restarting speech while handling one result retires the remaining results from that native session', () => {
+  const { window, instances } = fakeWindow(), heard = [];
+  let speech;
+  speech = createSpeechInput(window, { onFinal: text => { heard.push(text); if (text === 'require navigator prefix') { speech.stop(); speech.start(); } } });
+  speech.start();
+  emit(instances[0], 0, result('require navigator prefix', true), result('Navigator click submit', true));
+  assert.deepEqual(heard, ['require navigator prefix']);
+  emit(instances.at(-1), 0, result('Navigator open help', true));
+  assert.deepEqual(heard, ['require navigator prefix', 'Navigator open help']);
+});
