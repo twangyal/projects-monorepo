@@ -967,3 +967,6 @@ button {
 #word-timing-status[data-review-hidden] { display: none; }
 
 #recognition-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+
+.retry-reference { border-left: 3px solid var(--line, #667085); padding-left: .75rem; }
+.retry-reference pre { white-space: pre-wrap; overflow-wrap: anywhere; }
