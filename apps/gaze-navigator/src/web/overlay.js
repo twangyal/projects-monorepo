@@ -5,7 +5,8 @@ import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
-import { addressedSpeech, addressedFeedback } from './speech-address.js';
+import { addressedSpeech, addressedFeedback, immediateSpeech } from './speech-address.js';
+import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createLocalCamera } from './camera-source.js';
@@ -193,6 +194,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
           <label><input type="checkbox" class="speak" /> Speak feedback</label>
         </div>
+        <p class="hint">With Speak feedback enabled, wait for each reply to finish before speaking an instruction. Overlapping phrases are ignored, including later final results. Pause, stop and cancel still work, and you can type or use the panel buttons at any time. This is not acoustic echo cancellation.</p>
         <label><input type="checkbox" class="speech-address" /> Require “Navigator” before spoken instructions</label>
         <p class="hint">When enabled, begin every spoken instruction, confirmation and dictation phrase with “Navigator”, for example “Navigator, open help”. Pause, stop and cancel still work alone. Say “require navigator prefix” to enable, or “Navigator turn off navigator prefix” to disable. Typed instructions stay available. This routes recognized words; it does not identify who spoke or guarantee that background speech is ignored.</p>
         <div class="assist-row">
@@ -365,14 +367,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.dictation.hidden = !active;
   }
 
+  const feedbackVoice = createFeedbackVoice(window);
+  // Keep an overlapping capture blocked even when its final transcript arrives after output ends.
+  let spokenDuringFeedback = false, speechCaptureActive = false;
+  function resetSpeechCapture() { spokenContext = null; spokenInvalid = false; spokenDuringFeedback = false; speechCaptureActive = false; }
+  const feedbackWait = 'Spoken feedback is playing or overlapped this phrase; speech ignored. Wait for it to finish, or say pause or cancel. Typed instructions remain available.';
+
   function feedback({ message, tone = 'info', pending = null }) {
     message = addressedFeedback(message, pending, settings.requireAddress);
     ui.status.textContent = message;
     ui.status.className = `status ${tone}`;
     renderPrompt();
-    if (settings.speak && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(new window.SpeechSynthesisUtterance(message));
+    if (settings.speak && !document.hidden && !closing && !stopped) {
+      if (feedbackVoice.say(message) && speechCaptureActive) spokenDuringFeedback = true;
     }
   }
 
@@ -866,19 +873,36 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const speech = createSpeech(window, {
     // Keeps the earliest capture of an utterance: where the user looked when they began speaking.
     onSpeechStart() {
+      if (!speechCaptureActive) spokenDuringFeedback = false;
+      speechCaptureActive = true;
+      if (feedbackVoice.active) spokenDuringFeedback = true;
+      if (spokenDuringFeedback) { spokenContext = null; ui.transcript.textContent = feedbackWait; return; }
       if (controller.paused || spokenContext || spokenInvalid) return;
       if (settings.source === 'camera' && (cameraUnavailable || !cameraCalibrated || calibration)) { spokenInvalid = true; return; }
       recapture(true);
       spokenContext = context;
       ui.transcript.textContent = `Listening… ${context.elements.length} element${context.elements.length === 1 ? '' : 's'} captured.`;
     },
-    onReset() { spokenContext = null; spokenInvalid = false; },
-    onInterim(text) { ui.transcript.textContent = settings.requireAddress && !addressedSpeech(text, [], true) ? 'Waiting for a “Navigator” address…' : `Heard: ${text}`; },
+    onReset() {
+      spokenContext = null; spokenInvalid = false; speechCaptureActive = false;
+      // A no-speech/aborted error can precede a late final on the same native index.
+      // Keep its overlap marker until that final or a genuinely new capture starts.
+    },
+    onInterim(text) {
+      if (spokenDuringFeedback || feedbackVoice.active) { spokenDuringFeedback = true; spokenContext = null; ui.transcript.textContent = feedbackWait; return; }
+      ui.transcript.textContent = settings.requireAddress && !addressedSpeech(text, [], true) ? 'Waiting for a “Navigator” address…' : `Heard: ${text}`; },
     onImmediate(text) {
+      speechCaptureActive = false; spokenDuringFeedback = false;
       ui.transcript.textContent = `Heard: ${text}`;
       run(text, { elements: [] }, 'speech');
     },
     onFinal(text, alternatives = []) {
+      speechCaptureActive = false;
+      const overlapping = spokenDuringFeedback || feedbackVoice.active;
+      spokenDuringFeedback = false;
+      if (overlapping && !immediateSpeech(text)) {
+        spokenContext = null; spokenInvalid = false; ui.transcript.textContent = feedbackWait; return;
+      }
       expireCameraSilence();
       const addressed = addressedSpeech(text, alternatives, settings.requireAddress);
       const invalid = spokenInvalid; spokenInvalid = false;
@@ -1111,7 +1135,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       on = false;
     }
     if (on && !speech.listening && !speech.start()) on = false;
-    if (!on) { spokenContext = null; spokenInvalid = false; speech.stop(); controller.endDictation(); renderDictation(); }
+    if (!on) { resetSpeechCapture(); speech.stop(); controller.endDictation(); renderDictation(); }
     settings.listening = on;
     store.save(settings);
     renderListening(on);
@@ -1128,6 +1152,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       cameraVisibleSince = window.performance.now();
       return;
     }
+    feedbackVoice.cancel(); resetSpeechCapture();
     const wasListening = speech.listening;
     const activeCalibration = calibration;
     const wasCalibrated = cameraCalibrated;
@@ -1158,7 +1183,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   document.addEventListener('visibilitychange', onVisibilityChange);
   const onPageHide = () => {
     clearCameraSilence();
-    closing = true; sourceGeneration++;
+    closing = true; sourceGeneration++; feedbackVoice.cancel(); resetSpeechCapture();
     keyboard.cancel();
     const active = calibration; calibration = null; active?.cancel();
     camera.stop(); speech.stop(); controller.cancel();
@@ -1336,6 +1361,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.speak.checked = settings.speak;
   ui.speak.addEventListener('change', () => {
     settings.speak = ui.speak.checked;
+    if (!settings.speak) feedbackVoice.cancel();
     store.save(settings);
   });
   // The panel can be hidden to its status line and moved to any corner by voice, since the people it is for may not
@@ -1401,7 +1427,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     run: utterance => run(utterance, null),
     stop() {
       clearCameraSilence();
-      stopped = true; closing = true; assistLoad++; sourceGeneration++;
+      stopped = true; closing = true; assistLoad++; sourceGeneration++; feedbackVoice.cancel(); resetSpeechCapture();
       window.clearTimeout(numbersTimer); numbersTimer = null; numbering = null;
       keyboard.stop();
       controller.cancel(); spokenContext = null; promptContext = null;
