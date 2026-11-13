@@ -60,6 +60,8 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
   }
   // Results already handled from an interim "cancel" are not executed again when finalized.
   const handled = new Set();
+  // Final native indexes are immutable for a session. Re-delivery must not repeat page actions or dictation.
+  const finalized = new Set();
   // Continuous sessions fire speechstart once, so each new result also marks an utterance start.
   const started = new Set();
 
@@ -67,6 +69,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     recognition = new Recognition();
     const current = recognition;
     handled.clear();
+    finalized.clear();
     started.clear();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -90,7 +93,9 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
       heardAt = window.performance?.now?.() ?? Date.now();
       for (let index = event.resultIndex; index < event.results.length; index++) {
         if (!wanted || recognition !== current) return;
+        if (finalized.has(index)) continue;
         const result = event.results[index];
+        if (result.isFinal) finalized.add(index);
         const transcript = result[0]?.transcript ?? '';
         if (!started.has(index)) {
           started.add(index);
@@ -127,6 +132,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
       // No more final results can arrive from this session. Release an unfinished gaze capture before restarting.
       onReset?.();
       handled.clear();
+      finalized.clear();
       started.clear();
       if (!wanted) {
         onState?.('stopped');

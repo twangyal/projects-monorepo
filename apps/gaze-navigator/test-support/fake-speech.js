@@ -3,7 +3,7 @@
   const instances = [];
   class Recognition {
     constructor() { this.starts=0; this.aborted=0; instances.push(this); }
-    start() { this.starts++; this.onstart?.(); }
+    start() { this.starts++; this.nextIndex = 0; this.onstart?.(); }
     abort() { this.aborted++; this.onend?.(); }
   }
   // With "gaze-fake-speech" set to "downloadable" in the extension's storage, it can also run on the device.
@@ -17,7 +17,10 @@
   window.__extensionSpeech = {
     instances,
     begin() { instances.at(-1).onspeechstart?.(); },
-    say(text, final = true, index = 0) {
+    say(text, final = true, index) {
+      const recognition = instances.at(-1);
+      index ??= recognition.nextIndex;
+      recognition.nextIndex = Math.max(recognition.nextIndex, index + (final ? 1 : 0));
       const results = Array.from({length:index+1}, () => Object.assign([{transcript:''}],{isFinal:true}));
       results[index] = Object.assign([{transcript:text}],{isFinal:final});
       instances.at(-1).onresult?.({resultIndex:index,results});

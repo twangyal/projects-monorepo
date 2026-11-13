@@ -326,7 +326,7 @@ test('a speech-start target is discarded on loss and a fresh speech capture can 
   await page.evaluate(()=>window.webgazer.emit(null));await page.evaluate(()=>window.__lossSpeech.onspeechstart?.());await typeInstruction(page,'cancel');
   await gazeAt(page,page.locator('#other-sort'));await page.evaluate(()=>window.__lossSpeech.onresult({resultIndex:1,results:[Object.assign([{transcript:'ignored prior'}],{isFinal:true}),Object.assign([{transcript:'choose title'}],{isFinal:true})]}));
   await expect(page.locator('#other-sort')).toHaveValue('Newest');
-  await gazeAt(page,sort);await page.evaluate(()=>{window.__lossSpeech.onspeechstart?.();window.__lossSpeech.onresult({resultIndex:0,results:[Object.assign([{transcript:'choose title'}],{isFinal:true})]});});
+  await gazeAt(page,sort);await page.evaluate(()=>{window.__lossSpeech.onspeechstart?.();const results=Array.from({length:3},()=>Object.assign([{transcript:'choose title'}],{isFinal:true}));window.__lossSpeech.onresult({resultIndex:2,results});});
   await expect(sort).toHaveValue('Title');
 });
 
@@ -497,7 +497,7 @@ test('camera silence retires speech captured before the stall across recovery',a
   await page.clock.runFor(5001);await page.evaluate(()=>window.__lossSpeech.onspeechstart?.());await typeInstruction(page,'cancel');
   await gazeAt(page,page.locator('#other-sort'));await page.evaluate(()=>window.__lossSpeech.onresult({resultIndex:1,results:[Object.assign([{transcript:'ignored prior'}],{isFinal:true}),Object.assign([{transcript:'choose title'}],{isFinal:true})]}));
   await expect(page.locator('#other-sort')).toHaveValue('Newest');
-  await gazeAt(page,sort);await page.evaluate(()=>{window.__lossSpeech.onspeechstart?.();window.__lossSpeech.onresult({resultIndex:0,results:[Object.assign([{transcript:'choose title'}],{isFinal:true})]});});
+  await gazeAt(page,sort);await page.evaluate(()=>{window.__lossSpeech.onspeechstart?.();const results=Array.from({length:3},()=>Object.assign([{transcript:'choose title'}],{isFinal:true}));window.__lossSpeech.onresult({resultIndex:2,results});});
   await expect(sort).toHaveValue('Title');
 });
 

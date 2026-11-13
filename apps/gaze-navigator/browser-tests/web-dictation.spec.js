@@ -46,9 +46,9 @@ for (const stop of ['cancel','pause']) test(`${stop} retires dictation and resum
   await command(page,'resume');await command(page,'private words');await expect(page.locator('#dictation-message')).toHaveValue('Draft');
 });
 test('stopping listening retires dictation through the real speech callbacks',async({page})=>{
-  await page.addInitScript(()=>{window.SpeechRecognition=class {constructor(){window.testRecognition=this;}start(){this.onstart?.();}abort(){this.onend?.();}};});
+  await page.addInitScript(()=>{window.SpeechRecognition=class {constructor(){window.testRecognition=this;}start(){this.nextIndex=0;this.onstart?.();}abort(){this.onend?.();}};});
   await open(page);await panel(page).getByRole('button',{name:'Start listening',exact:true}).click();
-  const say= text=>page.evaluate(text=>{const r=window.testRecognition;r.onspeechstart?.();r.onresult?.({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal:true})]});},text);
+  const say= text=>page.evaluate(text=>{const r=window.testRecognition,index=r.nextIndex++;r.onspeechstart?.();const results=Array.from({length:index+1},()=>Object.assign([{transcript:''}],{isFinal:true}));results[index]=Object.assign([{transcript:text}],{isFinal:true});r.onresult?.({resultIndex:index,results});},text);
   await say('start dictation into Message');await expect(panel(page).locator('.dictation')).toBeVisible();
   await say('hello world');await expect(page.locator('#dictation-message')).toHaveValue('Draft hello world');
   await panel(page).getByRole('button',{name:'Stop listening',exact:true}).click();await expect(panel(page).locator('.dictation')).toBeHidden();

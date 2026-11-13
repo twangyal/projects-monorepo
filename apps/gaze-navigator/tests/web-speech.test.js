@@ -228,3 +228,30 @@ test('restarting speech while handling one result retires the remaining results 
   emit(instances.at(-1), 0, result('Navigator open help', true));
   assert.deepEqual(heard, ['require navigator prefix', 'Navigator open help']);
 });
+
+test('a finalized native result index is consumed once until recognition starts a new session', () => {
+  const { window, instances } = fakeWindow(), finals = [], immediate = [];
+  const speech = createSpeechInput(window, { onFinal: text => finals.push(text), onImmediate: text => immediate.push(text) });
+  speech.start(); const recognition = instances[0];
+  emit(recognition, 0, result('type once', true));
+  emit(recognition, 0, result('type once', true));
+  emit(recognition, 0, result('pause', false));
+  emit(recognition, 1, result('type once', true), result('type twice', true));
+  assert.deepEqual(finals, ['type once', 'type twice']);
+  assert.deepEqual(immediate, []);
+  recognition.onend();
+  emit(recognition, 0, result('type fresh', true));
+  assert.deepEqual(finals, ['type once', 'type twice', 'type fresh']);
+});
+test('an interim safety action and all repeated final acknowledgements execute only once', () => {
+  const { window, instances } = fakeWindow(), finals = [], immediate = [];
+  const speech = createSpeechInput(window, { onFinal: text => finals.push(text), onImmediate: text => immediate.push(text) });
+  speech.start(); const recognition = instances[0];
+  emit(recognition, 0, result('Navigator cancel', false));
+  emit(recognition, 0, result('Navigator cancel', true));
+  emit(recognition, 0, result('Navigator cancel', true));
+  emit(recognition, 0, result('pause', false));
+  emit(recognition, 1, result('Navigator cancel', true), result('open help', true));
+  assert.deepEqual(immediate, ['cancel']);
+  assert.deepEqual(finals, ['open help']);
+});
