@@ -2,8 +2,8 @@ import { createProject, validateProject } from './model.ts';
 import type { Garment, Project } from './model.ts';
 import { validatePhoto } from './media.ts';
 
-const GARMENT_WIDTH = 400;
-const GARMENT_HEIGHT = 440;
+export const GARMENT_WIDTH = 400;
+export const GARMENT_HEIGHT = 440;
 const MAX_EXPORT_EDGE = 2048;
 let svgSequence = 0;
 

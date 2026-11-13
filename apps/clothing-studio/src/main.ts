@@ -1,3 +1,6 @@
+import { conceptTee } from './concept-product.ts';
+import { renderConceptArtwork } from './concept-artwork.ts';
+import { replaceOutfitProduct } from './outfit-edit.ts';
 import {productFromConstruction} from './construction-product.ts';
 import {mountDesignLibrary} from './design-library-view.ts';
 import {readDesign,type DesignReceipt} from './design-library.ts';
@@ -51,6 +54,7 @@ app.innerHTML = `
         <div class="canvas-caption"><p id="sketch-help">Draw with a mouse, pen, or touch. Your marks stay inside the garment.</p><span id="stroke-count">0 strokes</span></div><p class="fine-print">Reshaping the tee keeps marks in the same canvas position; marks outside the new outline are clipped.</p>
         <button id="garment-png" class="export-button">Export garment PNG <span aria-hidden="true">↓</span></button><p class="export-detail">Transparent background · ready for your moodboard</p>
         <button id="garment-svg" class="export-button">Export garment SVG <span aria-hidden="true">↓</span></button><p class="export-detail">Editable vector shapes · garment and sketch only</p>
+        <section class="control-section" aria-labelledby="concept-product-heading"><h4 id="concept-product-heading">Make a 3D starting point</h4><p class="fine-print">Choose a product chest measurement to scale the concept’s proportions. Length and sleeves are bounded by the tee’s editable limits. This copies colour and neckline; soft stripes become horizontal stripes. Crosshatch is an illustration, not a measured fabric.</p><label class="field">Product chest from concept (cm)<input id="concept-product-chest" type="number" min="80" max="150" step="0.1" value="104"></label><label><input id="concept-product-artwork" type="checkbox" checked> Use body sketch marks as front artwork</label><p class="fine-print">Marks in the body rectangle become one transparent graphic fitted to the front, up to 40 cm wide; refine its placement in Artwork. Sleeve marks stay in the source sketch. Marks are not interpreted as seams, pockets or silhouette geometry. Photos, overlay placement and notes are not interpreted as measurements.</p><p id="concept-product-summary" class="fine-print" role="status"></p><button id="concept-product" class="quiet">Replace 3D product with this concept tee</button><p class="fine-print">Replaces the edited product and its styling. Compatible worn garments and shared body settings stay; incompatible pieces ask before removal. Your source sketch stays independent. One Undo restores the previous product. Refine the measurements and fabric before draping or exporting; this does not validate fit.</p></section>
       </section>
       <section class="preview-panel panel" aria-labelledby="preview-heading"><div class="panel-heading"><span class="step">03</span><h3 id="preview-heading">See it in context</h3></div>
         <div class="photo-toolbar"><label class="button quiet file-button">Choose a photo<input id="photo-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload body photo"></label><button id="sample" class="text-button">Use sample silhouette</button></div>
@@ -119,6 +123,8 @@ function updateControls() {
   element<HTMLButtonElement>('undo').disabled = !history.canUndo;
   element<HTMLButtonElement>('redo').disabled = !history.canRedo;
   element<HTMLButtonElement>('clear-sketch').disabled = project.strokes.length === 0;
+  element<HTMLButtonElement>('concept-product').disabled = loadBusy || saveProtection === 'loading' || exportBusy || replacingSaved || !!gesture;
+  renderConceptSummary();
 }
 
 function scheduleSave() {
@@ -167,6 +173,7 @@ function commit(next: Project, textField?: 'title' | 'note') {
 function updateLoadControls() {
   element('load-state').hidden = !loadBusy;
   element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
+  element<HTMLButtonElement>('concept-product').disabled = loadBusy || saveProtection === 'loading' || exportBusy || replacingSaved || !!gesture;
 }
 function retireLoad() {
   loadGeneration++; loadBusy = false;
@@ -393,6 +400,33 @@ const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),gu
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
+function conceptChest(): number {
+  const text = input('concept-product-chest').value;
+  if (!text.trim()) throw new Error('Choose a product chest measurement from 80 to 150 cm.');
+  return Number(text);
+}
+function renderConceptSummary(): void {
+  try { element('concept-product-summary').textContent = conceptTee(project, conceptChest()).summary; }
+  catch (error) { element('concept-product-summary').textContent = error instanceof Error ? error.message : 'Check the product chest measurement.'; }
+}
+input('concept-product-chest').addEventListener('input', renderConceptSummary);
+element('concept-product').addEventListener('pointerdown', event => event.preventDefault());
+element('concept-product').addEventListener('click', () => {
+  if (loadBusy || saveProtection === 'loading') { message('Wait for the current import or saved design before copying the concept.', true); return; }
+  if (!constructionGuard()) return;
+  if (constructionView.dirty() || gradingView.dirty()) { message('Apply or discard pattern and grading drafts before copying the concept. Your drafts are kept.', true); return; }
+  try {
+    const plan = conceptTee(project, conceptChest());
+    const artwork = input('concept-product-artwork').checked ? renderConceptArtwork(project, plan.product) : null;
+    const product = conceptTee(project, conceptChest(), artwork).product;
+    const replacement = replaceOutfitProduct(project, product);
+    if (replacement.removed.length && !window.confirm(`Replace the edited product with “${product.name}”? This removes ${replacement.removed.map(item => `“${item.name}”`).join(' and ')} from the outfit. Your source sketch stays; you can undo this.`)) return;
+    const next = validateProject(replacement.project);
+    edit(() => next); productView.reset();
+    message(`Copied concept tee to the 3D product. ${plan.summary} ${artwork ? 'Body marks copied as front artwork.' : 'No body artwork copied; all source marks stay in the sketchbook.'} Source sketch and shared body settings are unchanged. Use Back to garment to refine the copy; Undo restores the previous product.`);
+  } catch (error) { message(error instanceof Error ? error.message : 'Could not copy the concept. Existing work is unchanged.', true); }
+});
+
 element('construction-product').addEventListener('pointerdown',event=>event.preventDefault());
 element('construction-product').addEventListener('click',()=>{
   if(loadBusy||saveProtection==='loading') { message('Wait for the current import or saved design to finish before copying this skirt.',true);return; }
@@ -429,7 +463,7 @@ window.addEventListener('beforeunload', event => { if (unsaved) { event.preventD
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;
 void loadProject().then(saved => {
-  if (!saved) { saveProtection = 'ready'; if (unsaved) scheduleSave(); else element('save-state').textContent = 'Ready for your first idea'; return; }
+  if (!saved) { saveProtection = 'ready'; updateLoadControls(); if (unsaved) scheduleSave(); else element('save-state').textContent = 'Ready for your first idea'; return; }
   if (startupTouched || editVersion !== startupVersion || loadGeneration !== startupGeneration || loadBusy) {
     protectSaved('Your active concept was kept. The previous saved concept is protected. Export your current project backup before explicitly replacing it.');
     return;
