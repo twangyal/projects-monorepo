@@ -1,3 +1,4 @@
+import { parseRecognitionPassage, recognitionRange, type RecognitionPassage } from './recognition-passage.ts';
 import { parseRecognitionPreview, type RecognitionPreview } from './recognition-preview.ts';
 import {lyricsLookupMarkup,mountLyricsLookup} from './lyrics-lookup-view.ts';
 import { mountWorkspace } from './workspace.ts';
@@ -23,7 +24,7 @@ import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const recognitionOptions = `<option value="auto">Automatic language choice</option><option value="english">English</option><option value="multilingual">Multilingual (25 European languages)</option><option value="east-asian">East Asian (automatic language)</option><option value="chinese">Chinese</option><option value="cantonese">Cantonese</option><option value="japanese">Japanese</option><option value="korean">Korean</option><option value="whisper">Whisper (most other languages)</option>`;
@@ -64,7 +65,7 @@ app.innerHTML = `
           <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>Room for the complete song.</strong><p>Import complete songs up to 10 minutes. Local CPU separation and video export can take several minutes; cancellation remains available while processing.</p></div>
         </section>
         <section id="tool-lyrics" class="tool-panel lyrics-panel" role="tabpanel" aria-labelledby="tab-lyrics"><h3 class="tool-heading" id="lyrics-heading">Lyrics</h3>
-          <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><p id="lookup-offer" class="fine" hidden><span id="lookup-offer-text"></span> <button id="lookup-offer-find" class="quiet">Look up published lyrics</button></p><p id="lookup-found" class="fine" hidden><span id="lookup-found-text"></span> <button id="lookup-found-review" class="quiet">Review published lyrics</button></p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled>${recognitionOptions}</select></div><p class="fine">If the language choice sounds wrong, select a model or an explicit Chinese, Cantonese, Japanese or Korean retry. An explicit language is forced for the whole clip instead of guessed; mixed-language passages may fare worse. The selected model must be installed locally. Retrying keeps your lyric edits. If a valid automatic reference already exists, compare and listen to the retry candidate before keeping it as the reference; applying lyric cues is a separate choice.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div><section id="recognition-preview" aria-label="Compare recognition retry" hidden><h5>Compare recognition retry</h5><p id="recognition-preview-status" class="fine" role="status"></p><p class="fine">The pending candidate survives reopening this clip, but is not included in saved-clip backups until kept. A later retry replaces this candidate. Keeping changes only the automatic reference used for word timing, alignment and correction reports; your edited lyric cues stay unchanged.</p><details><summary>Current automatic reference</summary><pre id="recognition-preview-current"></pre></details><details><summary>Retry candidate</summary><pre id="recognition-preview-candidate"></pre></details><div class="timing-actions"><button id="recognition-preview-review" class="quiet">Review retry candidate</button><button id="recognition-preview-keep" class="quiet">Keep retry as automatic reference</button><button id="recognition-preview-discard" class="quiet">Discard retry candidate</button></div></section></section>
+          <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><p id="lookup-offer" class="fine" hidden><span id="lookup-offer-text"></span> <button id="lookup-offer-find" class="quiet">Look up published lyrics</button></p><p id="lookup-found" class="fine" hidden><span id="lookup-found-text"></span> <button id="lookup-found-review" class="quiet">Review published lyrics</button></p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled>${recognitionOptions}</select></div><p class="fine">If the language choice sounds wrong, select a model or an explicit Chinese, Cantonese, Japanese or Korean retry. An explicit language is forced for the selected audio instead of guessed; mixed-language passages may fare worse. The selected model must be installed locally. Retrying keeps your lyric edits. If a valid automatic reference already exists, compare and listen to the retry candidate before keeping it as the reference; applying lyric cues is a separate choice.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div><details id="recognition-passage-tools"><summary>Retry a passage</summary><p class="fine">Recognize only 1–60 seconds of the separated vocals with the model selected above. Include the whole phrase and a little context: a short excerpt may recognize worse. Review and apply selected corrections; the full automatic reference stays unchanged.</p><div class="practice-selection"><label class="field">Passage retry start (seconds)<input id="recognition-passage-start" type="text" inputmode="decimal" maxlength="12"></label><label class="field">Passage retry end (seconds)<input id="recognition-passage-end" type="text" inputmode="decimal" maxlength="12"></label></div><button id="recognition-passage-transcribe" class="quiet" disabled>Recognize this passage</button><p id="recognition-passage-range-status" class="fine" role="status"></p></details><section id="recognition-passage-preview" aria-label="Passage recognition retry" hidden><h5>Passage recognition retry</h5><p id="recognition-passage-status" class="fine" role="status"></p><p class="fine">Review and listen, then apply only reviewed lines or a reviewed passage. This pending preview survives reopening this clip and is excluded from saved-clip backups. A later passage retry replaces it. It cannot replace the full automatic reference.</p><div class="timing-actions"><button id="recognition-passage-review" class="quiet">Review passage retry</button><button id="recognition-passage-discard" class="quiet">Discard passage retry</button></div></section><section id="recognition-preview" aria-label="Compare recognition retry" hidden><h5>Compare recognition retry</h5><p id="recognition-preview-status" class="fine" role="status"></p><p class="fine">The pending candidate survives reopening this clip, but is not included in saved-clip backups until kept. A later retry replaces this candidate. Keeping changes only the automatic reference used for word timing, alignment and correction reports; your edited lyric cues stay unchanged.</p><details><summary>Current automatic reference</summary><pre id="recognition-preview-current"></pre></details><details><summary>Retry candidate</summary><pre id="recognition-preview-candidate"></pre></details><div class="timing-actions"><button id="recognition-preview-review" class="quiet">Review retry candidate</button><button id="recognition-preview-keep" class="quiet">Keep retry as automatic reference</button><button id="recognition-preview-discard" class="quiet">Discard retry candidate</button></div></section></section>
           <section class="lyric-review" aria-label="Lyric review"><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><label><input id="automatic-hide-checked" type="checkbox"> Hide checked automatic lines</label><p id="automatic-review-count" class="fine" role="status" aria-live="polite"></p><p id="automatic-review-keys" class="fine">Keyboard: in a line’s words or times, Alt+↓ and Alt+↑ move to the next or previous line shown, Alt+Enter listens to the line, and Ctrl+Enter (⌘+Enter on a Mac) marks it checked and moves to the next unchecked line.</p><p class="fine">Checked markers track your decisions for this review session, without applying or saving lyrics. Edits clear the line’s marker; leaving or reloading discards the markers. Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Exclude false automatic lines with each line’s checkbox; their words and times remain available for review. Apply replaces cues with the included lines together (excluding every line clears the cues); Cancel discards corrections and exclusions. Apply only reviewed line changes one overlapping current line or inserts into an empty gap, keeping the other current lines and staged review drafts. For several current lines, choose a reviewed passage below; its edges must not cut through a current line. Each application is one unsaved Undo step; Undo closes the review. Save lyrics keeps the remaining automatic review drafts here for this session; only applied lyrics are saved. Reloading or leaving the review discards its drafts. Apply split at caret and playhead turns one reviewed line into two current lines; Apply merged joins the named adjacent reviewed lines, including any gap. Each replaces the complete reviewed window as one unsaved edit, keeps the staged review, and refuses a boundary cutting through an outside current line. Hidden neighbors still count; excluded rows must be included first.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><div id="import-listen-tools" hidden><div id="import-offset-tools"><label class="field"><span id="import-offset-label">Offset from file (seconds)</span><input id="import-offset" type="number" step="0.001" value="0" aria-describedby="import-offset-help"></label><p id="import-offset-help" class="fine">Positive moves cues later; negative moves them earlier. Preview timing to hear and apply the proposed times.</p><div id="import-lrc-end-tools" hidden><label class="field">Last line end in clip (seconds)<input id="import-lrc-end" type="text" inputmode="decimal" maxlength="12" aria-describedby="import-lrc-end-help"></label><p id="import-lrc-end-help" class="fine">Optional, measured from the start of this clip after the offset. Leave blank to use the shifted file end.</p></div><div class="timing-actions"><button id="import-offset-preview" class="quiet">Preview offset</button><button id="import-offset-reset" class="quiet">Reset to file times</button></div><p id="import-offset-status" class="fine" role="status"></p></div><button id="import-listen-stop" class="quiet" disabled>Stop imported line</button><p id="import-listen-status" class="fine" role="status"></p></div><details id="review-passage" class="automatic-passage"><summary>Apply a reviewed passage</summary><p class="fine">Choose the first and last reviewed lines. Included lines define the time window; every current line wholly inside that window is replaced, including lines in its gaps. <span id="automatic-passage-help">Automatic review includes lines hidden by filters; excluded boundary lines do not widen the window.</span> Corrections outside it stay. A boundary cutting through a current line is refused. This is one unsaved Undo step.</p><div class="practice-selection"><label class="field"><span id="review-passage-first-label">First line in passage</span><select id="automatic-passage-first" disabled></select></label><label class="field"><span id="review-passage-last-label">Last line in passage</span><select id="automatic-passage-last" disabled></select></label></div><p id="automatic-passage-status" class="fine" role="status" aria-live="polite"></p><div class="timing-actions"><button id="review-passage-listen" class="quiet" disabled>Listen to reviewed passage</button><button id="review-passage-repeat" class="quiet" disabled>Repeat reviewed passage</button><button id="review-passage-stop" class="quiet" disabled>Stop reviewed audio</button></div><p id="review-passage-audio-status" class="fine" role="status"></p><button id="automatic-passage-apply" class="quiet" aria-describedby="automatic-passage-status" disabled>Apply reviewed passage</button></details><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
           <div class="line-tools"><details class="lyric-find"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="lyric-replace"><summary>Replace lyric words</summary><p class="fine">Preview literal, case-sensitive replacements in current lyric lines. This is not a regular expression. All cue times and resulting words must be valid. Apply is one unsaved Undo/Redo edit; Save lyrics is separate. Pasted words and automatic recognition are not changed.</p><label class="field">Literal text to replace<input id="words-replace-find" type="text" maxlength="480" disabled></label><label class="field">Replacement lyric text<textarea id="words-replace-with" rows="2" maxlength="480" disabled></textarea></label><p class="fine">Leave replacement empty to remove a fragment. A whole line cannot become empty. Matching keeps exact case and spacing.</p><p id="words-replace-summary" class="fine" role="status" aria-live="polite"></p><ol id="words-replace-preview"></ol><button id="words-replace-apply" class="quiet" disabled>Apply lyric word replacements</button><p id="words-replace-status" class="fine" role="status" aria-live="polite"></p></details><details class="line-insert"><summary>Add lyric line</summary><p class="fine">Supply missed words and an empty time span. Existing lines stay unchanged. Insert makes one unsaved Undo/Redo edit; Save lyrics is separate. These entry fields are session-only and are not part of saved lyrics until inserted.</p><label class="field">New lyric words<textarea id="line-insert-text" rows="2" disabled></textarea></label><label class="field">New line start (seconds)<input id="line-insert-start" type="text" inputmode="decimal" disabled></label><label class="field">New line end (seconds)<input id="line-insert-end" type="text" inputmode="decimal" disabled></label><button id="line-insert-apply" class="quiet" disabled>Insert lyric line</button><p id="line-insert-status" class="fine" role="status" aria-live="polite"></p></details></div>
           <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
@@ -132,7 +133,10 @@ let srtOwner: SrtOwner | null = null;
 let recognitionPreview: { projectId: string; value: RecognitionPreview } | null = null;
 let recognitionPreviewEpoch = 0;
 let recognitionPreviewError = '';
-let automaticReviewSource: 'reference' | 'candidate' = 'reference';
+let automaticReviewSource: 'reference' | 'candidate' | 'passage' = 'reference';
+let recognitionPassage: { projectId: string; value: RecognitionPassage } | null = null;
+let recognitionPassageEpoch = 0;
+let recognitionPassageError = '';
 let automaticReview = false;
 let automaticReviewDraft: ReviewedCue[] = [];
 const automaticChecked = new Set<number>();
@@ -697,7 +701,7 @@ function srtCurrent(owner: SrtOwner): boolean {
   return srtOwner === owner && srtEpoch === owner.epoch && working?.id === owner.projectId && loadedProjectGeneration === owner.project && editGeneration === owner.edit;
 }
 function srtControls() {
-  recognitionPreviewControls();
+  recognitionPreviewControls(); recognitionPassageControls();
   const allowed = srtAllowed();
   for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).disabled = !allowed;
   let reviewError = '';
@@ -706,7 +710,8 @@ function srtControls() {
     catch (error) { reviewError = error instanceof Error ? error.message : 'Check every reviewed lyric line.'; }
   }
   element('automatic-review-error').textContent = reviewError;
-  element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
+  element('srt-apply').hidden = automaticReview && automaticReviewSource === 'passage';
+  element<HTMLButtonElement>('srt-apply').disabled = (automaticReview && automaticReviewSource === 'passage') || !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
   element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
   automaticReviewControls(); importReviewControls(); passageControls(); draw();
 }
@@ -966,7 +971,7 @@ function savedCorrection(automatic: readonly Cue[]): string {
   return correctionCache.summary ? ` ${correctionCache.summary}` : '';
 }
 function autoControls() {
-  recognitionPreviewControls();
+  recognitionPreviewControls(); recognitionPassageControls();
   const status = element('auto-status'), review = element<HTMLButtonElement>('auto-review'), transcribe = element<HTMLButtonElement>('auto-transcribe');
   const current = working && transcript?.projectId === working.id ? transcript.value : null;
   const allowed = srtAllowed();
@@ -1035,7 +1040,62 @@ element('recognition-preview-review').addEventListener('click', () => {
 element('recognition-preview-keep').addEventListener('click', () => { void chooseRecognitionPreview(true); });
 element('recognition-preview-discard').addEventListener('click', () => { void chooseRecognitionPreview(false); });
 
+function recognitionPassageControls(): void {
+  const live = working && recognitionPassage?.projectId === working.id && recognitionPassage.value.available ? recognitionPassage.value : null;
+  const allowed = srtAllowed() && !srtOwner && !timingOwner && !practice.active;
+  for (const id of ['start', 'end']) element<HTMLInputElement>(`recognition-passage-${id}`).disabled = !allowed;
+  element<HTMLButtonElement>('recognition-passage-transcribe').disabled = !allowed || !session?.lyricsModelReady;
+  element('recognition-passage-preview').hidden = !live && !recognitionPassageError;
+  for (const id of ['review', 'discard']) element<HTMLButtonElement>(`recognition-passage-${id}`).disabled = !allowed || !live;
+  element('recognition-passage-status').textContent = recognitionPassageError || (live
+    ? `${live.start}–${live.end} s: ${recognizerName(live.candidate.model)}, ${live.candidate.words} words. ${srtOwner ? 'Finish or cancel the timed lyric review before opening or discarding this preview.' : 'Review the passage before applying corrections.'}` : '');
+}
+async function loadRecognitionPassage(): Promise<void> {
+  const project = working, epoch = ++recognitionPassageEpoch;
+  recognitionPassage = null; recognitionPassageError = ''; recognitionPassageControls();
+  if (!project) return;
+  try {
+    const value = parseRecognitionPassage(await request<unknown>(`/api/projects/${project.id}/recognition-passage`), project.duration);
+    if (epoch === recognitionPassageEpoch && working?.id === project.id) recognitionPassage = { projectId: project.id, value };
+  } catch (error) {
+    if (epoch === recognitionPassageEpoch && working?.id === project.id) recognitionPassageError = `Passage preview could not be read: ${error instanceof Error ? error.message : 'Connection lost.'} Retry the passage to replace it. Your lyric edits and automatic reference are unchanged.`;
+  }
+  if (epoch === recognitionPassageEpoch && working?.id === project.id) recognitionPassageControls();
+}
+element('recognition-passage-transcribe').addEventListener('click', async () => {
+  if (!working || !srtAllowed() || srtOwner || timingOwner || practice.active) return;
+  let range: { start: number; end: number };
+  try { range = recognitionRange(element<HTMLInputElement>('recognition-passage-start').value, element<HTMLInputElement>('recognition-passage-end').value, working.duration); }
+  catch (error) { element('recognition-passage-range-status').textContent = error instanceof Error ? error.message : 'Check the passage times.'; return; }
+  element('recognition-passage-range-status').textContent = '';
+  requestingJob = true; controls();
+  try {
+    const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/transcribe-passage`, json('POST', { ...range, modelChoice: element<HTMLSelectElement>('recognition-choice').value }));
+    message(''); startPolling(job);
+  } catch (error) { message(error instanceof Error ? error.message : 'Could not recognize this passage.', true); }
+  finally { requestingJob = false; controls(); }
+});
+element('recognition-passage-review').addEventListener('click', () => {
+  const value = working && recognitionPassage?.projectId === working.id ? recognitionPassage.value : null;
+  if (value?.available) reviewAutomatic(value.candidate, 'passage');
+});
+element('recognition-passage-discard').addEventListener('click', async () => {
+  const project = working, value = project && recognitionPassage?.projectId === project.id ? recognitionPassage.value : null;
+  if (!project || !value?.available || !srtAllowed() || srtOwner || timingOwner || practice.active) return;
+  const generation = loadedProjectGeneration;
+  requestingJob = true; controls();
+  try {
+    await request(`/api/projects/${project.id}/recognition-passage`, json('DELETE', { candidateId: value.candidateId }));
+    if (working?.id !== project.id || generation !== loadedProjectGeneration) return;
+    await loadRecognitionPassage(); message('Passage retry discarded. Your lyric edits and automatic reference are unchanged.');
+  } catch (error) {
+    if (working?.id !== project.id || generation !== loadedProjectGeneration) return;
+    await loadRecognitionPassage(); message(error instanceof Error ? error.message : 'Could not discard the passage retry.', true);
+  } finally { requestingJob = false; controls(); }
+});
+
 async function loadTranscript() {
+  recognitionPassageEpoch++; recognitionPassage = null; recognitionPassageError = ''; recognitionPassageControls();
   recognitionPreviewEpoch++; recognitionPreview = null; recognitionPreviewError = ''; recognitionPreviewControls();
   // Recognition can change while saved cues stay identical. Retire both cached
   // timing and pending replies before admitting the new transcript generation.
@@ -1053,7 +1113,7 @@ async function loadTranscript() {
     transcript = { projectId: project.id, value: { available: false } }; transcriptState='error'; lyricsLookup.sync(); autoControls();
     element('auto-status').textContent = `Recognized lyrics could not be read: ${error instanceof Error ? error.message : 'Connection lost.'}`;
   }
-  if (epoch === transcriptEpoch && working?.id === project.id) await loadRecognitionPreview();
+  if (epoch === transcriptEpoch && working?.id === project.id) await Promise.all([loadRecognitionPreview(), loadRecognitionPassage()]);
 }
 function applyAutomaticLine(owner: SrtOwner, index: number) {
   if (!automaticReview || srtReview?.owner !== owner || !srtCurrent(owner) || !srtAllowed() || !working || !lyricHistory) return;
@@ -1204,7 +1264,7 @@ element('auto-review').addEventListener('click', () => {
   const current = working && transcript?.projectId === working.id ? transcript.value : null;
   if (current) reviewAutomatic(current, 'reference');
 });
-function reviewAutomatic(current: Transcript, source: 'reference' | 'candidate'): void {
+function reviewAutomatic(current: Transcript, source: 'reference' | 'candidate' | 'passage'): void {
   if (!current?.available || !srtAllowed() || !working) return;
   if (automaticReview && srtReview && srtCurrent(srtReview.owner)) {
     if (automaticReviewSource !== source) { message('Finish or cancel this timed lyric review before opening the other recognition reading.', true); return; }
@@ -1214,7 +1274,7 @@ function reviewAutomatic(current: Transcript, source: 'reference' | 'candidate')
   const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
   srtOwner = owner;
   srtReview = { owner, cues: current.cues.map(({ start, end, text }) => ({ start, end, text })), applied: 'Automatic lyrics applied as one edit. Listen, correct any words or timing, then use Save lyrics.' };
-  element('srt-summary').textContent = `${source === 'candidate' ? 'Retry candidate: ' : ''}${current.cues.length} automatically recognized lines to replace ${working.cues.length} current lines for “${working.title}”. Words and timing come from the separated vocals and may contain mistakes.`;
+  element('srt-summary').textContent = `${source === 'passage' ? 'Passage retry: ' : source === 'candidate' ? 'Retry candidate: ' : ''}${current.cues.length} automatically recognized lines ${source === 'passage' ? 'to review and apply selectively' : `to replace ${working.cues.length} current lines`} for “${working.title}”. Words and timing come from the separated vocals and may contain mistakes.`;
   automaticReviewDraft = current.cues.map(cue => ({ start: String(cue.start), end: String(cue.end), text: cue.text }));
   automaticReview = true; element('automatic-review-tools').hidden = false;
   automaticChecked.clear();
@@ -1331,7 +1391,8 @@ function reviewAutomatic(current: Transcript, source: 'reference' | 'candidate')
     row.append(actions, applyStatus); list.append(row);
   }
   element('srt-review').hidden = false;
-  element('srt-status').textContent = 'Review the recognized lines, then replace lyric cues when ready. Nothing has been saved.';
+  element('srt-status').textContent = source === 'passage' ? 'Review this passage, then apply individual lines or a reviewed passage. Outside corrections stay. Nothing has been saved.' : 'Review the recognized lines, then replace lyric cues when ready. Nothing has been saved.';
+  if (source === 'passage') element('srt-cancel').textContent = 'Cancel passage retry review';
   filterAutomaticReview(); srtControls(); recognitionPreviewControls(); workspace.reveal(element('srt-review')); element('srt-review').scrollIntoView({ block: 'nearest' });
 }
 element('auto-transcribe').addEventListener('click', async () => {
@@ -1467,7 +1528,7 @@ element('srt-review-list').addEventListener('keydown', event => {
 element('srt-apply').addEventListener('click', () => {
   retirePractice('Replacing lyric cues stopped practice.');
   const review = srtReview;
-  if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory) return;
+  if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory || (automaticReview && automaticReviewSource === 'passage')) return;
   let cues: Project['cues'];
   try { cues = automaticReview ? reviewedAutomaticCues() : structuredClone(review.cues); }
   catch (error) {
@@ -1856,6 +1917,11 @@ async function openProject(id: string) {
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
+  if (working?.id !== project.id) {
+    element<HTMLInputElement>('recognition-passage-start').value = '0';
+    element<HTMLInputElement>('recognition-passage-end').value = String(Math.min(15, project.duration));
+    element('recognition-passage-range-status').textContent = '';
+  }
   if (working?.id !== project.id) { audio.defaultPlaybackRate = 1; audio.playbackRate = 1; audio.preservesPitch = true; resetWordReplace(); findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-remove-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
   resetLineInsert();
   working = structuredClone(project); savedLyrics = structuredClone(project.cues); dirty = false; draftDirty = false; videoUrl = null;
@@ -2032,7 +2098,7 @@ function showJob(job: Job | null) {
   if (job) retirePractice('Studio media work stopped practice.');
   currentJob = job; element('job-panel').hidden = !job;
   if (job) {
-    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive', transcribe: 'Listening for the lyrics' };
+    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive', transcribe: 'Listening for the lyrics', 'transcribe-passage': 'Listening to the selected passage' };
     element('job-title').textContent = titles[job.kind];
     element('job-stage').textContent = job.stage + (ownedJob ? '' : ' — observed studio work; cancellation belongs to its starting page.');
   }
@@ -2086,6 +2152,9 @@ async function pollJob(id: string, epoch = pollEpoch) {
           : job.recognitionFailed
           ? 'Automatic lyric recognition failed. Your stems are ready in Saved clips. Your current lyric edits are still here. Open the new clip when ready and retry with Transcribe lyrics; if it fails again, check the local lyric model setup.'
           : 'Your stems are ready in Saved clips. Your current lyric edits are still here.');
+      } else if (job.kind === 'transcribe-passage') {
+        if (working?.id === job.projectId) await loadRecognitionPassage();
+        message('Passage recognized. Review and listen, then apply selected corrections. Your full automatic reference and lyric edits are unchanged.');
       } else if (job.kind === 'transcribe') {
         const candidate = job.resultUrl?.endsWith('/recognition-preview');
         if (!candidate) archiveCaches.delete(job.projectId);

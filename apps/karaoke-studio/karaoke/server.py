@@ -35,6 +35,7 @@ from .alignment import ALIGNMENT_FILE, alignable, force_align, max_bytes, read_e
 from .lyrics_auto import align_lines, word_timings, words_to_cues
 from .ass import render_ass
 from .lrc import render_lrc
+from .recognition_passage import PASSAGE_FILE, passage_range, crop_vocals, passage_result, validate_passage, passage_reply
 from .transcription import CHOICES
 from .word_alignment import AlignmentLimitError
 from .media_io import inherit_media_handles
@@ -47,7 +48,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|transcribe|align|word-timings|cover))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -411,6 +412,36 @@ class KaraokeServer(ThreadingHTTPServer):
             os.close(fd)
         return {"kept": keep}
 
+    def recognition_passage(self, project, candidate_id=None):
+        try:
+            with self.project_file(project["id"], PASSAGE_FILE) as source:
+                raw = source.read(MAX_TRANSCRIPT_BYTES + 1)
+        except FileNotFoundError:
+            if candidate_id is not None:
+                raise RequestError(409, "The passage preview changed. Reopen it before discarding.") from None
+            return {"available": False}
+        try:
+            if len(raw) > MAX_TRANSCRIPT_BYTES:
+                raise ValueError("Oversized passage preview.")
+            value = validate_passage(json.loads(raw), project["duration"])
+            candidate = passage_reply(value, project["duration"])
+        except (ValueError, UnicodeError):
+            raise RequestError(409, "The stored passage preview is invalid. Retry the passage again.") from None
+        identity = self.transcript_identity(value)
+        if candidate_id is not None:
+            if self._closing or self.uploading or self.jobs.busy():
+                raise RequestError(409, "Wait for media work to finish before discarding a passage preview.")
+            if candidate_id != identity:
+                raise RequestError(409, "The passage preview changed. Reopen it before discarding.")
+            fd = self._open_project(project["id"])
+            try:
+                os.unlink(PASSAGE_FILE, dir_fd=fd)
+            finally:
+                os.close(fd)
+            return {"discarded": True}
+        return {"available": True, "candidateId": identity, "start": value["start"], "end": value["end"],
+                "candidate": candidate}
+
     def read_alignment(self, project):
         """How likely each letter is in every 20 ms of the clip's vocals, measured when it was transcribed; None when
         it was not measured (the aligner was not installed, or the clip was transcribed or restored without it)."""
@@ -704,13 +735,15 @@ class KaraokeServer(ThreadingHTTPServer):
             cleanup()
             raise
 
-    def start_transcribe(self, project: dict, model_choice: str = 'auto', *, review_only=False):
+    def start_transcribe(self, project: dict, model_choice: str = 'auto', *, review_only=False, passage=None):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before transcribing.")
         if not self.lyrics_ready():
             raise RequestError(409, "Lyric recognition is not set up. Run scripts/setup_lyrics_model.py with this studio's model directory, then try again.")
         # Decide from stored state under the publication lock, never from a browser's incomplete or failed read.
         review_only = review_only and self.optional_transcript(project) is not None
+        if passage is not None:
+            passage = passage_range(*passage, project["duration"])
         work_dir = self.new_work()
 
         def work(cancel, stage):
@@ -721,10 +754,15 @@ class KaraokeServer(ThreadingHTTPServer):
                     owned_work = self._descriptor_path(work_fd)
                     owned_project = self._descriptor_path(project_fd)
                     with inherit_media_handles(work_fd, project_fd):
-                        self.transcribe(owned_project / "vocals.wav", owned_work / _TRANSCRIPT,
-                                        self.model_dir, project["duration"], cancel, stage,
+                        vocals, duration = owned_project / "vocals.wav", project["duration"]
+                        if passage is not None:
+                            stage("Preparing the selected vocal passage")
+                            crop_vocals(vocals, owned_work / "passage.wav", *passage, cancel)
+                            vocals, duration = owned_work / "passage.wav", passage[1] - passage[0]
+                        self.transcribe(vocals, owned_work / _TRANSCRIPT,
+                                        self.model_dir, duration, cancel, stage,
                                         **({"model_choice": model_choice} if model_choice != "auto" else {}))
-                    if review_only:
+                    if review_only or passage is not None:
                         from .transcription import validate_transcript
                         fd = os.open(_TRANSCRIPT, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=work_fd)
                         with os.fdopen(fd, "rb") as candidate:
@@ -734,7 +772,13 @@ class KaraokeServer(ThreadingHTTPServer):
                         try:
                             if len(raw) > MAX_TRANSCRIPT_BYTES:
                                 raise ValueError("Oversized transcript.")
-                            validate_transcript(json.loads(raw), project["duration"])
+                            candidate = validate_transcript(json.loads(raw), duration)
+                            if passage is not None:
+                                value = passage_result(candidate, *passage)
+                                passage_reply(value, project["duration"])
+                                if len(json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")) > MAX_TRANSCRIPT_BYTES:
+                                    raise ValueError("Oversized passage preview.")
+                                _atomic_json(owned_work / PASSAGE_FILE, value, directory_fd=work_fd)
                         except (ValueError, UnicodeError):
                             raise RuntimeError("Lyric recognition produced an invalid transcript.") from None
                     self.check_storage()
@@ -749,6 +793,9 @@ class KaraokeServer(ThreadingHTTPServer):
                 try:
                     work_fd = self._open_work(work_dir)
                     try:
+                        if passage is not None:
+                            os.replace(PASSAGE_FILE, PASSAGE_FILE, src_dir_fd=work_fd, dst_dir_fd=fd)
+                            return f'/api/projects/{project["id"]}/recognition-passage'
                         if review_only:
                             os.replace(_TRANSCRIPT, _RECOGNITION_PREVIEW, src_dir_fd=work_fd, dst_dir_fd=fd)
                             # Candidate letter measurements are discarded with work; accepted alignment stays intact.
@@ -770,7 +817,7 @@ class KaraokeServer(ThreadingHTTPServer):
             return publish
 
         try:
-            return self.jobs.start(project["id"], "transcribe", work, lambda: self.cleanup_work(work_dir))
+            return self.jobs.start(project["id"], "transcribe-passage" if passage is not None else "transcribe", work, lambda: self.cleanup_work(work_dir))
         except Exception:
             self.cleanup_work(work_dir)
             raise
@@ -1201,6 +1248,17 @@ class Handler(BaseHTTPRequestHandler):
                 if (type(review_only) is not bool or set(value) - {"modelChoice", "reviewOnly"} or not isinstance(model_choice, str)
                         or model_choice not in CHOICES):
                     raise RequestError(400, "Choose a recognition model, or an explicit Chinese, Cantonese, Japanese or Korean retry.")
+            elif self.command == "POST" and resource == "transcribe-passage":
+                value = self._read_json()
+                model_choice = value.get("modelChoice", "auto")
+                if (set(value) - {"start", "end", "modelChoice"} or not isinstance(model_choice, str)
+                        or model_choice not in CHOICES):
+                    raise RequestError(400, "Choose a supported recognition model for this passage.")
+            elif self.command == "DELETE" and resource == "recognition-passage":
+                value = self._read_json()
+                if (set(value) != {"candidateId"} or not isinstance(value["candidateId"], str)
+                        or re.fullmatch(r"[0-9a-f]{64}", value["candidateId"]) is None):
+                    raise RequestError(400, "Provide the passage candidate from this preview.")
             elif self.command in ("POST", "DELETE") and resource == "recognition-preview":
                 value = self._read_json()
                 def digest(item):
@@ -1291,6 +1349,16 @@ class Handler(BaseHTTPRequestHandler):
                         raise RequestError(409, "This clip has no separated tracks to preview.") from None
                 if self.command == "POST" and resource == "transcribe":
                     job = server.start_transcribe(project, model_choice, review_only=review_only)
+                if self.command == "POST" and resource == "transcribe-passage":
+                    try:
+                        passage = passage_range(value.get("start"), value.get("end"), project["duration"])
+                    except ValueError as error:
+                        raise RequestError(400, str(error)) from None
+                    job = server.start_transcribe(project, model_choice, passage=passage)
+                if resource == "recognition-passage":
+                    if not read and self.command != "DELETE":
+                        raise RequestError(405, "Passage previews support read or discard.")
+                    preview = server.recognition_passage(project, None if read else value["candidateId"])
                 if resource == "recognition-preview":
                     if not read and self.command not in ("POST", "DELETE"):
                         raise RequestError(405, "Recognition comparison supports read, keep or discard.")
@@ -1337,13 +1405,13 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == 'POST' and resource == 'archive':
                 self._json({'job': job}, 202)
                 return
-            if self.command == "POST" and resource in ("export", "transcribe"):
+            if self.command == "POST" and resource in ("export", "transcribe", "transcribe-passage"):
                 self._json({"job": job}, 202)
                 return
             if self.command == "POST" and resource == "key-preview":
                 self._bytes(server.render_key_preview(preview_sources, project["duration"], start, semitones, guide), "audio/wav")
                 return
-            if resource == "recognition-preview":
+            if resource in ("recognition-preview", "recognition-passage"):
                 self._json(preview)
                 return
             if read and resource == "transcript":
