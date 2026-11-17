@@ -32,7 +32,8 @@ for (const [id,suffix] of [['product-png-front','-front.png'],['product-png-back
   expect(file.suggestedFilename()).toBe(`Original garment${suffix}`);
   if (id === 'product-glb') expect(glbContents(bytes)).toEqual(glbContents(baseline));
   else expect(hash(bytes)).toBe(hash(baseline));
-  await expect.poll(()=>page.evaluate(()=> (window as unknown as {standaloneGate:{lost:number}}).standaloneGate.lost)).toBe(2);
+  // The PNGs' two temporary WebGL contexts are released; the GLB is written without WebGL, so it has none to release.
+  await expect.poll(()=>page.evaluate(()=> (window as unknown as {standaloneGate:{lost:number}}).standaloneGate.lost)).toBe(id === 'product-glb' ? 0 : 2);
   await expect(button).toBeEnabled();expect(await page.locator('#product-canvas').evaluate(c=>(c as HTMLCanvasElement).getContext('webgl2')!.isContextLost())).toBe(false);
   const afterWait=page.waitForEvent('download');await page.locator('#backup').click();expect(await readFile((await (await afterWait).path())!)).toEqual(before);
 });
