@@ -56,7 +56,7 @@ MAX_GUIDE_VOCAL = 50
 MAX_SEMITONES = 6
 # Lyric styles for exported videos (karaoke.video.STYLES).
 VIDEO_STYLES = ("classic", "contrast", "large", "light")
-VIDEO_SIZES = ("720p", "1080p")
+VIDEO_SIZES = ("720p", "1080p", "vertical")
 _TRANSCRIPT = "transcript.json"
 _RECOGNITION_PREVIEW = "recognition-preview.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
@@ -1244,7 +1244,7 @@ class Handler(BaseHTTPRequestHandler):
                 if background not in ("cover", "plain"):
                     raise RequestError(400, "Choose the cover art or a plain background.")
                 if size not in VIDEO_SIZES:
-                    raise RequestError(400, "Choose a video size: 720p (1280x720) or 1080p (1920x1080).")
+                    raise RequestError(400, "Choose a video size: 720p (1280x720), 1080p (1920x1080) or vertical (1080x1920).")
                 if type(pronounce) is not bool:
                     raise RequestError(400, "Choose whether the video shows how lyrics in other scripts are pronounced.")
                 if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):

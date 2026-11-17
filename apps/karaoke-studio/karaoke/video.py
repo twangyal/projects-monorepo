@@ -25,8 +25,26 @@ from .lyrics_auto import sung_count, word_timings
 from .pronunciation import pronunciation as line_pronunciation, said_line
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
-# Video sizes: cards are laid out at 1280x720 and every position and size is scaled to the chosen frame.
-VIDEO_SIZES = {'720p': (1280, 720), '1080p': (1920, 1080)}
+# Video sizes: cards are laid out at 1280x720 (or 720x1280 upright, for phones) and every position and size is scaled to
+# the chosen frame.
+VIDEO_SIZES = {'720p': (1280, 720), '1080p': (1920, 1080), 'vertical': (1080, 1920)}
+# Where a card's parts sit, in its layout's own pixels (the browser preview draws the same, see src/card-layout.ts):
+# the title, the line being sung (centre and room, and the same with a pronunciation under it), that pronunciation,
+# the count-in dots, the next line, the footer, and how wide a line may run.
+LAYOUTS = {
+    'landscape': dict(width=1280, height=720, title=80, middle=320, room=300, said_middle=290, said_room=200, said=430, dots=430,
+                      next=540, footer=660, wrap=1000),
+    'portrait': dict(width=720, height=1280, title=140, middle=500, room=440, said_middle=470, said_room=280, said=670, dots=610,
+                     next=860, footer=1180, wrap=600),
+}
+
+
+def layout_of(size: str) -> dict:
+    """The card layout for a video size: upright for a frame taller than it is wide."""
+    width, height = VIDEO_SIZES[size]
+    return LAYOUTS['portrait' if height > width else 'landscape']
+
+
 BACKGROUND = '#14232f'
 MUTED = '#9dafbb'
 MAIN = '#f7f5ed'
@@ -43,7 +61,7 @@ STYLES = {
 
 def validate_size(value) -> str:
     if value not in VIDEO_SIZES:
-        raise ValidationError('Choose a video size: 720p (1280x720) or 1080p (1920x1080).')
+        raise ValidationError('Choose a video size: 720p (1280x720), 1080p (1920x1080) or vertical (1080x1920).')
     return value
 
 
@@ -366,10 +384,11 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     words (see ``pronunciation``), drawn under it and highlighted with it. During a break, ``count`` dots count singers in to the next line. ``style`` names
     one of STYLES; with the ``cover`` background, a clip's cover picture lies behind the lyrics. A ``layer`` is the
     card's words alone on a transparent ground, to lie over a backdrop drawn once. ``size`` names one of VIDEO_SIZES:
-    the card is laid out at 1280x720 and scaled to it."""
+    the card is laid out at 1280x720, or 720x1280 for an upright frame (see ``LAYOUTS``), and scaled to it."""
     project = validate_project(project)
     width, height = VIDEO_SIZES[validate_size(size)]
-    k = height / HEIGHT
+    place = layout_of(size)
+    k = height / place['height']
     look = STYLES[validate_style(style)]
     fill, muted, main, accent, scale = look['background'], look['muted'], look['main'], look['accent'], look['scale']
     cues = project['cues']
@@ -379,12 +398,12 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     image = (Image.new('RGBA', (width, height), (0, 0, 0, 0)) if layer
              else _cover_backdrop(cover, fill, width, height).copy() if cover else Image.new('RGB', (width, height), fill))
     draw = ImageDraw.Draw(image)
-    text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=1000 * k)
-    text(' '.join(project['title'].split()), 80 * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
+    text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=place['wrap'] * k)
+    text(' '.join(project['title'].split()), place['title'] * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
     # With its pronunciation under it, the line being sung moves up to leave it room.
     said = said if active_index is not None and said else None
-    middle, room = (290 * k, 200 * k) if said else (320 * k, 300 * k)
+    middle, room = (place['said_middle'] * k, place['said_room'] * k) if said else (place['middle'] * k, place['room'] * k)
     if active_index is not None and sung is not None:
         text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room, fill=main,
              sung_chars=sum(len(word) for word in sung), sung_fill=accent)
@@ -393,7 +412,7 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
              fill=accent if active_index is not None else main)
     if said:
         spoken = said_line(said[:len(sung)]) if sung is not None else said_line(said)
-        text(said_line(said), 430 * k, size=28 * scale * k, minimum=18 * scale * k, max_height=90 * k, fill=muted,
+        text(said_line(said), place['said'] * k, size=28 * scale * k, minimum=18 * scale * k, max_height=90 * k, fill=muted,
              sung_chars=sum(not ch.isspace() for ch in spoken), sung_fill=accent)
     if active_index is None and count:
         # Dots in a row under the break, one fewer each second, in the colour of words not yet sung.
@@ -401,11 +420,11 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
         left = width / 2 - (count - 1) * gap / 2
         for dot in range(count):
             x = left + dot * gap
-            draw.ellipse((x - radius, 430 * k - radius, x + radius, 430 * k + radius), fill=main)
+            draw.ellipse((x - radius, place['dots'] * k - radius, x + radius, place['dots'] * k + radius), fill=main)
     next_index = active_index + 1 if active_index is not None else 0
     if next_index < len(cues):
-        text('Next: ' + cues[next_index]['text'], 540 * k, size=26 * scale * k, minimum=18 * scale * k, max_height=80 * min(scale, 1.2) * k, fill=muted)
-    text('Karaoke Studio · Backing track', 660 * k, size=20 * k, minimum=20 * k, max_height=40 * k, fill=muted)
+        text('Next: ' + cues[next_index]['text'], place['next'] * k, size=26 * scale * k, minimum=18 * scale * k, max_height=80 * min(scale, 1.2) * k, fill=muted)
+    text('Karaoke Studio · Backing track', place['footer'] * k, size=20 * k, minimum=20 * k, max_height=40 * k, fill=muted)
     image.save(output, format='PNG')
 
 

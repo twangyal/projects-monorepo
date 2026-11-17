@@ -72,3 +72,33 @@ test('Full HD is chosen for the exported video', async ({ page }, info) => withC
   expect(probe).toBe('1920,1080');
 }));
 
+test('a vertical video is previewed upright and exported for phones', async ({ page }, info) => withClip(page, async () => {
+  const size = page.locator('#video-size'), stage = page.locator('#stage');
+  await expect(stage).toHaveAttribute('data-orientation', 'landscape');
+  await size.selectOption('vertical');
+  // The preview turns upright, in the video's own layout, and stays within the window.
+  await expect(stage).toHaveAttribute('data-orientation', 'portrait');
+  expect(await stage.evaluate(canvas => [(canvas as HTMLCanvasElement).width, (canvas as HTMLCanvasElement).height])).toEqual([720, 1280]);
+  const box = (await stage.boundingBox())!, viewport = page.viewportSize()!;
+  expect(box.height / box.width).toBeCloseTo(16 / 9, 1);
+  expect(box.height).toBeLessThan(viewport.height * 0.7);
+  // The title is drawn across the top of the upright card, not where the landscape card put it.
+  const inked = (y: number) => stage.evaluate((canvas, row) => {
+    const pixels = (canvas as HTMLCanvasElement).getContext('2d')!.getImageData(0, row, 720, 1).data, first = Array.from(pixels.slice(0, 3));
+    return Array.from({ length: 720 }, (_, x) => x).some(x => Math.abs(pixels[x * 4] - first[0]) + Math.abs(pixels[x * 4 + 1] - first[1]) + Math.abs(pixels[x * 4 + 2] - first[2]) > 120);
+  }, y);
+  expect(await inked(140)).toBe(true);
+  const exported = page.waitForRequest(request => request.url().endsWith('/export') && request.method() === 'POST');
+  const download = page.waitForEvent('download', { timeout: 90000 });
+  await page.getByRole('button', { name: 'Export karaoke MP4', exact: true }).click();
+  expect(JSON.parse((await exported).postData()!)).toEqual({ size: 'vertical' });
+  const path = info.outputPath('vertical.mp4');
+  await (await download).saveAs(path);
+  const probe = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', path]).stdout.toString().trim();
+  expect(probe).toBe('1080,1920');
+  // Back to HD, the preview lies flat again.
+  await size.selectOption('720p');
+  await expect(stage).toHaveAttribute('data-orientation', 'landscape');
+  expect(await stage.evaluate(canvas => [(canvas as HTMLCanvasElement).width, (canvas as HTMLCanvasElement).height])).toEqual([1280, 720]);
+}));
+

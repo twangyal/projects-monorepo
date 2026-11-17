@@ -343,6 +343,15 @@ canvas {
   width:100%;
   height:auto
 }
+/* A vertical video's preview stands upright, no taller than most of the window, its edges showing. */
+#stage[data-orientation="portrait"] {
+  width:min(100%, calc(62vh * 9 / 16));
+  margin-inline:auto;
+  border-radius:6px
+}
+.stage-wrap:has(#stage[data-orientation="portrait"]) {
+  background:transparent
+}
 .transport {
   display:flex;
   align-items:center;

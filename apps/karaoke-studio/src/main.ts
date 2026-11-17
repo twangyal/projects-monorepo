@@ -23,6 +23,7 @@ import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, reviewedPreview, type ReviewedCue } from './automatic-review.ts';
 import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
+import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
@@ -38,7 +39,7 @@ app.innerHTML = `
     <div id="job-panel" role="status" hidden><div class="job-copy"><span class="spinner" aria-hidden="true"></span><div><strong id="job-title"></strong><p id="job-stage"></p></div></div><button id="cancel-job">Cancel job</button></div>
     <div class="workspace-grid">
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><h3 id="stage-heading">Listen &amp; preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
-        <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
+        <div class="stage-wrap"><canvas id="stage" width="1280" height="720" data-orientation="landscape" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
         <p id="review-preview-status" class="fine" role="status" hidden></p><p id="bidi-status" class="fine" role="status" hidden>Lyrics containing right-to-left text use whole-line highlighting in preview and MP4 to preserve reading order and joined letters. Word times remain available in word-timed LRC.</p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p>
@@ -87,10 +88,10 @@ app.innerHTML = `
           <p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p>
         </section>
         <section id="tool-export" class="tool-panel export-panel" role="tabpanel" aria-labelledby="tab-export"><h3 class="tool-heading">Export</h3>
-          <div class="export-row"><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><label class="guide-vocal">Video size <select id="video-size"><option value="720p">HD 1280×720</option><option value="1080p">Full HD 1920×1080</option></select></label><label class="guide-vocal">Pronunciation <select id="lyric-pronunciation" aria-describedby="lyric-pronunciation-note"><option value="show">Show for other scripts</option><option value="hide">Hide</option></select></label></div>
+          <div class="export-row"><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><label class="guide-vocal">Video size <select id="video-size"><option value="720p">HD 1280×720</option><option value="1080p">Full HD 1920×1080</option><option value="vertical">Vertical 1080×1920 (phones)</option></select></label><label class="guide-vocal">Pronunciation <select id="lyric-pronunciation" aria-describedby="lyric-pronunciation-note"><option value="show">Show for other scripts</option><option value="hide">Hide</option></select></label></div>
           <p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p><p id="lyric-pronunciation-note" class="fine">Lines in Korean or Cyrillic, and Chinese or Japanese lines in a song recognized as Mandarin or Japanese, show how they are said in Latin letters under them, lighting up with the words: romanized Korean, pinyin with tone marks, romaji (with the Japanese reading dictionary installed) and Russian transliteration.</p><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="video-background-note" class="fine">With a song file that carries cover art, or a picture you choose, the video shows it softly behind the lyrics; choose Plain colour for the lyric style's own background. <label class="text-button file-button">Choose picture<input id="video-picture" type="file" accept="image/png,image/jpeg,image/webp" disabled></label> <button id="video-picture-remove" class="text-button" disabled>Remove picture</button></p>
           <div class="export-actions"><button id="export-video" class="primary" disabled>Export karaoke MP4</button><button id="video-download" class="text-button" hidden>Download MP4 again</button></div>
-          <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="ass-download" class="text-button" disabled>Export karaoke subtitles (ASS)</button><button id="backing-download" class="text-button">Download backing WAV</button><span>HD or Full HD · 24 fps · estimated backing</span></div>
+          <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="ass-download" class="text-button" disabled>Export karaoke subtitles (ASS)</button><button id="backing-download" class="text-button">Download backing WAV</button><span>HD, Full HD or vertical · 24 fps · estimated backing</span></div>
         </section>
       </section>
     </div><footer><span>Built for your next kitchen concert.</span><span>AI estimates the stems and the lyrics. You review and correct them.</span></footer>
@@ -100,6 +101,8 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T { return do
 const audio = element<HTMLAudioElement>('audio');
 const stage = element<HTMLCanvasElement>('stage');
 const context = stage.getContext('2d')!;
+// The preview is drawn in the layout of the chosen video size: upright for a vertical video.
+let cardPlace: CardLayout = cardLayout('720p');
 // The preview beside one tool at a time; Show all tools lists every tool.
 const workspace = mountWorkspace();
 let session: Session | null = null;
@@ -379,7 +382,7 @@ app.addEventListener('focusout', event => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) lyricHistory?.endGroup();
 });
 
-function wrap(text: string, size: number, maxWidth = 1000): string[] {
+function wrap(text: string, size: number, maxWidth = cardPlace.wrap): string[] {
   context.font = `${size}px KaraokeSans`;
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
@@ -408,16 +411,16 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
   if (lines.length * lineHeight > maxHeight) lines = wrap(text.replace(/\s+/g, ' ').trim(), size);
   if (lines.length * lineHeight > maxHeight) {
     lines = lines.slice(0, Math.max(1, Math.floor(maxHeight / lineHeight)));
-    while (lines.at(-1) && context.measureText(lines.at(-1)! + '…').width > 1000) lines[lines.length - 1] = lines.at(-1)!.slice(0, -1);
+    while (lines.at(-1) && context.measureText(lines.at(-1)! + '…').width > cardPlace.wrap) lines[lines.length - 1] = lines.at(-1)!.slice(0, -1);
     lines[lines.length - 1] += '…';
   }
   context.font = `${size}px KaraokeSans`; context.fillStyle = color;
   let remaining = sung;
   for (const [index, line] of lines.entries()) {
     const lineY = y + (index - (lines.length - 1) / 2) * lineHeight;
-    if (remaining === undefined) { context.fillText(line, 640, lineY); continue; }
+    if (remaining === undefined) { context.fillText(line, cardPlace.width / 2, lineY); continue; }
     // Word-by-word highlight: the sung words, then the rest of the line, placed as one centred line.
-    const [done, rest] = splitSung(line, remaining), left = 640 - context.measureText(line).width / 2;
+    const [done, rest] = splitSung(line, remaining), left = cardPlace.width / 2 - context.measureText(line).width / 2;
     remaining -= [...done].filter(character => !/\s/.test(character)).length;
     context.textAlign = 'left';
     context.fillStyle = sungColor; context.fillText(done, left, lineY);
@@ -489,14 +492,15 @@ function draw() {
   timeline.setPlayback(audio.currentTime || 0);
   const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
   stage.dataset.lyricStyle = lyricStyle();
-  context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720);
+  const { width: frameWidth, height: frameHeight } = cardPlace;
+  context.fillStyle = look.background; context.fillRect(0, 0, frameWidth, frameHeight);
   // As the video draws it: the cover filling the frame, softened, under a veil of the style's background colour.
   const cover = previewCover();
   stage.dataset.background = cover ? 'cover' : 'plain';
   if (cover) {
-    const fill = Math.max(1280 / cover.naturalWidth, 720 / cover.naturalHeight), width = cover.naturalWidth * fill, height = cover.naturalHeight * fill;
-    context.save(); context.filter = 'blur(6px)'; context.drawImage(cover, (1280 - width) / 2, (720 - height) / 2, width, height); context.restore();
-    context.globalAlpha = 0.62; context.fillStyle = look.background; context.fillRect(0, 0, 1280, 720); context.globalAlpha = 1;
+    const fill = Math.max(frameWidth / cover.naturalWidth, frameHeight / cover.naturalHeight), width = cover.naturalWidth * fill, height = cover.naturalHeight * fill;
+    context.save(); context.filter = 'blur(6px)'; context.drawImage(cover, (frameWidth - width) / 2, (frameHeight - height) / 2, width, height); context.restore();
+    context.globalAlpha = 0.62; context.fillStyle = look.background; context.fillRect(0, 0, frameWidth, frameHeight); context.globalAlpha = 1;
   }
   context.textAlign = 'center'; context.textBaseline = 'middle';
   const review = auditionPreview(), cues = review ? review.cues : working?.cues ?? [];
@@ -510,9 +514,9 @@ function draw() {
   if (invalid) {
     // Keep the complete invalid draft in its editor/history, but never send
     // unbounded input to native canvas layout, including during playback.
-    drawBlock(review ? 'Review preview paused' : 'Preview paused', 240, 44, 24, 100, look.accent, undefined, look.accent);
-    drawBlock(review ? 'Correct the selected reviewed words or times.' : 'Correct the title or lyric draft to resume.', 330, 28, 22, 100, look.main, undefined, look.accent);
-    drawBlock(invalid, 430, 24, 18, 160, look.muted, undefined, look.accent);
+    drawBlock(review ? 'Review preview paused' : 'Preview paused', cardPlace.middle - 80, 44, 24, 100, look.accent, undefined, look.accent);
+    drawBlock(review ? 'Correct the selected reviewed words or times.' : 'Correct the title or lyric draft to resume.', cardPlace.middle + 10, 28, 22, 100, look.main, undefined, look.accent);
+    drawBlock(invalid, cardPlace.middle + 110, 24, 18, 160, look.muted, undefined, look.accent);
     stage.dataset.activeCue = '-1';
     const paused = review ? 'Review preview paused — correct the selected reviewed words or times.' : 'Preview paused — correct the title or lyric draft to resume.';
     stage.dataset.wordTiming = 'none'; stage.dataset.sung = ''; stage.dataset.countIn = ''; stage.dataset.said = '';
@@ -522,17 +526,17 @@ function draw() {
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.remove('active');
     return;
   }
-  drawBlock((review ? 'Reviewing timed lyrics' : working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, look.main, undefined, look.accent);
+  drawBlock((review ? 'Reviewing timed lyrics' : working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), cardPlace.title, 32, 22, 100, look.main, undefined, look.accent);
   const time = audio.currentTime || 0, index = activeCue(cues, time);
   const current = index >= 0 ? cues[index].text : 'Instrumental break';
   const upcoming = cues.find(cue => cue.start > time);
   const fetched = working && !review ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
   // How a line in another script is said, in Latin letters, under it; the line moves up to leave it room.
   const pieces = timing && element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide' && !textLayout(current).wholeLine ? timing.said[index] : null;
-  const [middle, room] = pieces ? [290, 200] : [320, 300];
+  const [middle, room] = pieces ? [cardPlace.saidMiddle, cardPlace.saidRoom] : [cardPlace.middle, cardPlace.room];
   if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, look.main, sungCharacters(timing.lines[index], time), look.accent);
   else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? look.accent : look.main, undefined, look.accent);
-  if (pieces) drawBlock(saidLine(pieces), 430, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), look.accent);
+  if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), look.accent);
   stage.dataset.said = pieces ? saidLine(pieces) : '';
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
   stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
@@ -541,10 +545,10 @@ function draw() {
   stage.dataset.countIn = count ? String(count) : '';
   if (count) {
     context.fillStyle = look.main;
-    for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(640 - (count - 1) * 22 + dot * 44, 430, 12, 0, 2 * Math.PI); context.fill(); }
+    for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(frameWidth / 2 - (count - 1) * 22 + dot * 44, cardPlace.dots, 12, 0, 2 * Math.PI); context.fill(); }
   }
-  if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
-  context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
+  if (upcoming) drawBlock(`Next: ${upcoming.text}`, cardPlace.next, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
+  context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, frameWidth / 2, cardPlace.footer);
   stage.dataset.activeCue = String(review && index >= 0 ? review.indices[index] : index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
   element('clock').textContent = `${formatTime(time)} / ${formatTime(working?.duration || 0)}`;
@@ -2379,8 +2383,8 @@ element('export-video').addEventListener('click', async () => {
   // A guide vocal mixes the separated vocals quietly under the backing so singers can follow the melody.
   const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value), semitones = Number(element<HTMLSelectElement>('key-change').value);
   const style = lyricStyle(), background = working.cover && element<HTMLSelectElement>('video-background').value === 'plain' ? 'plain' : null;
-  // Full HD takes about twice as long to make as HD.
-  const size = element<HTMLSelectElement>('video-size').value === '1080p' ? '1080p' : null;
+  // Full HD and vertical videos have twice the pixels of HD and take about twice as long to make.
+  const chosen = element<HTMLSelectElement>('video-size').value, size = chosen !== '720p' && isVideoSize(chosen) ? chosen : null;
   const pronunciation = element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide';
   const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}), ...(background ? { background } : {}), ...(size ? { size } : {}),
     ...(pronunciation ? {} : { pronunciation: false }) };
@@ -2397,6 +2401,13 @@ function stopKeyPreview(): void {
 }
 audio.addEventListener('play', stopKeyPreview);
 element('lyric-style').addEventListener('change', () => draw());
+element('video-size').addEventListener('change', () => {
+  cardPlace = cardLayout(element<HTMLSelectElement>('video-size').value);
+  // Resizing the canvas clears it; the next draw fills it in the new layout.
+  if (stage.width !== cardPlace.width || stage.height !== cardPlace.height) { stage.width = cardPlace.width; stage.height = cardPlace.height; }
+  stage.dataset.orientation = cardPlace.height > cardPlace.width ? 'portrait' : 'landscape';
+  draw();
+});
 element('lyric-pronunciation').addEventListener('change', () => draw());
 // A picture of the person's own to lie behind the lyrics: shrunk to a small JPEG here, so the studio keeps no more
 // than it needs, and saved with the clip.

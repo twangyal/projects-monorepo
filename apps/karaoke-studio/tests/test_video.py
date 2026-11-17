@@ -3,6 +3,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import subprocess
 import shutil
 import tempfile
@@ -301,12 +302,67 @@ class VideoTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             video.render_card(self.project, 0, self.root / 'bad.png', FONT, size='4k')
 
-    def test_full_hd_export(self):
-        output = self.root / 'full.mp4'
-        video.export_video(self.project, self.backing, output, self.root / 'work', FONT, threading.Event(), size='1080p')
-        metadata = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', str(output)]))
-        streams = {item['codec_type']: item for item in metadata['streams']}
-        self.assertEqual((streams['video']['width'], streams['video']['height']), (1920, 1080))
+    def test_full_hd_and_vertical_exports(self):
+        for size, frame in [('1080p', (1920, 1080)), ('vertical', (1080, 1920))]:
+            with self.subTest(size=size):
+                output = self.root / f'{size}.mp4'
+                video.export_video(self.project, self.backing, output, self.root / 'work', FONT, threading.Event(), size=size)
+                metadata = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', str(output)]))
+                streams = {item['codec_type']: item for item in metadata['streams']}
+                self.assertEqual((streams['video']['width'], streams['video']['height']), frame)
+
+    def drawn(self, card: Path) -> tuple[list[tuple[int, int]], tuple[int, int]]:
+        """Where anything is drawn on a plain card: runs of rows (top, bottom), rows closer than a gap between lines
+        joined in one run, and the leftmost and rightmost columns."""
+        with Image.open(card) as image:
+            ink = ImageChops.difference(image.convert('RGB'), Image.new('RGB', image.size, video.BACKGROUND)).convert('L')
+        ink = ink.point(lambda value: 255 if value > 40 else 0)
+        pixels, runs = ink.tobytes(), []
+        for y in range(ink.height):
+            if not pixels[y * ink.width:(y + 1) * ink.width].strip(b'\0'):
+                continue
+            if runs and y - runs[-1][1] <= 45:
+                runs[-1][1] = y
+            else:
+                runs.append([y, y])
+        left, _, right, _ = ink.getbbox()
+        return [tuple(run) for run in runs], (left, right)
+
+    def test_vertical_cards_stand_upright_with_each_part_where_the_layout_puts_it(self):
+        place = video.LAYOUTS['portrait']
+        k = 1920 / place['height']
+        long = 'Every word of a long line wraps inside the upright frame instead of running off its sides'
+        song = update_project(self.project, 'Example clip', [dict(start=0.5, end=1.25, text=long),
+                                                            dict(start=1.75, end=2.5, text='SECOND LINE')], 1)
+        cards = {'sung': (song, 0, dict(sung=['Every']), ['title', 'middle', 'next', 'footer']),
+                 'said': (self.project, 0, dict(said=['ferst', 'lain']), ['title', 'said_middle', 'said', 'next', 'footer']),
+                 'break': (self.project, None, dict(count=3), ['title', 'middle', 'dots', 'next', 'footer'])}
+        for name, (project, active, options, parts) in cards.items():
+            with self.subTest(card=name):
+                card = self.root / f'{name}.png'
+                video.render_card(project, active, card, FONT, size='vertical', **options)
+                with Image.open(card) as image:
+                    self.assertEqual(image.size, (1080, 1920))
+                runs, (left, right) = self.drawn(card)
+                # One part under another down the frame, each centred where the layout puts it.
+                self.assertEqual(len(runs), len(parts), runs)
+                for (top, bottom), part in zip(runs, parts):
+                    self.assertTrue(top <= place[part] * k <= bottom, (part, top, bottom))
+                # Nothing runs off the sides: lines wrap within the layout's width.
+                margin = (place['width'] - place['wrap']) / 2 * k
+                self.assertGreaterEqual(left, margin - 4)
+                self.assertLessEqual(right, 1080 - margin + 4)
+                if name == 'sung':
+                    # The long line wraps onto rows of its own size rather than shrinking onto one.
+                    top, bottom = runs[1]
+                    self.assertGreater(bottom - top, 2 * math.ceil(44 * k * 1.25))
+
+    def test_the_preview_lays_cards_out_as_the_video_does(self):
+        source = (Path(__file__).resolve().parents[1] / 'src' / 'card-layout.ts').read_text()
+        for name, place in video.LAYOUTS.items():
+            body = re.search(name + r': \{([^}]*)\}', source).group(1)
+            fields = {re.sub('[A-Z]', lambda m: '_' + m.group().lower(), key): int(value) for key, value in re.findall(r'(\w+): (\d+)', body)}
+            self.assertEqual(fields, place, name)
 
     def test_cancellation_and_validation_preserve_existing_export(self):
         output = self.root / 'video.mp4'
@@ -652,6 +708,21 @@ class CoverArtTests(unittest.TestCase):
                     self.assertGreater(right[2] - left[2], 25)
                 else:
                     self.assertLess(max(abs(a - b) for a, b in zip(left, right)), 6)
+
+    def test_cover_art_fills_an_upright_frame_without_being_squeezed(self):
+        output = self.root / 'upright.png'
+        video.render_card(self.project, 0, output, FONT, size='vertical')
+        with Image.open(output) as image:
+            picture = image.convert('RGB')
+            self.assertEqual(picture.size, (1080, 1920))
+            # The square cover is scaled to the frame's height and cropped at the sides, so its two halves still meet
+            # in the middle: red on the left, blue on the right.
+            row = [picture.getpixel((x, 1700)) for x in range(0, 1080, 10)]
+            reds = [x * 10 for x, (red, _, blue) in enumerate(row) if red > blue + 20]
+            blues = [x * 10 for x, (red, _, blue) in enumerate(row) if blue > red + 20]
+            self.assertTrue(reds and blues)
+            self.assertLess(max(reds), min(blues))
+            self.assertLess(abs((max(reds) + min(blues)) / 2 - 540), 40)
 
     def test_a_card_layer_is_transparent_around_its_words(self):
         output = self.root / 'layer.png'
