@@ -102,11 +102,25 @@ class ForcedAlignmentTests(unittest.TestCase):
         self.assertLessEqual(cues[0]['end'], cues[1]['start'])
         self.assertLessEqual(cues[1]['end'], cues[2]['start'])
 
-    def test_only_lyrics_in_latin_letters_are_aligned(self):
+    def test_lyrics_in_latin_letters_or_korean_are_aligned(self):
         self.assertEqual(fold("Où l'été, Straße! Æsir"), "OUL'ETESTRASSEAESIR")
         self.assertTrue(alignable(['Mädchen und Straße', 'ça va, señor']))
         self.assertFalse(alignable(['東京の夜', 'Tokyo']))
         self.assertFalse(alignable(['', '123 !!']))
+        # Korean is spelled syllable by syllable in Revised Romanization; lines mixing it with English are aligned too.
+        self.assertEqual(fold('사랑해'), 'SARANGHAE')
+        self.assertEqual(fold('어떻게 닭'), 'EOTTEOTGEDAK')
+        self.assertEqual(fold('꽃잎, 빛!'), 'KKOTIPBIT')
+        self.assertTrue(alignable(['사랑해 baby', '너를 보면']))
+        self.assertFalse(alignable(['사랑해 東京の夜です']))
+
+    def test_korean_lines_start_where_their_romanized_letters_are_sung(self):
+        sung_at = [('보고 싶어 너를', 1.5), ('oh baby 사랑해', 8.0), ('다시 만나', 15.0)]
+        cues = force_align([text for text, _ in sung_at], sung(sung_at, 25), 25)
+        self.assertEqual([cue['text'] for cue in cues], [text for text, _ in sung_at])
+        for cue, (_, start) in zip(cues, sung_at, strict=True):
+            self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
+            self.assertGreater(cue['matched'], 0.9)
 
 
 class StoredEmissionTests(unittest.TestCase):
@@ -223,10 +237,13 @@ class ServerAlignmentTests(unittest.TestCase):
         self.assertTrue((folder / 'alignment.bin').is_file())
         lines = ['Lay awake at night', 'through all the pain']
         self.assertEqual(self.align(base, lines), [16.85, 28.45])
-        # Lyrics in another script are matched to recognized words.
+        # Lyrics in another script are matched to recognized words; Korean is spelled in Latin letters and laid on them.
         with mock.patch('karaoke.server.force_align') as forced:
             self.align(base, ['夜に目覚めて', '痛みを越えて'])
             forced.assert_not_called()
+        with mock.patch('karaoke.server.force_align', wraps=force_align) as forced:
+            self.assertEqual(len(self.align(base, ['사랑해 너를', '보고 싶어'])), 2)
+            forced.assert_called_once()
         # Unreadable measurements are ignored rather than refused.
         good = (folder / 'alignment.bin').read_bytes()
         (folder / 'alignment.bin').write_bytes(good[:-64])
@@ -282,6 +299,14 @@ class WordHighlightTests(unittest.TestCase):
         for got, want in zip(starts, expected, strict=True):
             self.assertAlmostEqual(got, want, delta=0.03)
         self.assertIsNone(force_words('東京', log_probs, 3.9, 9.0))
+        # Korean words, too, start where their letters were sung.
+        korean = sung([('너를 보면 웃어', 2.0)], 8)
+        expected, t = [], 2.0
+        for word in '너를 보면 웃어'.split():
+            expected.append(t)
+            t += len(fold(word)) * 4 * FRAME + 4 * FRAME
+        for got, want in zip(force_words('너를 보면 웃어', korean, 1.9, 6.0), expected, strict=True):
+            self.assertAlmostEqual(got, want, delta=0.03)
         # Numbers start between their neighbours.
         self.assertEqual(len(force_words('so 2 many', sung([('so many', 1.0)], 4), 0.9, 3.0)), 3)
 
@@ -299,6 +324,6 @@ class WordHighlightTests(unittest.TestCase):
         # Without letters, unheard words are spread by length as before.
         before = word_timings([cue], heard, 40)[0]
         self.assertNotAlmostEqual(before[1]['start'], timings[1]['start'], delta=0.05)
-        # A line in another script keeps the spread.
+        # A line in a script the aligner cannot spell keeps the spread.
         other = dict(start=17.8, end=21.5, text='夜 に 目覚めて')
         self.assertEqual(word_timings([other], [], 40, log_probs), word_timings([other], [], 40))

@@ -319,9 +319,10 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None) -
     Unheard words are placed between their heard neighbours in proportion to their length, and a
     line with no recognized words is spread across its interval, so corrected and supplied lyrics
     highlight too. With ``letters`` (how likely each letter is in every 20 ms of the vocals, see
-    ``alignment``), a line in Latin letters is laid on them instead: each word, heard or not, starts
-    where its letters were sung, which on the developer benchmark is closer to the annotated starts
-    than the recognizers' own word times. Starts never decrease within a line and stay inside the cue.
+    ``alignment``), a line in Latin letters or Korean is laid on them instead: each word, heard or
+    not, starts where its letters were sung, which on the developer benchmarks is closer to the
+    annotated starts than the recognizers' own word times. Starts never decrease within a line and
+    stay inside the cue.
     """
     from .alignment import alignable, force_words
     words = clean_words(words, duration)

@@ -5,11 +5,13 @@ published for transformers.js) gives, for every 20 ms of the separated vocals, h
 probabilities are measured once, when a clip is transcribed, and kept beside its transcript. Supplied lyrics are then
 laid on them letter by letter, in order, along the most likely path (CTC forced alignment), so every line gets a time
 even where recognition heard none of its words. Accents are folded (é is e), which serves French, Spanish and German
-lyrics too.
+lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable).
 
 On the first two minutes of five JamendoLyrics songs in each of English, French, Spanish and German (431 lines), 93%
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
-a median error of 0.03-0.05 s against 0.1-0.2 s.
+a median error of 0.03-0.05 s against 0.1-0.2 s. On 20 sung Korean phrases (GTSinger), the romanized lyrics put 62%
+of breath-separated lines and 64% of words within 0.3 s of their sung start, against 34% and 41% from matching them
+to the words SenseVoice recognized.
 """
 from __future__ import annotations
 
@@ -52,6 +54,14 @@ _HEADER = struct.Struct('<8sIB3x')
 MAX_CELLS = 250_000_000
 # Letters that do not decompose into a Latin letter and accents.
 _SPELLED = {'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ı': 'i'}
+# A Hangul syllable's initial consonant, vowel and final consonant in Revised Romanization (finals as pronounced at the
+# end of a syllable). Sound changes between syllables are left out: they move letters little.
+_INITIALS = ('g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h')
+_VOWELS = ('a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu',
+           'ui', 'i')
+_FINALS = ('', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't',
+           't', 'k', 't', 'p', 't')
+_HANGUL, _SYLLABLES = 0xAC00, 11172
 
 
 _verified: dict[str, tuple] = {}
@@ -84,15 +94,22 @@ def aligner_ready(model_root: Path) -> bool:
     return True
 
 
+def _spelled(ch: str) -> str:
+    code = ord(ch) - _HANGUL
+    if 0 <= code < _SYLLABLES:
+        return _INITIALS[code // 588] + _VOWELS[code % 588 // 28] + _FINALS[code % 28]
+    return _SPELLED.get(ch.lower(), ch)
+
+
 def fold(text: str) -> str:
-    """Upper-case Latin letters and apostrophes of ``text``, accents removed; other characters are dropped."""
-    text = ''.join(_SPELLED.get(ch.lower(), ch) for ch in text)
+    """Upper-case Latin letters and apostrophes of ``text``, accents removed and Korean romanized; others are dropped."""
+    text = ''.join(_spelled(ch) for ch in text)
     text = unicodedata.normalize('NFKD', text.replace('’', "'"))
     return ''.join(ch for ch in text.upper() if ch in LETTERS)
 
 
 def alignable(lines: list[str]) -> bool:
-    """Whether the lyrics are written in Latin letters the aligner knows (at least nine in ten of their letters)."""
+    """Whether the lyrics are written in letters the aligner knows, Latin or Korean (at least nine in ten of them)."""
     letters = [ch for line in lines for ch in line if unicodedata.category(ch).startswith('L')]
     known = sum(1 for ch in letters if fold(ch))
     return bool(letters) and known >= 0.9 * len(letters)

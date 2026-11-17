@@ -1425,8 +1425,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "align":
                 if transcript is None:
                     raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
-                # Lyrics in Latin letters are laid on the letters measured in the singing; others, or a clip measured
-                # without the aligner, are matched to the recognized words.
+                # Lyrics in Latin letters or Korean are laid on the letters measured in the singing; others, or a clip
+                # measured without the aligner, are matched to the recognized words.
                 cues = force_align(value["lines"], letters, project["duration"]) if letters is not None else None
                 self._json({"cues": cues if cues is not None else align_lines(value["lines"], transcript["words"], project["duration"])})
                 return
