@@ -5,7 +5,8 @@ published for transformers.js) gives, for every 20 ms of the separated vocals, h
 probabilities are measured once, when a clip is transcribed, and kept beside its transcript. Supplied lyrics are then
 laid on them letter by letter, in order, along the most likely path (CTC forced alignment), so every line gets a time
 even where recognition heard none of its words. Accents are folded (é is e), which serves French, Spanish and German
-lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable). Chinese characters
+lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable), as is Cyrillic
+(transliterated letter by letter, with Russian readings). Chinese characters
 are read in pinyin when the song was recognized as Mandarin: the characters alone do not say whether a song is sung in
 Mandarin or Cantonese, whose readings differ, so Cantonese lyrics are left to recognized words. Japanese lyrics in a
 song recognized as Japanese are read in romaji when the optional reading dictionary is installed (see ``japanese``).
@@ -14,7 +15,8 @@ On the first two minutes of five JamendoLyrics songs in each of English, French,
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
 a median error of 0.03-0.05 s against 0.1-0.2 s. On 20 sung Korean phrases (GTSinger), the romanized lyrics put 62%
 of breath-separated lines and 64% of words within 0.3 s of their sung start, against 34% and 41% from matching them
-to the words SenseVoice recognized; on 20 sung Mandarin phrases, pinyin put 95% of lines within 0.3 s against 75%,
+to the words SenseVoice recognized; on 20 sung Russian phrases, transliteration put 86% of lines and 87% of words within
+0.3 s, against 58% and 61% from matching the multilingual model's words; on 20 sung Mandarin phrases, pinyin put 95% of lines within 0.3 s against 75%,
 and 77% of characters within 0.15 s against 63%.
 """
 from __future__ import annotations
@@ -69,6 +71,12 @@ _VOWELS = ('a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe
 _FINALS = ('', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't',
            't', 'k', 't', 'p', 't')
 _HANGUL, _SYLLABLES = 0xAC00, 11172
+# Cyrillic letters in Latin letters, as Russian reads them, with the other Cyrillic alphabets' own letters (Ukrainian,
+# Belarusian, Serbian, Macedonian); hard and soft signs are silent.
+_CYRILLIC = dict(zip('абвгдеёжзийклмнопрстуфхцчшщъыьэюяіїєґўђјљњћџѓќѕ',
+                     ['a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f',
+                      'kh', 'ts', 'ch', 'sh', 'shch', '', 'y', '', 'e', 'yu', 'ya', 'i', 'yi', 'ye', 'g', 'w', 'dj', 'j', 'lj', 'nj',
+                      'c', 'dz', 'gj', 'kj', 'dz'], strict=True))
 # Runs of Chinese characters (the unified ideographs and their extensions), read in pinyin together so that a character
 # with several readings takes the one its phrase gives it.
 _HAN = re.compile('[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0003134f]+')
@@ -111,7 +119,8 @@ def _spelled(ch: str) -> str:
     code = ord(ch) - _HANGUL
     if 0 <= code < _SYLLABLES:
         return _INITIALS[code // 588] + _VOWELS[code % 588 // 28] + _FINALS[code % 28]
-    return _SPELLED.get(ch.lower(), ch)
+    low = ch.lower()
+    return _CYRILLIC[low] if low in _CYRILLIC else _SPELLED.get(low, ch)
 
 
 def _letters(spelled: str) -> str:
@@ -120,7 +129,8 @@ def _letters(spelled: str) -> str:
 
 
 def fold(text: str) -> str:
-    """Upper-case Latin letters and apostrophes of ``text``, accents removed and Korean romanized; others are dropped."""
+    """Upper-case Latin letters and apostrophes of ``text``, accents removed, Korean romanized and Cyrillic transliterated;
+    others are dropped."""
     return _letters(''.join(_spelled(ch) for ch in text))
 
 
@@ -158,8 +168,8 @@ def word_letters(line: str, language: str | None = None) -> list[str]:
 
 
 def alignable(lines: list[str], language: str | None = None) -> bool:
-    """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean, or
-    Chinese and Japanese in a song recognized as Mandarin or Japanese."""
+    """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean,
+    Cyrillic, or Chinese and Japanese in a song recognized as Mandarin or Japanese."""
     known = total = 0
     for line in lines:
         spelled = readings(line, language)

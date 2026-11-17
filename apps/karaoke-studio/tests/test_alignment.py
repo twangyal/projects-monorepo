@@ -113,6 +113,11 @@ class ForcedAlignmentTests(unittest.TestCase):
         self.assertEqual(fold('꽃잎, 빛!'), 'KKOTIPBIT')
         self.assertTrue(alignable(['사랑해 baby', '너를 보면']))
         self.assertFalse(alignable(['사랑해 東京の夜です']))
+        # Cyrillic is transliterated as Russian reads it, with Ukrainian and Serbian letters too; its signs are silent.
+        self.assertEqual(fold('Берегов Москвы'), 'BEREGOVMOSKVY')
+        self.assertEqual(fold('Забудьте всё, щит'), 'ZABUDTEVSYOSHCHIT')
+        self.assertEqual(fold('їжак ґанок љубав'), 'YIZHAKGANOKLJUBAV')
+        self.assertTrue(alignable(['Забудьте всё что было вчера', 'oh baby, давай']))
 
     def test_chinese_is_read_in_pinyin_only_in_a_song_recognized_as_mandarin(self):
         # Each character is a lyric word, read with its phrase: 乐 is "yue" in 音乐 (music) and "le" in 快乐 (happy).
@@ -136,6 +141,14 @@ class ForcedAlignmentTests(unittest.TestCase):
             self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
             self.assertGreater(cue['matched'], 0.9)
         self.assertIsNone(force_align([text for text, _ in sung_at], log_probs, 26))
+
+    def test_russian_lines_start_where_their_transliterated_letters_are_sung(self):
+        sung_at = [('Анна Каренина, Анна Вронская', 1.5), ('Где теперь она, та моя', 8.0), ('На долгожданную войну', 14.0)]
+        cues = force_align([text for text, _ in sung_at], sung(sung_at, 22), 22)
+        self.assertEqual([cue['text'] for cue in cues], [text for text, _ in sung_at])
+        for cue, (_, start) in zip(cues, sung_at, strict=True):
+            self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
+            self.assertGreater(cue['matched'], 0.9)
 
     def test_korean_lines_start_where_their_romanized_letters_are_sung(self):
         sung_at = [('보고 싶어 너를', 1.5), ('oh baby 사랑해', 8.0), ('다시 만나', 15.0)]
@@ -353,6 +366,14 @@ class WordHighlightTests(unittest.TestCase):
         for got, want in zip(starts, expected, strict=True):
             self.assertAlmostEqual(got, want, delta=0.03)
         self.assertIsNone(force_words('東京', log_probs, 3.9, 9.0))
+        # Russian words start where their transliterated letters were sung.
+        russian = sung([('что было вчера', 2.0)], 8)
+        expected, t = [], 2.0
+        for word in 'что было вчера'.split():
+            expected.append(t)
+            t += len(fold(word)) * 4 * FRAME + 4 * FRAME
+        for got, want in zip(force_words('что было вчера', russian, 1.9, 6.0), expected, strict=True):
+            self.assertAlmostEqual(got, want, delta=0.03)
         # Korean words, too, start where their letters were sung.
         korean = sung([('너를 보면 웃어', 2.0)], 8)
         expected, t = [], 2.0
