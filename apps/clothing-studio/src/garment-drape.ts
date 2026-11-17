@@ -1175,7 +1175,7 @@ export function outfitBodies(top: Product, bottoms: Product, chest: number, shap
 export function canTuck(top: Product): boolean { return !isBottoms(top) && topMeasurements(top).length < DRESS_LENGTH; }
 
 /**
- * Drapes `design` worn with `companion`, a top with bottoms or a T-shirt under a sweatshirt or hoodie (see the layers
+ * Drapes `design` worn with `companion`, a top with bottoms or a top over another (see layerOrder and the layers
  * below). Untucked, the bottoms drape first on the outfit's lower body, then the top drapes on the outfit's body over them. `tucked`, the top drapes first, its fabric below the
  * bottoms' waistline pressed close to the body as a waistband holds it, then the bottoms drape outside that part of it.
  * The garment underneath does not feel the other's weight. Positions are in the design's own place, and the
@@ -1202,7 +1202,7 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
     const [own, other] = inner === design ? [pressed, over] : [over, pressed];
     return { ...own, companion: { parts: other.parts, metrics: other.metrics, settings: other.settings } };
   }
-  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt or hoodie.');
+  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt, hoodie or button-up shirt.');
   const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
   if (options.tucked && !canTuck(top)) throw new Error('A dress cannot be tucked in. Shorten it to a top, or wear it untucked.');
   const topMeshes = designIsTop ? designMeshes : companionMeshes, bottomMeshes = designIsTop ? companionMeshes : designMeshes;
@@ -1238,8 +1238,9 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
   return { parts: under.parts, metrics: under.metrics, settings: under.settings, body: own, companion: { parts: back(over.parts), metrics: over.metrics, settings: over.settings } };
 }
 
-/** Whether three designs make an outfit: a T-shirt under a sweatshirt or hoodie, worn with bottoms. */
-export function threePiece<T extends Pick<Product, 'base'>>(garments: readonly T[]): { inner: T; outer: T; bottoms: T } | null {
+/** Whether three designs make an outfit: a top over another (a T-shirt under a sweatshirt, hoodie or button-up shirt), worn
+ * with bottoms. */
+export function threePiece<T extends Pick<Product, 'base' | 'options'>>(garments: readonly T[]): { inner: T; outer: T; bottoms: T } | null {
   const bottoms = garments.filter(garment => isBottoms(garment)), tops = garments.filter(garment => !isBottoms(garment));
   if (garments.length !== 3 || bottoms.length !== 1 || tops.length !== 2) return null;
   const layers = layerOrder(tops[0]!, tops[1]!);
@@ -1248,14 +1249,14 @@ export function threePiece<T extends Pick<Product, 'base'>>(garments: readonly T
 
 /**
  * Three garments on one body, in the place of the first (the design): the bottoms drape first on the outfit's lower
- * body, the T-shirt over them, then the sweatshirt or hoodie over both, resting on the T-shirt as on a thicker body
+ * body, the T-shirt over them, then the outer top over both, resting on the T-shirt as on a thicker body
  * and outside the bottoms; the T-shirt is then pressed in where the outer top covers it. The second and third come
  * back as `companion` and `also`. Nothing is tucked in.
  */
 function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[], bodyChest: number,
   options: { bodyShape?: TopBodyShape; bodyProducts?: { top: Product; bottoms?: Product }; tucked?: boolean; frames: number; steps: { frames?: number; substeps?: number }; progress?: (frame: number, frames: number) => boolean | void }): GarmentDrapeResult {
   const pieces = threePiece(garments.map(garment => garment.product));
-  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt or hoodie, with shorts, trousers or a skirt.');
+  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt, hoodie or button-up shirt, with shorts, trousers or a skirt.');
   if (options.tucked) throw new Error('A three-piece outfit is worn untucked.');
   const of = (product: Product) => garments.find(garment => garment.product === product)!;
   const { inner, outer, bottoms } = pieces;

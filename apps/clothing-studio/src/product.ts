@@ -77,16 +77,18 @@ export function partName(product: Pick<Product, 'base'>, part: PartId): string {
 }
 /** Bottoms use their own measured panels instead of top measurements or the top drape. */
 export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers' || product.base === 'skirt'; }
-/** A top worn over another: one made on the T-shirt base (a tee, tank, crop top or T-shirt dress) under a sweatshirt
- * or hoodie. Null for any other pair. */
-export function layerOrder<T extends Pick<Product, 'base'>>(a: T, b: T): { inner: T; outer: T } | null {
-  const outer = (product: T) => product.base === 'sweatshirt' || product.base === 'hoodie';
-  if (a.base === 'tee' && outer(b)) return { inner: a, outer: b };
-  if (b.base === 'tee' && outer(a)) return { inner: b, outer: a };
+/** A top worn over another: one made on the T-shirt base (a tee, tank, crop top, T-shirt dress or shirt) under a
+ * sweatshirt or hoodie, or one without a button front under a button-front shirt, worn open or buttoned. Null for any
+ * other pair. */
+export function layerOrder<T extends Pick<Product, 'base' | 'options'>>(a: T, b: T): { inner: T; outer: T } | null {
+  const shirt = (product: T) => product.base === 'tee' && !!product.options?.buttons;
+  const over = (outer: T, inner: T) => inner.base === 'tee' && (outer.base === 'sweatshirt' || outer.base === 'hoodie' || (shirt(outer) && !shirt(inner)));
+  if (over(b, a)) return { inner: a, outer: b };
+  if (over(a, b)) return { inner: b, outer: a };
   return null;
 }
 /** Whether two designs make an outfit: a top with bottoms, or a top over another (see layerOrder). */
-export function canWearTogether(a: Pick<Product, 'base'>, b: Pick<Product, 'base'>): boolean { return isBottoms(a) !== isBottoms(b) || layerOrder(a, b) !== null; }
+export function canWearTogether(a: Pick<Product, 'base' | 'options'>, b: Pick<Product, 'base' | 'options'>): boolean { return isBottoms(a) !== isBottoms(b) || layerOrder(a, b) !== null; }
 // A top worn under another is made for the outer one's arm pose, so its sleeves lie round the same arms. The pose is
 // kept beside the copy made for the drape, never in the saved design.
 const SLEEVE_POSE = new WeakMap<object, number>();

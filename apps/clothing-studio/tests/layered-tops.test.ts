@@ -6,7 +6,7 @@ import { canWearTogether, layerOrder, sleeveAngleOf, teeDimensions, teeMesh, tem
 import { switchOutfitEditing } from '../src/outfit-edit.ts';
 import { createProject } from '../src/model.ts';
 
-test('a T-shirt can be worn under a sweatshirt or hoodie, and no other top under another', () => {
+test('a T-shirt can be worn under a sweatshirt or hoodie, and not under another T-shirt or a hoodie under a sweatshirt', () => {
   const tee = template('blank'), hoodie = template('zip-hoodie'), sweat = template('crew-sweat');
   assert.deepEqual(layerOrder(hoodie, tee), { inner: tee, outer: hoodie });
   assert.deepEqual(layerOrder(tee, sweat), { inner: tee, outer: sweat });
