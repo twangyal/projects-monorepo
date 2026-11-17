@@ -1106,6 +1106,9 @@ export function wholeFrontOutline(product: Product): Pt[] {
   return optionsOf(product).buttons ? leftOf(outline, panelSize(topMeasurements(product)).width / 2) : outline;
 }
 
+/** Outline points closer than this to a corner made by a cut are merged into it: a sliver of an edge would stretch
+ * many times its own length in the drape. */
+const CUT_MERGE_CM = 0.5;
 /** The part of a pattern outline above the horizontal line y = `cut` (`above`), or below it, clipped along that line. */
 function clipAt(outline: Pt[], cut: number, above: boolean): Pt[] {
   const kept: Pt[] = [], keep = (point: Pt) => (above ? point.y <= cut + 1e-9 : point.y >= cut - 1e-9);
@@ -1114,7 +1117,10 @@ function clipAt(outline: Pt[], cut: number, above: boolean): Pt[] {
     if (inside) kept.push(point);
     if (inside !== nextInside) { const t = (cut - point.y) / (next.y - point.y); kept.push({ x: point.x + (next.x - point.x) * t, y: cut }); }
   });
-  return kept;
+  // The cut's corners stay exactly where they are (the other piece shares them); points crowding them go.
+  const onCut = (point: Pt) => Math.abs(point.y - cut) < 1e-9;
+  return kept.filter((point, i) => onCut(point) || ![kept[(i + kept.length - 1) % kept.length]!, kept[(i + 1) % kept.length]!]
+    .some(other => onCut(other) && Math.hypot(other.x - point.x, other.y - point.y) < CUT_MERGE_CM));
 }
 
 /** The part of a pattern outline left of x = `cut` (one half of a symmetrical piece), clipped along that line. */

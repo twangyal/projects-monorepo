@@ -73,6 +73,16 @@ test('in 3D the skirt is sewn to the bodice, so the dress drapes as one garment'
   assert.ok(result.metrics.minClearance >= 0.3, `clearance ${result.metrics.minClearance}`);
 });
 
+test('a waist cut through a shaped side seam leaves no sliver edges, so the fit-and-flare dress drapes without overstretching', () => {
+  const product = template('fit-flare') as Product;
+  for (const piece of patternPieces(product).filter(item => ['front', 'back', 'skirtFront', 'skirtBack'].includes(item.part))) {
+    const shortest = Math.min(...piece.outline.map((q, i) => { const next = piece.outline[(i + 1) % piece.outline.length]!; return Math.hypot(next.x - q.x, next.y - q.y); }));
+    assert.ok(shortest >= 0.5, `${piece.part} has a ${shortest.toFixed(2)} cm edge`);
+  }
+  const result = simulateGarment(product, teeMesh(product, Delaunator), defaultBodyChest(product));
+  assert.ok(result.metrics.maxStrain < 0.5, `stretch ${result.metrics.maxStrain}`);
+});
+
 test('the tech pack lists the skirt fabric, sews the waist seam and draws the whole dress with the seam', () => {
   const product = seamed(), styled = validateProduct({ ...product, parts: { ...product.parts, skirtFront: { material: 'linen-170', color: '#aa3344', print: null }, skirtBack: { material: 'linen-170', color: '#aa3344', print: null } } });
   const pack = buildTechPack(styled, '2026-11-17'), d = teeDimensions(styled);
