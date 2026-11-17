@@ -659,7 +659,24 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       : 'Camera tracking is lost. Keep your face visible and look at the page again, or say use pointer.', tone: 'error' });
   }
 
-  // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
+  // Camera gaze within a circle's radius inside an edge of the panel that faces the page is more likely aimed at a
+  // control along that edge, half under the panel, than at the panel's border: it looks at the page just outside the
+  // nearest such edge. Deeper inside, the person is reading the panel. An edge faces the page when at least a circle's
+  // radius of page lies beyond it, so not the narrow margins between the panel and the window's sides.
+  function pageEdgeOfPanel(at, panel) {
+    const reach = radius(), outside = 2;
+    const edges = [
+      panel.left >= reach && { distance: at.x - panel.left, point: { x: panel.left - outside, y: at.y } },
+      window.innerWidth - panel.right >= reach && { distance: panel.right - at.x, point: { x: panel.right + outside, y: at.y } },
+      panel.top >= reach && { distance: at.y - panel.top, point: { x: at.x, y: panel.top - outside } },
+      window.innerHeight - panel.bottom >= reach && { distance: panel.bottom - at.y, point: { x: at.x, y: panel.bottom + outside } },
+    ].filter(edge => edge && edge.distance <= reach);
+    if (!edges.length) return null;
+    return edges.reduce((a, b) => (b.distance < a.distance ? b : a)).point;
+  }
+
+  // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area, except along
+  // the panel's page-facing edges (see pageEdgeOfPanel).
   function track(x, y, time) {
     if (stopped || closing || document.hidden) return;
     if (settings.source === 'camera' && (!Number.isFinite(time) || (cameraVisibleSince !== null && time <= cameraVisibleSince))) return;
@@ -680,15 +697,17 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (next) calibration.sample(next.x, next.y);
       return;
     }
-    const next = settings.source === 'camera' ? filter.filter(x, y, time) : { x, y };
+    let next = settings.source === 'camera' ? filter.filter(x, y, time) : { x, y };
     if (!next) return;
     if (settings.source === 'camera') {
-      const panel = ui.panel.getBoundingClientRect();
-      frozen = next.x >= panel.left && next.x <= panel.right && next.y >= panel.top && next.y <= panel.bottom;
+      const panel = ui.panel.getBoundingClientRect(), inside = next.x >= panel.left && next.x <= panel.right && next.y >= panel.top && next.y <= panel.bottom;
+      const edge = inside ? pageEdgeOfPanel(next, panel) : null;
+      frozen = inside && !edge;
       if (frozen) {
         ui.circle.classList.add('frozen');
         return;
       }
+      if (edge) next = edge;
     }
     cameraUnavailable = false;
     ui.circle.classList.remove('lost');

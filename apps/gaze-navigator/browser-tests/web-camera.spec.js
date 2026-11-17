@@ -771,3 +771,40 @@ test('a camera estimate produced while hidden cannot restore gaze after the tab 
   await typeInstruction(page, 'choose title');
   await expect(sort).toHaveValue('Title');
 });
+
+test('gaze just inside the panel edge reaches the control half under it; deeper in, the panel keeps the last page area', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await finishCalibration(page);
+  // A chosen corner stays put, so the control stays half under the panel.
+  await typeInstruction(page, 'move the navigator to the bottom right');
+  const box = await panel(page).boundingBox(), wide = page.viewportSize().width >= 1000;
+  // The control straddles the edge that faces the page: the panel's left edge, or its top edge on a narrow screen,
+  // where the panel is a sheet across the width. The edges against the window's sides face no page.
+  const place = wide ? { left: box.x - 50, top: box.y + 120 } : { left: box.x + 100, top: box.y - 16 };
+  const near = wide ? [box.x + 30, box.y + 136] : [box.x + 150, box.y + 30];
+  const blind = wide ? [box.x + box.width - 10, box.y + 136] : [box.x + 150, box.y + box.height - 10];
+  await page.evaluate(({ left, top }) => {
+    const button = document.createElement('button');
+    button.id = 'half-hidden'; button.textContent = 'Half hidden';
+    Object.assign(button.style, { position: 'fixed', left: `${left}px`, top: `${top}px`, width: '100px', height: '32px', zIndex: 5 });
+    button.addEventListener('click', () => { button.dataset.clicked = 'yes'; });
+    document.body.append(button);
+  }, place);
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort);
+  const circle = page.locator('#gaze-web-navigator .circle'), context = panel(page).locator('.context li');
+  const emit = async ([x, y]) => { for (let i = 0; i < 12; i++) { await page.evaluate(([x, y]) => window.webgazer.emit({ x, y }), [x, y]); await page.clock.runFor(33); } await page.clock.runFor(150); };
+  // 30 px inside that edge, level with the half-hidden button: the circle sits on the page at the edge.
+  await emit(near);
+  await expect(circle).not.toHaveClass(/frozen/);
+  await expect(context.filter({ hasText: 'Half hidden' })).toHaveCount(1);
+  // Deep inside the panel the person is reading it: the circle stops and keeps the button's area.
+  await emit([box.x + box.width / 2, box.y + box.height / 2]);
+  await expect(circle).toHaveClass(/frozen/);
+  await expect(context.filter({ hasText: 'Half hidden' })).toHaveCount(1);
+  await typeInstruction(page, 'click half hidden');
+  await expect(page.locator('#half-hidden')).toHaveAttribute('data-clicked', 'yes');
+  // Just inside an edge against the window's side there is no page to look at, so the last page area stays too.
+  await gazeAt(page, sort);
+  await emit(blind);
+  await expect(circle).toHaveClass(/frozen/);
+  await expect(context.first()).toHaveText(/Dropdown: Sort by/);
+});
