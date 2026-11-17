@@ -53,10 +53,11 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   }
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
-  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket' };
+  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket',
+  skirtFront: 'Front skirt', skirtBack: 'Back skirt' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -103,7 +104,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
   const { collar, buttons } = optionsOf(product), placket = product.base === 'tee' && (collar || buttons);
   const collared = !collar && !placket ? kept
     : [...kept.filter(part => !collar || part !== 'neckband'), ...(collar ? ['collar' as const] : []), ...(placket ? ['placket' as const] : [])];
-  return optionsOf(product).chestPocket ? [...collared, 'chestPocket'] : collared;
+  // A dress cut at the waist: the front and back bodies end at the waist seam, and a skirt front and back hang from it.
+  const seamed = product.base === 'tee' && optionsOf(product).waistSeam ? [...collared, 'skirtFront' as const, 'skirtBack' as const] : collared;
+  return optionsOf(product).chestPocket ? [...seamed, 'chestPocket'] : seamed;
 }
 
 /**
@@ -165,7 +168,9 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
   /** A zip hoodie worn open: in 3D its front halves and hem band are not joined at the centre front, so they hang apart. */ zipOpen?: boolean;
   /** A collar instead of the neck rib: on a tee a polo's flat-knit collar and buttoned placket, on a sweatshirt a rib
    * stand collar (a bomber jacket's, with the front zip). */ collar?: boolean;
-  /** A button front (tees): the front opens down its length on a buttoned placket; with the collar, a shirt. */ buttons?: boolean }
+  /** A button front (tees): the front opens down its length on a buttoned placket; with the collar, a shirt. */ buttons?: boolean;
+  /** A waist seam (T-shirt dresses): the front and back are cut at the waist line into a bodice and a skirt, each styled
+   * on its own. */ waistSeam?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -173,6 +178,10 @@ export function chestPocketAllowed(base: Base): boolean { return base === 'tee' 
 export function zipAllowed(base: Base): boolean { return base === 'hoodie' || base === 'sweatshirt'; }
 export function collarAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 export function buttonsAllowed(base: Base): boolean { return base === 'tee'; }
+/** A waist seam goes on a dress: a T-shirt base at least DRESS_LENGTH long. */
+export function waistSeamAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
+  return product.base === 'tee' && ((product.measurements as Measurements | undefined)?.length ?? 0) >= DRESS_LENGTH;
+}
 /** A polo/shirt collar's flat height from neck sewing edge to outer fall edge, and the polo placket, cm. */
 export const COLLAR_CM = 7, PLACKET_CM = { length: 14, width: 3, buttons: 3 } as const;
 /** A sweatshirt's rib stand collar (a bomber jacket's), its finished height, cm. */
@@ -201,6 +210,7 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.collar && !collarAllowed(product.base)) fail('A collar goes on a T-shirt (a polo collar) or a sweatshirt (a stand collar).');
   if (next.buttons && !buttonsAllowed(product.base)) fail('A button front goes on a T-shirt, to make a shirt.');
   if (next.zipOpen && !next.zip && !next.buttons) fail('Only a garment with a front zip or buttons can be worn open.');
+  if (next.waistSeam && !waistSeamAllowed(product)) fail(`A waist seam goes on a T-shirt dress: lengthen it to at least ${DRESS_LENGTH} cm first.`);
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -224,6 +234,14 @@ export function withOptions(product: Product, next: Options): Product {
   };
   setPocket(draft.parts);
   for (const colorway of draft.colorways ?? []) setPocket(colorway.parts);
+  // A new skirt starts in its body's style; taking the seam off sews the body back in one piece.
+  const setSkirt = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (next.waistSeam) { all.skirtFront ??= structuredClone(parts.front); all.skirtBack ??= structuredClone(parts.back); }
+    else { delete all.skirtFront; delete all.skirtBack; }
+  };
+  setSkirt(draft.parts);
+  for (const colorway of draft.colorways ?? []) setSkirt(colorway.parts);
   draft.options = { ...next };
   return draft;
 }
@@ -436,7 +454,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -450,8 +468,10 @@ export function validateProduct(value: unknown): Product {
     if (o.collar !== undefined && typeof o.collar !== 'boolean') fail('A polo collar must be on or off.');
     if (o.collar && !collarAllowed(base)) fail('A collar goes on a T-shirt (a polo collar) or a sweatshirt (a stand collar).');
     if (o.collar && p.neckline !== 'crew') fail('A collar is sewn to a round neck.');
+    if (o.waistSeam !== undefined && typeof o.waistSeam !== 'boolean') fail('A waist seam must be on or off.');
+    if (o.waistSeam && !waistSeamAllowed({ base, measurements: measurements as Product['measurements'] })) fail(`A waist seam goes on a T-shirt dress, at least ${DRESS_LENGTH} cm long: lengthen it or take the waist seam off.`);
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -460,7 +480,7 @@ export function validateProduct(value: unknown): Product {
     const raw = p.fit && typeof p.fit === 'object' && !Array.isArray(p.fit) ? Object.keys(p.fit as object) : [];
     const f = plain(p.fit, raw.filter(key => FIT_KEYS.includes(key as FitKey)).length === raw.length ? raw : FIT_KEYS, 'Fit');
     fit = Object.fromEntries(Object.keys(f).map(key => [key, finite(f[key], LIMITS.fit[key as FitKey], `${FIT_NAMES[key as FitKey]} (cm)`)])) as Fit;
-    checkFit({ base, measurements: measurements as Measurements, neckline: p.neckline as Product['neckline'], fit });
+    checkFit({ base, measurements: measurements as Measurements, neckline: p.neckline as Product['neckline'], fit, options });
   }
   checkChestPocket({ base, measurements, neckline: p.neckline as Product['neckline'], fit, options });
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
@@ -533,6 +553,12 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'tee-dress', name: 'T-shirt dress', description: 'A knee-length jersey dress that flares gently from the hips.',
     product: { base: 'tee', name: 'T-shirt dress', measurements: { ...measurements, length: 100 }, neckline: 'crew', fit: { hemWidth: 64 },
       parts: allParts(style('jersey-240', '#2f3b33'), { neckband: style('rib-220', '#2f3b33') }), artwork: [] } },
+  { id: 'fit-flare', name: 'Fit-and-flare dress', description: 'Navy jersey shaped at the waist and cut into a bodice and a polka-dot skirt that flares to the knee.',
+    product: { base: 'tee', name: 'Fit-and-flare dress', measurements: { chest: 96, length: 95, sleeve: 21 }, neckline: 'crew', fit: { waistWidth: 40, hemWidth: 76 },
+      options: { hem: 'straight', chestPocket: false, waistSeam: true },
+      parts: { ...allParts(style('jersey-240', '#1f2a4f'), { neckband: style('rib-220', '#1f2a4f') }),
+        skirtFront: style('jersey-240', '#1f2a4f', { motif: 'dots', color: '#f4efe3', scaleCm: 4, layout: 'half-drop' }),
+        skirtBack: style('jersey-240', '#1f2a4f', { motif: 'dots', color: '#f4efe3', scaleCm: 4, layout: 'half-drop' }) }, artwork: [] } },
   { id: 'polo', name: 'Polo shirt', description: 'Navy cotton piqué with a flat-knit collar and a three-button placket.',
     product: { base: 'tee', name: 'Polo shirt', measurements: { ...measurements, chest: 106, length: 72, sleeve: 22 }, neckline: 'crew', options: { hem: 'straight', chestPocket: false, collar: true },
       parts: polo(style('pique-200', '#1f2a4f')), artwork: [] } },
@@ -691,7 +717,7 @@ export function seamHalfAt(d: ReturnType<typeof teeDimensions>, y: number): numb
 export function flare(product: Product): number { const d = teeDimensions(product); return Math.max(0, d.hemHalf - d.half); }
 
 /** Edited points of measure must still make a garment: the neck inside the shoulders, the armhole and neck within the body. */
-function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit'>) {
+function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit' | 'options'>) {
   if (product.base !== 'hoodie' && (product.fit?.hoodHeight !== undefined || product.fit?.hoodWidth !== undefined)) fail('Hood side dimensions apply only to hoodies.');
   if (product.base === 'hoodie' && product.fit?.neckRibHeight !== undefined) fail('A hoodie has a hood instead of a neck rib.');
   if (product.base === 'tee' && (product.fit?.cuffHeight !== undefined || product.fit?.hemBandHeight !== undefined)) fail('Cuff and hem band heights apply only to sweatshirts and hoodies.');
@@ -708,10 +734,10 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
   if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
   if (WAIST_FIT_KEYS.some(key => product.fit?.[key] !== undefined) && product.base !== 'tee') fail('Waist shaping applies only to T-shirts, shirts and tee dresses; sweatshirts and hoodies are held by their hem band.');
-  if (d.shaped) {
+  if (d.shaped || (product.base === 'tee' && optionsOf(product).waistSeam)) {
     const armY = d.shoulderDrop + d.armDepth, low = armY + 5, high = d.length - 5;
     if (d.waistY < low || d.waistY > high) fail(`Waist position must be between ${low.toFixed(1)} and ${high.toFixed(1)} cm below the neck points for this top, at least 5 cm below the underarm and above the hem.`);
-    if (d.waistHalf > d.half || d.waistHalf < d.half * 0.7) fail(`Waist width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 2).toFixed(1)} cm for this chest: no wider than the chest.`);
+    if (d.shaped && (d.waistHalf > d.half || d.waistHalf < d.half * 0.7)) fail(`Waist width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 2).toFixed(1)} cm for this chest: no wider than the chest.`);
   }
   if (sleeves && d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
 }
@@ -1035,8 +1061,17 @@ export function patternPieces(product: Product): PatternPiece[] {
     const { collar, buttons } = optionsOf(product), placket = placketOf(product);
     const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
       ...(collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
-    const front = buttons ? make('front', leftOf(body(true), panel.width / 2), 2) : make('front', body(true), 1);
-    return [front, make('back', body(false), 1), ...sleeves, ...neck, ...modules];
+    const front = buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
+    // A dress cut at the waist: the bodies end at the waist line, and the skirt pieces below it are laid out from the
+    // waist seam (their own top) down. Each piece starts at x = 0 (the bodice moved left by bodiceShift).
+    if (optionsOf(product).waistSeam) {
+      const waist = dims.waistY, shift = bodiceShift(product);
+      const bodice = (outline: Pt[]) => clipAt(outline, waist, true).map(q => ({ x: q.x - shift, y: q.y }));
+      const skirt = (outline: Pt[]) => { const below = clipAt(outline, waist, false), left = Math.min(...below.map(q => q.x)); return below.map(q => ({ x: q.x - left, y: q.y - waist })); };
+      return [make('front', bodice(front), cut), make('back', bodice(body(false)), 1), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
+        ...sleeves, ...neck, ...modules];
+    }
+    return [make('front', front, cut), make('back', body(false), 1), ...sleeves, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;
@@ -1057,6 +1092,29 @@ export function patternPieces(product: Product): PatternPiece[] {
     pieces.push(zip ? make('pocket', leftOf(pouch, bottom), 2) : make('pocket', pouch, 1));
   }
   return [...pieces, ...modules];
+}
+
+/** How far a dress's bodice pieces are moved left so they start at x = 0 (their flared skirt is wider); 0 without a seam. */
+export function bodiceShift(product: Product): number {
+  if (product.base !== 'tee' || !optionsOf(product).waistSeam) return 0;
+  return Math.min(...clipAt(topBodyOutline(product, true), teeDimensions(product).waistY, true).map(q => q.x));
+}
+
+/** A T-shirt's whole front body as cut without a waist seam (a button front's left half), for drawings of the garment. */
+export function wholeFrontOutline(product: Product): Pt[] {
+  const outline = topBodyOutline(product, true);
+  return optionsOf(product).buttons ? leftOf(outline, panelSize(topMeasurements(product)).width / 2) : outline;
+}
+
+/** The part of a pattern outline above the horizontal line y = `cut` (`above`), or below it, clipped along that line. */
+function clipAt(outline: Pt[], cut: number, above: boolean): Pt[] {
+  const kept: Pt[] = [], keep = (point: Pt) => (above ? point.y <= cut + 1e-9 : point.y >= cut - 1e-9);
+  outline.forEach((point, i) => {
+    const next = outline[(i + 1) % outline.length]!, inside = keep(point), nextInside = keep(next);
+    if (inside) kept.push(point);
+    if (inside !== nextInside) { const t = (cut - point.y) / (next.y - point.y); kept.push({ x: point.x + (next.x - point.x) * t, y: cut }); }
+  });
+  return kept;
 }
 
 /** The part of a pattern outline left of x = `cut` (one half of a symmetrical piece), clipped along that line. */
@@ -1165,10 +1223,15 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   const open = (zipped || buttoned) && !!optionsOf(product).zipOpen;
   for (const [side, o] of [['front', front], ['back', back]] as const) {
     const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, ...o.neck.slice(0, -1)];
-    if (side === 'front' && open) {
-      const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
-      for (const half of [leftOf(region, -OPEN_ZIP_GAP), mirror(leftOf(mirror(region), -OPEN_ZIP_GAP))]) fillRegion(groups.get(side)!, half, Delaunator, p => sign * rise(p), top, side);
-    } else fillRegion(groups.get(side)!, region, Delaunator, p => sign * rise(p), top, side);
+    // A dress cut at the waist is sewn there: the bodice and skirt share the waist line's points, which the drape joins.
+    const pieces: [PartId, Pt[]][] = product.base === 'tee' && optionsOf(product).waistSeam
+      ? [[side, clipAt(region, dims.waistY, true)], [side === 'front' ? 'skirtFront' : 'skirtBack', clipAt(region, dims.waistY, false)]] : [[side, region]];
+    for (const [part, piece] of pieces) {
+      if (side === 'front' && open) {
+        const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
+        for (const half of [leftOf(piece, -OPEN_ZIP_GAP), mirror(leftOf(mirror(piece), -OPEN_ZIP_GAP))]) fillRegion(groups.get(part)!, half, Delaunator, p => sign * rise(p), top, side);
+      } else fillRegion(groups.get(part)!, piece, Delaunator, p => sign * rise(p), top, side);
+    }
   }
   if (product.base === 'hoodie') {
     // The kangaroo pocket sits just above the hem band, slightly proud of the front body.

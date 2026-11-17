@@ -14,7 +14,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, collarAllowed, buttonsAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, collarAllowed, buttonsAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -104,7 +104,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label><label class="check-field"><input id="product-waist-seam" type="checkbox" aria-describedby="waist-seam-help"> Waist seam (a dress cut into bodice and skirt)</label><p id="waist-seam-help" class="fine-print" hidden>The front and back are cut at the waist line (Fit: waist position) into a bodice and a skirt, which you can style on their own; artwork stays on the bodice. The hem width sets the skirt's flare.</p></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -975,6 +975,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     setModules(current => { const others = { ...current }; delete others.buttons; delete others.zipOpen; return on ? { ...others, buttons: true } : others; },
       on ? 'Button front added: the front is cut as halves joined by a buttoned placket; with the collar it is a shirt. You can undo this.' : 'Button front removed. You can undo this.');
   });
+  $('product-waist-seam').addEventListener('change', () => {
+    const on = ($('product-waist-seam') as HTMLInputElement).checked;
+    if (on) selected = 'skirtFront';
+    else if (selected === 'skirtFront' || selected === 'skirtBack') selected = 'front';
+    setModules(current => { const others = { ...current }; delete others.waistSeam; return on ? { ...others, waistSeam: true } : others; },
+      on ? 'Waist seam added: the dress is cut at the waist into a bodice and a skirt, which start in the body’s style. Style the skirt on its own. You can undo this.'
+        : 'Waist seam removed: the front and back are cut in one piece again. You can undo this.');
+  });
   $('product-chest-pocket').addEventListener('change', () => {
     const on = ($('product-chest-pocket') as HTMLInputElement).checked;
     if (on) selected = 'chestPocket';
@@ -1187,13 +1195,19 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Direct pattern editing: front and back neckline handles plus front-piece handles move its shoulder point, neck point, neck drop, underarm and
   // hem corner. Each is a slider over one fit measurement; a drag or an arrow key is one undoable edit.
-  type Handle = { part?: 'front' | 'back'; key: FitKey; axis: 'x' | 'y'; x: number; y: number; label: string; value: (x: number, y: number) => number; widens: boolean };
+  // Each handle sits on its piece (in that piece's own coordinates) and is moved with it; `offset` is where that piece is
+  // drawn relative to the front piece.
+  type Handle = { part?: 'front' | 'back' | 'skirtFront'; key: FitKey; axis: 'x' | 'y'; x: number; y: number; label: string; value: (x: number, y: number) => number; widens: boolean; offset?: number };
   let handlesShown: Handle[] = [];
   function fitHandles(design: Product): Handle[] {
     if (isBottoms(design)) return [];
-    const d = teeDimensions(design), cx = flare(design) + d.half, armY = d.shoulderDrop + d.armDepth, full = d.length - armY;
+    // A dress's bodice pieces are drawn from x = 0 (see bodiceShift).
+    const d = teeDimensions(design), cx = flare(design) + d.half - bodiceShift(design), armY = d.shoulderDrop + d.armDepth, full = d.length - armY;
     // The hem corner sits where the side seam meets the hem, or the hem band seam on banded bases.
     const hemY = d.band ? d.length - d.band : d.length, ratio = full / (hemY - armY), inset = (d.half - d.hemHalf) / ratio;
+    // On a dress cut at the waist the hem is the skirt piece's: its left hem corner, the skirt centred on its width.
+    const skirt = optionsOf(design).waistSeam ? patternPieces(design).find(piece => piece.part === 'skirtFront') : undefined;
+    const hemCorner = skirt && skirt.outline.filter(q => q.y >= skirt.height - d.hemCurve - 1e-6).reduce((a, b) => (b.x < a.x ? b : a));
     return [
       { key: 'shoulderWidth', axis: 'x', x: cx - d.shoulderX, y: d.shoulderDrop, label: 'Shoulder point', value: x => 2 * (cx - x), widens: true },
       { key: 'shoulderDrop', axis: 'y', x: cx + d.shoulderX, y: d.shoulderDrop, label: 'Shoulder height', value: (_, y) => y, widens: false },
@@ -1201,8 +1215,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       { key: 'backNeckDrop', part: 'back', axis: 'y', x: cx, y: d.neckDepthBack, label: 'Back neck', value: (_, y) => y, widens: false },
       { key: 'frontNeckDrop', axis: 'y', x: cx, y: d.neckDepthFront, label: 'Front neck', value: (_, y) => y, widens: false },
       { key: 'armholeDepth', axis: 'y', x: cx - d.half, y: armY, label: 'Underarm', value: (_, y) => y - d.shoulderDrop, widens: false },
-      { key: 'hemWidth', axis: 'x', x: cx - d.half + inset, y: hemY - (d.band ? 0 : d.hemCurve), label: 'Hem corner',
-        value: x => 2 * (d.half - (x - cx + d.half) * ratio), widens: true },
+      skirt && hemCorner ? { key: 'hemWidth', part: 'skirtFront', axis: 'x', x: hemCorner.x, y: hemCorner.y, label: 'Hem corner', value: (x: number) => 2 * (skirt.width / 2 - x), widens: true } satisfies Handle
+        : { key: 'hemWidth', axis: 'x', x: cx - d.half + inset, y: hemY - (d.band ? 0 : d.hemCurve), label: 'Hem corner', value: (x: number) => 2 * (d.half - (x - cx + d.half) * ratio), widens: true } satisfies Handle,
       // A T-shirt's waist: drag the left side seam in to shape it, or the right one up or down to move the waist line.
       ...(waistShapeable(design) ? [
         { key: 'waistWidth', axis: 'x', x: cx - seamHalfAt(d, d.waistY), y: d.waistY, label: 'Waist', value: (x: number) => 2 * (cx - x), widens: true },
@@ -1214,10 +1228,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   function piecesSvg(design: Product): string {
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
-    handlesShown = fitHandles(design);
-    const partAt = (part: 'front' | 'back') => placed.find(item => item.piece.part === part)?.at ?? 0;
+    const partAt = (part: NonNullable<Handle['part']>) => placed.find(item => item.piece.part === part)?.at ?? 0;
     const frontAt = placed.find(item => item.piece.part === 'front')?.at ?? 0;
-    const handles = handlesShown.map(h => `<circle data-fit-handle="${h.key}" data-fit-part="${h.part ?? 'front'}" cx="${(h.x + partAt(h.part ?? 'front') - frontAt).toFixed(2)}" cy="${h.y.toFixed(2)}" r="1.5" tabindex="0" role="slider" aria-label="${h.label}: ${FIT_NAMES[h.key]}"
+    handlesShown = fitHandles(design).map(h => ({ ...h, offset: partAt(h.part ?? 'front') - frontAt }));
+    const handles = handlesShown.map(h => `<circle data-fit-handle="${h.key}" data-fit-part="${h.part ?? 'front'}" cx="${(h.x + (h.offset ?? 0)).toFixed(2)}" cy="${h.y.toFixed(2)}" r="1.5" tabindex="0" role="slider" aria-label="${h.label}: ${FIT_NAMES[h.key]}"
       aria-valuemin="${LIMITS.fit[h.key][0]}" aria-valuemax="${LIMITS.fit[h.key][1]}" aria-valuenow="${(Math.round(fitValue(design, h.key) * 10) / 10)}" aria-valuetext="${(Math.round(fitValue(design, h.key) * 10) / 10)} cm" aria-orientation="${h.axis === 'x' ? 'horizontal' : 'vertical'}"><title>${h.label}: drag to change ${FIT_NAMES[h.key].toLowerCase()}</title></circle>`).join('');
     const handleLayer = handles ? `<g class="fit-handles" transform="translate(${frontAt} 0)">${handles}<text class="fit-readout" x="0" y="-0.5" font-size="3"></text></g>` : '';
     const height = Math.max(...pieces.map(p => p.height));
@@ -1248,7 +1262,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('product-pieces').addEventListener('pointermove', event => {
     if (!drag) return;
     const point = toLayer(drag.layer, event), [low, high] = LIMITS.fit[drag.handle.key];
-    drag.value = Math.min(high, Math.max(low, drag.handle.value(point.x, point.y))); drag.moved = true;
+    drag.value = Math.min(high, Math.max(low, drag.handle.value(point.x - (drag.handle.offset ?? 0), point.y))); drag.moved = true;
     if (drag.handle.axis === 'x') drag.circle.setAttribute('cx', point.x.toFixed(2)); else drag.circle.setAttribute('cy', point.y.toFixed(2));
     const readout = drag.layer.querySelector('.fit-readout')!;
     readout.setAttribute('x', drag.circle.getAttribute('cx')!); readout.setAttribute('y', String(Number(drag.circle.getAttribute('cy')) - 3));
@@ -1332,6 +1346,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     open.checked = !!modules.zipOpen; open.disabled = !modules.zip && !modules.buttons; open.closest('label')!.hidden = !zipAllowed(design.base) && !buttonsAllowed(design.base);
     const buttons = $('product-buttons') as HTMLInputElement;
     buttons.checked = !!modules.buttons; buttons.disabled = !buttonsAllowed(design.base); buttons.closest('label')!.hidden = !buttonsAllowed(design.base);
+    // A waist seam goes on a dress: shown on T-shirt bases, available once the top is dress length.
+    const seam = $('product-waist-seam') as HTMLInputElement, dress = waistSeamAllowed(design);
+    seam.checked = !!modules.waistSeam; seam.disabled = !dress && !modules.waistSeam; seam.closest('label')!.hidden = design.base !== 'tee';
+    seam.closest('label')!.title = dress || modules.waistSeam ? '' : `Lengthen the top to at least ${DRESS_LENGTH} cm to make it a dress first.`;
+    $('waist-seam-help').hidden = !modules.waistSeam;
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;

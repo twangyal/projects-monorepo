@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, waistShapeable, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -31,6 +31,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   // Dresses are long tops; a plain "dress" keeps the current top's base.
   [/\b(?:hoodie|hooded) dress(?:es)?\b/, 'hoodie', 'hoodie'],
   [/\b(?:sweatshirt|sweat|jumper|sweater) dress(?:es)?\b/, 'sweat-dress', 'sweatshirt'],
+  // A fit-and-flare (skater) dress is shaped at the waist and cut there into a bodice and a flared skirt.
+  [/\b(?:fit[- ]and[- ]flare|skater) dress(?:es)?\b/, 'fit-flare', 'tee'],
   [/\b(?:t-?shirt|tee) dress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
@@ -57,6 +59,11 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'collar', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
   [/\b(hem ?bands?|hem ribs?|bottom bands?)\b/, () => ['hemBand']],
   [/\b(waist ?bands?)\b/, () => ['waistband']],
+  // A dress cut at the waist: its skirt pieces, and the bodice above them.
+  [/\bfront skirts?\b/, parts => (parts.has('skirtFront') ? ['skirtFront'] : [])],
+  [/\bback skirts?\b/, parts => (parts.has('skirtBack') ? ['skirtBack'] : [])],
+  [/\bskirts?\b/, parts => (parts.has('skirtFront') ? ['skirtFront', 'skirtBack'] : [])],
+  [/\bbodices?\b/, parts => (parts.has('skirtFront') ? ['front', 'back'] : [])],
   [/\b(sleeves?|arms?)\b/, () => ['sleeveLeft', 'sleeveRight']],
   [/\bcuffs?\b/, () => ['cuffLeft', 'cuffRight']],
   [/\bhoods?\b/, () => ['hood']],
@@ -103,6 +110,13 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         : Math.max(topMeasurements(product).length, base === 'tee' ? 100 : 92);
       const flared = template(base === 'tee' ? 'tee-dress' : 'sweat-dress').fit!.hemWidth!;
       product.measurements = { ...topMeasurements(product), length };
+      if (id === 'fit-flare' && base === current.base) {
+        // A tee becoming a fit-and-flare dress keeps its styling: its waist is taken in 10 cm a piece and its hem flared
+        // to one and a half times the chest, and it is cut at the waist.
+        const panel = topMeasurements(product).chest / 2 + 2;
+        product.fit = { ...product.fit, waistWidth: Math.round((panel - 10) * 2) / 2, hemWidth: Math.round(panel * 1.5 * 2) / 2 };
+        product = withOptions(product, { ...optionsOf(product), waistSeam: true });
+      }
       if (product.fit?.hemWidth === undefined) product.fit = { ...product.fit, hemWidth: flared };
       garment.push(`garment: ${garmentName(product)}${base !== current.base ? ', started from its template' : ''}, ${length} cm long`);
       break;
@@ -197,6 +211,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   if (top) {
     // A shaped waist is read before "fitted" alone, which sets the chest: "a fitted waist" shapes the side seams.
     const waisted = take(/\b(?:fitted|shaped|tapered|nipped(?:[- ]in)?|cinched|defined) waist\b|\bwaisted\b/), straightSides = take(/\bstraight side(?: seam)?s\b|\bno waist shaping\b/);
+    const unseamed = take(/\b(?:no|without a) waist seam\b/), seamed = take(/\bwaist seam\b/);
     const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
@@ -218,6 +233,17 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       const width = Math.round((next.chest / 2 + 2 - 8) * 2) / 2;
       product.fit = { ...product.fit, waistWidth: width };
       garment.push(`fitted waist: ${width} cm waist width (½)`);
+    }
+    // A waist seam cuts a dress into a bodice and a skirt, each styled on its own.
+    if (unseamed && optionsOf(product).waistSeam) {
+      const modules = { ...optionsOf(product) };
+      delete modules.waistSeam;
+      product = withOptions(product, modules);
+      garment.push('no waist seam: the body is cut in one piece');
+    } else if (seamed && !waistSeamAllowed(product)) notApplied.push(`waist seam (it goes on a dress at least ${DRESS_LENGTH} cm long)`);
+    else if (seamed && !optionsOf(product).waistSeam) {
+      product = withOptions(product, { ...optionsOf(product), waistSeam: true });
+      garment.push('waist seam: a bodice and a skirt');
     }
   } else if (product.base === 'trousers') {
     const m = legMeasurements(product), r = legMeasurements(reference), next = { ...m };

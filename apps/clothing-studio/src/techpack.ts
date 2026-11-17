@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -155,6 +155,8 @@ function samplePack(product: Product, date: string): TechPack {
     ]),
     armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
       : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
+    ...(product.base === 'tee' && modules.waistSeam ? [{ area: 'Waist seam', operation: '4-thread overlock each skirt to its bodice, then press the seam up',
+      detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; the skirt flares from ${cm(seamHalfAt(dims, dims.waistY) * 2)} (½) at the seam to ${cm(dims.hemHalf * 2)} at the hem` }] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
       ...(armholesOnly ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
@@ -321,7 +323,10 @@ export function measurementDiagram(product: Product): string {
   if (product.base === 'skirt') return skirtDiagram(product);
   if (isBottoms(product)) return trouserDiagram(product);
   // A sleeveless top's drawing is its front alone.
-  const pieces = patternPieces(product), front = pieces.find(p => p.part === 'front')!, sleeve = pieces.find(p => p.part === 'sleeveLeft') ?? { width: -14, height: 0, outline: [] };
+  const pieces = patternPieces(product), bodice = pieces.find(p => p.part === 'front')!, sleeve = pieces.find(p => p.part === 'sleeveLeft') ?? { width: -14, height: 0, outline: [] };
+  // A dress cut at the waist is drawn whole, its waist seam dashed across it.
+  const seamed = product.base === 'tee' && !!optionsOf(product).waistSeam, whole = seamed ? wholeFrontOutline(product) : bodice.outline;
+  const front = seamed ? { ...bodice, outline: whole, width: Math.max(...whole.map(p => p.x)), height: Math.max(...whole.map(p => p.y)) } : bodice;
   const d = teeDimensions(product), w = front.width, gap = 14, sx = w + gap;
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
@@ -342,8 +347,9 @@ export function measurementDiagram(product: Product): string {
   const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
   const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
   // A shaped waist: its width across the piece at the waist line, and the line's depth below the shoulder line.
-  const waistMarks = d.shaped ? arrow(half - d.waistHalf, d.waistY, half + d.waistHalf, d.waistY, 'X', half + 2, d.waistY - 1.2)
-    + arrow(body + 7, 0, body + 7, d.waistY, 'Y', body + 8.5, d.waistY / 2) : '';
+  const waistMarks = (d.shaped ? arrow(half - d.waistHalf, d.waistY, half + d.waistHalf, d.waistY, 'X', half + 2, d.waistY - 1.2)
+    + arrow(body + 7, 0, body + 7, d.waistY, 'Y', body + 8.5, d.waistY / 2) : '')
+    + (seamed ? `<line data-waist-seam="front" x1="${half - seamHalfAt(d, d.waistY)}" y1="${d.waistY}" x2="${half + seamHalfAt(d, d.waistY)}" y2="${d.waistY}" stroke="#333" stroke-width="0.35" stroke-dasharray="1.2 0.8"><title>Waist seam</title></line>` : '');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${Math.max(sx + sleeve.width, collar?.width ?? 0) + 12} ${collar ? collarY + collar.height + 12 : Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 ${outline(front, 0)}${sleeve.outline.length ? outline(sleeve as typeof front, sx) : ''}<g transform="translate(${flare(product)} 0)">
 ${arrow(chest.left - flare(product), armY, chest.right - flare(product), armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
