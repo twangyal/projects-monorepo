@@ -68,6 +68,8 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bcuffs?\b/, () => ['cuffLeft', 'cuffRight']],
   [/\bhoods?\b/, () => ['hood']],
   [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, parts => [parts.has('collar') ? 'collar' : 'neckband']],
+  // A shirt's back yoke, before "back" alone takes the word.
+  [/\b(?:back )?yokes?\b/, parts => (parts.has('yoke') ? ['yoke'] : [])],
   [/\b(front panels?|front)\b/, () => ['front']],
   [/\b(back panels?|back)\b/, () => ['back']],
   [/\b(body|bodies|torso|legs?|panels)\b/, () => ['front', 'back']],
@@ -205,6 +207,24 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
       garment.push(`rib stand collar added: ${garmentName(product)}`);
     }
+  }
+  // A shirt's back yoke: added by naming it ("a contrast yoke", "navy yoke"), taken off with "no yoke".
+  const noYoke = take(/\b(?:no|without(?: a)?) (?:back )?yokes?\b/), yoked = /\byokes?\b/.test(text);
+  if (noYoke && optionsOf(product).yoke) {
+    product = withOptions(product, { ...optionsOf(product), yoke: false });
+    garment.push('back yoke removed');
+  } else if (!noYoke && yoked && !optionsOf(product).yoke) {
+    if (product.base === 'tee' && optionsOf(product).buttons) {
+      product = withOptions(product, { ...optionsOf(product), yoke: true });
+      garment.push('back yoke added: the back is cut across below the neck');
+    } else notApplied.push(`back yoke (it goes on a shirt with a button front, not a ${garmentName(product).toLowerCase()})`);
+  }
+  if (take(/\bcontrast(?:ing)? (?:back )?yokes?\b/) && optionsOf(product).yoke) {
+    // A contrast yoke without a colour named: the yoke in the collar's colour if that differs from the back, else navy.
+    const parts = product.parts as Partial<Record<PartId, { color: string }>>;
+    const back = product.parts.back.color, collar = parts.collar?.color;
+    product.parts = { ...product.parts, yoke: { ...product.parts.yoke!, color: collar && collar !== back ? collar : '#1f2a4f' } };
+    garment.push('contrast yoke');
   }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
   const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /\bpockets?\b/.test(text) && top) ? true : null;

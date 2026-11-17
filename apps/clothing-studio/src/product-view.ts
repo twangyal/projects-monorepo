@@ -108,7 +108,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
-        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label><label class="check-field"><input id="product-waist-seam" type="checkbox" aria-describedby="waist-seam-help"> Waist seam (a dress cut into bodice and skirt)</label><p id="waist-seam-help" class="fine-print" hidden>The front and back are cut at the waist line (Fit: waist position) into a bodice and a skirt, which you can style on their own; artwork stays on the bodice. The hem width sets the skirt's flare.</p></div>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-yoke" type="checkbox" aria-describedby="yoke-help"> Back yoke</label><p id="yoke-help" class="fine-print" hidden>The back is cut across 9 cm below the neck into a yoke over the shoulders (cut double, outer and facing) and the back body, each styled on its own.</p><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label><label class="check-field"><input id="product-waist-seam" type="checkbox" aria-describedby="waist-seam-help"> Waist seam (a dress cut into bodice and skirt)</label><p id="waist-seam-help" class="fine-print" hidden>The front and back are cut at the waist line (Fit: waist position) into a bodice and a skirt, which you can style on their own; artwork stays on the bodice. The hem width sets the skirt's flare.</p></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
@@ -981,8 +981,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const on = ($('product-buttons') as HTMLInputElement).checked;
     if (on) selected = 'placket';
     else if (selected === 'placket' && !optionsOf(product() ?? template('blank')).collar) selected = 'front';
-    setModules(current => { const others = { ...current }; delete others.buttons; delete others.zipOpen; return on ? { ...others, buttons: true } : others; },
+    setModules(current => { const others = { ...current }; delete others.buttons; delete others.zipOpen; delete others.yoke; return on ? { ...others, buttons: true, ...(current.yoke ? { yoke: true } : {}) } : others; },
       on ? 'Button front added: the front is cut as halves joined by a buttoned placket; with the collar it is a shirt. You can undo this.' : 'Button front removed. You can undo this.');
+  });
+  $('product-yoke').addEventListener('change', () => {
+    const on = ($('product-yoke') as HTMLInputElement).checked;
+    if (on) selected = 'yoke';
+    else if (selected === 'yoke') selected = 'back';
+    setModules(current => { const others = { ...current }; delete others.yoke; return on ? { ...others, yoke: true } : others; },
+      on ? 'Back yoke added: the back is cut 9 cm below the neck into a yoke and the back body; the yoke starts in the back’s style. Style it on its own. You can undo this.'
+        : 'Back yoke removed: the back is cut in one piece again. You can undo this.');
   });
   $('product-waist-seam').addEventListener('change', () => {
     const on = ($('product-waist-seam') as HTMLInputElement).checked;
@@ -1356,6 +1364,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const buttons = $('product-buttons') as HTMLInputElement;
     buttons.checked = !!modules.buttons; buttons.disabled = !buttonsAllowed(design.base); buttons.closest('label')!.hidden = !buttonsAllowed(design.base);
     // A waist seam goes on a dress: shown on T-shirt bases, available once the top is dress length.
+    const yoke = $('product-yoke') as HTMLInputElement;
+    yoke.checked = !!modules.yoke; yoke.closest('label')!.hidden = design.base !== 'tee' || !modules.buttons;
+    $('yoke-help').hidden = !modules.yoke;
     const seam = $('product-waist-seam') as HTMLInputElement, dress = waistSeamAllowed(design);
     seam.checked = !!modules.waistSeam; seam.disabled = !dress && !modules.waistSeam; seam.closest('label')!.hidden = design.base !== 'tee';
     seam.closest('label')!.title = dress || modules.waistSeam ? '' : `Lengthen the top to at least ${DRESS_LENGTH} cm to make it a dress first.`;

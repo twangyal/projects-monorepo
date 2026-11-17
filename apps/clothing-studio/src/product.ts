@@ -56,11 +56,11 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   }
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
   cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket',
-  skirtFront: 'Front skirt', skirtBack: 'Back skirt' };
+  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -111,7 +111,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
     : [...kept.filter(part => !collar || part !== 'neckband'), ...(collar ? ['collar' as const] : []), ...(placket ? ['placket' as const] : [])];
   // A dress cut at the waist: the front and back bodies end at the waist seam, and a skirt front and back hang from it.
   const seamed = product.base === 'tee' && optionsOf(product).waistSeam ? [...collared, 'skirtFront' as const, 'skirtBack' as const] : collared;
-  return optionsOf(product).chestPocket ? [...seamed, 'chestPocket'] : seamed;
+  // A shirt's back yoke, across the shoulders above the back body.
+  const yoked = product.base === 'tee' && optionsOf(product).yoke ? [...seamed, 'yoke' as const] : seamed;
+  return optionsOf(product).chestPocket ? [...yoked, 'chestPocket'] : yoked;
 }
 
 /**
@@ -177,7 +179,9 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
    * stand collar (a bomber jacket's, with the front zip). */ collar?: boolean;
   /** A button front (tees): the front opens down its length on a buttoned placket; with the collar, a shirt. */ buttons?: boolean;
   /** A waist seam (T-shirt dresses): the front and back are cut at the waist line into a bodice and a skirt, each styled
-   * on its own. */ waistSeam?: boolean }
+   * on its own. */ waistSeam?: boolean;
+  /** A back yoke (shirts): the back is cut across YOKE_CM below the neck points into a yoke over the shoulders and the
+   * back body, each styled on its own. */ yoke?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -185,6 +189,8 @@ export function chestPocketAllowed(base: Base): boolean { return base === 'tee' 
 export function zipAllowed(base: Base): boolean { return base === 'hoodie' || base === 'sweatshirt'; }
 export function collarAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 export function buttonsAllowed(base: Base): boolean { return base === 'tee'; }
+/** How far below the neck points a shirt's back yoke seam runs across the back, cm. */
+export const YOKE_CM = 9;
 /** A waist seam goes on a dress: a T-shirt base at least DRESS_LENGTH long. */
 export function waistSeamAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
   return product.base === 'tee' && ((product.measurements as Measurements | undefined)?.length ?? 0) >= DRESS_LENGTH;
@@ -218,6 +224,7 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.buttons && !buttonsAllowed(product.base)) fail('A button front goes on a T-shirt, to make a shirt.');
   if (next.zipOpen && !next.zip && !next.buttons) fail('Only a garment with a front zip or buttons can be worn open.');
   if (next.waistSeam && !waistSeamAllowed(product)) fail(`A waist seam goes on a T-shirt dress: lengthen it to at least ${DRESS_LENGTH} cm first.`);
+  if (next.yoke && (product.base !== 'tee' || !next.buttons)) fail('A back yoke goes on a shirt: add the button front first.');
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -250,6 +257,13 @@ export function withOptions(product: Product, next: Options): Product {
   if (!next.waistSeam && product.base === 'tee') delete (draft.measurements as Measurements).gather;
   setSkirt(draft.parts);
   for (const colorway of draft.colorways ?? []) setSkirt(colorway.parts);
+  // A new yoke starts in the back's style.
+  const setYoke = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (next.yoke) all.yoke ??= structuredClone(parts.back); else delete all.yoke;
+  };
+  setYoke(draft.parts);
+  for (const colorway of draft.colorways ?? []) setYoke(colorway.parts);
   draft.options = { ...next };
   return draft;
 }
@@ -475,7 +489,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -490,9 +504,11 @@ export function validateProduct(value: unknown): Product {
     if (o.collar && !collarAllowed(base)) fail('A collar goes on a T-shirt (a polo collar) or a sweatshirt (a stand collar).');
     if (o.collar && p.neckline !== 'crew') fail('A collar is sewn to a round neck.');
     if (o.waistSeam !== undefined && typeof o.waistSeam !== 'boolean') fail('A waist seam must be on or off.');
+    if (o.yoke !== undefined && typeof o.yoke !== 'boolean') fail('A back yoke must be on or off.');
+    if (o.yoke && (base !== 'tee' || !o.buttons)) fail('A back yoke goes on a shirt with a button front.');
     if (o.waistSeam && !waistSeamAllowed({ base, measurements: measurements as Product['measurements'] })) fail(`A waist seam goes on a T-shirt dress, at least ${DRESS_LENGTH} cm long: lengthen it or take the waist seam off.`);
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -1125,6 +1141,11 @@ export function patternPieces(product: Product): PatternPiece[] {
     const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
       ...(collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
     const front = buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
+    // A back yoke is cut double (the outer yoke and its facing) above its seam, and the back body below it, laid out
+    // from the seam (its own top) down.
+    const backs = (outline: Pt[]) => (optionsOf(product).yoke
+      ? [make('yoke', clipAt(outline, YOKE_CM, true), 2), make('back', clipAt(outline, YOKE_CM, false).map(q => ({ x: q.x, y: q.y - YOKE_CM })), 1)]
+      : [make('back', outline, 1)]);
     // A dress cut at the waist: the bodies end at the waist line, and the skirt pieces below it are laid out from the
     // waist seam (their own top) down. Each piece starts at x = 0 (the bodice moved left by bodiceShift).
     if (optionsOf(product).waistSeam) {
@@ -1136,10 +1157,10 @@ export function patternPieces(product: Product): PatternPiece[] {
         const below = clipAt(outline, waist, false).map(q => ({ x: centre + (q.x - centre) * skirtGatherAt(dims, gather, q.y), y: q.y })), left = Math.min(...below.map(q => q.x));
         return below.map(q => ({ x: q.x - left, y: q.y - waist }));
       };
-      return [make('front', bodice(front), cut), make('back', bodice(body(false)), 1), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
+      return [make('front', bodice(front), cut), ...backs(bodice(body(false))), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
         ...sleeves, ...neck, ...modules];
     }
-    return [make('front', front, cut), make('back', body(false), 1), ...sleeves, ...neck, ...modules];
+    return [make('front', front, cut), ...backs(body(false)), ...sleeves, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;
@@ -1298,8 +1319,11 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   for (const [side, o] of [['front', front], ['back', back]] as const) {
     const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, ...o.neck.slice(0, -1)];
     // A dress cut at the waist is sewn there: the bodice and skirt share the waist line's points, which the drape joins.
-    const pieces: [PartId, Pt[]][] = product.base === 'tee' && optionsOf(product).waistSeam
+    const seamed: [PartId, Pt[]][] = product.base === 'tee' && optionsOf(product).waistSeam
       ? [[side, clipAt(region, dims.waistY, true)], [side === 'front' ? 'skirtFront' : 'skirtBack', clipAt(region, dims.waistY, false)]] : [[side, region]];
+    // A shirt's back yoke is sewn to the back body along its seam the same way.
+    const pieces: [PartId, Pt[]][] = side === 'back' && product.base === 'tee' && optionsOf(product).yoke
+      ? seamed.flatMap(([part, outline]): [PartId, Pt[]][] => (part === 'back' ? [['yoke', clipAt(outline, YOKE_CM, true)], ['back', clipAt(outline, YOKE_CM, false)]] : [[part, outline]])) : seamed;
     // A gathered skirt starts on the waist seam but is cut wider there: the drape gathers the extra fabric.
     const gather = m.gather ?? 1, flat = (p: Pt) => ({ x: p.x * skirtGatherAt(dims, gather, p.y), y: p.y });
     for (const [part, piece] of pieces) {

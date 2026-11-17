@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -128,6 +128,8 @@ function samplePack(product: Product, date: string): TechPack {
     ] : []),
   ].filter(row => !(armholesOnly && (row.code === 'C' || row.code === 'J')));
   const construction: ConstructionRow[] = [
+    ...(product.base === 'tee' && modules.yoke ? [{ area: 'Back yoke', operation: 'Sew the back body between the outer yoke and its facing, turn and topstitch 0.6 cm',
+      detail: `Yoke cut 2 (outer and facing) above a seam ${cm(YOKE_CM)} below the high point shoulder, ${product.parts.yoke?.material === product.parts.back.material ? 'in the shirt fabric' : 'in the chosen yoke fabric'}; the fronts are then sewn to the yoke at the shoulders, between its layers` }] : []),
     { area: 'Shoulder seams', operation: '4-thread overlock', detail: 'Back neck to shoulder point; stabilise with 6 mm clear tape' },
     ...(product.base === 'hoodie' ? [
       { area: 'Hood', operation: '4-thread overlock centre seam, then attach to neckline', detail: `Hood sides cut 2; ${cm(dims.hoodHeight)} high × ${cm(dims.hoodWidth)} wide; face edge turned 2 cm and coverstitched` },
