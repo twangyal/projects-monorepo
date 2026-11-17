@@ -48,12 +48,14 @@ export function gradedProduct(product: Product, size: Size): Product {
     graded.measurements = next;
   } else {
     const m = topMeasurements(product);
-    graded.measurements = { chest: round(m.chest + steps * TOP_GRADES.chest), length: round(m.length + steps * TOP_GRADES.length), sleeve: m.sleeve === 0 ? 0 : round(m.sleeve + steps * TOP_GRADES.sleeve(m.sleeve)) };
-    const fit: NonNullable<Product['fit']> = Object.fromEntries(Object.entries(product.fit ?? {}).map(([key, value]) => [key, round(value + steps * (FIT_GRADES[key as FitKey] ?? 0))]));
+    graded.measurements = { ...m, chest: round(m.chest + steps * TOP_GRADES.chest), length: round(m.length + steps * TOP_GRADES.length), sleeve: m.sleeve === 0 ? 0 : round(m.sleeve + steps * TOP_GRADES.sleeve(m.sleeve)) };
+    // A gathered skirt's hem grows with its gathered waist edge, so a larger size still has the hem to gather it from.
+    const grades: Partial<Record<FitKey, number>> = m.gather ? { ...FIT_GRADES, hemWidth: Math.max(FIT_GRADES.hemWidth!, FIT_GRADES.waistWidth! * m.gather) } : FIT_GRADES;
+    const fit: NonNullable<Product['fit']> = Object.fromEntries(Object.entries(product.fit ?? {}).map(([key, value]) => [key, round(value + steps * (grades[key as FitKey] ?? 0))]));
     // A point left at a fixed default (a hood's height, a crew neck's drop) would not change with the chest, so it takes
     // its own increment, while it stays within what can be edited.
     const sample = fitValues(product), proportional = fitValues({ ...graded, fit });
-    for (const [key, grade] of Object.entries(FIT_GRADES) as [FitKey, number][]) {
+    for (const [key, grade] of Object.entries(grades) as [FitKey, number][]) {
       // A shaped waist's position grades by its own increment, as a waist line does, rather than with the chest.
       const own = key === 'waistPosition' && product.fit?.waistWidth !== undefined;
       if (key in fit || !applies(product, key) || (!own && Math.abs(proportional[key] - sample[key]) > 0.01)) continue;

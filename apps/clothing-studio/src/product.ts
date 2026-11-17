@@ -240,6 +240,7 @@ export function withOptions(product: Product, next: Options): Product {
     if (next.waistSeam) { all.skirtFront ??= structuredClone(parts.front); all.skirtBack ??= structuredClone(parts.back); }
     else { delete all.skirtFront; delete all.skirtBack; }
   };
+  if (!next.waistSeam && product.base === 'tee') delete (draft.measurements as Measurements).gather;
   setSkirt(draft.parts);
   for (const colorway of draft.colorways ?? []) setSkirt(colorway.parts);
   draft.options = { ...next };
@@ -263,7 +264,11 @@ export interface Print { motif: PrintMotif; color: string; scaleCm: number; layo
 export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
 export interface PartStyle { material: string; color: string; print: Print | null }
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
-export interface Measurements { chest: number; length: number; sleeve: number }
+export interface Measurements { chest: number; length: number; sleeve: number;
+  /** A dress cut at the waist: its skirt's waist edge is cut this many times longer than the seam and gathered into it
+   * (DRESS_GATHER); absent for a smooth skirt. */ gather?: number }
+/** How many times longer a dress skirt's waist edge may be cut than the waist seam it is gathered into. */
+export const DRESS_GATHER = [1.1, 2] as const;
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), shoulder drop (U), neck width (F), front
  * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
@@ -444,10 +449,12 @@ export function validateProduct(value: unknown): Product {
     if (measurements.hip < measurements.waist) fail('Hip must be at least the waist: the waistband has to pull on over the hips.');
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
-    const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
+    const gathered = !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, 'gather');
+    const m = plain(p.measurements, ['chest', 'length', 'sleeve', ...(gathered ? ['gather'] : [])], 'Measurements');
     // A tee's sleeve length of 0 makes it sleeveless.
     const sleeve = base === 'tee' && m.sleeve === 0 ? 0 : finite(m.sleeve, LIMITS.sleeve, base === 'tee' ? 'Sleeve length (cm; 0 for sleeveless)' : 'Sleeve length (cm)');
-    measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve };
+    measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve,
+      ...(gathered ? { gather: finite(m.gather, DRESS_GATHER, 'Skirt gathering (× waist seam)') } : {}) };
   }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
@@ -483,6 +490,7 @@ export function validateProduct(value: unknown): Product {
     checkFit({ base, measurements: measurements as Measurements, neckline: p.neckline as Product['neckline'], fit, options });
   }
   checkChestPocket({ base, measurements, neckline: p.neckline as Product['neckline'], fit, options });
+  checkGather({ base, measurements, neckline: p.neckline as Product['neckline'], fit, options });
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
@@ -740,6 +748,22 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
     if (d.shaped && (d.waistHalf > d.half || d.waistHalf < d.half * 0.7)) fail(`Waist width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 2).toFixed(1)} cm for this chest: no wider than the chest.`);
   }
   if (sleeves && d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
+}
+
+/** A gathered skirt hangs from a waist seam, and its gathered waist edge is no longer than its hem. */
+function checkGather(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit' | 'options'>) {
+  const gather = isBottoms(product) ? undefined : (product.measurements as Measurements).gather;
+  if (gather === undefined) return;
+  if (product.base !== 'tee' || !optionsOf(product).waistSeam) fail('Skirt gathering goes on a dress cut at the waist: add the waist seam first.');
+  const d = teeDimensions(product as Product), waist = 2 * seamHalfAt(d, d.waistY) * gather, hem = 2 * d.hemHalf;
+  if (waist > hem + 1e-9) fail(`A gathered skirt's waist edge (${waist.toFixed(1)} cm a piece) must be no longer than its hem (${hem.toFixed(1)} cm): widen the hem or gather less.`);
+}
+
+/** How many times wider a dress skirt piece is cut than its 3D shell at `y` cm below the neck points: its gathering at
+ * the waist seam, easing to none at the hem. */
+export function skirtGatherAt(d: ReturnType<typeof teeDimensions>, gather: number, y: number): number {
+  const t = Math.min(1, Math.max(0, (y - d.waistY) / (d.length - d.waistY)));
+  return gather + (1 - gather) * t;
 }
 
 /** Keep an enabled finished pocket's bounding rectangle at least 0.5 cm inside the actual front sewing outline. */
@@ -1067,7 +1091,12 @@ export function patternPieces(product: Product): PatternPiece[] {
     if (optionsOf(product).waistSeam) {
       const waist = dims.waistY, shift = bodiceShift(product);
       const bodice = (outline: Pt[]) => clipAt(outline, waist, true).map(q => ({ x: q.x - shift, y: q.y }));
-      const skirt = (outline: Pt[]) => { const below = clipAt(outline, waist, false), left = Math.min(...below.map(q => q.x)); return below.map(q => ({ x: q.x - left, y: q.y - waist })); };
+      // A gathered skirt is cut wider at the waist than the seam it is gathered into, about the piece's centre line.
+      const gather = m.gather ?? 1, centre = flare(product) + panel.width / 2;
+      const skirt = (outline: Pt[]) => {
+        const below = clipAt(outline, waist, false).map(q => ({ x: centre + (q.x - centre) * skirtGatherAt(dims, gather, q.y), y: q.y })), left = Math.min(...below.map(q => q.x));
+        return below.map(q => ({ x: q.x - left, y: q.y - waist }));
+      };
       return [make('front', bodice(front), cut), make('back', bodice(body(false)), 1), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
         ...sleeves, ...neck, ...modules];
     }
@@ -1232,11 +1261,14 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     // A dress cut at the waist is sewn there: the bodice and skirt share the waist line's points, which the drape joins.
     const pieces: [PartId, Pt[]][] = product.base === 'tee' && optionsOf(product).waistSeam
       ? [[side, clipAt(region, dims.waistY, true)], [side === 'front' ? 'skirtFront' : 'skirtBack', clipAt(region, dims.waistY, false)]] : [[side, region]];
+    // A gathered skirt starts on the waist seam but is cut wider there: the drape gathers the extra fabric.
+    const gather = m.gather ?? 1, flat = (p: Pt) => ({ x: p.x * skirtGatherAt(dims, gather, p.y), y: p.y });
     for (const [part, piece] of pieces) {
+      const cut = part === 'skirtFront' || part === 'skirtBack' ? flat : undefined;
       if (side === 'front' && open) {
         const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
-        for (const half of [leftOf(piece, -OPEN_ZIP_GAP), mirror(leftOf(mirror(piece), -OPEN_ZIP_GAP))]) fillRegion(groups.get(part)!, half, Delaunator, p => sign * rise(p), top, side);
-      } else fillRegion(groups.get(part)!, piece, Delaunator, p => sign * rise(p), top, side);
+        for (const half of [leftOf(piece, -OPEN_ZIP_GAP), mirror(leftOf(mirror(piece), -OPEN_ZIP_GAP))]) fillRegion(groups.get(part)!, half, Delaunator, p => sign * rise(p), top, side, cut);
+      } else fillRegion(groups.get(part)!, piece, Delaunator, p => sign * rise(p), top, side, cut);
     }
   }
   if (product.base === 'hoodie') {
@@ -1364,7 +1396,7 @@ function tube(mesh: PartMesh, rows: number, columns: number, ends: (k: number) =
  * flipped so the hem sits at 0 below `top`, z comes from `z`, and UVs are flat cm (mirrored on the back so prints
  * read left to right from behind).
  */
-function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, z: (p: Pt) => number, top: number, side: 'front' | 'back') {
+function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, z: (p: Pt) => number, top: number, side: 'front' | 'back', flat?: (p: Pt) => Pt) {
   const samples: Pt[] = [];
   for (let i = 0; i < polygon.length; i++) {
     const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / MESH_STEP - 1e-9));
@@ -1381,7 +1413,9 @@ function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, 
     if (id === undefined) {
       const p = samples[index]; id = group.positions.length / 3; ids.set(index, id);
       group.positions.push(p.x, top - p.y, z(p));
-      group.uvs.push(side === 'front' ? p.x : -p.x, p.y);
+      // UVs are the flat pattern position: the shell's own, or as the piece is cut (a gathered skirt is wider).
+      const cut = flat ? flat(p) : p;
+      group.uvs.push(side === 'front' ? cut.x : -cut.x, cut.y);
     }
     return id;
   };

@@ -155,8 +155,11 @@ function samplePack(product: Product, date: string): TechPack {
     ]),
     armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
       : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
-    ...(product.base === 'tee' && modules.waistSeam ? [{ area: 'Waist seam', operation: '4-thread overlock each skirt to its bodice, then press the seam up',
-      detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; the skirt flares from ${cm(seamHalfAt(dims, dims.waistY) * 2)} (½) at the seam to ${cm(dims.hemHalf * 2)} at the hem` }] : []),
+    ...(product.base === 'tee' && modules.waistSeam ? [(gather => ({ area: 'Waist seam',
+      operation: gather > 1 ? 'Run two gathering rows along each skirt’s waist edge, draw it up to the bodice’s, then 4-thread overlock and press the seam up' : '4-thread overlock each skirt to its bodice, then press the seam up',
+      detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; `
+        + (gather > 1 ? `each skirt’s waist edge is cut ${gather}× the seam (${cm(seamHalfAt(dims, dims.waistY) * 2 * gather)} against ${cm(seamHalfAt(dims, dims.waistY) * 2)}) and gathered into it, falling to a ${cm(dims.hemHalf * 2)} hem`
+          : `the skirt flares from ${cm(seamHalfAt(dims, dims.waistY) * 2)} (½) at the seam to ${cm(dims.hemHalf * 2)} at the hem`) }))(topMeasurements(product).gather ?? 1)] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
       ...(armholesOnly ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),

@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -93,10 +93,16 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     return match;
   };
 
+  // A gathered dress is a dress whose skirt is gathered into a waist seam: the word is read with the skirt, below.
+  const gatheredDress = take(/\b(?:gathered|dirndl)(?=(?:[ -][a-z]+){0,3} dress(?:es)?\b)/);
   // The garment: a different base starts from that base's template; shorts and trousers switch leg length.
   let product = structuredClone(current);
   let tank = false;
+  // On a dress cut at the waist, "skirt" names its skirt pieces, not a skirt to wear instead; so does a gathered skirt on
+  // a dress long enough to be cut there.
+  const dressSkirt = partsOf(product).includes('skirtFront') || (!gatheredDress && waistSeamAllowed(product) && /\b(?:gathered|dirndl) skirts?\b/.test(text));
   for (const [pattern, id, chosen] of GARMENTS) {
+    if (id === 'flared-skirt' && dressSkirt) continue;
     const match = take(pattern);
     if (!match) continue;
     tank = id === 'blank' && /tank|vest|sleeveless|singlet/.test(match[0]);
@@ -212,6 +218,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     // A shaped waist is read before "fitted" alone, which sets the chest: "a fitted waist" shapes the side seams.
     const waisted = take(/\b(?:fitted|shaped|tapered|nipped(?:[- ]in)?|cinched|defined) waist\b|\bwaisted\b/), straightSides = take(/\bstraight side(?: seam)?s\b|\bno waist shaping\b/);
     const unseamed = take(/\b(?:no|without a) waist seam\b/), seamed = take(/\bwaist seam\b/);
+    const gatheredSkirt = take(/\b(?:gathered|dirndl) (?:skirt|waist)s?\b|\bdirndl\b/) ?? gatheredDress;
+    const smoothSkirt = !gatheredSkirt && take(/\b(?:smooth|ungathered) skirt\b/);
     const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
@@ -244,6 +252,33 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     else if (seamed && !optionsOf(product).waistSeam) {
       product = withOptions(product, { ...optionsOf(product), waistSeam: true });
       garment.push('waist seam: a bodice and a skirt');
+    }
+    // A gathered skirt hangs from a waist seam, its waist edge cut one and a half times the seam and gathered into it.
+    // As gathered skirts are cut, its hem is widened to that edge when narrower, within the hem's limit.
+    if (gatheredSkirt && !unseamed && product.base === 'tee' && !optionsOf(product).waistSeam && waistSeamAllowed(product)) {
+      product = withOptions(product, { ...optionsOf(product), waistSeam: true });
+      garment.push('waist seam: a bodice and a skirt');
+    }
+    if (gatheredSkirt && (product.base !== 'tee' || !optionsOf(product).waistSeam)) {
+      notApplied.push(`${gatheredSkirt[0]}${gatheredSkirt === gatheredDress ? ' dress' : ''} (a gathered skirt goes on a T-shirt dress at least ${DRESS_LENGTH} cm long, cut at the waist)`);
+    } else if (gatheredSkirt) {
+      // A straight side seam would move out with a wider hem, so the waist keeps its width as the hem is widened, taken
+      // in to the chest's width where a flared hem had let it out wider.
+      const d = teeDimensions(product), hem = 2 * d.hemHalf;
+      const seam = product.fit?.waistWidth ?? Math.min(Math.round(2 * seamHalfAt(d, d.waistY) * 2) / 2, Math.floor(4 * d.half) / 2);
+      const gather = Math.min(1.5, Math.floor(Math.max(hem, LIMITS.fit.hemWidth[1]) / seam * 20) / 20);
+      if (gather < DRESS_GATHER[0]) notApplied.push(`${gatheredSkirt[0]} (this waist seam is too wide to gather)`);
+      else {
+        const edge = Math.ceil(seam * gather * 2) / 2, widened = edge > hem + 1e-9;
+        product.measurements = { ...topMeasurements(product), gather };
+        product.fit = { ...product.fit, waistWidth: product.fit?.waistWidth ?? seam, ...(widened ? { hemWidth: edge } : {}) };
+        garment.push(`gathered skirt: ${gather} times the waist seam${widened ? `, hem widened to ${edge} cm (½)` : ''}`);
+      }
+    } else if (smoothSkirt && topMeasurements(product).gather) {
+      const smooth = { ...topMeasurements(product) };
+      delete smooth.gather;
+      product.measurements = smooth;
+      garment.push('smooth skirt: no gathers');
     }
   } else if (product.base === 'trousers') {
     const m = legMeasurements(product), r = legMeasurements(reference), next = { ...m };
