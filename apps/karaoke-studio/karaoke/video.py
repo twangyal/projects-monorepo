@@ -22,6 +22,7 @@ from .limits import (COUNT_IN, COUNT_IN_BREAK, MAX_CARD_BYTES, MAX_CARDS, MAX_VI
 from .model import ValidationError, validate_project
 from .media_io import media_handles
 from .lyrics_auto import sung_count, word_timings
+from .pronunciation import pronunciation as line_pronunciation, said_line
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
 # Video sizes: cards are laid out at 1280x720 and every position and size is scaled to the chosen frame.
@@ -359,9 +360,10 @@ def _cover_backdrop(cover: str, colour: str, width: int = WIDTH, height: int = H
 
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
                 sung: list[str] | None = None, count: int | None = None, style: str = 'classic',
-                background: str = 'cover', layer: bool = False, size: str = '720p') -> None:
+                background: str = 'cover', layer: bool = False, size: str = '720p', said: list[str] | None = None) -> None:
     """One video card. ``sung`` lists the active line's words already sung; without it the whole
-    active line is highlighted. During a break, ``count`` dots count singers in to the next line. ``style`` names
+    active line is highlighted. ``said`` is the active line's pronunciation in Latin letters, a piece for each of its
+    words (see ``pronunciation``), drawn under it and highlighted with it. During a break, ``count`` dots count singers in to the next line. ``style`` names
     one of STYLES; with the ``cover`` background, a clip's cover picture lies behind the lyrics. A ``layer`` is the
     card's words alone on a transparent ground, to lie over a backdrop drawn once. ``size`` names one of VIDEO_SIZES:
     the card is laid out at 1280x720 and scaled to it."""
@@ -380,12 +382,19 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=1000 * k)
     text(' '.join(project['title'].split()), 80 * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
+    # With its pronunciation under it, the line being sung moves up to leave it room.
+    said = said if active_index is not None and said else None
+    middle, room = (290 * k, 200 * k) if said else (320 * k, 300 * k)
     if active_index is not None and sung is not None:
-        text(active, 320 * k, size=44 * scale * k, minimum=24 * scale * k, max_height=300 * k, fill=main,
+        text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room, fill=main,
              sung_chars=sum(len(word) for word in sung), sung_fill=accent)
     else:
-        text(active, 320 * k, size=44 * scale * k, minimum=24 * scale * k, max_height=300 * k,
+        text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room,
              fill=accent if active_index is not None else main)
+    if said:
+        spoken = said_line(said[:len(sung)]) if sung is not None else said_line(said)
+        text(said_line(said), 430 * k, size=28 * scale * k, minimum=18 * scale * k, max_height=90 * k, fill=muted,
+             sung_chars=sum(not ch.isspace() for ch in spoken), sung_fill=accent)
     if active_index is None and count:
         # Dots in a row under the break, one fewer each second, in the colour of words not yet sung.
         radius, gap = 12 * k, 44 * k
@@ -564,10 +573,12 @@ def _sized_wav(data: bytes) -> bytes:
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
                  vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic',
-                 background: str = 'cover', letters=None, size: str = '720p', language: str | None = None) -> None:
+                 background: str = 'cover', letters=None, size: str = '720p', language: str | None = None,
+                 pronunciation: bool = True) -> None:
     """Render the karaoke video at ``size`` (one of VIDEO_SIZES); ``words`` are recognized words that, with
     ``letters`` measured in the vocals when there are any (and the song's recognized ``language``), time the word
-    highlighting.
+    highlighting. With ``pronunciation``, a line in Korean, Cyrillic, or Chinese or Japanese read in the song's
+    language, shows how it is said in Latin letters under it.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
     ``semitones`` moves the audio's key up or down without changing its tempo.
@@ -601,6 +612,8 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             cues = project['cues']
             timings = word_timings(cues, words or [], project['duration'], letters, language)
             whole_lines = [text_layout(cue['text'])[1] for cue in cues]
+            said = [line_pronunciation(cue['text'], language) if pronunciation and not whole else None
+                    for cue, whole in zip(cues, whole_lines, strict=True)]
             for frame in range(frame_count):
                 _remaining(cancel, deadline)
                 position = frame / FPS
@@ -620,7 +633,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                     else:
                         render_card(project, active, card, font_path,
                                     sung=[word['text'] for word in timings[active][:sung]], style=style, background=background,
-                                    layer=backdrop is not None, size=size)
+                                    layer=backdrop is not None, size=size, said=said[active])
                     _remaining(cancel, deadline)
                     card_bytes += card.stat().st_size
                     if card_bytes > MAX_CARD_BYTES:

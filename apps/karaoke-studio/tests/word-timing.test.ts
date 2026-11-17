@@ -41,3 +41,21 @@ test('the sung prefix counts code points of words already started and skips spac
   assert.deepEqual(splitSung('é 漢字', 3), ['é 漢字', '']);
   assert.deepEqual(splitSung('😀 ok', 1), ['😀', ' ok'], 'emoji are never cut in half');
 });
+
+test('a line in another script comes with how it is said, a piece per word, lit as its words are sung', async () => {
+  const { saidCharacters, saidLine } = await import('../src/word-timing.ts');
+  const korean = [{ start: 1, end: 4, text: '사랑해 너를' }, { start: 5, end: 6, text: 'hello' }];
+  const said = { recognized: true, lines: [[{ text: '사랑해', start: 1.2, heard: true }, { text: '너를', start: 2, heard: true }], [{ text: 'hello', start: 5.2, heard: true }]],
+    said: [['saranghae', 'neoreul'], null] };
+  const timing = parseWordTiming(said, korean);
+  assert.deepEqual(timing.said, [['saranghae', 'neoreul'], null]);
+  assert.equal(saidLine(timing.said[0]!), 'saranghae neoreul');
+  assert.deepEqual([1, 1.5, 2.5].map(t => saidCharacters(timing.said[0]!, timing.lines[0]!, t)), [0, 9, 16]);
+  // A Japanese word's later characters are said with its first: their pieces are empty.
+  assert.equal(saidLine(['toukyou', '', 'e', 'ikou', '', '']), 'toukyou e ikou');
+  // Replies from a studio without pronunciations still read; pieces that do not match the words are refused.
+  assert.deepEqual(parseWordTiming({ recognized: true, lines: said.lines }, korean).said, [null, null]);
+  for (const bad of [[['saranghae'], null], [['saranghae', 'neoreul']], [['saranghae', 7], null]]) {
+    assert.throws(() => parseWordTiming({ ...said, said: bad }, korean), Error, JSON.stringify(bad));
+  }
+});

@@ -152,6 +152,29 @@ class VideoTests(unittest.TestCase):
                 video.export_video(self.project, self.backing, self.root / 'x.mp4', self.root / 'work', FONT,
                                    threading.Event(), vocals=vocals, guide=guide)
 
+    def test_a_line_in_another_script_shows_how_it_is_said_under_it_lighting_up_with_its_words(self):
+        project = update_project(self.project, 'Said', [dict(start=0, end=3, text='사랑해 너를')], 1)
+        accent = (0xe4, 0xb7, 0x7d)
+
+        def card(name, **options):
+            output = self.root / f'{name}.png'
+            video.render_card(project, 0, output, FONT, **options)
+            image = Image.open(output).convert('RGB')
+            self.addCleanup(image.close)
+            return image
+
+        def columns(image, top, bottom, colour=None):
+            pixels = image.load()
+            background = pixels[5, 5]
+            return [x for x in range(1280) if any((pixels[x, y] == colour) if colour else (pixels[x, y] != background) for y in range(top, bottom))]
+        plain, said = card('plain', sung=['사랑해']), card('said', sung=['사랑해'], said=['saranghae', 'neoreul'])
+        # Nothing is drawn in the band under the line without it; with it, the first word's reading is lit and the
+        # second's is not.
+        self.assertEqual(columns(plain, 410, 450), [])
+        lit, drawn = columns(said, 410, 450, accent), columns(said, 410, 450)
+        self.assertTrue(lit and drawn and min(lit) - min(drawn) <= 2 and max(lit) + 80 < max(drawn), (lit[:1], lit[-1:], drawn[:1], drawn[-1:]))
+        self.assertEqual(columns(card('none', sung=[], said=['saranghae', 'neoreul']), 410, 450, accent), [])
+
     def test_word_highlighting_colours_only_the_sung_words(self):
         project = update_project(self.project, 'Words', [dict(start=0, end=3, text='LEFT RIGHT')], 1)
         cards = {}
@@ -436,7 +459,7 @@ class VideoTests(unittest.TestCase):
         card_count = [0]
         sung_states = []
 
-        def card(_project, active, path, _font, sung=None, count=None, style="classic", background="cover", layer=False, size="720p"):
+        def card(_project, active, path, _font, sung=None, count=None, style="classic", background="cover", layer=False, size="720p", said=None):
             path.write_text(str(card_count[0]))
             sung_states.append((active, sung))
             card_count[0] += 1

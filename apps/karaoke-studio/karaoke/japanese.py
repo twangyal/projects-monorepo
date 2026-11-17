@@ -69,14 +69,56 @@ def romaji(kana: Iterable[str]) -> list[str]:
 
 
 @lru_cache(maxsize=1)
-def _dictionary() -> Callable[[str], list[tuple[str, str]]] | None:
-    """Words of a text with their readings in katakana, or None without SudachiPy and its small dictionary."""
+def _tokenizer():
+    """SudachiPy's tokenizer with its small dictionary, or None without them."""
     try:
         from sudachipy import Dictionary
-        tokenizer = Dictionary(dict='small').create()
+        return Dictionary(dict='small').create()
     except Exception:  # not installed, or its dictionary missing: Japanese stays unread
         return None
-    return lambda text: [(word.surface(), word.reading_form()) for word in tokenizer.tokenize(text)]
+
+
+def _dictionary() -> Callable[[str], list[tuple[str, str]]] | None:
+    """Words of a text with their readings in katakana, or None without SudachiPy and its small dictionary."""
+    tokenizer = _tokenizer()
+    return None if tokenizer is None else lambda text: [(word.surface(), word.reading_form()) for word in tokenizer.tokenize(text)]
+
+
+def _tagger() -> Callable[[str], list[tuple[str, str, bool]]] | None:
+    """Words of a text with their readings in katakana and whether each is a particle, or None without the dictionary."""
+    tokenizer = _tokenizer()
+    return None if tokenizer is None else lambda text: [(word.surface(), word.reading_form(), word.part_of_speech()[0] == '助詞')
+                                                        for word in tokenizer.tokenize(text)]
+
+
+# Particles said otherwise than they are written.
+_PARTICLES = {'ハ': 'wa', 'ヘ': 'e', 'ヲ': 'o'}
+
+
+def japanese_words(text: str, words: Callable[[str], list[tuple[str, str, bool]]] | None = None) -> list[tuple[int, int, str]] | None:
+    """Each word of ``text`` the dictionary finds, as its start and end offsets and its romaji: a particle as it is said,
+    a word in other letters as written, '' for one without a reading. None without the reading dictionary."""
+    words = words or _tagger()
+    if words is None:
+        return None
+    spans, at = [], 0
+    for surface, reading, particle in words(text):
+        start = text.find(surface, at)
+        if start < 0:
+            return None
+        at = start + len(surface)
+        if not any(is_kana(ch) or is_kanji(ch) for ch in surface):
+            spans.append((start, at, surface.strip()))
+            continue
+        kana = _katakana(reading)
+        if particle and kana in _PARTICLES:
+            said = _PARTICLES[kana]
+        elif kana and all(is_kana(ch) for ch in kana):
+            said = ''.join(piece for piece in romaji(kana) if piece != CONTINUED)
+        else:
+            said = ''
+        spans.append((start, at, said))
+    return spans
 
 
 def japanese_readings(text: str, words: Callable[[str], list[tuple[str, str]]] | None = None) -> list[str | None] | None:

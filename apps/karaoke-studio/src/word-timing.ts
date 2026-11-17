@@ -2,7 +2,9 @@ import type { Cue } from './lyrics.ts';
 
 /** One word of a lyric line and the time it starts being sung (from the studio's word timing). */
 export interface TimedWord { text: string; start: number; heard: boolean }
-export interface WordTiming { recognized: boolean; lines: TimedWord[][] }
+/** Each line's words with their start times, and where its script needs it, how it is said in Latin letters: a piece
+ * for each word, '' for a word said with the one before it (null for a line in Latin letters). */
+export interface WordTiming { recognized: boolean; lines: TimedWord[][]; said: (string[] | null)[] }
 
 const unreadable = () => new Error('The studio returned unreadable word timing.');
 // Scripts written without spaces (karaoke/lyrics_auto.py has the same rule): each Chinese, Japanese, Thai,
@@ -39,8 +41,11 @@ export function cueWords(text: string): string[] {
 export function parseWordTiming(value: unknown, cues: readonly Cue[]): WordTiming {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw unreadable();
   const reply = value as Record<string, unknown>;
-  if (Object.keys(reply).sort().join(',') !== 'lines,recognized' || typeof reply.recognized !== 'boolean'
+  const keys = Object.keys(reply).sort().join(',');
+  if ((keys !== 'lines,recognized' && keys !== 'lines,recognized,said') || typeof reply.recognized !== 'boolean'
     || !Array.isArray(reply.lines) || reply.lines.length !== cues.length) throw unreadable();
+  const said = reply.said === undefined ? cues.map(() => null) : reply.said;
+  if (!Array.isArray(said) || said.length !== cues.length) throw unreadable();
   const lines = reply.lines.map((line, index) => {
     const cue = cues[index], expected = cueWords(cue.text);
     if (!Array.isArray(line) || line.length !== expected.length) throw unreadable();
@@ -55,7 +60,26 @@ export function parseWordTiming(value: unknown, cues: readonly Cue[]): WordTimin
       return { text, start, heard } as TimedWord;
     });
   });
-  return { recognized: reply.recognized, lines };
+  return {
+    recognized: reply.recognized, lines,
+    said: said.map((pieces, index) => {
+      if (pieces === null) return null;
+      if (!Array.isArray(pieces) || pieces.length !== lines[index]!.length || !pieces.every(piece => typeof piece === 'string' && piece.length <= 120)) throw unreadable();
+      return pieces as string[];
+    }),
+  };
+}
+
+/** A line's pronunciation as shown: its pieces with a space between each. */
+export function saidLine(pieces: readonly string[]): string {
+  return pieces.filter(Boolean).join(' ');
+}
+
+/** Non-space characters of the pronunciation said by `time`: the pieces of the words that have started. */
+export function saidCharacters(pieces: readonly string[], words: readonly TimedWord[], time: number): number {
+  let count = 0;
+  pieces.forEach((piece, index) => { if (words[index] && words[index]!.start <= time) count += [...piece].filter(ch => !/\s/.test(ch)).length; });
+  return count;
 }
 
 /** Non-space characters (Unicode code points) of the words that have started by `time`. */

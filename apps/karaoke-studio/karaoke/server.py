@@ -33,6 +33,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
 from .jobs import JobBusy, JobManager, JobPublication
 from .alignment import ALIGNMENT_FILE, alignable, force_align, max_bytes, read_emissions
 from .lyrics_auto import align_lines, word_timings, words_to_cues
+from .pronunciation import pronunciation as line_pronunciation
 from .ass import render_ass
 from .lrc import render_lrc
 from .recognition_passage import PASSAGE_FILE, passage_range, crop_vocals, passage_result, validate_passage, passage_reply
@@ -845,7 +846,7 @@ class KaraokeServer(ThreadingHTTPServer):
                 source.close()
 
     def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
-                     background: str = "cover", size: str = "720p"):
+                     background: str = "cover", size: str = "720p", pronunciation: bool = True):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -856,8 +857,9 @@ class KaraokeServer(ThreadingHTTPServer):
         letters = self.read_alignment(project) if transcript else None
         if letters is not None:
             timing["letters"] = letters
-            if transcript.get("language"):
-                timing["language"] = transcript["language"]
+        # The song's language also says how its lyrics are pronounced (pinyin for Mandarin, romaji for Japanese).
+        if transcript and transcript.get("language"):
+            timing["language"] = transcript["language"]
         work_dir = self.new_work()
         project_dir = self.projects_dir / project["id"]
 
@@ -877,6 +879,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     key.update({"style": style} if style != "classic" else {})
                     key.update({"background": background} if background != "cover" else {})
                     key.update({"size": size} if size != "720p" else {})
+                    key.update({"pronunciation": False} if not pronunciation else {})
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
                                     owned_work, self.font_path, cancel, **timing, **guide, **key)
@@ -1230,7 +1233,8 @@ class Handler(BaseHTTPRequestHandler):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
                 style, background, size = value.get("style", "classic"), value.get("background", "cover"), value.get("size", "720p")
-                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background", "size"})
+                pronounce = value.get("pronunciation", True)
+                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background", "size", "pronunciation"})
                 if set(value) - allowed or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
                     raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
                 if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
@@ -1241,6 +1245,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise RequestError(400, "Choose the cover art or a plain background.")
                 if size not in VIDEO_SIZES:
                     raise RequestError(400, "Choose a video size: 720p (1280x720) or 1080p (1920x1080).")
+                if type(pronounce) is not bool:
+                    raise RequestError(400, "Choose whether the video shows how lyrics in other scripts are pronounced.")
                 if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):
                     raise RequestError(400, "Choose where in the clip to preview the key.")
             elif self.command == "POST" and resource == "transcribe":
@@ -1337,7 +1343,7 @@ class Handler(BaseHTTPRequestHandler):
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style,
-                                              background=background, size=size)
+                                              background=background, size=size, pronunciation=pronounce)
                 if self.command == "POST" and resource == "key-preview":
                     if start >= project["duration"]:
                         raise RequestError(400, "Choose where in the clip to preview the key.")
@@ -1421,8 +1427,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.command == "POST" and resource == "word-timings":
                 words = transcript["words"] if transcript else []
+                language = (transcript or {}).get("language")
+                # Each line's pronunciation in Latin letters, a piece per word, where its script needs one.
                 self._json({"recognized": transcript is not None,
-                            "lines": word_timings(timed["cues"], words, project["duration"], letters, (transcript or {}).get("language"))})
+                            "lines": word_timings(timed["cues"], words, project["duration"], letters, language),
+                            "said": [line_pronunciation(cue["text"], language) for cue in timed["cues"]]})
                 return
             if self.command == "POST" and resource == "align":
                 if transcript is None:

@@ -279,6 +279,8 @@ class ServerAlignmentTests(unittest.TestCase):
         status, _, reply = self.helper.request('POST', base + '/word-timings', {'cues': [{'start': 17.0, 'end': 20.0, 'text': '我爱你'}]})
         self.assertEqual(status, 200, reply)
         self.assertEqual(len(reply['lines'][0]), 3)
+        # Each line also comes with how it is said, in pinyin with tone marks, a piece for each character.
+        self.assertEqual(reply['said'], [['wǒ', 'ài', 'nǐ']])
 
     def test_japanese_lyrics_are_laid_on_the_singing_with_the_reading_dictionary(self):
         from unittest import mock

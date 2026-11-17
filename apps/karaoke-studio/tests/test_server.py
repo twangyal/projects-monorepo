@@ -446,6 +446,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
         self.assertEqual(calls[-1].get("size"), "1080p")
         self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "size": "1080p"})[0], 400)
+        # Pronunciation under lines in other scripts is shown unless it is turned off.
+        for body in ({"pronunciation": "no"}, {"pronunciation": 0}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        status, _, response = self.request("POST", endpoint + "/export", {"pronunciation": False})
+        self.assertEqual(status, 202, response)
+        self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+        self.assertIs(calls[-1].get("pronunciation"), False)
+        self.assertEqual(self.request("POST", endpoint + "/key-preview", {"semitones": 2, "start": 0, "pronunciation": False})[0], 400)
         for body, semitones in (({}, None), ({"semitones": -2, "guideVocal": 15}, -2)):
             status, _, response = self.request("POST", endpoint + "/export", body)
             self.assertEqual(status, 202, response)
