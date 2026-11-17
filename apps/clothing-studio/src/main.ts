@@ -108,6 +108,8 @@ function renderViews() {
 
 function updateControls() {
   element('replace-saved').hidden = saveProtection !== 'protected';
+  // A backup taken before the saved concept has loaded would hold only the blank starting concept.
+  element<HTMLButtonElement>('backup').disabled = saveProtection === 'loading';
   element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
   // Active text inputs can temporarily be empty, and retain native selection
   // and undo state while other asynchronous work updates the workspace.
@@ -172,6 +174,7 @@ function commit(next: Project, textField?: 'title' | 'note') {
 
 function updateLoadControls() {
   element('load-state').hidden = !loadBusy;
+  element<HTMLButtonElement>('backup').disabled = saveProtection === 'loading';
   element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
   element<HTMLButtonElement>('concept-product').disabled = loadBusy || saveProtection === 'loading' || exportBusy || replacingSaved || !!gesture;
 }
