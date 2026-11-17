@@ -8,7 +8,7 @@ import { LIMITS, SIZES, fitValues, isBottoms, legMeasurements, optionsOf, topMea
 
 /** Fit increments per size step for tops; points not listed stay the same in every size. */
 export const FIT_GRADES: Partial<Record<FitKey, number>> = {
-  shoulderWidth: 1.5, armholeDepth: 1, neckWidth: 0.5, frontNeckDrop: 0.25, hemWidth: 2.5, sleeveOpening: 0.5,
+  shoulderWidth: 1.5, armholeDepth: 1, neckWidth: 0.5, frontNeckDrop: 0.25, waistWidth: 2.5, waistPosition: 0.5, hemWidth: 2.5, sleeveOpening: 0.5,
   hoodHeight: 0.5, hoodWidth: 0.5, chestPocketWidth: 0.5, chestPocketHeight: 0.5, chestPocketY: 0.5,
 };
 /** Body increments per size step: a top's chest girth and body length, and its sleeve (more for long sleeves). */
@@ -19,6 +19,7 @@ export const LEG_GRADES = { waist: 5, hip: 5, rise: 0.5, inseam: 0, legOpening: 
 /** Whether a fit point belongs to this top: hood points to a hoodie, chest pocket points to a top with one. */
 function applies(product: Product, key: FitKey): boolean {
   if (key === 'hoodHeight' || key === 'hoodWidth') return product.base === 'hoodie';
+  if (key === 'waistWidth' || key === 'waistPosition') return product.base === 'tee';
   if (key.startsWith('chestPocket')) return optionsOf(product).chestPocket;
   return true;
 }
@@ -53,7 +54,9 @@ export function gradedProduct(product: Product, size: Size): Product {
     // its own increment, while it stays within what can be edited.
     const sample = fitValues(product), proportional = fitValues({ ...graded, fit });
     for (const [key, grade] of Object.entries(FIT_GRADES) as [FitKey, number][]) {
-      if (key in fit || !applies(product, key) || Math.abs(proportional[key] - sample[key]) > 0.01) continue;
+      // A shaped waist's position grades by its own increment, as a waist line does, rather than with the chest.
+      const own = key === 'waistPosition' && product.fit?.waistWidth !== undefined;
+      if (key in fit || !applies(product, key) || (!own && Math.abs(proportional[key] - sample[key]) > 0.01)) continue;
       const value = round(sample[key] + steps * grade), [low, high] = LIMITS.fit[key];
       if (value >= low && value <= high) fit[key] = value;
     }

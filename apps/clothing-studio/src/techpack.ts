@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -96,6 +96,10 @@ function samplePack(product: Product, date: string): TechPack {
     pom('G', 'Front neck drop', 'High point shoulder line to front neck seam', dims.neckDepthFront, 0.25, 0.5),
     pom('H', 'Back neck drop', 'High point shoulder line to back neck seam', dims.neckDepthBack, 0, 0.5),
     pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.hemHalf * 2, 2.5, 1),
+    ...(dims.shaped ? [
+      pom('X', 'Waist width (½)', 'Side seam to side seam at the waist line (Y)', dims.waistHalf * 2, 2.5, 1),
+      pom('Y', 'Waist position', 'High point shoulder line straight down to the waist line', dims.waistY, 0.5, 0.5),
+    ] : []),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
     ...(product.base === 'hoodie' ? [pom('K', 'Hood side height', 'Side pattern base to top; no seam allowance; 3D crown is illustrative', dims.hoodHeight, 0.5, 1)]
       : (modules.collar || modules.buttons) && product.base === 'tee' ? [
@@ -151,7 +155,7 @@ function samplePack(product: Product, date: string): TechPack {
     ]),
     armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
       : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
-    { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
+    { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
       ...(armholesOnly ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
@@ -176,7 +180,7 @@ function samplePack(product: Product, date: string): TechPack {
 
 /** Chest POM endpoints from the actual sewing side seams, including taper/flare and curved hems. */
 function chestLine(product: Product) {
-  const d = teeDimensions(product), y = d.shoulderDrop + d.armDepth + 2.5;
+  const d = teeDimensions(product), y = d.shoulderDrop + d.armDepth + CHEST_LINE_CM;
   const outline = patternPieces(product).find(piece => piece.part === 'front')!.outline;
   const xs = outline.flatMap((a, i) => {
     const b = outline[(i + 1) % outline.length];
@@ -337,6 +341,9 @@ export function measurementDiagram(product: Product): string {
     + arrow(px + d.chestPocketWidth + 1.5, py, px + d.chestPocketWidth + 1.5, py + d.chestPocketHeight, 'Q', px + d.chestPocketWidth + 2.5, py + d.chestPocketHeight / 2) : '';
   const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
   const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
+  // A shaped waist: its width across the piece at the waist line, and the line's depth below the shoulder line.
+  const waistMarks = d.shaped ? arrow(half - d.waistHalf, d.waistY, half + d.waistHalf, d.waistY, 'X', half + 2, d.waistY - 1.2)
+    + arrow(body + 7, 0, body + 7, d.waistY, 'Y', body + 8.5, d.waistY / 2) : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${Math.max(sx + sleeve.width, collar?.width ?? 0) + 12} ${collar ? collarY + collar.height + 12 : Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 ${outline(front, 0)}${sleeve.outline.length ? outline(sleeve as typeof front, sx) : ''}<g transform="translate(${flare(product)} 0)">
 ${arrow(chest.left - flare(product), armY, chest.right - flare(product), armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
@@ -344,7 +351,7 @@ ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulder
 ${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(half - d.hemHalf, d.length - d.hemCurve - 1.5, half + d.hemHalf, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
 ${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D', body + 4, d.shoulderDrop + d.armDepth / 2)}
 ${arrow(body + 2.5, 0, body + 2.5, d.shoulderDrop, 'U', body + 4, d.shoulderDrop / 2)}
-${pocketMarks}${hemMarks}</g>
+${pocketMarks}${hemMarks}${waistMarks}</g>
 ${sleeve.outline.length ? `${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}` : ''}
 ${collarSketch}</svg>`;
 }

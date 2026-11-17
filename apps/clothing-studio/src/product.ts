@@ -252,12 +252,14 @@ export interface Measurements { chest: number; length: number; sleeve: number }
  * out keeps its default. Optional chest-pocket width/height/placement use P/Q/R/V. Defaults are chest-based where applicable; back neck drop is 2 cm and shoulder drop is 4 cm.
  */
 export const POCKET_FIT_KEYS = ['chestPocketWidth', 'chestPocketHeight', 'chestPocketX', 'chestPocketY'] as const;
-export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'hoodWidth', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
+export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'hoodWidth', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'waistWidth', 'waistPosition', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
+/** A T-shirt's waist shaping (X, Y): with a waist width its side seams curve in through it at the waist position. */
+export const WAIST_FIT_KEYS = ['waistWidth', 'waistPosition'] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
 export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop', hoodHeight: 'Hood side height', hoodWidth: 'Hood side width', neckRibHeight: 'Neck rib height', cuffHeight: 'Cuff height', hemBandHeight: 'Hem band height',
   chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
-  armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
+  armholeDepth: 'Armhole depth', waistWidth: 'Waist width (½)', waistPosition: 'Waist position', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number; waistbandHeight?: number;
   /** Rib cuffs at the leg openings, which gather them (joggers), cm high; absent without cuffs. */ cuffHeight?: number }
@@ -293,7 +295,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [40, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], legCuffHeight: [4, 12], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
+  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], waistWidth: [28, 76], waistPosition: [25, 70], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -621,7 +623,7 @@ const capCurve = (width: number, height: number): Pt[] =>
 /** Every fit point of measure of a top as it is now: edited ones as edited, the rest at their proportional values. */
 export function fitValues(product: Product): Record<FitKey, number> {
   const d = teeDimensions(product);
-  return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+  return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, waistWidth: d.waistHalf * 2, waistPosition: d.waistY, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
 }
 
 export function teeDimensions(product: Product) {
@@ -637,8 +639,11 @@ export function teeDimensions(product: Product) {
   return {
     panelWidth: panel.width, length: m.length, half, neckHalf: (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2, shoulderX, shoulderDrop,
     armDepth, sleeveLength: m.sleeve,
-    // Half the hem, side seam to side seam; the side seams run straight from the underarm to it.
+    // Half the hem, side seam to side seam; the side seams run straight from the underarm to it, or curve in through a
+    // T-shirt's waist when it has a waist width (see seamHalfAt). The waist sits where the default body's waist is.
     hemHalf: (fit.hemWidth ?? panel.width) / 2,
+    waistY: fit.waistPosition ?? waistPositionFor(m.chest), shaped: product.base === 'tee' && fit.waistWidth !== undefined,
+    waistHalf: fit.waistWidth !== undefined ? fit.waistWidth / 2 : straightSeamHalf(half, (fit.hemWidth ?? panel.width) / 2, shoulderDrop + armDepth, m.length, fit.waistPosition ?? waistPositionFor(m.chest)),
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: low, capHeight,
     neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: fit.backNeckDrop ?? 2, ribHeight: neckSize(m, product.neckline, fit).width, ribLength: neckSize(m, product.neckline, fit).length,
@@ -649,6 +654,37 @@ export function teeDimensions(product: Product) {
     // Chest pocket on the wearer's left (+x seen from the front): centre, top below the shoulder line, finished size.
     chestPocketX: fit.chestPocketX ?? half * 0.45, chestPocketY: fit.chestPocketY ?? shoulderDrop + armDepth * 0.5, chestPocketWidth: fit.chestPocketWidth ?? 12, chestPocketHeight: fit.chestPocketHeight ?? 13.5,
   };
+}
+
+/**
+ * Whether a top can be shaped at the waist: a T-shirt base (tee, shirt, polo, tank or tee dress). Its armhole ends at
+ * least 12 cm above the hem, so there is always room for a waist line 5 cm below the underarm and above the hem.
+ */
+export function waistShapeable(product: Pick<Product, 'base'>): boolean { return product.base === 'tee'; }
+
+/** The default waist position, cm below the neck points: where the waist of the body a top of this chest drapes on is. */
+export function waistPositionFor(chest: number): number { return Math.round(0.44 * (chest - 10) * 2) / 2; }
+function straightSeamHalf(half: number, hemHalf: number, armY: number, length: number, y: number): number {
+  return half - (half - hemHalf) * (y - armY) / (length - armY);
+}
+/** A shaped side seam keeps the full chest width this far below the underarm, where the chest is measured (A). */
+export const CHEST_LINE_CM = 2.5;
+/**
+ * Half a top's body piece, side seam to side seam, `y` cm below the neck points between the underarm and the hem: on a
+ * straight side seam from the chest to the hem width, or, with a shaped waist, straight down to the chest line and then
+ * on a smooth curve through the waist width to the hem (a monotone cubic, level at the chest line and at the waist when
+ * it is the narrowest or widest point, so the seam never bulges past its widths).
+ */
+export function seamHalfAt(d: ReturnType<typeof teeDimensions>, y: number): number {
+  const armY = d.shoulderDrop + d.armDepth;
+  if (!d.shaped) return straightSeamHalf(d.half, d.hemHalf, armY, d.length, y);
+  const ys = [armY + CHEST_LINE_CM, d.waistY, d.length], widths = [d.half, d.waistHalf, d.hemHalf];
+  if (y <= ys[0]!) return d.half;
+  const above = (widths[1]! - widths[0]!) / (ys[1]! - ys[0]!), below = (widths[2]! - widths[1]!) / (ys[2]! - ys[1]!);
+  const middle = above * below <= 0 ? 0 : 2 / (1 / above + 1 / below);
+  const k = y <= d.waistY ? 0 : 1, h = ys[k + 1]! - ys[k]!, t = Math.min(1, Math.max(0, (y - ys[k]!) / h));
+  const [start, end] = k === 0 ? [0, middle] : [middle, below];
+  return (2 * t ** 3 - 3 * t ** 2 + 1) * widths[k]! + (t ** 3 - 2 * t ** 2 + t) * h * start + (-2 * t ** 3 + 3 * t ** 2) * widths[k + 1]! + (t ** 3 - t ** 2) * h * end;
 }
 
 /** How far a flared hem reaches past the chest on each side of the flat body piece (0 when it does not). */
@@ -671,6 +707,12 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (d.neckDepthFront + 4 > d.shoulderDrop + d.armDepth) fail('The front neck must end above the underarm.');
   if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
   if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
+  if (WAIST_FIT_KEYS.some(key => product.fit?.[key] !== undefined) && product.base !== 'tee') fail('Waist shaping applies only to T-shirts, shirts and tee dresses; sweatshirts and hoodies are held by their hem band.');
+  if (d.shaped) {
+    const armY = d.shoulderDrop + d.armDepth, low = armY + 5, high = d.length - 5;
+    if (d.waistY < low || d.waistY > high) fail(`Waist position must be between ${low.toFixed(1)} and ${high.toFixed(1)} cm below the neck points for this top, at least 5 cm below the underarm and above the hem.`);
+    if (d.waistHalf > d.half || d.waistHalf < d.half * 0.7) fail(`Waist width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 2).toFixed(1)} cm for this chest: no wider than the chest.`);
+  }
   if (sleeves && d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
 }
 
@@ -887,14 +929,20 @@ function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i
 function bodyOutline(product: Product, front: boolean, length: number) {
   const m = topMeasurements(product), panel = panelSize(m), dims = teeDimensions(product), w = panel.width, half = w / 2;
   const shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
-  const armY = shoulderDrop + armDepth, inset = (half - dims.hemHalf) * (length - armY) / (panel.length - armY);
+  const armY = shoulderDrop + armDepth, inset = dims.shaped ? half - seamHalfAt(dims, length) : (half - dims.hemHalf) * (length - armY) / (panel.length - armY);
+  // A shaped side seam curves through the waist: points about every 2 cm from the underarm to the hem's side.
+  const sideEnd = length - dims.hemCurve, steps = dims.shaped ? Math.max(2, Math.ceil((sideEnd - armY) / 2)) : 0;
+  const side = Array.from({ length: Math.max(0, steps - 1) }, (_, i) => { const y = armY + (sideEnd - armY) * (i + 1) / steps; return { x: half - seamHalfAt(dims, y), y }; });
   const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, armhole = armholeCurve(half, dims.shoulderX, shoulderDrop, armDepth, front);
   // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
   const shift = (p: Pt) => ({ x: p.x + flare(product), y: p.y });
   return {
     neckLeft: shift({ x: half - neckWidth, y: 0 }),
     armholeLeft: armhole.map(shift),
+    // The side seams between the underarm and the hem (only a shaped waist has points there): down the left, up the right.
+    sideLeft: side.map(shift),
     hem: hemLine(w - 2 * inset, length, dims.hemCurve).map(p => shift({ x: p.x + inset, y: p.y })),
+    sideRight: side.map(p => shift({ x: w - p.x, y: p.y })).reverse(),
     armholeRight: armhole.map(p => shift({ x: w - p.x, y: p.y })).reverse(),
     neckRight: shift({ x: half + neckWidth, y: 0 }),
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
@@ -904,7 +952,7 @@ function bodyOutline(product: Product, front: boolean, length: number) {
 
 function topBodyOutline(product: Product, front: boolean, length = panelSize(topMeasurements(product)).length): Pt[] {
   const o = bodyOutline(product, front, length);
-  return [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, o.neckRight, ...o.neckline];
+  return [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, o.neckRight, ...o.neckline];
 }
 
 /**
@@ -1094,13 +1142,14 @@ function topFrame(product: Product) {
   const centre = flare(product) + panelSize(m).width / 2, centred = (p: Pt) => ({ x: p.x - centre, y: p.y });
   const outline = (front: boolean) => {
     const o = bodyOutline(product, front, m.length - dims.band);
-    return { neckLeft: centred(o.neckLeft), armholeLeft: densify(o.armholeLeft.map(centred)), hem: densify(o.hem.map(centred)),
-      armholeRight: densify(o.armholeRight.map(centred)), neck: densify([o.neckRight, ...o.neckline, o.neckLeft].map(centred)) };
+    return { neckLeft: centred(o.neckLeft), armholeLeft: densify(o.armholeLeft.map(centred)), sideLeft: o.sideLeft.map(centred), hem: densify(o.hem.map(centred)),
+      sideRight: o.sideRight.map(centred), armholeRight: densify(o.armholeRight.map(centred)), neck: densify([o.neckRight, ...o.neckline, o.neckLeft].map(centred)) };
   };
   const front = outline(true), back = outline(false);
-  // The shoulder and side seams, which the front and back share.
+  // The shoulder and side seams, which the front and back share (a shaped side seam is a chain of short segments).
+  const chain = (points: Pt[]) => points.slice(1).map((point, i): [Pt, Pt] => [points[i]!, point]);
   const seams: [Pt, Pt][] = [[front.neckLeft, front.armholeLeft[0]], [front.armholeRight.at(-1)!, front.neck[0]],
-    [front.armholeLeft.at(-1)!, front.hem[0]], [front.hem.at(-1)!, front.armholeRight[0]]];
+    ...chain([front.armholeLeft.at(-1)!, ...front.sideLeft, front.hem[0]]), ...chain([front.hem.at(-1)!, ...front.sideRight, front.armholeRight[0]])];
   // Rounding-level distances are on a seam: snap them so the front and back coincide exactly there.
   const rise = (p: Pt) => { const d = Math.min(depth, ...seams.map(([a, b]) => segmentDistance(p, a, b))); return d < 1e-6 ? 0 : depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
   const shell = (p: Pt, sign: number): P3 => ({ x: p.x, y: top - p.y, z: sign * rise(p) });
@@ -1115,7 +1164,7 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   const zipped = zipAllowed(product.base) && !!optionsOf(product).zip, buttoned = product.base === 'tee' && !!optionsOf(product).buttons;
   const open = (zipped || buttoned) && !!optionsOf(product).zipOpen;
   for (const [side, o] of [['front', front], ['back', back]] as const) {
-    const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.hem, ...o.armholeRight, ...o.neck.slice(0, -1)];
+    const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, ...o.neck.slice(0, -1)];
     if (side === 'front' && open) {
       const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
       for (const half of [leftOf(region, -OPEN_ZIP_GAP), mirror(leftOf(mirror(region), -OPEN_ZIP_GAP))]) fillRegion(groups.get(side)!, half, Delaunator, p => sign * rise(p), top, side);

@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, waistShapeable, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -17,7 +17,7 @@ export interface DesignReading { product: Product; scopes: DesignScope[]; ignore
 const TOP_FIT_LABELS: Partial<Record<string, FitKey>> = {
   'shoulder width': 'shoulderWidth', 'shoulder drop': 'shoulderDrop',
   'neck width': 'neckWidth', 'front neck drop': 'frontNeckDrop', 'back neck drop': 'backNeckDrop',
-  'armhole depth': 'armholeDepth', 'hem width': 'hemWidth',
+  'armhole depth': 'armholeDepth', 'waist width': 'waistWidth', 'waist position': 'waistPosition', 'hem width': 'hemWidth',
 };
 
 /** The template a garment word starts from, and its base. */
@@ -195,6 +195,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   let skirtFitPreset: 'pencil' | 'straight' | null = null;
   // Fit sets sizes against the base's reference measurements, so describing the same fit twice changes nothing more.
   if (top) {
+    // A shaped waist is read before "fitted" alone, which sets the chest: "a fitted waist" shapes the side seams.
+    const waisted = take(/\b(?:fitted|shaped|tapered|nipped(?:[- ]in)?|cinched|defined) waist\b|\bwaisted\b/), straightSides = take(/\bstraight side(?: seam)?s\b|\bno waist shaping\b/);
     const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
@@ -204,6 +206,19 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (chest !== null) garment.push(`fit: ${next.chest} cm chest`);
     if (cropped) garment.push(`cropped: ${next.length} cm length`);
     product.measurements = next;
+    // A fitted waist takes 8 cm off each side of the front and back at the waist (16 cm round), from this chest.
+    if (straightSides && product.fit && WAIST_FIT_KEYS.some(key => product.fit![key] !== undefined)) {
+      const rest = { ...product.fit };
+      for (const key of WAIST_FIT_KEYS) delete rest[key];
+      if (Object.keys(rest).length) product.fit = rest; else delete product.fit;
+      garment.push('straight side seams: no waist shaping');
+    } else if (straightSides) garment.push('straight side seams');
+    if (waisted && !waistShapeable(product)) notApplied.push(`${waisted[0]} (only T-shirts, shirts and tee dresses are shaped at the waist)`);
+    else if (waisted) {
+      const width = Math.round((next.chest / 2 + 2 - 8) * 2) / 2;
+      product.fit = { ...product.fit, waistWidth: width };
+      garment.push(`fitted waist: ${width} cm waist width (½)`);
+    }
   } else if (product.base === 'trousers') {
     const m = legMeasurements(product), r = legMeasurements(reference), next = { ...m };
     const widest = Math.min(LIMITS.legOpening[1], Math.floor(m.hip * 0.8));
