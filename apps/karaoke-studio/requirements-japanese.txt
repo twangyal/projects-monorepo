@@ -1,0 +1,3 @@
+# Optional: reads Japanese lyrics (kanji words) so supplied Japanese lines can be laid on the singing.
+SudachiPy==0.7.0
+SudachiDict-small==20261015

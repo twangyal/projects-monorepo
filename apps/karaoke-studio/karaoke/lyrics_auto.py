@@ -324,7 +324,7 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
     its letters were sung, which on the developer benchmarks is closer to the annotated starts than
     the recognizers' own word times. Starts never decrease within a line and stay inside the cue.
     """
-    from .alignment import alignable, force_words
+    from .alignment import LINES_ONLY, alignable, force_words
     words = clean_words(words, duration)
     result = []
     budget = AlignmentBudget()
@@ -370,7 +370,8 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
             for k in range(index, run_end):
                 starts[k] = left + (right - left) * sum(weights[first:k]) / total
             index = run_end
-        forced = force_words(cue['text'], letters, start, end, language=language) if letters is not None and alignable([cue['text']], language) else None
+        forced = (force_words(cue['text'], letters, start, end, language=language)
+                  if letters is not None and language not in LINES_ONLY and alignable([cue['text']], language) else None)
         if forced is not None and len(forced) == len(tokens):
             for k in range(len(tokens)):
                 starts[k] = min(max(forced[k], start), sing_end)

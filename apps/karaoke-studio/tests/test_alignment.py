@@ -267,6 +267,22 @@ class ServerAlignmentTests(unittest.TestCase):
         self.assertEqual(status, 200, reply)
         self.assertEqual(len(reply['lines'][0]), 3)
 
+    def test_japanese_lyrics_are_laid_on_the_singing_with_the_reading_dictionary(self):
+        from unittest import mock
+        from karaoke.alignment import force_align as real
+        from tests.test_japanese import DICTIONARY
+        self.language = 'ja'
+        self.assertEqual(self.helper.upload()['status'], 'complete')
+        project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        with DICTIONARY, mock.patch('karaoke.server.force_align', wraps=real) as forced:
+            self.assertEqual(len(self.align(base, ['出して輝き続けよ', '君の名は'])), 2)
+            self.assertEqual(forced.call_args.args[3], 'ja')
+        # Without the dictionary they are matched to the recognized words, as before.
+        with mock.patch('karaoke.japanese._dictionary', return_value=None), mock.patch('karaoke.server.force_align') as forced:
+            self.align(base, ['出して輝き続けよ', '君の名は'])
+            forced.assert_not_called()
+
     def test_supplied_lyrics_are_laid_on_the_singing_and_fall_back_to_recognized_words(self):
         from unittest import mock
         self.assertEqual(self.helper.upload()['status'], 'complete')
