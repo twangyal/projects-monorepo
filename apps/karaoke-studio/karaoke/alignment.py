@@ -7,9 +7,9 @@ laid on them letter by letter, in order, along the most likely path (CTC forced 
 even where recognition heard none of its words. Accents are folded (é is e), which serves French, Spanish and German
 lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable), as is Cyrillic
 (transliterated letter by letter, with Russian readings). Chinese characters
-are read in pinyin when the song was recognized as Mandarin: the characters alone do not say whether a song is sung in
-Mandarin or Cantonese, whose readings differ, so Cantonese lyrics are left to recognized words. Japanese lyrics in a
-song recognized as Japanese are read in romaji when the optional reading dictionary is installed (see ``japanese``).
+are read in pinyin when the song was recognized as Mandarin and in Jyutping when it was recognized as Cantonese: the
+characters alone do not say which is sung, and their readings differ. Japanese lyrics in a song recognized as Japanese
+are read in romaji when the optional reading dictionary is installed (see ``japanese``).
 
 On the first two minutes of five JamendoLyrics songs in each of English, French, Spanish and German (431 lines), 93%
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
@@ -80,7 +80,7 @@ _CYRILLIC = dict(zip('абвгдеёжзийклмнопрстуфхцчшщъы
 # Runs of Chinese characters (the unified ideographs and their extensions), read in pinyin together so that a character
 # with several readings takes the one its phrase gives it.
 _HAN = re.compile('[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0003134f]+')
-MANDARIN = 'zh'
+MANDARIN, CANTONESE = 'zh', 'yue'
 # Languages whose lines are placed on the letters but whose words keep the recognized words' timing (see japanese).
 LINES_ONLY = frozenset({JAPANESE})
 
@@ -134,24 +134,42 @@ def fold(text: str) -> str:
     return _letters(''.join(_spelled(ch) for ch in text))
 
 
+def chinese_readings(run: str, language: str | None, tones: bool = False) -> list[str | None] | None:
+    """Each character of a run of Chinese characters as it is read in the song's language: pinyin for Mandarin ('zh'),
+    Jyutping for Cantonese ('yue'), each character taking the reading its phrase gives it, with tones (pinyin's marks,
+    Jyutping's numbers) when ``tones``; None for one with no reading. None when the language is neither or its reading
+    package is not installed."""
+    if language == MANDARIN:
+        try:
+            from pypinyin import Style, pinyin
+        except ImportError:
+            return None
+        read = [reading[0] for reading in pinyin(run, style=Style.TONE if tones else Style.NORMAL)]
+    elif language == CANTONESE:
+        try:
+            import ToJyutping
+        except ImportError:
+            return None
+        read = [reading if reading is None or tones else reading.rstrip('0123456789') for _, reading in ToJyutping.get_jyutping_list(run)]
+    else:
+        return None
+    return read if len(read) == len(run) else None
+
+
 def readings(text: str, language: str | None = None) -> list[str]:
     """Each character of ``text`` as the aligner spells it: ``fold``'s spelling, and in a song recognized as Mandarin
-    (``language`` 'zh') each Chinese character's pinyin without tones, or as Japanese ('ja') each kana and kanji word in
-    romaji (``japanese.CONTINUED`` for a character read with the one before it). Without the pinyin package or the
-    Japanese reading dictionary they stay unread."""
+    (``language`` 'zh') or Cantonese ('yue') each Chinese character's pinyin or Jyutping without tones, or as Japanese
+    ('ja') each kana and kanji word in romaji (``japanese.CONTINUED`` for a character read with the one before it).
+    Without the reading package or the Japanese reading dictionary they stay unread."""
     spelled = [_spelled(ch) for ch in text]
     if language == JAPANESE and any(is_kana(ch) or is_kanji(ch) for ch in text):
         read = japanese_readings(text)
         return spelled if read is None else [_spelled(ch) if reading is None else reading for ch, reading in zip(text, read, strict=True)]
-    if language == MANDARIN and _HAN.search(text):
-        try:
-            from pypinyin import lazy_pinyin
-        except ImportError:
-            return spelled
+    if language in (MANDARIN, CANTONESE) and _HAN.search(text):
         for run in _HAN.finditer(text):
-            read = lazy_pinyin(run.group())
-            if len(read) == len(run.group()):
-                spelled[run.start():run.end()] = read
+            read = chinese_readings(run.group(), language)
+            if read is not None:
+                spelled[run.start():run.end()] = [ch if reading is None else reading for ch, reading in zip(run.group(), read, strict=True)]
     return spelled
 
 
@@ -169,7 +187,7 @@ def word_letters(line: str, language: str | None = None) -> list[str]:
 
 def alignable(lines: list[str], language: str | None = None) -> bool:
     """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean,
-    Cyrillic, or Chinese and Japanese in a song recognized as Mandarin or Japanese."""
+    Cyrillic, or Chinese and Japanese in a song recognized as Mandarin, Cantonese or Japanese."""
     known = total = 0
     for line in lines:
         spelled = readings(line, language)

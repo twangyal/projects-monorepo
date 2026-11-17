@@ -24,12 +24,18 @@ class PronunciationTest(unittest.TestCase):
         self.assertEqual(pronunciation('Я тебя люблю'), ['Ya', 'tebya', 'lyublyu'])
         self.assertEqual(said_line(pronunciation('Я тебя люблю')), 'Ya tebya lyublyu')
 
-    def test_chinese_is_read_in_pinyin_with_tone_marks_only_in_a_song_recognized_as_mandarin(self):
+    def test_chinese_is_read_in_pinyin_with_tone_marks_or_jyutping_with_tone_numbers_by_the_song_s_language(self):
         self.assertEqual(pronunciation('我爱你', 'zh'), ['wǒ', 'ài', 'nǐ'])
         # A character with several readings takes its phrase's: 长 in 长大 is zhǎng.
         self.assertEqual(pronunciation('长大', 'zh'), ['zhǎng', 'dà'])
-        for language in (None, 'yue', 'ko'):
+        self.assertEqual(pronunciation('我愛你', 'yue'), ['ngo5', 'oi3', 'nei5'])
+        self.assertEqual(said_line(pronunciation('佢哋去咗邊度', 'yue')), 'keoi5 dei6 heoi3 zo2 bin1 dou6')
+        self.assertEqual(pronunciation('銀行', 'yue'), ['ngan4', 'hong4'])
+        for language in (None, 'ko'):
             self.assertIsNone(pronunciation('我爱你', language), language)
+        # Without the reading package, nothing is shown.
+        with mock.patch.dict('sys.modules', {'ToJyutping': None}):
+            self.assertIsNone(pronunciation('我愛你', 'yue'))
 
     def test_japanese_is_read_word_by_word_in_romaji_with_particles_as_they_are_said(self):
         pieces = pronunciation('君の名は', 'ja', tagger)

@@ -1,8 +1,9 @@
 """How a lyric line is said, in Latin letters, for singers who do not read its script.
 
 Korean is written in Revised Romanization and Cyrillic transliterated as Russian reads it (as the letter aligner spells
-them); Chinese, in a song recognized as Mandarin, in pinyin with tone marks; Japanese, in a song recognized as Japanese
-and with the optional reading dictionary, in Hepburn romaji word by word, the particles は, へ and を as they are said.
+them); Chinese, in a song recognized as Mandarin, in pinyin with tone marks, and in one recognized as Cantonese, in
+Jyutping with tone numbers; Japanese, in a song recognized as Japanese and with the optional reading dictionary, in
+Hepburn romaji word by word, the particles は, へ and を as they are said.
 Words already in Latin letters are kept as written.
 """
 from __future__ import annotations
@@ -10,7 +11,7 @@ from __future__ import annotations
 import unicodedata
 from collections.abc import Callable
 
-from .alignment import _HAN, MANDARIN, _spelled
+from .alignment import _HAN, CANTONESE, MANDARIN, _spelled, chinese_readings
 from .japanese import JAPANESE, is_kana, is_kanji, japanese_words
 from .lyrics_auto import lyric_words
 
@@ -41,7 +42,7 @@ def pronunciation(text: str, language: str | None = None,
     """For each lyric word of ``text`` (``lyrics_auto.lyric_words``), the piece of the line's pronunciation it starts,
     '' for a word said with the one before it (the rest of a Japanese word). None when the line needs none, its
     letters all being Latin, or when a word of it cannot be read (Chinese characters in a song not recognized as
-    Mandarin or Japanese, Japanese without the reading dictionary, other scripts). ``words`` stands in for the Japanese
+    Mandarin, Cantonese or Japanese, Japanese without the reading dictionary, other scripts). ``words`` stands in for the Japanese
     dictionary's tokens (surface, reading in katakana, whether it is a particle)."""
     tokens = lyric_words(text)
     scripts = [{_script(ch) for ch in token} - {''} for token in tokens]
@@ -66,19 +67,15 @@ def pronunciation(text: str, language: str | None = None,
             if span is None or not span[2]:
                 return None
             said[k] = span[2] if span[0] == start else ''
-    if language == MANDARIN and any('han' in kinds for kinds in scripts):
-        try:
-            from pypinyin import Style, pinyin
-        except ImportError:
-            return None
+    if language in (MANDARIN, CANTONESE) and any('han' in kinds for kinds in scripts):
         for run in _HAN.finditer(text):
-            readings = pinyin(run.group(), style=Style.TONE)
-            if len(readings) != len(run.group()):
+            readings = chinese_readings(run.group(), language, tones=True)
+            if readings is None or None in readings:
                 return None
             for offset, reading in enumerate(readings):
                 index = starts.index(run.start() + offset) if run.start() + offset in starts else None
                 if index is not None:
-                    said[index] = reading[0]
+                    said[index] = reading
     for k, token in enumerate(tokens):
         if said[k] is not None:
             continue
