@@ -720,7 +720,7 @@ function popupCommand(text, context) {
 
 // Words that begin a command acting on something other than a control of that name: finding words or searching,
 // typing into a field, ticking a checkbox, clearing a field, filling in a form.
-const OTHER_TARGET = /^(?:find|search|look|type|enter|write|check|uncheck|tick|untick|turn|switch|enable|disable|clear|empty|fill) \S/;
+const OTHER_TARGET = /^(?:find|search|look|type|enter|write|insert|select|check|uncheck|tick|untick|turn|switch|enable|disable|clear|empty|fill) \S/;
 // Controls that saying their name presses: a checkbox or switch said by its whole name is ticked instead.
 const PRESSED_BY_NAME = new Set(['button', 'link', 'clickable', 'menuitem', 'tab', 'treeitem', 'radio']);
 const TICKED_BY_NAME = new Set(['checkbox', 'switch']);
@@ -736,6 +736,42 @@ function namedControl(text, context) {
   // the words being typed or searched for here.
   if ((context.nearby ?? []).some(same) || (context.onScreen?.() ?? []).some(same)) {
     return { type: 'unknown', missing: true, message: `No control called "${said}" is inside the gaze circle. Look at it and try again.`, targetQuery: said };
+  }
+  return null;
+}
+
+// Editor toolbars (mail, comments, posts): things a toolbar inserts, and the formats it applies, as people say them.
+const INSERTED = [
+  [/^(?:hyper)?links?$/, /\b(?:hyper)?link\b/i], [/^(?:images?|pictures?|photos?|pics?)$/, /\b(?:image|picture|photo|img)\b/i],
+  [/^tables?$/, /\btable\b/i], [/^(?:emojis?|emoticons?|smiley(?: face)?s?)$/, /\b(?:emoji|emoticon|smiley)\b/i],
+  [/^(?:files?|attachments?|documents?)$/, /\b(?:attach(?:ment)?|file|upload)\b/i], [/^videos?$/, /\bvideo\b/i],
+  [/^(?:quotes?|quotations?|block ?quotes?)$/, /\b(?:quote|blockquote)\b/i], [/^(?:code(?: block)?|code snippets?)$/, /\bcode\b/i],
+  [/^(?:headings?|headers?|titles?)$/, /\b(?:heading|header|title)\b/i], [/^(?:horizontal (?:line|rule)|divider|separator)$/, /\b(?:horizontal|divider|separator)\b/i],
+];
+const FORMATS = [
+  ['bold', /^bold$|^(?:bold|strong)\b/i], ['italic', /^italics?$|^(?:italic|emphasis)\b/i], ['underline', /^underlined?$|^underline\b/i],
+  ['strikethrough', /^strike ?through$|^strike/i], ['bulleted list', /^bullet(?:ed)?(?: list| points)?$|\bbullet/i], ['numbered list', /^numbered(?: list)?$|^(?:numbered|ordered|number) list|\bnumber(?:ed)? list/i],
+];
+const FORMAT_WORDS = { bold: 'bold', italic: 'italic', italics: 'italic', italicize: 'italic', italicise: 'italic', underline: 'underline', underlined: 'underline',
+  strikethrough: 'strikethrough', 'strike through': 'strikethrough', bullet: 'bulleted list', bulleted: 'bulleted list', bullets: 'bulleted list',
+  'bullet points': 'bulleted list', 'bulleted list': 'bulleted list', 'bullet list': 'bulleted list', numbered: 'numbered list', 'numbered list': 'numbered list',
+  'number list': 'numbered list', 'ordered list': 'numbered list' };
+const TOOLBAR_ROLES = new Set(['button', 'clickable', 'menuitem', 'menuitemcheckbox', 'link', 'switch', 'checkbox']);
+
+/** A toolbar control for "insert a link", "add a picture", "make it bold" or "bullet points"; null when the words are
+ * not one of these or no control in the circle (or just outside it) does it, so "insert hello" is still typed. */
+function toolbarCommand(text, context) {
+  const thing = /^(?:insert|add|attach|embed|put in|upload)\s+(?:a |an |the |some |my )?(.+?)(?:\s+(?:here|in the (?:message|text|post|comment|email)))?$/.exec(text)?.[1];
+  const inserted = thing ? INSERTED.find(([said]) => said.test(thing))?.[1] : null;
+  const format = !inserted && (/^(?:make|set|put|turn|change)\s+(?:it|this|that|the text|the selection|this text|that text|these words|those words)(?:\s+(?:to|into|in))?\s+(.+)$/.exec(text)?.[1]
+    ?? /^(bold|italici[sz]e|underline|strike through)\s+(?:it|this|that|the text|the selection|this text|that text)$/.exec(text)?.[1]
+    ?? /^(?:make|start|add|insert|begin|use)\s+(?:a |an )?((?:bullet(?:ed)?|numbered|number|ordered) (?:list|points))$/.exec(text)?.[1]
+    ?? /^(bold|italics?|underline|strike ?through|bullet points|bullets|bulleted list|bullet list|numbered list|ordered list)$/.exec(text)?.[1]);
+  const wanted = inserted ?? (format && FORMAT_WORDS[format] ? FORMATS.find(([name]) => name === FORMAT_WORDS[format])[1] : null);
+  if (!wanted) return null;
+  for (const pool of [context.elements ?? [], context.nearby ?? []]) {
+    const found = pool.filter(element => TOOLBAR_ROLES.has(element.role) && wanted.test((element.name ?? '').trim()));
+    if (found.length) return found.length === 1 ? { type: 'activate', targetId: found[0].id } : clarify(found, element => ({ type: 'activate', targetId: element.id }));
   }
   return null;
 }
@@ -759,6 +795,9 @@ function interpretInCircle(utterance, context) {
   // begin like a command that would find, type, tick or clear something else.
   const named = namedControl(text, context);
   if (named) return named;
+  // Editor toolbars: "insert a link", "add a picture", "make it bold", "bullet points".
+  const toolbar = toolbarCommand(text, context);
+  if (toolbar) return toolbar;
   // Controls repeated on every row, named by what their row is about: "remove the socks", "make the mug two".
   const row = rowAction(text, context, clarify);
   if (row) return row;
