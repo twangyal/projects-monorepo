@@ -26,7 +26,10 @@ function encodeEye(eye) {
   return { ...rest, patch: toBase64(new Uint8Array(data.buffer, data.byteOffset, data.length)) };
 }
 
-export function encodeCalibration(samples, { width, height, now }) {
+const irisSample = s => Array.isArray(s?.features) && s.features.length === 10 && s.features.every(Number.isFinite) && Number.isFinite(s.x) && Number.isFinite(s.y);
+
+/** An eye calibration: WebGazer's samples and, beside them, the iris samples (iris-gaze.js) taken with them. */
+export function encodeCalibration(samples, { width, height, now, iris = [] }) {
   const encoded = [];
   for (const sample of samples ?? []) {
     const left = sample?.eyes?.left && encodeEye(sample.eyes.left);
@@ -34,7 +37,8 @@ export function encodeCalibration(samples, { width, height, now }) {
     if (!left || !right || !Array.isArray(sample.screenPos)) continue;
     encoded.push({ eyes: { left, right }, screenPos: [...sample.screenPos], type: sample.type });
   }
-  return { version: CALIBRATION_VERSION, width, height, savedAt: now, samples: encoded };
+  const irises = (iris ?? []).filter(irisSample).map(({ features, x, y }) => ({ features: [...features], x, y }));
+  return { version: CALIBRATION_VERSION, width, height, savedAt: now, samples: encoded, ...(irises.length ? { iris: irises } : {}) };
 }
 
 /** A head pointer's calibration (head-pointer.js samples: pose and screen point), stored like an eye calibration. */
@@ -43,8 +47,9 @@ export function encodeHeadCalibration(samples, { width, height, now }) {
   return { version: CALIBRATION_VERSION, mode: 'head', width, height, savedAt: now, samples: valid.map(({ features, x, y }) => ({ features: [...features], x, y })) };
 }
 
-// Returns samples in the shape WebGazer's setData() expects (or, for `mode` 'head', head pointer samples), or a reason
-// the calibration cannot be reused. A calibration made for the other mode is not reused.
+// Returns samples in the shape WebGazer's setData() expects, with any iris samples as `iris` (or, for `mode` 'head',
+// head pointer samples), or a reason the calibration cannot be reused. A calibration made for the other mode is not
+// reused.
 export function decodeCalibration(stored, { width, height, now, mode = 'eyes' }) {
   if (!stored || stored.version !== CALIBRATION_VERSION || !Array.isArray(stored.samples) || !stored.samples.length) {
     return { ok: false, reason: 'none' };
@@ -65,7 +70,9 @@ export function decodeCalibration(stored, { width, height, now, mode = 'eyes' })
       screenPos: [...sample.screenPos],
       type: sample.type,
     }));
-    return { ok: true, samples };
+    const iris = Array.isArray(stored.iris) ? stored.iris : [];
+    if (!iris.every(irisSample)) return { ok: false, reason: 'invalid' };
+    return { ok: true, samples, iris: iris.map(({ features, x, y }) => ({ features: [...features], x, y })) };
   } catch {
     return { ok: false, reason: 'invalid' };
   }

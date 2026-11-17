@@ -26,7 +26,10 @@ export function createLocalCamera({ document, window, load, store = {}, onGaze, 
     recordSample(x, y) {
       const api = camera.api;
       if (!api) return false;
-      return camera.mode === 'head' ? camera.recordHeadSample(x, y) : recordCalibrationSample(api, x, y);
+      if (camera.mode === 'head') return camera.recordHeadSample(x, y);
+      // The irises learn the point as well as WebGazer, which places the gaze until they have enough.
+      const kept = recordCalibrationSample(api, x, y), irises = camera.recordIrisSample(x, y);
+      return kept || irises;
     },
     async restoreCalibration({ width, height, now }) {
       const attempt = ++calibrationGeneration;
@@ -42,6 +45,7 @@ export function createLocalCamera({ document, window, load, store = {}, onGaze, 
         camera.resetCalibration();
         if (camera.mode === 'head') return camera.setHeadSamples(decoded.samples) ? { ok: true } : { ok: false, reason: 'invalid' };
         api.getRegression()[0].setData(decoded.samples);
+        if (decoded.iris?.length) camera.setIrisSamples(decoded.iris);
         return { ok: true };
       } catch {
         return { ok: false, reason: 'invalid' };
@@ -52,7 +56,7 @@ export function createLocalCamera({ document, window, load, store = {}, onGaze, 
       if (!api) return;
       try {
         store.saveCalibration?.(camera.mode === 'head' ? encodeHeadCalibration(camera.headSamples, { width, height, now })
-          : encodeCalibration(api.getRegression()[0].getData(), { width, height, now }));
+          : encodeCalibration(api.getRegression()[0].getData(), { width, height, now, iris: camera.irisSamples }));
       } catch { /* The calibration still works on this page. */ }
     },
     clearCalibration: () => store.clearCalibration?.(),
