@@ -18,6 +18,14 @@ export const CONTEXTS = {
   empty: { elements: [] },
 };
 CONTEXTS.focused = { ...CONTEXTS.form, focusedId: 3 };
+// A clothes shop's product and checkout choices, as dropdowns name them on many sites.
+CONTEXTS.shop = { elements: [
+  el(1, 'combobox', 'Size', { options: ['XS', 'S', 'M', 'L', 'XL'], value: 'M' }),
+  el(2, 'combobox', 'Colour', { options: ['Navy blue', 'Forest green', 'Charcoal grey', 'Off-white'], value: 'Navy blue' }),
+  el(3, 'combobox', 'Quantity', { options: ['1', '2', '3', '4', '5'], value: '1' }),
+  el(4, 'combobox', 'Delivery', { options: ['Standard (3-5 working days)', 'Express (next working day)', 'Click and collect'], value: 'Standard (3-5 working days)' }),
+  el(5, 'combobox', 'Country', { options: ['United Kingdom', 'United States', 'Ireland', 'France', 'Germany'], value: 'United Kingdom' }),
+  el(6, 'button', 'Add to bag')] };
 
 const act = targetId => ({ type: 'activate', targetId });
 const option = (targetId, optionIndex) => ({ type: 'select-option', targetId, optionIndex });
@@ -389,6 +397,47 @@ const HELD_OUT_4 = [
 ];
 
 export const HELD_OUT_4_SUITE = HELD_OUT_4.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
+// Held-out set 5 (2026-11-17): choices said in other words, on a clothes shop's dropdowns (sizes by name, colours by
+// one word, delivery by what it does, countries by their short names, quantities as words), plus choices the page does
+// not offer, which must not act. Written before any rule for it, by the same developer, on a new page context, avoiding
+// the product and topic wordings earlier sets missed.
+const HELD_OUT_5 = [
+  ['select', 'shop', 'make it a medium', option(1, 2)],
+  ['select', 'shop', 'I need a small', option(1, 1)],
+  ['select', 'shop', 'extra large please', option(1, 4)],
+  ['select', 'shop', 'can I get size large', option(1, 3)],
+  ['select', 'shop', 'the extra small one', option(1, 0)],
+  ['select', 'shop', 'go one size up', option(1, 3)],
+  ['select', 'shop', 'in green', option(2, 1)],
+  ['select', 'shop', "I'll take the grey", option(2, 2)],
+  ['select', 'shop', 'change the colour to white', option(2, 3)],
+  ['select', 'shop', 'do you have it in navy', option(2, 0)],
+  ['select', 'shop', 'the blue one', option(2, 0)],
+  ['select', 'shop', 'next day delivery', option(4, 1)],
+  ['select', 'shop', 'I want it tomorrow', option(4, 1)],
+  ['select', 'shop', "I'll pick it up in store", option(4, 2)],
+  ['select', 'shop', 'standard shipping is fine', option(4, 0)],
+  ['select', 'shop', 'express please', option(4, 1)],
+  ['select', 'shop', 'I live in the UK', option(5, 0)],
+  ['select', 'shop', 'ship it to the US', option(5, 1)],
+  ['select', 'shop', 'set the country to America', option(5, 1)],
+  ['select', 'shop', 'Germany', option(5, 4)],
+  ["select", 'shop', "I'm in Ireland", option(5, 2)],
+  ['select', 'shop', "I'll take two", option(3, 1)],
+  ['select', 'shop', 'make it three', option(3, 2)],
+  ['select', 'shop', 'just one', option(3, 0)],
+  ['select', 'shop', 'four of them please', option(3, 3)],
+  ['activate', 'shop', 'put it in my bag', act(6)],
+  ['refuse', 'shop', 'in pink', plain('unknown')],
+  ['refuse', 'shop', 'size 12', plain('unknown')],
+  ['refuse', 'shop', 'ship it to Japan', plain('unknown')],
+  ['refuse', 'shop', 'two-day delivery', plain('unknown')],
+  ['refuse', 'shop', 'make it ten', plain('unknown')],
+  ['refuse', 'shop', 'in a tall fit', plain('unknown')],
+];
+
+export const HELD_OUT_5_SUITE = HELD_OUT_5.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);

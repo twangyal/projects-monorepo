@@ -76,9 +76,15 @@ export function everydayCommand(command, normalize) {
  * "go with the paperback". The interpreter tries it as an option, then as a control.
  */
 export function choiceSaid(text) {
-  const said = /^(?:make it|make that|switch to|change to|go with|give me|get me|i want|i'd like|i would like|i'll take|i'll have|i prefer|let's go with|let's have|(?:can|could|may) i (?:have|get)(?: it| one)?(?: in)?|it's about|it is about|this is about|my (?:question|message|enquiry|inquiry|problem|request) is (?:about|regarding))(?: the| an| a)? (.+?)(?: one| version| edition| option| format)?(?: please)?$/.exec(text)
+  const said = /^(?:make it|make that|switch to|change to|go with|give me|get me|i want|i need|i'd like|i would like|i'll take|i'll have|i prefer|let's go with|let's have|(?:can|could|may) i (?:have|get)(?: it| one)?(?: in)?|it's about|it is about|this is about|my (?:question|message|enquiry|inquiry|problem|request) is (?:about|regarding))(?: the| an| a)? (.+?)(?: one| version| edition| option| format)?(?: please)?$/.exec(text)
     // "Large print please", "the paperback is fine": the choice named and agreed to.
-    ?? /^(?:the )?(.+?)(?: one| version| edition)?(?: please| is fine| will do| works| is good| is great)$/.exec(text);
+    ?? /^(?:the )?(.+?)(?: one| version| edition)?(?: please| is fine| will do| works| is good| is great)$/.exec(text)
+    // "The blue one", "in green", "do you have it in navy", "just one", "I live in the UK", "ship it to the US".
+    ?? /^the (.+?) one$/.exec(text) ?? /^in (.+)$/.exec(text) ?? /^do you have (?:it|this|that|one|these|them) in (.+?)(?: please)?$/.exec(text)
+    ?? /^(?:just|only) (.+)$/.exec(text) ?? /^(?:i|we) (?:live|am|'m|are|'re)(?: based| living| located)? in (.+)$/.exec(text.replace(/^(i|we)'/, '$1 \''))
+    ?? /^(?:ship|send|deliver|post)(?: it| them| this| that| these| those)? to (.+)$/.exec(text);
+  // "Just one" is a number of things; a bare "one" elsewhere ("that one") names no choice.
+  if (/^(?:just|only) one$/.test(text)) return 'one';
   return said && !/^(?:it|that|this|one|yes|ok|okay|sure|thanks|thank you)$/.test(said[1]) ? said[1] : null;
 }
 

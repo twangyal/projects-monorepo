@@ -3,6 +3,7 @@
 import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
 import { relatedWords } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
+import { choicesMeant, nextSize } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -340,19 +341,27 @@ function namedOption(query, selects) {
   return null;
 }
 
-// A value from a dropdown in the circle: unique strong option names act, close ones ask.
+// A value from a dropdown in the circle: unique strong option names act, close ones ask. Without a strong name, what
+// the choice means is tried ("a medium" for M, "the UK", "in green" for Forest green) before weaker names are asked about.
 function selectOption(optionQuery, selects, selected) {
   const options = selects.flatMap(element => element.options.map((name, optionIndex) => ({ ...element, name, optionIndex, selectId: element.id })));
   const ranked = rank(optionQuery, options);
-  if (!ranked.length) return null;
   const pick = option => ({ type: 'select-option', targetId: option.selectId, optionIndex: option.optionIndex, optionName: option.name, ...(typeof selected === 'boolean' ? { selected } : {}) });
+  const ask = close => question(close.map((option, index) => ({ number: index + 1, label: option.name, elementId: option.selectId })),
+    number => pick(close[number - 1]));
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN).map(entry => entry.element);
-  if (close.length === 1 && ranked[0].score >= 0.9) return pick(close[0]);
-  if (close.length > 1) {
-    return question(close.map((option, index) => ({ number: index + 1, label: option.name, elementId: option.selectId })),
-      number => pick(close[number - 1]));
+  const { exact, containing } = choicesMeant(optionQuery, selects);
+  const found = list => list.map(({ select, optionIndex, name }) => ({ selectId: select.id, optionIndex, name }));
+  if (ranked.length && ranked[0].score >= 0.9) {
+    // A name only containing the words said ("large" in Large pack) is asked about beside an option it names exactly
+    // another way (L, for large).
+    const all = ranked[0].score < 1 ? [...close, ...found(exact)] : close;
+    const distinct = all.filter((option, index) => all.findIndex(other => other.selectId === option.selectId && other.optionIndex === option.optionIndex) === index);
+    return distinct.length === 1 ? pick(distinct[0]) : ask(distinct);
   }
-  return null;
+  const meant = found(exact.length ? exact : containing);
+  if (meant.length) return meant.length === 1 ? pick(meant[0]) : ask(meant);
+  return close.length > 1 ? ask(close) : null;
 }
 
 const edit = (kind, extra = {}) => element => ({ type: 'edit', targetId: element.id, edit: { kind, ...extra } });
@@ -1050,6 +1059,13 @@ function interpretInCircle(utterance, context) {
 
   // A choice said another way ("make it hardcover", "switch to the audiobook", "make the topic order problem").
   const options = context.elements.filter(element => element.options?.length);
+  // "Go one size up": the size next to the current one in a size dropdown.
+  const step = nextSize(text), sizes = step && options.find(element => /\bsize\b/i.test(element.name ?? ''));
+  if (sizes) {
+    const at = sizes.options.indexOf(sizes.value), next = at + step;
+    if (at >= 0 && next >= 0 && next < sizes.options.length) return { type: 'select-option', targetId: sizes.id, optionIndex: next, optionName: sizes.options[next] };
+    return { type: 'unknown', message: `There is no size ${step > 0 ? 'above' : 'below'} ${sizes.value ?? 'this one'} in ${sizes.name}.` };
+  }
   const wanted = choiceSaid(text), making = /^make (?:the )?(.+)$/.exec(text);
   const madeIn = making && options.find(element => normalize(element.name ?? '') && making[1].startsWith(`${normalize(element.name)} `));
   const madeChoice = (wanted && selectOption(wanted, options)) ??
