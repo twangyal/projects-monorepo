@@ -3,6 +3,7 @@
 import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
 import { relatedWords } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
+import { rowAction } from './rows.js';
 import { choicesMeant, nextSize } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
@@ -732,6 +733,9 @@ function interpretInCircle(utterance, context) {
   if (/^(cancel|stop|never ?mind|forget it)(?: (?:that|it|this))?$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on|wait|wait a (?:second|moment|minute)|one moment)$/.test(text)) return { type: 'pause' };
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
+  // Controls repeated on every row, named by what their row is about: "remove the socks", "make the mug two".
+  const row = rowAction(text, context, clarify);
+  if (row) return row;
   // The browser itself: reload, go to a website, tabs and zoom. A website is named by its address ("go to bbc dot co
   // dot uk"), so "open settings" still opens a control.
   const browser = browserCommand(command, context);

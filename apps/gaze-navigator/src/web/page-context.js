@@ -553,6 +553,24 @@ export function captureSubmissionSnapshot(element, identity = captureActivationS
     form.hasAttribute('novalidate'), submitter?.hasAttribute('formnovalidate') ?? false];
 }
 
+// The list item, table row or card a control sits in, for controls repeated on every row ("Remove" on each basket
+// line): its text says what the row is about. Semantic rows first; otherwise the nearest of a few ancestors whose own
+// text is short and that holds only a few controls, as a card does. Null when nothing beyond the control's name.
+const ROWS = 'li, tr, [role=row], [role=listitem], article, [role=article]';
+const ROW_TEXT = 200, ROW_CONTROLS = 6;
+function rowOf(element, name) {
+  const read = node => clean(node.textContent).slice(0, ROW_TEXT);
+  const semantic = element.closest?.(ROWS);
+  let row = semantic && clean(semantic.textContent).length <= ROW_TEXT * 2 ? semantic : null;
+  for (let node = element.parentElement, depth = 0; !row && node && node !== element.ownerDocument.body && depth < 5; node = node.parentElement, depth++) {
+    const text = clean(node.textContent);
+    if (text.length > ROW_TEXT) break;
+    if (text !== clean(name) && text.length > clean(name).length + 2 && node.querySelectorAll(ACTIONABLE).length <= ROW_CONTROLS) row = node;
+  }
+  const text = row && read(row);
+  return text && text !== clean(name) ? text : null;
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -566,6 +584,8 @@ function describe(element) {
     name, role, editable: isEditable(element), submits, activationSnapshot: captureActivationSnapshot(element, name),
     consequential: submits || CONSEQUENTIAL.test(name) || element.hasAttribute?.('download'),
   };
+  const row = rowOf(element, name);
+  if (row) description.row = row;
   const dateParts = datePartsOf(element);
   if (dateParts) description.dateParts = dateParts;
   if (description.editable || submits) description.submissionSnapshot = captureSubmissionSnapshot(element, description.activationSnapshot);

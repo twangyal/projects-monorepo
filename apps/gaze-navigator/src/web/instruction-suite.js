@@ -27,6 +27,16 @@ CONTEXTS.shop = { elements: [
   el(5, 'combobox', 'Country', { options: ['United Kingdom', 'United States', 'Ireland', 'France', 'Germany'], value: 'United Kingdom' }),
   el(6, 'button', 'Add to bag')] };
 
+// A basket and an address book: the same controls repeated on each row, which says what the row is about (`row`).
+const basketRow = (first, item, quantity) => [
+  el(first, 'combobox', 'Quantity', { options: ['1', '2', '3', '4', '5'], value: quantity, row: item }),
+  el(first + 1, 'button', 'Remove', { consequential: true, row: item }), el(first + 2, 'link', 'Save for later', { row: item })];
+CONTEXTS.basket = { elements: [...basketRow(1, 'Wool socks, grey, £8.00', '1'), ...basketRow(4, 'Bobble hat, navy, £15.00', '2'),
+  ...basketRow(7, 'Stoneware mug, £12.50', '1'), el(10, 'button', 'Checkout', { consequential: true })] };
+const addressRow = (first, address) => [el(first, 'link', 'Edit', { row: address }), el(first + 1, 'button', 'Delete', { consequential: true, row: address })];
+CONTEXTS.addresses = { elements: [...addressRow(1, 'Home, 12 Mill Lane, Leeds'), ...addressRow(3, 'Work, 4 Station Road, York'),
+  ...addressRow(5, "Mum's house, 9 Elm Close, Hull"), el(7, 'button', 'Add a new address')] };
+
 const act = targetId => ({ type: 'activate', targetId });
 const option = (targetId, optionIndex) => ({ type: 'select-option', targetId, optionIndex });
 const edit = (targetId, kind, extra = {}) => ({ type: 'edit', targetId, edit: { kind, ...extra } });
@@ -438,6 +448,40 @@ const HELD_OUT_5 = [
 ];
 
 export const HELD_OUT_5_SUITE = HELD_OUT_5.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
+// Held-out set 6 (2026-11-17): controls repeated on every row of a basket and an address book (Remove, Save for later,
+// Quantity, Edit, Delete), named by what their row is about ("remove the socks", "edit my work address"), plus rows the
+// page does not have, which must not act. Written before any rule for it, by the same developer, on new page contexts.
+const HELD_OUT_6 = [
+  ['activate', 'basket', 'remove the socks', act(2)],
+  ['activate', 'basket', 'take the hat out of my basket', act(5)],
+  ['activate', 'basket', 'delete the mug', act(8)],
+  ['activate', 'basket', 'get rid of the bobble hat', act(5)],
+  ['activate', 'basket', 'remove the grey socks from my basket', act(2)],
+  ['activate', 'basket', "I don't want the mug any more", act(8)],
+  ['activate', 'basket', 'save the hat for later', act(6)],
+  ['activate', 'basket', 'save the mug for later', act(9)],
+  ['activate', 'basket', 'remove the second item', act(5)],
+  ['activate', 'basket', 'remove the last one', act(8)],
+  ['activate', 'basket', 'checkout', act(10)],
+  ['select', 'basket', 'make the mug two', option(7, 1)],
+  ['select', 'basket', 'change the socks quantity to 3', option(1, 2)],
+  ['select', 'basket', 'I want three hats', option(4, 2)],
+  ['select', 'basket', 'just one hat', option(4, 0)],
+  ['activate', 'addresses', 'edit my work address', act(3)],
+  ['activate', 'addresses', 'change the home address', act(1)],
+  ['activate', 'addresses', "delete mum's address", act(6)],
+  ['activate', 'addresses', 'edit the York one', act(3)],
+  ['activate', 'addresses', 'remove the Leeds address', act(2)],
+  ['activate', 'addresses', 'add an address', act(7)],
+  ['refuse', 'basket', 'remove the scarf', plain('unknown')],
+  ['refuse', 'basket', 'save the shoes for later', plain('unknown')],
+  ['refuse', 'basket', 'make the scarf two', plain('unknown')],
+  ['refuse', 'addresses', 'delete the office address', plain('unknown')],
+  ['refuse', 'addresses', 'edit the Paris one', plain('unknown')],
+];
+
+export const HELD_OUT_6_SUITE = HELD_OUT_6.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
