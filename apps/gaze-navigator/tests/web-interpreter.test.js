@@ -284,7 +284,9 @@ test('explicit checkbox state survives interpretation and does not become a gene
   for (const word of ['check','tick']) assert.deepEqual(interpret(`${word} Newsletter`,page),{type:'check',targetId:1,checked:true});
   for (const word of ['uncheck','untick']) assert.deepEqual(interpret(`${word} that checkbox`,page),{type:'check',targetId:1,checked:false});
   assert.deepEqual(interpret('click Newsletter',page),{type:'activate',targetId:1});
-  assert.equal(interpret('check balance',page).type,'unknown');
+  // A button said by its whole name is pressed ("Check balance"), but ticking something no checkbox is called is no click.
+  assert.deepEqual(interpret('check balance',page),{type:'activate',targetId:2});
+  assert.equal(interpret('tick balance',page).type,'unknown');
 });
 
 test('checkbox state preserves reading-order ordinal requests', () => {

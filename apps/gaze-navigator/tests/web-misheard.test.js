@@ -8,11 +8,13 @@ const page = { elements: [control(1, 'Submit'), control(2, 'Sign in', 'link'), c
 const offered = (said, context = page) => interpret(said, context).alike;
 
 test('a name that sounds like a control in the circle is offered, never used directly', () => {
-  for (const [said, id] of [['click signing', 2], ['open card', 3], ['click check out', 4], ['press summit', 1]]) {
+  for (const [said, id] of [['click signing', 2], ['open card', 3], ['press summit', 1]]) {
     const action = interpret(said, page);
     assert.equal(action.type, 'unknown', said);
     assert.equal(action.alike?.targetId, id, said);
   }
+  // "Check out" is another way of writing Checkout, not a mishearing of it.
+  assert.deepEqual(interpret('click check out', page), { type: 'activate', targetId: 4 });
   // Too short, too different, or two controls equally close: nothing is offered.
   assert.equal(offered('click man'), undefined);
   assert.equal(offered('click many'), undefined);

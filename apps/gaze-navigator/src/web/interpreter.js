@@ -15,7 +15,7 @@ const MARGIN = 0.05;
 // A match below this shares only some of the words said; a control named this well just outside the circle wins.
 const STRONG = 0.8;
 const DEICTIC = /^(this|that|it|here|there|this one|that one)$/;
-const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|jump to|skip to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
+const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check(?! out\b)|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|jump to|skip to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
 // Politeness and lead-ins that carry no instruction; dictated text keeps everything after its verb.
 const LEADING_FILLER = /^(?:(?:please|ok|okay|now|hey|so|um|uh)\s+|(?:can|could|would|will) you(?: please)?\s+|(?:i(?:'d| would) like to|i want to|i need to|let's|let me|go ahead and)\s+)+/i;
 // "Thanks" is not stripped: it is often the content ("change it to Thanks").
@@ -24,7 +24,7 @@ const ORDINAL = /^(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|te
 // Common equivalent names for the same control.
 const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign in'], ['log out', 'sign out'], ['logout', 'sign out'], ['log off', 'sign out'],
   ['sign up', 'register'], ['create account', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['trolley', 'cart'], ['shopping cart', 'cart'],
-  ['place order', 'checkout'], ['place order', 'buy now'], ['place order', 'complete purchase'], ['prices', 'pricing'], ['price', 'pricing'], ['fees', 'pricing'], ['plans', 'pricing'],
+  ['check out', 'checkout'], ['place order', 'checkout'], ['place order', 'buy now'], ['place order', 'complete purchase'], ['prices', 'pricing'], ['price', 'pricing'], ['fees', 'pricing'], ['plans', 'pricing'],
   ['home page', 'home'], ['homepage', 'home'], ['main page', 'home'], ['start page', 'home'],
   ['past versions', 'history'], ['previous versions', 'history'], ['old versions', 'history'], ['revisions', 'history'], ['revision history', 'history'],
   ['version history', 'history'], ['edit history', 'history'],
@@ -718,6 +718,28 @@ function popupCommand(text, context) {
   return null;
 }
 
+// Words that begin a command acting on something other than a control of that name: finding words or searching,
+// typing into a field, ticking a checkbox, clearing a field, filling in a form.
+const OTHER_TARGET = /^(?:find|search|look|type|enter|write|check|uncheck|tick|untick|turn|switch|enable|disable|clear|empty|fill) \S/;
+// Controls that saying their name presses: a checkbox or switch said by its whole name is ticked instead.
+const PRESSED_BY_NAME = new Set(['button', 'link', 'clickable', 'menuitem', 'tab', 'treeitem', 'radio']);
+const TICKED_BY_NAME = new Set(['checkbox', 'switch']);
+
+function namedControl(text, context) {
+  if (!OTHER_TARGET.test(text)) return null;
+  const said = text.replace(/^the /, '');
+  const same = element => (PRESSED_BY_NAME.has(element.role) || TICKED_BY_NAME.has(element.role)) && normalize(element.name ?? '').replace(/^the /, '') === said;
+  const act = element => (TICKED_BY_NAME.has(element.role) ? { type: 'check', targetId: element.id, checked: true } : { type: 'activate', targetId: element.id });
+  const here = (context.elements ?? []).filter(same);
+  if (here.length) return here.length === 1 ? act(here[0]) : clarify(here, act);
+  // Named just outside the circle or elsewhere on screen, it is looked for there, as any named control is, rather than
+  // the words being typed or searched for here.
+  if ((context.nearby ?? []).some(same) || (context.onScreen?.() ?? []).some(same)) {
+    return { type: 'unknown', missing: true, message: `No control called "${said}" is inside the gaze circle. Look at it and try again.`, targetQuery: said };
+  }
+  return null;
+}
+
 function interpretInCircle(utterance, context) {
   const now = context.now ?? new Date();
   const heard = (utterance ?? '').trim();
@@ -733,6 +755,10 @@ function interpretInCircle(utterance, context) {
   if (/^(cancel|stop|never ?mind|forget it)(?: (?:that|it|this))?$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on|wait|wait a (?:second|moment|minute)|one moment)$/.test(text)) return { type: 'pause' };
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
+  // A control named by everything said ("Find out more", "Check availability") is the one meant, though the words
+  // begin like a command that would find, type, tick or clear something else.
+  const named = namedControl(text, context);
+  if (named) return named;
   // Controls repeated on every row, named by what their row is about: "remove the socks", "make the mug two".
   const row = rowAction(text, context, clarify);
   if (row) return row;
@@ -906,8 +932,16 @@ function interpretInCircle(utterance, context) {
     if (prior) return act(prior);
     const counted = subject && ORDINAL.exec(subject);
     if (counted) return ordinal(counted[1], counted[2], candidates, act);
-    return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
-      ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
+    if (!subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)) return deictic(candidates, act, 'checkbox');
+    const ticked = resolve(subject, candidates, null, act, 'checkbox');
+    // "Check my order status", "check the reviews": with no checkbox of that name, to check is to look, so the control
+    // of that name is opened. It is never a checkbox, which would be clicked off as easily as on.
+    if (ticked.missing && checkboxState[1] === 'check' && !turned) {
+      const opened = interpretInCircle(`open ${subject}`, context), ids = opened.type === 'clarify' ? opened.candidates.map(candidate => candidate.elementId) : [opened.targetId];
+      const roles = ids.map(id => context.elements.find(element => element.id === id)?.role);
+      if ((opened.type === 'activate' || opened.type === 'clarify') && roles.every(role => role && !['checkbox', 'switch'].includes(role))) return opened;
+    }
+    return ticked;
   }
   // Reserve explicit period intent before generic text editing, activation or model fallback.
   // Do not mistake a generic field's replacement payload ("... field to month field") for intent.
@@ -1166,6 +1200,11 @@ function interpretInCircle(utterance, context) {
   const counted = ORDINAL.exec(query);
   if (counted) return ordinal(counted[1], counted[2], context.elements, act);
   let resolved = resolve(query, context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);
+  // "Check out now", "sign in now": a last "now" says when, not which, unless a control's name has it ("Book now").
+  if (resolved.type === 'unknown' && / now$/.test(query)) {
+    const sooner = resolve(query.slice(0, -4), context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);
+    if (sooner.type !== 'unknown') resolved = sooner;
+  }
   // A bare option name ("large print") selects it when no control has that name, and so does a dropdown's own name
   // followed by the choice, as its label reads ("sort by most views", "country to France").
   if (resolved.type === 'unknown') {
