@@ -38,9 +38,9 @@ def _plain(text: str) -> str:
     return re.sub(r'\s+', ' ', text.translate(_TAG_CHARACTERS)).strip()
 
 
-def render_lrc(project: dict, words: list | None = None, letters=None) -> str:
+def render_lrc(project: dict, words: list | None = None, letters=None, language: str | None = None) -> str:
     """The project's saved lyrics as enhanced LRC; ``words`` are recognized words (may be empty) and ``letters`` the
-    letters measured in the vocals, when there are any (see ``alignment``)."""
+    letters measured in the vocals, when there are any, with the song's recognized ``language`` (see ``alignment``)."""
     project = validate_project(project)
     cues = project['cues']
     duration = project['duration']
@@ -53,7 +53,7 @@ def render_lrc(project: dict, words: list | None = None, letters=None) -> str:
         if start_ms >= end_ms:
             raise ValidationError(f'Lyric line {index + 1} collapses at LRC millisecond precision. '
                                   'Lengthen its interval and save before exporting.')
-    timings = word_timings(cues, words or [], duration, letters)
+    timings = word_timings(cues, words or [], duration, letters, language)
     lines = [f'[ti:{_plain(project["title"])}]', f'[length:{_stamp(project["duration"])[:5]}]', '[re:Karaoke Studio]']
     for index, (start_ms, end_ms) in enumerate(boundaries):
         sung, previous = '', ''

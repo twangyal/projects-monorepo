@@ -3,7 +3,7 @@ name = "local-karaoke-studio"
 version = "0.4.0"
 description = "Local AI stem separation, automatic lyrics and karaoke song export"
 requires-python = ">=3.11,<3.12"
-dependencies = ["Pillow==11.3.0"]
+dependencies = ["Pillow==11.3.0", "pypinyin==0.55.0"]
 
 [tool.ruff]
 target-version = "py311"

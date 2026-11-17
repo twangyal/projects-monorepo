@@ -232,6 +232,12 @@ class TranscriptTests(unittest.TestCase):
         self.assertEqual(validate_transcript(dict(good, model=EAST_ASIAN.name), 40.0)['model'], EAST_ASIAN.name)
         with self.assertRaises(ValueError):
             validate_transcript(dict(good, model='whisper-large'), 40.0)
+        # The song's language is kept when a model was told it; older transcripts have none.
+        self.assertEqual(validate_transcript(dict(good, model=EAST_ASIAN.name, language='zh'), 40.0)['language'], 'zh')
+        self.assertNotIn('language', validate_transcript(good, 40.0))
+        for language in ('ZH', 'chinese', '', 5, None):
+            with self.assertRaises(ValueError):
+                validate_transcript(dict(good, language=language), 40.0)
         for bad in (dict(good, model='other'), dict(good, extra=1), dict(good, words=[dict(text='x', start=5, end=4, confidence=1)]),
                     dict(good, words=[dict(text='x', start=1, end=99, confidence=1)]), dict(good, seconds=-1),
                     dict(good, words=[dict(text='late', start=5, end=6, confidence=1), dict(text='early', start=1, end=2, confidence=1)]),
@@ -309,7 +315,7 @@ class RecognizerChoiceTests(unittest.TestCase):
 
         progress = []
         with mock.patch.object(transcribe_worker, 'recognize_phrase', phrase_words):
-            model, result = recognize(phrases, load, models, lambda done, total: progress.append((done, total)), model_choice=choice)
+            model, result, self.language = recognize(phrases, load, models, lambda done, total: progress.append((done, total)), model_choice=choice)
         return model, result, loads, heard, progress
 
     def test_english_songs_are_heard_again_by_the_english_model(self):
@@ -342,8 +348,9 @@ class RecognizerChoiceTests(unittest.TestCase):
         decoded = SimpleNamespace(tokens=[' 今', ' 夜'], timestamps=[0.0, 0.3], durations=[0.3, 0.3],
                                   ys_log_probs=[], lang='<|ja|>')
         with mock.patch.object(transcribe_worker, '_decode', return_value=decoded):
-            model, result = recognize([(0, self.Phrase(0))], lambda _model, **_kwargs: object(),
-                                      (EAST_ASIAN,), model_choice='japanese')
+            model, result, language = recognize([(0, self.Phrase(0))], lambda _model, **_kwargs: object(),
+                                                (EAST_ASIAN,), model_choice='japanese')
+        self.assertEqual(language, 'ja')
         self.assertEqual(model, EAST_ASIAN)
         self.assertTrue(result)
         self.assertEqual({word['confidence'] for word in result}, {transcribe_worker.UNCONFIRMED})
@@ -355,6 +362,8 @@ class RecognizerChoiceTests(unittest.TestCase):
                 model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER), 'en', choice)
                 self.assertEqual(model, EAST_ASIAN)
                 self.assertEqual(loads, ['east-asian:' + code])
+                # The transcript records the language the model was told, which says how to read Chinese characters.
+                self.assertEqual(self.language, code)
                 self.assertEqual([phrase for _, phrase in heard], list(range(40)))
                 self.assertEqual(len(result), 400)
                 self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
@@ -373,6 +382,7 @@ class RecognizerChoiceTests(unittest.TestCase):
         everything = (ENGLISH, MULTILINGUAL, EAST_ASIAN)
         model, result, loads, heard, progress = self.run_choice(everything, 'zh')
         self.assertEqual((model, loads), (EAST_ASIAN, ['multilingual', 'east-asian', 'east-asian:zh']))
+        self.assertEqual(self.language, 'zh')
         # It listens to the first phrases, then hears the whole song in Chinese.
         self.assertEqual([phrase for recognizer, phrase in heard if recognizer == 'east-asian'], list(range(10)) + list(range(40)))
         self.assertEqual(len(result), 400)
@@ -380,6 +390,7 @@ class RecognizerChoiceTests(unittest.TestCase):
         # A confidently heard song stays where it is; an unsure one the East Asian model does not hear as East Asian returns.
         model, _result, loads, _heard, _progress = self.run_choice(everything, 'fr')
         self.assertEqual((model, loads), (MULTILINGUAL, ['multilingual']))
+        self.assertIsNone(self.language)
         model, result, loads, heard, _progress = self.run_choice(everything, 'fr?')
         self.assertEqual((model, loads), (MULTILINGUAL, ['multilingual', 'east-asian', 'multilingual']))
         self.assertEqual(sum(1 for recognizer, _ in heard if recognizer == 'east-asian'), 10)
@@ -397,6 +408,8 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual((model, loads), (ENGLISH, ['east-asian', 'english']))
         model, _result, loads, _heard, _progress = self.run_choice(everything, 'en', 'east-asian')
         self.assertEqual((model, loads), (EAST_ASIAN, ['east-asian']))
+        # Told no language, it records none.
+        self.assertIsNone(self.language)
 
     def test_phrases_heard_as_english_keep_the_automatic_language_in_an_east_asian_song(self):
         class Result:

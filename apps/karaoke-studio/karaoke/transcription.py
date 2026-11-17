@@ -17,6 +17,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import sys
 import threading
 import unicodedata
@@ -195,9 +196,13 @@ def sounds_east_asian(words: list[str]) -> bool:
 
 
 def validate_transcript(value: object, duration: float) -> dict:
-    """Strict shape for stored transcripts: model name, timed words and processing time."""
-    if not isinstance(value, dict) or set(value) != {'model', 'words', 'seconds'}:
+    """Strict shape for stored transcripts: model name, timed words, processing time and, when a model was told it, the
+    song's language (a lower-case code such as 'zh' for Mandarin or 'yue' for Cantonese; older transcripts have none)."""
+    if not isinstance(value, dict) or not {'model', 'words', 'seconds'} <= set(value) <= {'model', 'words', 'seconds', 'language'}:
         raise ValueError('The lyric transcript has an unexpected shape.')
+    language = value.get('language')
+    if 'language' in value and (not isinstance(language, str) or not re.fullmatch('[a-z]{2,3}', language)):
+        raise ValueError('The lyric transcript has an invalid language.')
     if value['model'] not in KNOWN_MODELS:
         raise ValueError('The lyric transcript came from an unknown model.')
     seconds = value['seconds']
@@ -219,7 +224,7 @@ def validate_transcript(value: object, duration: float) -> dict:
                 or not previous - 1e-6 <= start <= end <= min(duration, MAX_DURATION) + 0.5):
             raise ValueError('A transcript word has invalid text or timing.')
         previous = start
-    return dict(model=value['model'], words=words, seconds=float(seconds))
+    return dict(model=value['model'], words=words, seconds=float(seconds), **({'language': language} if language else {}))
 
 
 def transcribe_vocals(vocals: Path, output: Path, model_root: Path, duration: float,

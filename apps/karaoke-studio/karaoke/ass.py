@@ -35,12 +35,13 @@ def _plain(text: str) -> str:
     return re.sub(r'\s+', ' ', text.translate(_OVERRIDE_CHARACTERS)).strip()
 
 
-def render_ass(project: dict, words: list | None = None, letters=None) -> str:
+def render_ass(project: dict, words: list | None = None, letters=None, language: str | None = None) -> str:
     """The project's saved lyrics as karaoke ASS subtitles; ``words`` are recognized words (may be empty) and
-    ``letters`` the letters measured in the vocals, when there are any (see ``alignment``)."""
+    ``letters`` the letters measured in the vocals, when there are any, with the song's recognized ``language`` (see
+    ``alignment``)."""
     project = validate_project(project)
     cues = project['cues']
-    timings = word_timings(cues, words or [], project['duration'], letters)
+    timings = word_timings(cues, words or [], project['duration'], letters, language)
     style = ','.join(['Karaoke', 'Arial', '54', _colour(ACCENT), _colour(MAIN), _colour(BACKGROUND), _colour(BACKGROUND, 0x80),
                       '-1', '0', '0', '0', '100', '100', '0', '0', '1', '3', '0', '2', '60', '60', '60', '1'])
     lines = ['[Script Info]', f'Title: {_plain(project["title"])}', 'ScriptType: v4.00+', 'PlayResX: 1280', 'PlayResY: 720',

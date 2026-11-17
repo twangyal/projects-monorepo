@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 
 from karaoke.alignment import (
-    BLANK, CLASSES, FRAME, LETTERS, SPACE, _path, alignable, fold, force_align, max_bytes, read_emissions, write_emissions,
+    BLANK, CLASSES, FRAME, LETTERS, SPACE, _path, alignable, fold, force_align, max_bytes, read_emissions, word_letters, write_emissions,
 )
 from karaoke.lyrics_auto import LEAD_IN
 
@@ -38,15 +38,15 @@ def plain_path(log_probs, tokens):
     return first
 
 
-def sung(lines_at, seconds, letter_frames=3):
+def sung(lines_at, seconds, letter_frames=3, language=None):
     """Letter probabilities for lyrics sung at the given times: each letter clear for a few frames, blank elsewhere."""
     frames = int(round(seconds / FRAME))
     probs = np.full((frames, CLASSES), 1e-4)
     probs[:, BLANK] = 1.0
     for text, start in lines_at:
         t = int(round(start / FRAME))
-        for word in text.split():
-            for ch in fold(word):
+        for letters in word_letters(text, language):
+            for ch in letters:
                 probs[t:t + letter_frames, :] = 1e-4
                 probs[t:t + letter_frames, LETTERS[ch]] = 1.0
                 t += letter_frames + 1
@@ -113,6 +113,29 @@ class ForcedAlignmentTests(unittest.TestCase):
         self.assertEqual(fold('꽃잎, 빛!'), 'KKOTIPBIT')
         self.assertTrue(alignable(['사랑해 baby', '너를 보면']))
         self.assertFalse(alignable(['사랑해 東京の夜です']))
+
+    def test_chinese_is_read_in_pinyin_only_in_a_song_recognized_as_mandarin(self):
+        # Each character is a lyric word, read with its phrase: 乐 is "yue" in 音乐 (music) and "le" in 快乐 (happy).
+        self.assertEqual(word_letters('我爱你', 'zh'), ['WO', 'AI', 'NI'])
+        self.assertEqual(word_letters('音乐 快乐', 'zh'), ['YIN', 'YUE', 'KUAI', 'LE'])
+        self.assertEqual(word_letters('绿色', 'zh'), ['LV', 'SE'])
+        # Without the song's language the characters are not read: they could be sung in Cantonese.
+        self.assertEqual(word_letters('我爱你'), ['', '', ''])
+        self.assertTrue(alignable(['我爱你 baby', '月亮代表我的心'], 'zh'))
+        for language in (None, 'yue', 'ja'):
+            self.assertFalse(alignable(['我爱你', '月亮代表我的心'], language), language)
+        # Japanese kana are never read, so Japanese lyrics stay with recognized words even in pinyin's reach.
+        self.assertFalse(alignable(['東京の夜です'], 'zh'))
+
+    def test_mandarin_lines_start_where_their_pinyin_is_sung(self):
+        sung_at = [('月亮代表我的心', 1.5), ('你问我爱你有多深', 9.0), ('我爱你有几分', 17.0)]
+        log_probs = sung(sung_at, 26, language='zh')
+        cues = force_align([text for text, _ in sung_at], log_probs, 26, 'zh')
+        self.assertEqual([cue['text'] for cue in cues], [text for text, _ in sung_at])
+        for cue, (_, start) in zip(cues, sung_at, strict=True):
+            self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
+            self.assertGreater(cue['matched'], 0.9)
+        self.assertIsNone(force_align([text for text, _ in sung_at], log_probs, 26))
 
     def test_korean_lines_start_where_their_romanized_letters_are_sung(self):
         sung_at = [('보고 싶어 너를', 1.5), ('oh baby 사랑해', 8.0), ('다시 만나', 15.0)]
@@ -201,10 +224,10 @@ class ServerAlignmentTests(unittest.TestCase):
         from tests.test_lyrics_auto import SUNG, silent_separation
         from tests.test_server import ServerTests
         from karaoke.transcription import ENGLISH
-        self.measure = True
+        self.measure, self.language = True, None
 
         def transcribe(vocals, output, model_root, duration, cancel, stage):
-            transcript = dict(model=ENGLISH.name, words=SUNG, seconds=0.1)
+            transcript = dict(model=ENGLISH.name, words=SUNG, seconds=0.1, **({'language': self.language} if self.language else {}))
             Path(output).write_text(json.dumps(transcript))
             if self.measure:
                 # The singing is a second and a half earlier than the recognized words say.
@@ -228,6 +251,21 @@ class ServerAlignmentTests(unittest.TestCase):
         status, _, reply = self.helper.request('POST', base + '/align', {'lines': lines})
         self.assertEqual(status, 200, reply)
         return [round(cue['start'], 2) for cue in reply['cues']]
+
+    def test_chinese_lyrics_are_laid_on_the_singing_only_in_a_song_recognized_as_mandarin(self):
+        from unittest import mock
+        from karaoke.alignment import force_align as real
+        self.language = 'zh'
+        self.assertEqual(self.helper.upload()['status'], 'complete')
+        project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        with mock.patch('karaoke.server.force_align', wraps=real) as forced:
+            self.assertEqual(len(self.align(base, ['月亮代表我的心', '我爱你'])), 2)
+            self.assertEqual(forced.call_args.args[3], 'zh')
+        # The word timings sent to the preview, and the exports, are read the same way.
+        status, _, reply = self.helper.request('POST', base + '/word-timings', {'cues': [{'start': 17.0, 'end': 20.0, 'text': '我爱你'}]})
+        self.assertEqual(status, 200, reply)
+        self.assertEqual(len(reply['lines'][0]), 3)
 
     def test_supplied_lyrics_are_laid_on_the_singing_and_fall_back_to_recognized_words(self):
         from unittest import mock
@@ -327,3 +365,14 @@ class WordHighlightTests(unittest.TestCase):
         # A line in a script the aligner cannot spell keeps the spread.
         other = dict(start=17.8, end=21.5, text='夜 に 目覚めて')
         self.assertEqual(word_timings([other], [], 40, log_probs), word_timings([other], [], 40))
+
+    def test_mandarin_characters_highlight_where_their_pinyin_is_sung(self):
+        from karaoke.lyrics_auto import word_timings
+        log_probs = sung([('我爱你', 4.0)], 10, language='zh')
+        cue = dict(start=3.8, end=6.5, text='我爱你')
+        timings = word_timings([cue], [], 10, log_probs, 'zh')[0]
+        # Each letter lasts 4 frames and each word 4 more: WO, AI and NI start 0.24 s apart.
+        for word, want in zip(timings, [4.0, 4.24, 4.48], strict=True):
+            self.assertAlmostEqual(word['start'], want, delta=0.03)
+        # Read as Cantonese (or in an older transcript without a language) the characters are spread as before.
+        self.assertEqual(word_timings([cue], [], 10, log_probs, 'yue'), word_timings([cue], [], 10))

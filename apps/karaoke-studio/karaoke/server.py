@@ -856,6 +856,8 @@ class KaraokeServer(ThreadingHTTPServer):
         letters = self.read_alignment(project) if transcript else None
         if letters is not None:
             timing["letters"] = letters
+            if transcript.get("language"):
+                timing["language"] = transcript["language"]
         work_dir = self.new_work()
         project_dir = self.projects_dir / project["id"]
 
@@ -1365,7 +1367,7 @@ class Handler(BaseHTTPRequestHandler):
                     preview = server.recognition_preview(project) if read else server.update_recognition_preview(project, value, keep=self.command == "POST")
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
-                if self.command == "POST" and resource == "align" and alignable(value["lines"]):
+                if self.command == "POST" and resource == "align" and alignable(value["lines"], (transcript or {}).get("language")):
                     letters = server.read_alignment(project)
                 if read and resource in ("lrc", "ass"):
                     transcript = server.optional_transcript(project)
@@ -1420,14 +1422,14 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "word-timings":
                 words = transcript["words"] if transcript else []
                 self._json({"recognized": transcript is not None,
-                            "lines": word_timings(timed["cues"], words, project["duration"], letters)})
+                            "lines": word_timings(timed["cues"], words, project["duration"], letters, (transcript or {}).get("language"))})
                 return
             if self.command == "POST" and resource == "align":
                 if transcript is None:
                     raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
-                # Lyrics in Latin letters or Korean are laid on the letters measured in the singing; others, or a clip
-                # measured without the aligner, are matched to the recognized words.
-                cues = force_align(value["lines"], letters, project["duration"]) if letters is not None else None
+                # Lyrics in Latin letters or Korean, or Chinese in a song recognized as Mandarin, are laid on the letters
+                # measured in the singing; others, or a clip measured without the aligner, are matched to the recognized words.
+                cues = force_align(value["lines"], letters, project["duration"], transcript.get("language")) if letters is not None else None
                 self._json({"cues": cues if cues is not None else align_lines(value["lines"], transcript["words"], project["duration"])})
                 return
             if read and stem:
@@ -1438,11 +1440,11 @@ class Handler(BaseHTTPRequestHandler):
                             disposition=self._attachment(project["title"], ".srt"))
                 return
             if read and resource == "lrc":
-                self._bytes(render_lrc(project, transcript["words"] if transcript else [], letters).encode("utf-8"),
+                self._bytes(render_lrc(project, transcript["words"] if transcript else [], letters, (transcript or {}).get("language")).encode("utf-8"),
                             "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".lrc"))
                 return
             if read and resource == "ass":
-                self._bytes(render_ass(project, transcript["words"] if transcript else [], letters).encode("utf-8"),
+                self._bytes(render_ass(project, transcript["words"] if transcript else [], letters, (transcript or {}).get("language")).encode("utf-8"),
                             "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".ass"))
                 return
             if read and resource == "video":

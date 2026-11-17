@@ -5,13 +5,16 @@ published for transformers.js) gives, for every 20 ms of the separated vocals, h
 probabilities are measured once, when a clip is transcribed, and kept beside its transcript. Supplied lyrics are then
 laid on them letter by letter, in order, along the most likely path (CTC forced alignment), so every line gets a time
 even where recognition heard none of its words. Accents are folded (é is e), which serves French, Spanish and German
-lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable).
+lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syllable by syllable). Chinese characters
+are read in pinyin when the song was recognized as Mandarin: the characters alone do not say whether a song is sung in
+Mandarin or Cantonese, whose readings differ, so Cantonese and Japanese lyrics are left to recognized words.
 
 On the first two minutes of five JamendoLyrics songs in each of English, French, Spanish and German (431 lines), 93%
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
 a median error of 0.03-0.05 s against 0.1-0.2 s. On 20 sung Korean phrases (GTSinger), the romanized lyrics put 62%
 of breath-separated lines and 64% of words within 0.3 s of their sung start, against 34% and 41% from matching them
-to the words SenseVoice recognized.
+to the words SenseVoice recognized; on 20 sung Mandarin phrases, pinyin put 95% of lines within 0.3 s against 75%,
+and 77% of characters within 0.15 s against 63%.
 """
 from __future__ import annotations
 
@@ -19,6 +22,7 @@ from dataclasses import dataclass
 import hashlib
 import math
 from pathlib import Path
+import re
 import struct
 import unicodedata
 
@@ -62,6 +66,10 @@ _VOWELS = ('a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe
 _FINALS = ('', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't',
            't', 'k', 't', 'p', 't')
 _HANGUL, _SYLLABLES = 0xAC00, 11172
+# Runs of Chinese characters (the unified ideographs and their extensions), read in pinyin together so that a character
+# with several readings takes the one its phrase gives it.
+_HAN = re.compile('[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0003134f]+')
+MANDARIN = 'zh'
 
 
 _verified: dict[str, tuple] = {}
@@ -101,18 +109,55 @@ def _spelled(ch: str) -> str:
     return _SPELLED.get(ch.lower(), ch)
 
 
-def fold(text: str) -> str:
-    """Upper-case Latin letters and apostrophes of ``text``, accents removed and Korean romanized; others are dropped."""
-    text = ''.join(_spelled(ch) for ch in text)
-    text = unicodedata.normalize('NFKD', text.replace('’', "'"))
+def _letters(spelled: str) -> str:
+    text = unicodedata.normalize('NFKD', spelled.replace('’', "'"))
     return ''.join(ch for ch in text.upper() if ch in LETTERS)
 
 
-def alignable(lines: list[str]) -> bool:
-    """Whether the lyrics are written in letters the aligner knows, Latin or Korean (at least nine in ten of them)."""
-    letters = [ch for line in lines for ch in line if unicodedata.category(ch).startswith('L')]
-    known = sum(1 for ch in letters if fold(ch))
-    return bool(letters) and known >= 0.9 * len(letters)
+def fold(text: str) -> str:
+    """Upper-case Latin letters and apostrophes of ``text``, accents removed and Korean romanized; others are dropped."""
+    return _letters(''.join(_spelled(ch) for ch in text))
+
+
+def readings(text: str, language: str | None = None) -> list[str]:
+    """Each character of ``text`` as the aligner spells it: ``fold``'s spelling, and in a song recognized as Mandarin
+    (``language`` 'zh') each Chinese character's pinyin without tones. Without the pinyin package they stay unread."""
+    spelled = [_spelled(ch) for ch in text]
+    if language == MANDARIN and _HAN.search(text):
+        try:
+            from pypinyin import lazy_pinyin
+        except ImportError:
+            return spelled
+        for run in _HAN.finditer(text):
+            read = lazy_pinyin(run.group())
+            if len(read) == len(run.group()):
+                spelled[run.start():run.end()] = read
+    return spelled
+
+
+def word_letters(line: str, language: str | None = None) -> list[str]:
+    """The aligner's letters for each lyric word of ``line`` (see ``lyrics_auto.lyric_words``), possibly empty."""
+    from .lyrics_auto import lyric_words
+    spelled, at, result = readings(line, language), 0, []
+    for word in lyric_words(line):
+        # Lyric words are the line's own characters, in order.
+        at = line.index(word, at)
+        result.append(_letters(''.join(spelled[at:at + len(word)])))
+        at += len(word)
+    return result
+
+
+def alignable(lines: list[str], language: str | None = None) -> bool:
+    """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean, or
+    Chinese in a song recognized as Mandarin."""
+    known = total = 0
+    for line in lines:
+        spelled = readings(line, language)
+        for ch, reading in zip(line, spelled, strict=True):
+            if unicodedata.category(ch).startswith('L'):
+                total += 1
+                known += bool(_letters(reading))
+    return bool(total) and known >= 0.9 * total
 
 
 def write_emissions(path: Path, log_probs) -> None:
@@ -211,13 +256,14 @@ def _path(log_probs, tokens: list[int]):
     return first, peak
 
 
-def force_align(lines: list[str], log_probs, duration: float) -> list[dict] | None:
+def force_align(lines: list[str], log_probs, duration: float, language: str | None = None) -> list[dict] | None:
     """Cues for supplied ``lines`` placed on the singing: start, end, text and ``matched`` (how surely each was found).
 
-    Returns None when the lyrics cannot be laid on these frames (none of their letters are known, or there are more
-    letters than frames), so the caller can fall back to matching recognized words.
+    ``language`` is the song's recognized language (see ``readings``). Returns None when the lyrics cannot be laid on
+    these frames (none of their letters are known, or there are more letters than frames), so the caller can fall back
+    to matching recognized words.
     """
-    from .lyrics_auto import HOLD, _finish, lyric_words
+    from .lyrics_auto import HOLD, _finish
     lines = [line.strip() for line in lines if isinstance(line, str) and line.strip()]
     if not lines or log_probs is None or not len(log_probs):
         return None
@@ -225,8 +271,7 @@ def force_align(lines: list[str], log_probs, duration: float) -> list[dict] | No
     owned: list[list[tuple[int, int]]] = []  # per line: (first token, letter count) of each word with letters
     for line in lines:
         words = []
-        for word in lyric_words(line):
-            letters = fold(word)
+        for letters in word_letters(line, language):
             if not letters:
                 continue
             if tokens:
@@ -268,17 +313,15 @@ def force_align(lines: list[str], log_probs, duration: float) -> list[dict] | No
     return _finish(groups, duration, scores)
 
 
-def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25) -> list[float] | None:
+def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25, language: str | None = None) -> list[float] | None:
     """When each lyric word of a line sung from ``start`` to ``end`` starts, from the letters measured there.
 
     Words without letters the aligner knows (numbers, symbols) start between their neighbours. Returns None when the
     line cannot be laid on these frames: no letters it knows, or too few frames for its letters.
     """
-    from .lyrics_auto import lyric_words
     tokens: list[int] = []
     firsts: list[int | None] = []
-    for word in lyric_words(text):
-        letters = fold(word)
+    for letters in word_letters(text, language):
         if not letters:
             firsts.append(None)
             continue
