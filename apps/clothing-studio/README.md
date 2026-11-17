@@ -31,6 +31,8 @@ Optional **underbust girth** gives the body a bust: the chest is then measured r
 
 Optional **upper-arm girth** sets the upper arm on the proxy without narrowing it to fit the selected sleeve. Optional **neck girth** sets its circular neck without changing the garment neckline, head or shoulders. Both follow body profiles, project backups, outfits and matched fabric comparisons. Blank keeps automatic dimensions; forearms, wrists and shoulder placement stay assumed, and this does not validate fit.
 
+**Measure the body from photos** (Body & drape): a photo from the front, standing in close-fitting clothes with the arms held a little away from the sides, and your height give estimated chest, waist and hip girths, upper-arm girth, chest depth and waist-to-hip depth; a second photo from the side makes the girths more accurate. Google's MediaPipe pose model finds the person's outline on the device (it is downloaded when first used, about 6 MB, pinned and checked by SHA-256). Each girth is a straight-line fit, from the outline's width at its level and, with a side photo, its depth there, to tape measurements of 280 people in BodyM (Amazon). The photos show the outline found and where each was measured, a photo whose arms touch the body is refused with the reason, and the estimates go into the body fields as drafts to correct and apply. On the 68 measurable people of BodyM test A they were within 5 cm for 60% of chests, 74% of waists and 78% of hips with a side photo (47%, 44% and 72% from the front alone), and within 3 cm for 78% of upper arms. They were not tried on people photographing themselves at home.
+
 Changing **Wear with** keeps an edited third garment when it is compatible with the new outfit. If it cannot stay, the studio asks before removing it. Changing the edited garment’s type by template or description also keeps compatible pieces and asks before removing any that no longer go with it.
 
 Use **Edit worn garment** for a pair or **Garment to edit** for three pieces, including outfits built around the initial Blank tee. The applied copies and shared body settings stay together; edits affect only the current garment. Switching is one Undo step, requires applied/discarded product drafts, and returns 3D and pattern export sizing to the new garment’s sample. The saved-library source stays separate.
@@ -73,6 +75,7 @@ npm run build          # typecheck + Vite production build
 npm run check          # test + lint + build
 npx playwright install chromium
 npm run test:browser   # builds with the storage test harness, serves a preview on port 4186, runs tests/*.spec.ts
+node --experimental-strip-types scripts/evaluate-body-photos.ts DIR --download   # body-from-photos estimates on BodyM (CC BY-NC 4.0, not committed)
 ```
 
 Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser, and `CLOTHING_TEST_PORT` to change the port. CI: `.github/workflows/clothing-studio.yml` (`npm run check`, then the browser tests).
@@ -88,10 +91,11 @@ Use `CHROMIUM_PATH=/path/to/chromium` to run against an existing browser, and `C
 - `src/style-prompt.ts`, `src/design-prompt.ts`: description parsers for one part and for the whole garment.
 - `src/tensile*.ts`, `src/bending*.ts`, `src/membrane*.ts`: swatch experiments (each with its worker).
 - `src/model.ts`, `src/storage.ts`, `src/design-library*.ts`, `src/top-body-profiles*.ts`, `src/media.ts`: project model and validation, persistence, image admission.
+- `src/body-photo*.ts`, `src/pose-*.ts`: body measurements from photo outlines, the panel, and the pinned pose model; `scripts/evaluate-body-photos.ts` scores and refits them.
 - `tests/`: unit tests (`*.test.ts`) and Playwright specs (`*.spec.ts`).
 
 ## Data & privacy
 
 - Everything stays in the browser. The current project autosaves to IndexedDB (`clothing-studio`), and saved named copies go to a second IndexedDB database (`clothing-studio-designs`). Saved body profiles are kept in `localStorage`. Unapplied drafts and Undo history last only for the session.
-- Uploaded photos are resized to at most 1200 px and re-encoded as JPEG without metadata. Motifs and artwork are size-checked before decoding. Nothing is uploaded.
+- Uploaded photos are resized to at most 1200 px and re-encoded as JPEG without metadata. Motifs and artwork are size-checked before decoding. Nothing is uploaded. Photos for measuring the body are read in memory and not kept; their only network request is the pose model download.
 - Saved designs, backups and body-profile exports contain your photos, artwork and measurements. Clearing browser data removes the local library, so keep downloaded JSON backups of work you want to keep. Several tabs share one autosave, and the last write wins.

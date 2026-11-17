@@ -122,3 +122,11 @@ dialog.workspace-tool{width:min(1100px,94vw);max-width:94vw;max-height:90dvh;pos
 #top-body-shape{width:100%}#top-body-shape summary{cursor:pointer;min-height:44px;padding-top:10px}
 
 #garment-comparison{width:100%;min-width:0}#garment-comparison .measure-grid{grid-template-columns:1fr}#garment-comparison summary{min-height:44px;cursor:pointer;padding:10px 0}.garment-comparison-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}.garment-comparison-card{min-width:0;border:1px solid var(--line,#ddd);padding:12px;border-radius:12px}.garment-comparison-images{display:grid;grid-template-columns:1fr 1fr;gap:6px}.garment-comparison-images img{width:100%;height:auto;min-width:0}.garment-comparison-card p{overflow-wrap:anywhere}
+/* Measure the body from photos: the outline and measured lines over each photo, then the estimates. */
+#body-photos{width:100%}#body-photos summary{cursor:pointer;min-height:44px;padding-top:10px}
+.body-photo-views{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.body-photo-views canvas{width:min(48%,220px);height:auto;border:1px solid #d7d3cb;border-radius:6px;background:#222}
+.body-photo-table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+.body-photo-table caption{text-align:left;font-weight:600;padding-bottom:4px}
+.body-photo-table th,.body-photo-table td{text-align:left;vertical-align:top;padding:4px 6px;border-bottom:1px solid #e4e0d8}
+.body-photo-table td:nth-child(2){white-space:nowrap;font-variant-numeric:tabular-nums}
