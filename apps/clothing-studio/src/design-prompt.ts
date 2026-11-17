@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -93,6 +93,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     return match;
   };
 
+  // A long dress is a maxi dress; the word is read before the garment word is taken.
+  const longDress = take(/\blong(?![ -]sleeve)(?=(?:[ -][a-z]+){0,2}[ -]dress(?:es)?\b)/);
   // A gathered dress is a dress whose skirt is gathered into a waist seam: the word is read with the skirt, below.
   const gatheredDress = take(/\b(?:gathered|dirndl)(?=(?:[ -][a-z]+){0,3} dress(?:es)?\b)/);
   // The garment: a different base starts from that base's template; shorts and trousers switch leg length.
@@ -112,7 +114,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       if (base !== product.base) product = { ...template(id), ...(current.spec ? { spec: current.spec } : {}), ...(current.motifs ? { motifs: current.motifs } : {}) };
       else if (id === 'shirt') product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), buttons: true, collar: true });
       // Shoulder-to-hem lengths for a mid-height body: a mini ends at mid-thigh, a midi below the knee.
+      // A maxi dress ends at the ankles and a floor-length one just above the floor (a mid-height body's shoulder is
+      // about 138 cm up).
       const length = take(/\bmini\b/) ? DRESS_LENGTH : take(/\b(?:midi|mid[- ]calf|calf[- ]length)\b/) ? 115 : take(/\bknee[- ]length\b/) ? 100
+        : take(/\b(?:floor[- ]length|full[- ]length|floor[- ]sweeping)\b/) ? FLOOR_LENGTH : (take(/\b(?:maxi|ankle[- ]length)\b/) || longDress) ? MAXI_LENGTH
         : Math.max(topMeasurements(product).length, base === 'tee' ? 100 : 92);
       const flared = template(base === 'tee' ? 'tee-dress' : 'sweat-dress').fit!.hemWidth!;
       product.measurements = { ...topMeasurements(product), length };
@@ -218,6 +223,9 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     // A shaped waist is read before "fitted" alone, which sets the chest: "a fitted waist" shapes the side seams.
     const waisted = take(/\b(?:fitted|shaped|tapered|nipped(?:[- ]in)?|cinched|defined) waist\b|\bwaisted\b/), straightSides = take(/\bstraight side(?: seam)?s\b|\bno waist shaping\b/);
     const unseamed = take(/\b(?:no|without a) waist seam\b/), seamed = take(/\bwaist seam\b/);
+    // A dress skirt is gathered into its waist seam, not pleated (only skirts are pleated).
+    const pleatedDress = optionsOf(product).waistSeam || /dress/.test(garmentName(product).toLowerCase()) ? take(/\b(?:knife[- ]|box[- ])?pleat(?:ed|s)?(?: skirt)?\b/) : null;
+    if (pleatedDress) notApplied.push(`${pleatedDress[0]} (a dress skirt can be gathered into its waist seam, not pleated; skirts are pleated)`);
     const gatheredSkirt = take(/\b(?:gathered|dirndl) (?:skirt|waist)s?\b|\bdirndl\b/) ?? gatheredDress;
     const smoothSkirt = !gatheredSkirt && take(/\b(?:smooth|ungathered) skirt\b/);
     const puffed = take(/\b(?:puff(?:ed|y)?|balloon|gathered) sleeves?\b/), plainSleeves = !puffed && take(/\b(?:plain|flat|unpuffed|ungathered) sleeves?\b|\bno puff sleeves?\b/);
@@ -418,6 +426,13 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     }
     const measured = words.trim() ? measuredParts.filter(item => item.start >= start && item.start < clauseStart) : [];
     parts.push(...measured.flatMap(item => item.parts));
+    // A part word for a part this garment does not have ("skirt" on a dress not cut at the waist) is reported with its
+    // words rather than dropped.
+    if (named.length && !parts.length) {
+      const dressSkirt = named.some(word => /skirt|bodice/.test(word)) && product.base === 'tee';
+      notApplied.push(`${clause.replace(/\s+/g, ' ').trim()} (${dressSkirt ? 'a dress has a separate skirt and bodice when cut at the waist: say “waist seam”' : `not on this ${garmentName(product).toLowerCase()}`})`);
+      return [];
+    }
     const missing = parts.filter(id => !available.has(id));
     for (const id of new Set(missing)) if (!notApplied.some(item => item.startsWith(PART_NAMES[id].toLowerCase()))) notApplied.push(`${PART_NAMES[id].toLowerCase()} (not on this ${BASE_NAMES[product.base].toLowerCase()})`);
     parts = [...new Set(parts.filter(id => available.has(id)))];
@@ -469,6 +484,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   }
   for (const item of notApplied) ignored.push(item);
   if (!scopes.length) {
+    // Words that were understood but cannot apply to this design say why.
+    if (notApplied.length) throw new Error(`Nothing in “${prompt.trim().slice(0, 60)}” could be applied: ${notApplied.join('; ')}.`);
     throw new Error(`Nothing in “${prompt.trim().slice(0, 60)}” could be applied. Try a garment, part, fabric, colour or print, for example "white tee with navy sleeves".`);
   }
   return { product: validateProduct(product), scopes, ignored: [...new Set(ignored)], ...(printed ? { text: printed } : {}) };

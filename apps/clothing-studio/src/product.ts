@@ -10,6 +10,9 @@ export type Base = typeof BASES[number];
 export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie', trousers: 'Pull-on trousers', skirt: 'Flared skirt' };
 /** A top at least this long (cm, shoulder to hem) reaches past the hips and is worn as a dress. */
 export const DRESS_LENGTH = 85;
+/** A maxi dress's length, ending at the ankles, and a floor-length one's, just above the floor, for a mid-height body. */
+export const MAXI_LENGTH = 128;
+export const FLOOR_LENGTH = 136;
 /** A top at most this long ends above the waist: a crop top. */
 export const CROP_LENGTH = 52;
 /** Half the gap a zip hoodie's pocket halves leave for the zip, cm. */
@@ -323,7 +326,7 @@ export interface Product {
 }
 
 export const LIMITS = {
-  chest: [80, 150], length: [40, 120], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], legCuffHeight: [4, 12], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  chest: [80, 150], length: [40, 150], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], legCuffHeight: [4, 12], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
   fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], waistWidth: [28, 76], waistPosition: [25, 70], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;

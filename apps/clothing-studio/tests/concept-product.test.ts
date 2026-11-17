@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { conceptTee } from '../src/concept-product.ts';
 import { createProject, validateProject, ProjectHistory, parseProject, serializeProject } from '../src/model.ts';
-import { template, topMeasurements, patternPieces } from '../src/product.ts';
+import { LIMITS, template, topMeasurements, patternPieces } from '../src/product.ts';
 import { replaceOutfitProduct } from '../src/outfit-edit.ts';
 
 test('concept proportions, colour and neckline become an editable tee without mutating source work', () => {
@@ -25,8 +25,9 @@ test('stripe transfer is editable and crosshatch and capped proportions are expl
   assert.equal(plan.product.parts.neckband.print, null); assert.match(plan.summary, /horizontal/i);
   project.garment = { ...project.garment, bodyWidth: 160, bodyLength: 300, pattern: 'weave' };
   const capped = conceptTee(project, 150);
-  assert.equal(topMeasurements(capped.product).length, 120);
-  assert.match(capped.summary, /limited to 120/i); assert.match(capped.summary, /crosshatch.*source/i);
+  // The body length is capped at the longest a top may be (a floor-length dress).
+  assert.equal(topMeasurements(capped.product).length, LIMITS.length[1]);
+  assert.match(capped.summary, new RegExp(`limited to ${LIMITS.length[1]}`, 'i')); assert.match(capped.summary, /crosshatch.*source/i);
   assert.equal(capped.product.parts.front.print, null);
   for (const bad of [NaN, Infinity, 0, 79.9, 150.1]) assert.throws(() => conceptTee(project, bad), /chest/i);
 });
