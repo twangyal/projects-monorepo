@@ -115,6 +115,8 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
  */
 export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements' | 'parts' | 'options'> & { colorways?: Product['colorways'] }>(product: T, sleeve: number): T {
   (product.measurements as Measurements).sleeve = sleeve;
+  // A sleeveless top has no sleeves to puff.
+  if (sleeve === 0) delete (product.measurements as Measurements).sleeveGather;
   const ids = new Set(partsOf(product));
   const fix = (parts: Product['parts']) => {
     for (const id of ['sleeveLeft', 'sleeveRight'] as const) {
@@ -266,9 +268,13 @@ export interface PartStyle { material: string; color: string; print: Print | nul
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
 export interface Measurements { chest: number; length: number; sleeve: number;
   /** A dress cut at the waist: its skirt's waist edge is cut this many times longer than the seam and gathered into it
-   * (DRESS_GATHER); absent for a smooth skirt. */ gather?: number }
+   * (DRESS_GATHER); absent for a smooth skirt. */ gather?: number;
+  /** Puff sleeves: each sleeve cap is cut this many times as long as the armhole it is gathered into (SLEEVE_GATHER);
+   * absent for a plain sleeve, whose cap is CAP_EASE longer. */ sleeveGather?: number }
 /** How many times longer a dress skirt's waist edge may be cut than the waist seam it is gathered into. */
 export const DRESS_GATHER = [1.1, 2] as const;
+/** How many times as long as its armhole a puff sleeve's cap may be cut. */
+export const SLEEVE_GATHER = [1.2, 1.7] as const;
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), shoulder drop (U), neck width (F), front
  * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
@@ -449,12 +455,15 @@ export function validateProduct(value: unknown): Product {
     if (measurements.hip < measurements.waist) fail('Hip must be at least the waist: the waistband has to pull on over the hips.');
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
-    const gathered = !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, 'gather');
-    const m = plain(p.measurements, ['chest', 'length', 'sleeve', ...(gathered ? ['gather'] : [])], 'Measurements');
+    const has = (key: string) => !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, key);
+    const gathered = has('gather'), puffed = has('sleeveGather');
+    const m = plain(p.measurements, ['chest', 'length', 'sleeve', ...(gathered ? ['gather'] : []), ...(puffed ? ['sleeveGather'] : [])], 'Measurements');
     // A tee's sleeve length of 0 makes it sleeveless.
     const sleeve = base === 'tee' && m.sleeve === 0 ? 0 : finite(m.sleeve, LIMITS.sleeve, base === 'tee' ? 'Sleeve length (cm; 0 for sleeveless)' : 'Sleeve length (cm)');
     measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve,
-      ...(gathered ? { gather: finite(m.gather, DRESS_GATHER, 'Skirt gathering (× waist seam)') } : {}) };
+      ...(gathered ? { gather: finite(m.gather, DRESS_GATHER, 'Skirt gathering (× waist seam)') } : {}),
+      ...(puffed ? { sleeveGather: finite(m.sleeveGather, SLEEVE_GATHER, 'Sleeve cap gathering (× armhole)') } : {}) };
+    if (puffed && (base !== 'tee' || sleeve === 0)) fail(base === 'tee' ? 'A sleeveless top has no sleeves to puff: give it sleeves first.' : 'Puff sleeves go on T-shirts, shirts and tee dresses; a sweatshirt\'s sleeves end in rib cuffs.');
   }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
@@ -1013,11 +1022,36 @@ function topBodyOutline(product: Product, front: boolean, length = panelSize(top
 function sleeveOutline(product: Product) {
   const m = topMeasurements(product), dims = teeDimensions(product), cap = dims.capWidth, end = sleeveSize(m).length - dims.cuffHeight;
   // The sleeve length runs from the shoulder point, where the top of the cap is sewn, so it includes the cap.
-  const opening = dims.cuffHalf * 2 + (dims.cuffHeight ? 4 : 0);
+  const opening = dims.cuffHalf * 2 + (dims.cuffHeight ? 4 : 0), drafted = capCurve(cap, dims.capHeight);
+  const spread = capSpread(drafted, cap, dims.capHeight, end, m.sleeveGather);
   return {
-    cap: capCurve(cap, dims.capHeight),
+    cap: drafted.map(spread),
+    // The cap as drafted, which the 3D sleeve is sewn along, and how a point of the sleeve is spread for cutting.
+    drafted, spread,
     opening: [{ x: (cap - opening) / 2, y: end }, { x: (cap + opening) / 2, y: end }] as [Pt, Pt],
   };
+}
+
+/**
+ * A puff sleeve's cap is cut fuller than its armhole and gathered into it: slashed and spread about its centre line,
+ * most at the top and less toward the underarm, the spreading fading out twice the cap height below the top (or at the
+ * opening), so the cap edge is `gather` times the armhole. Without gathering, points stay as drafted.
+ */
+function capSpread(drafted: Pt[], width: number, height: number, end: number, gather?: number): (p: Pt) => Pt {
+  if (!gather) return p => p;
+  const depth = Math.min(end, 2 * height);
+  const by = (s: number) => (p: Pt): Pt => ({ x: width / 2 + (p.x - width / 2) * (1 + (s - 1) * Math.max(0, 1 - p.y / depth)), y: p.y });
+  const target = polylineLength(drafted) / (1 + CAP_EASE) * gather;
+  let low = 1, high = 8;
+  for (let i = 0; i < 50; i++) { const s = (low + high) / 2; if (polylineLength(drafted.map(by(s))) < target) low = s; else high = s; }
+  return by(low);
+}
+
+/** A top's sleeve cap as cut and the armhole it is set into, cm: a plain cap is CAP_EASE longer, a puff sleeve's its
+ * gathering times. */
+export function sleeveCap(product: Product): { cut: number; armhole: number } {
+  const sleeve = sleeveOutline(product);
+  return { cut: polylineLength(sleeve.cap), armhole: polylineLength(sleeve.drafted) / (1 + CAP_EASE) };
 }
 
 /** Where the hood leaves the neckline open at the centre front, as a share of half the neck width. */
@@ -1314,10 +1348,12 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
       });
     };
     const end = ring(length, radius), rows = Math.max(2, Math.ceil(length / 2));
-    const capAt = (k: number) => alongPolyline(sleeve.cap, k / columns);
+    // The sleeve is sewn along the cap as drafted; its flat positions are as cut, so a puff sleeve's spread cap is
+    // gathered into the armhole and the drape puffs it.
+    const capAt = (k: number) => alongPolyline(sleeve.drafted, k / columns);
     tube(groups.get(part)!, rows, columns, k => [loop[k], end[k]], (k, v) => {
       const a = capAt(k), b = { x: sleeve.opening[0].x + opening * k / columns, y: sleeve.opening[0].y };
-      return { x: a.x + (b.x - a.x) * v, y: a.y + (b.y - a.y) * v };
+      return sleeve.spread({ x: a.x + (b.x - a.x) * v, y: a.y + (b.y - a.y) * v });
     });
     if (dims.cuffHeight) {
       // Rib cuffs are cut about 15% shorter than the sleeve opening they finish.

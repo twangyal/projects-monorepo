@@ -15,7 +15,7 @@ export function colourWord(hex: string): string {
 }
 
 const MEASURE_NAMES: Record<string, string> = { chest: 'Chest', length: 'Body length', sleeve: 'Sleeve length', waist: 'Waist', hip: 'Hip', rise: 'Rise',
-  inseam: 'Inseam', legOpening: 'Leg opening', cuffHeight: 'Ankle cuff height', waistbandHeight: 'Waistband height', hem: 'Hem', slant: 'Side slant', gather: 'Gathering' };
+  inseam: 'Inseam', legOpening: 'Leg opening', cuffHeight: 'Ankle cuff height', waistbandHeight: 'Waistband height', hem: 'Hem', slant: 'Side slant', gather: 'Gathering', sleeveGather: 'Sleeve cap gathering' };
 const MODULE_NAMES: Record<string, string> = { chestPocket: 'Chest pocket', zip: 'Front zip', zipOpen: 'Worn open', collar: 'Collar', buttons: 'Button front', waistSeam: 'Waist seam' };
 const style = (product: Product, part: PartStyle) => `${material(part.material).name}, ${colourWord(part.color)}${part.print ? `, ${printName(part.print, product).toLowerCase()}` : ''}`;
 const sameStyle = (one: PartStyle, two: PartStyle) => one.material === two.material && one.color.toLowerCase() === two.color.toLowerCase()
@@ -34,7 +34,7 @@ export function designDifferences(saved: Project, current: Project): string[] {
   for (const key of Object.keys(measures)) {
     const a = (then.measurements as unknown as Record<string, unknown>)[key], b = (now.measurements as unknown as Record<string, unknown>)[key];
     // Gathering is a ratio of the cut edge to the seam it is gathered into, not a length.
-    if (a !== b && (typeof a === 'number' || typeof b === 'number')) lines.push(`${MEASURE_NAMES[key] ?? key}: ${a ?? 'none'} → ${b ?? 'none'}${key === 'gather' ? ' times' : ' cm'}`);
+    if (a !== b && (typeof a === 'number' || typeof b === 'number')) lines.push(`${MEASURE_NAMES[key] ?? key}: ${a ?? 'none'} → ${b ?? 'none'}${key === 'gather' || key === 'sleeveGather' ? ' times' : ' cm'}`);
   }
   if (then.neckline !== now.neckline) lines.push(`Neckline: ${then.neckline === 'v' ? 'V-neck' : 'crew'} → ${now.neckline === 'v' ? 'V-neck' : 'crew'}`);
   const [oldOptions, newOptions] = [optionsOf(then), optionsOf(now)] as unknown as Record<string, unknown>[];

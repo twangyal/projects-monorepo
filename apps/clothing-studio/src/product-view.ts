@@ -14,7 +14,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, collarAllowed, buttonsAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, collarAllowed, buttonsAllowed, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, SLEEVE_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -93,6 +93,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Body length (cm)<input id="product-length" type="number" min="${LIMITS.length[0]}" max="${LIMITS.length[1]}" step="1"></label>
         <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="0" max="${LIMITS.sleeve[1]}" step="1" title="0 makes a T-shirt sleeveless (a tank top)" aria-description="0 makes a T-shirt sleeveless (a tank top)"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label>
+        <label class="field" id="sleeve-gather-field" hidden>Sleeve cap gathering (× armhole)<input id="product-sleeve-gather" type="number" min="1" max="${SLEEVE_GATHER[1]}" step="0.05" aria-describedby="sleeve-gather-note"></label>
+        <p class="fine-print" id="sleeve-gather-note" hidden>1 sets in a plain sleeve. ${SLEEVE_GATHER[0]}–${SLEEVE_GATHER[1]} makes puff sleeves: each cap is cut that many times as long as its armhole, spread most at the top, and gathered into it; the drape puffs it.</p>
         <label class="field" id="dress-gather-field" hidden>Skirt gathering (× waist seam)<input id="product-dress-gather" type="number" min="1" max="${DRESS_GATHER[1]}" step="0.05" aria-describedby="dress-gather-note"></label>
         <p class="fine-print" id="dress-gather-note" hidden>1 sews a smooth skirt to the waist seam. ${DRESS_GATHER[0]}–${DRESS_GATHER[1]} cuts the skirt's waist edge that many times longer, easing to the hem, and gathers it into the seam; the drape forms the gathers. Its waist edge must be no longer than its hem.</p></div>
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="${key === 'waistbandHeight' ? '0.1' : '1'}"></label>`).join('')}<label class="field">Ankle cuff height (cm, 0 for none)<input id="product-leg-cuff" type="number" min="0" max="${LIMITS.legCuffHeight[1]}" step="0.5" aria-describedby="leg-cuff-help"></label><p id="leg-cuff-help" class="fine-print">Rib cuffs gather the leg openings, making joggers. The inseam is measured to the cuff edge.</p></div>
@@ -494,7 +496,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const commit = (next: Project) => options.commit(validateProject(next));
   type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body' | 'colorways';
   const drafts = new Map<string, string>();
-  const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', 'product-dress-gather', 'product-skirt-band', 'product-skirt-gather', 'product-skirt-hip', 'product-skirt-pleats', 'product-skirt-pleat-count', 'product-skirt-pleat-depth', 'product-leg-cuff', ...LEG_FIELDS.map(([id]) => id), ...SKIRT_FIELDS.map(([id])=>id)]);
+  const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', 'product-sleeve-gather', 'product-dress-gather', 'product-skirt-band', 'product-skirt-gather', 'product-skirt-hip', 'product-skirt-pleats', 'product-skirt-pleat-count', 'product-skirt-pleat-depth', 'product-leg-cuff', ...LEG_FIELDS.map(([id]) => id), ...SKIRT_FIELDS.map(([id])=>id)]);
   const groupOf = (id: string): DraftGroup | null => ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth','garment-drape-height','garment-drape-hip-depth','garment-drape-arm-girth','garment-drape-neck-girth','garment-drape-underbust'].includes(id) ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
     : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : /^range-(name|units)-/.test(id) ? 'colorways' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
@@ -847,7 +849,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     // A dress cut at the waist keeps its skirt gathering, 1 meaning none.
     const gathering = optionsOf(draft).waistSeam ? value('product-dress-gather') : 1;
-    const m = { chest: value('product-chest'), length: value('product-length'), sleeve: topMeasurements(draft).sleeve, ...(gathering > 1 ? { gather: gathering } : {}) };
+    // A T-shirt's sleeves keep their cap gathering (puff sleeves), 1 meaning a plain sleeve; a sleeveless top drops it.
+    const puff = draft.base === 'tee' ? value('product-sleeve-gather') : 1;
+    const m = { chest: value('product-chest'), length: value('product-length'), sleeve: topMeasurements(draft).sleeve, ...(gathering > 1 ? { gather: gathering } : {}),
+      ...(puff > 1 ? { sleeveGather: puff } : {}) };
     draft.measurements = m;
     withSleeveLength(draft, value('product-sleeve'));
     draft.neckline = ($('product-neckline') as HTMLSelectElement).value as Product['neckline'];
@@ -1383,6 +1388,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const seamed = design.base === 'tee' && !!optionsOf(design).waistSeam;
       $('dress-gather-field').hidden = $('dress-gather-note').hidden = !seamed;
       ($('product-dress-gather') as HTMLInputElement).value = String(m.gather ?? 1);
+      $('sleeve-gather-field').hidden = $('sleeve-gather-note').hidden = design.base !== 'tee' || m.sleeve === 0;
+      ($('product-sleeve-gather') as HTMLInputElement).value = String(m.sleeveGather ?? 1);
       for (const key of ['hoodHeight', 'hoodWidth']) { const input = $(`fit-${key}`) as HTMLInputElement; input.disabled = design.base !== 'hoodie'; input.closest('label')!.hidden = design.base !== 'hoodie'; }
       const ribInput = $('fit-neckRibHeight') as HTMLInputElement; ribInput.disabled = design.base === 'hoodie'; ribInput.closest('label')!.hidden = design.base === 'hoodie';
       for (const key of ['cuffHeight', 'hemBandHeight']) { const input = $(`fit-${key}`) as HTMLInputElement; input.disabled = design.base === 'tee'; input.closest('label')!.hidden = design.base === 'tee'; }

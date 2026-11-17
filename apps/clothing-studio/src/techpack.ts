@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -154,7 +154,9 @@ function samplePack(product: Product, date: string): TechPack {
         : { area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : modules.zip ? 'Its ends are caught in the zip tapes' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long (${Math.round((1 - NECK_RIB_RATIO) * 100)}% shorter than the flat neckline sewing path; confirm for the chosen rib), ${cm(dims.ribHeight)} finished` },
     ]),
     armholesOnly ? { area: 'Armholes', operation: 'Bind with self-fabric binding, then 2-needle coverstitch', detail: 'Binding cut about 10% shorter than the armhole; no sleeves' }
-      : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
+      : (gather => (gather ? { area: 'Sleeves', operation: 'Run two gathering rows over each sleeve cap, draw it up to the armhole, then 4-thread overlock (set in flat)',
+        detail: `Puff sleeves: each cap is cut ${gather}× its armhole (${cm(sleeveCap(product).cut)} against ${cm(sleeveCap(product).armhole)}), spread most at the top; gather evenly and match the sleeve head to the shoulder seam` }
+        : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' }))(topMeasurements(product).sleeveGather),
     ...(product.base === 'tee' && modules.waistSeam ? [(gather => ({ area: 'Waist seam',
       operation: gather > 1 ? 'Run two gathering rows along each skirt’s waist edge, draw it up to the bodice’s, then 4-thread overlock and press the seam up' : '4-thread overlock each skirt to its bodice, then press the seam up',
       detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; `

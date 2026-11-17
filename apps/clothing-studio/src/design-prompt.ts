@@ -220,6 +220,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const unseamed = take(/\b(?:no|without a) waist seam\b/), seamed = take(/\bwaist seam\b/);
     const gatheredSkirt = take(/\b(?:gathered|dirndl) (?:skirt|waist)s?\b|\bdirndl\b/) ?? gatheredDress;
     const smoothSkirt = !gatheredSkirt && take(/\b(?:smooth|ungathered) skirt\b/);
+    const puffed = take(/\b(?:puff(?:ed|y)?|balloon|gathered) sleeves?\b/), plainSleeves = !puffed && take(/\b(?:plain|flat|unpuffed|ungathered) sleeves?\b|\bno puff sleeves?\b/);
     const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
@@ -279,6 +280,18 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       delete smooth.gather;
       product.measurements = smooth;
       garment.push('smooth skirt: no gathers');
+    }
+    // Puff sleeves: each cap is cut one and a half times its armhole and gathered into it.
+    if (puffed && (product.base !== 'tee' || topMeasurements(product).sleeve === 0)) {
+      notApplied.push(`${puffed[0]} (${product.base !== 'tee' ? 'they go on T-shirts, shirts and tee dresses' : 'a sleeveless top has no sleeves'})`);
+    } else if (puffed) {
+      product.measurements = { ...topMeasurements(product), sleeveGather: 1.5 };
+      garment.push('puff sleeves: each cap cut 1.5 times its armhole and gathered into it');
+    } else if (plainSleeves && topMeasurements(product).sleeveGather) {
+      const plain = { ...topMeasurements(product) };
+      delete plain.sleeveGather;
+      product.measurements = plain;
+      garment.push('plain sleeves: no gathers at the cap');
     }
   } else if (product.base === 'trousers') {
     const m = legMeasurements(product), r = legMeasurements(reference), next = { ...m };
