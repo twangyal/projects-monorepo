@@ -21,7 +21,17 @@ const FIELD_WORDS = new Map([['delivery', ['delivery', 'shipping', 'postage', 'm
 // Words that carry no choice: who, wanting and politeness ("I'll take it in large please").
 const FILLER = new Set(('a an the it its them this that these those one ones in on of for to at from with please just only '
   + "i i'll i'd i'm im ill id we we'll we're my me you your do does have has want would like need get take make can could will "
-  + 'is be fine ok okay version edition option choice thanks').split(' '));
+  + 'is be fine ok okay version edition option choice thanks about regarding concerning').split(' '));
+// Other words for words in options' names, as people say them: "softback" for Paperback, "the shop" for in store, "a
+// complaint" for an Order problem, "an idea" for a Book suggestion.
+const SYNONYMS = new Map(Object.entries({
+  paperback: ['softback', 'softcover', 'paper'], hardcover: ['hardback', 'hardbound'], hardback: ['hardcover', 'hardbound'],
+  audiobook: ['audio'], ebook: ['kindle', 'digital', 'electronic'], store: ['shop'], shop: ['store'],
+  problem: ['complaint', 'issue', 'trouble', 'fault'], issue: ['problem', 'complaint', 'trouble', 'fault'], complaint: ['problem', 'issue'],
+  suggestion: ['idea', 'proposal', 'recommendation'], question: ['query', 'enquiry', 'inquiry'], enquiry: ['question', 'query', 'inquiry'],
+  delivery: ['shipping', 'postage'], collection: ['pickup'],
+}));
+const withSynonyms = known => new Set([...known, ...[...known].flatMap(word => SYNONYMS.get(word) ?? [])]);
 
 const normalize = text => (text ?? '').toLowerCase().replace(/[’‘]/g, "'").normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const words = text => normalize(text).split(' ').filter(Boolean).map(word => word === 'gray' ? 'grey' : word);
@@ -69,7 +79,7 @@ export function choicesMeant(said, selects) {
       const meanings = optionMeanings(name), own = words(name);
       if (normalize(name) === phrase || meanings.includes(phrase)) exact.push({ select, optionIndex, name });
       else {
-        const known = new Set([...own, ...meanings.flatMap(words)]);
+        const known = withSynonyms(new Set([...own, ...meanings.flatMap(words)]));
         if (asked.every(word => known.has(word))) containing.push({ select, optionIndex, name });
       }
     });
@@ -109,7 +119,12 @@ const RANKED = new RegExp(`^(?:the |a |an )?(${[...RANKS.keys()].join('|')})(?: 
 export function rankSaid(said) {
   const text = normalize(said)
     .replace(/^(?:i'd like|i would like|i want|i need|i'll take|ill take|i'll have|give me|go for|choose|select|pick|get|make it|switch to|change to|change it to)\s+/, '')
-    .replace(/\s+please$/, '');
+    .replace(/\s+please$/, '')
+    // "The biggest one you have", "the cheapest there is": who has it says nothing about which.
+    .replace(/\s+(?:(?:that|which) )?(?:you|they|we)(?: have| have got|'ve got|'ve| sell| stock| do| offer| make)$|\s+(?:there is|there's|available|going|in stock|on offer)$/, '')
+    // "The fastest way to get it", "the cheapest way to send it": a way of getting it is its delivery.
+    .replace(/\s+(?:way|option|method|service) (?:to|of) (?:get|getting|have|having|receive|receiving|send|sending|ship|shipping|deliver|delivering)(?: (?:it|them|this|that|these|those))?(?: (?:here|to me|to us|delivered|sent|shipped))?$/, ' delivery')
+    .replace(/\s+way$/, ' delivery');
   const match = RANKED.exec(text);
   if (!match) return null;
   const [by, end] = RANKS.get(match[1]);

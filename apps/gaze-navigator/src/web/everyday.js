@@ -43,6 +43,8 @@ const RULES = [
   [/^(?:log|sign) me (?:in|on)$/, 'sign in'],
   [/^(?:log|sign) me (?:out|off)$/, 'sign out'],
   [/^(?:contact|call|email|ring|phone|message|reach|get hold of|get in touch with) (?:the )?(?:customer (?:service|services|support|care)|support(?: team)?|help ?desk|the team|someone|somebody|you|them|us)$/, 'open contact'],
+  // "Who can I ring about this", "is there a phone number", "what's your phone number".
+  [/^(?:who (?:can|could|should|do) (?:i|we) (?:ring|call|phone|contact|email|talk to|speak to|speak with|write to)(?: about (?:this|it|that|my order|an order))?|is there (?:a |any )?(?:phone |telephone |contact )?number(?: (?:i|we) can (?:ring|call)| to (?:ring|call))?|what(?:'s| is) (?:your|the) (?:phone|telephone|contact) number)$/, 'open contact'],
   // Tasks said as what is wanted rather than which control does it.
   [/^(?:i (?:need|want|would like|'d like) to |how (?:do|can) i |let me )?(?:get in touch(?: with (?:you|someone|somebody|the team))?|reach you|contact you|talk to (?:someone|somebody|a person|a human))$/, 'open contact'],
   [/^(?:i (?:need|want|would like|'d like) to |let me |please )?(?:log|sign) (?:in|into|on|onto|on to)(?: (?:my|your|the) account)?$/, 'sign in'],
@@ -52,11 +54,13 @@ const RULES = [
   [/^(?:(?:go ahead and |please )?(?:complete|finish|finalise|finalize|confirm|place|submit) (?:my|the|this|your) (?:order|purchase)|(?:go ahead and )?(?:order|purchase) (?:it|this|that|this one|it now|this now)|proceed to (?:the )?checkout)$/, 'place order'],
   // Paying is placing the order (or going to the checkout): "buy it now", "check out now", "time to pay", "I'm ready to order".
   [/^(?:(?:i'?m|i am) ready to |(?:it'?s |it is )?time to )?(?:buy (?:it|this|that|this one)(?: now)?|check ?out(?: now)?|pay(?: now| for (?:it|this|that|them))?|make (?:the|a|my) payment|order(?: (?:it|this|now))?)$/, 'place order'],
-  [/^(?:what do (?:other )?(?:people|readers|customers|buyers|users|others) (?:think|say)(?: (?:about|of) (?:it|this|that))?|(?:read|see|show me) what (?:other )?(?:people|readers|customers|buyers|others) (?:wrote|said|think|say)(?: about (?:it|this|that))?|(?:are there )?any reviews)$/, 'open reviews'],
+  [/^(?:what do (?:other )?(?:people|readers|customers|buyers|users|others) (?:think|say)(?: (?:about|of) (?:it|this|that))?|(?:read|see|show me) what (?:other )?(?:people|readers|customers|buyers|others) (?:wrote|said|think|say)(?: about (?:it|this|that))?|(?:are there |have you got |do you have )?any (?:good |decent |customer )?reviews(?: (?:worth reading|to read|at all|yet))?)$/, 'open reviews'],
   [/^(?:(?:show me |tell me )?how much (?:does (?:it|this|that) cost|(?:it|this|that) costs?|is (?:it|this|that)|do you charge|will (?:it|this) cost)|what (?:are|is) (?:your|the) (?:prices?|costs?|fees?|rates?)|what does (?:it|this) cost)$/, 'open pricing'],
+  [/^(?:how much (?:will|would|is) (?:it|this|that) (?:going to )?set (?:me|us) back|how (?:expensive|pricey|dear) is (?:it|this|that)|what(?:'s| is) the damage|what (?:will|would) (?:it|this|that) cost(?: me| us)?)$/, 'open pricing'],
   [/^(?:do you have|have you got|is there|are there|got) (?:anything|something|any(?: books?)?) (?:about|on|for|with) (.+)$|^(?:i'?m|i am) looking for (?!.*\b(?:page|link|button|form|section|tab)$)(.+)$/,
     match => `search for ${match[1] ?? match[2]}`],
   [/^(?:remove|delete|get rid of|bin|discard|take out) (?:it|this|that)$/, 'remove'],
+  [/^(?:fire|shoot|ping|whizz|zap) (?:it|this|that) (?:off|over|across)(?: now| please)?$|^(?:fire|send|shoot) (?:it|this|that) away$|^(?:pop|stick) (?:it|this|that) in the post$/, 'send it'],
 ];
 
 /** The command reworded for the interpreter when it is an everyday way of saying one of the navigator's own. */
@@ -80,14 +84,16 @@ export function everydayCommand(command, normalize) {
 export function choiceSaid(text) {
   const said = /^(?:make it|make that|switch to|change to|go with|give me|get me|i want|i need|i'd like|i would like|i'll take|i'll have|i prefer|let's go with|let's have|(?:can|could|may) i (?:have|get)(?: it| one)?(?: in)?|it's about|it is about|this is about|my (?:question|message|enquiry|inquiry|problem|request) is (?:about|regarding))(?: the| an| a)? (.+?)(?: one| version| edition| option| format)?(?: please)?$/.exec(text)
     // "Large print please", "the paperback is fine": the choice named and agreed to.
-    ?? /^(?:the )?(.+?)(?: one| version| edition)?(?: please| is fine| will do| works| is good| is great)$/.exec(text)
+    ?? /^(?:the |a |an )?(.+?)(?: one| version| edition)?(?: please| is fine| will do| works| is good| is great| would be (?:better|best|good|great|fine|perfect)| is better| sounds (?:good|great|fine|right)| would work| works for me)$/.exec(text)
     // "The blue one", "in green", "do you have it in navy", "just one", "I live in the UK", "ship it to the US".
     ?? /^the (.+?) one$/.exec(text) ?? /^in (.+)$/.exec(text) ?? /^do you have (?:it|this|that|one|these|them) in (.+?)(?: please)?$/.exec(text)
     ?? /^(?:just|only) (.+)$/.exec(text) ?? /^(?:i|we) (?:live|am|'m|are|'re)(?: based| living| located)? in (.+)$/.exec(text.replace(/^(i|we)'/, '$1 \''))
-    ?? /^(?:ship|send|deliver|post)(?: it| them| this| that| these| those)? to (.+)$/.exec(text);
-  // "I'll collect it myself": a way of doing it, named by an option ("Click and collect").
-  const doing = !said && /^i(?:'ll| will) (?!take\b|have\b|go\b|get\b)(\w+)(?: (?:it|them|this|that|one))?(?: (?:myself|ourselves|in person))?$/.exec(text);
-  if (doing) return doing[1];
+    ?? /^(?:ship|send|deliver|post)(?: it| them| this| that| these| those)? to (.+)$/.exec(text)
+    // "I have a complaint about my order", "I've got an idea for a book": what it is about, named by an option.
+    ?? /^(?:i|we) (?:have|'ve got|have got|got) (?:a|an|some) (.+)$/.exec(text.replace(/^(i|we)'ve /, '$1 \'ve '));
+  // "I'll collect it myself", "I'll pick it up from the shop": a way of doing it, named by an option ("Click and collect").
+  const doing = !said && /^i(?:'ll| will|'d rather| would rather) (?!take\b|have\b|go\b|get\b)(\w+)(?: (?:it|them|this|that|one))?((?: (?:up|in|over|round))?(?: (?:from|at|in) (?:the |your |a )?\w+(?: \w+)?)?)(?: (?:myself|ourselves|in person))?$/.exec(text);
+  if (doing) return `${doing[1]}${doing[2]}`;
   // "Just one" is a number of things; a bare "one" elsewhere ("that one") names no choice.
   if (/^(?:just|only) one$/.test(text)) return 'one';
   return said && !/^(?:it|that|this|one|yes|ok|okay|sure|thanks|thank you)$/.test(said[1]) ? said[1] : null;

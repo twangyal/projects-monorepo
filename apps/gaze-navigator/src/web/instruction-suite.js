@@ -743,6 +743,44 @@ const HELD_OUT_12 = [
 
 export const HELD_OUT_12_SUITE = HELD_OUT_12.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Written after choices could be said as a preference ("softback is fine", "I have a complaint about my order"), by
+// quantity per item ("three hats please") and as a wish to tick a box, and scored once.
+const HELD_OUT_13 = [
+  ['activate', 'navigation', 'I need to speak to someone', act(3)],
+  ['activate', 'navigation', 'what does it cost per month', act(2)],
+  ['activate', 'navigation', 'back to the homepage please', act(1)],
+  ['activate', 'navigation', 'let me log into my account', act(4)],
+  ['select', 'product', "I'd prefer the hardback", option(1, 1)],
+  ['select', 'product', "I'd rather hear it than read it", option(1, 3)],
+  ['activate', 'product', 'chuck it in my trolley', act(2)],
+  ['activate', 'product', 'has anyone reviewed it', act(4)],
+  ['select', 'product', 'the one with bigger writing', option(1, 2)],
+  ['select', 'form', "something's wrong with my order", option(5, 1)],
+  ['select', 'form', "it's just a general question", option(5, 0)],
+  ['select', 'form', 'send me a copy too', { type: 'check', targetId: 4, checked: true }],
+  ['activate', 'form', "that's it, send it", act(6)],
+  ['select', 'shop', 'a small would be better', option(1, 1)],
+  ['select', 'shop', 'do you have it in green', option(2, 1)],
+  ['select', 'shop', "I'll go for the off-white", option(2, 3)],
+  ['select', 'shop', 'make it four', option(3, 3)],
+  ['select', 'shop', 'I want it here tomorrow', option(4, 1)],
+  ['select', 'shop', 'standard delivery is fine', option(4, 0)],
+  ['select', 'shop', "it's going to Ireland", option(5, 2)],
+  ['select', 'shop', "the smallest you've got", option(1, 0)],
+  ['activate', 'shop', 'pop it in the bag', act(6)],
+  ['activate', 'basket', "I don't need the mug", act(8)],
+  ['select', 'basket', 'only the one hat', option(4, 0)],
+  ['activate', 'basket', 'save the socks for another time', act(3)],
+  ['activate', 'basket', 'take me to the checkout', act(10)],
+  ['activate', 'addresses', "change my mum's address", act(5)],
+  ['activate', 'addresses', 'get rid of the work address', act(4)],
+  ['activate', 'addresses', "I've moved, add my new address", act(7)],
+  ['navigate', 'empty', 'take me back where I was', plain('back')],
+  ['control', 'navigation', 'hang on a sec', plain('pause')],
+  ['refuse', 'basket', 'bin the umbrella', plain('unknown')],
+];
+export const HELD_OUT_13_SUITE = HELD_OUT_13.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 
@@ -759,9 +797,17 @@ function matches(expected, got) {
   return true;
 }
 
+// Clicking an unticked checkbox ticks it: either action on the box meant is the same thing done.
+function sameTick(test, expected, got) {
+  const box = CONTEXTS[test.context]?.elements.find(element => element.id === expected.targetId);
+  if (!box || !['checkbox', 'switch'].includes(box.role) || box.checked || got.targetId !== expected.targetId) return false;
+  const ticks = action => action.type === 'activate' || (action.type === 'check' && action.checked === true);
+  return ticks(expected) && ticks(got);
+}
+
 function classify(test, got) {
   let outcome;
-  if (matches(test.expected, got)) outcome = 'correct';
+  if (matches(test.expected, got) || sameTick(test, test.expected, got)) outcome = 'correct';
   // A number said on its own only answers a question, so it acts on nothing without one.
   else if (PAGE_ACTIONS.has(got.type) && !(got.type === 'choose' && got.bare)) outcome = 'unsafe';
   else outcome = 'abstained';
@@ -769,7 +815,7 @@ function classify(test, got) {
   let offer;
   if (outcome === 'abstained' && got.type === 'unknown' && got.alike) {
     const { heardAs: _as, heardName: _name, ...offered } = got.alike;
-    offer = matches(test.expected, offered) ? 'right' : 'wrong';
+    offer = matches(test.expected, offered) || sameTick(test, test.expected, offered) ? 'right' : 'wrong';
   }
   return { ...test, got: { ...got, choose: undefined }, outcome, ...(offer ? { offer } : {}) };
 }

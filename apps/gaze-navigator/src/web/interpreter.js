@@ -4,7 +4,7 @@ import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValu
 import { relatedWords, stem } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
 import { rowAction } from './rows.js';
-import { choicesMeant, namesIn, nextSize, rankSaid, rankedOption, sentence } from './choices.js';
+import { choicesMeant, meantOptions, namesIn, nextSize, rankSaid, rankedOption, sentence } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -296,6 +296,13 @@ function resolve(query, elements, roles, act, noun = 'control', topics = false) 
   const action = act(ranked[0].element);
   return { ...action, ...(ranked[0].related ? { related: true } : {}), ...(ranked[0].score < STRONG ? { weak: true } : {}) };
 }
+
+// Words of a wish and of a checkbox's name compared by their roots: "sent" is send, "emails" email, "updates" update.
+const IRREGULAR = new Map([['sent', 'send'], ['kept', 'keep'], ['told', 'tell'], ['got', 'get'], ['given', 'give'], ['shown', 'show']]);
+const root = word => IRREGULAR.get(word) ?? word.replace(/(?<=\w{3})(?:ing|ed)$/, '').replace(/ies$/, 'y').replace(/(?<=\w{3})e?s$/, '').replace(/(?<=\w{3})e$/, '');
+const roots = text => normalize(text).split(' ').filter(Boolean).map(root);
+// Words of a checkbox's name that a wish need not repeat.
+const WISH_FILLER = new Set(['me', 'my', 'a', 'an', 'the', 'of', 'to', 'i', 'us', 'our', 'this', 'it', 'for', 'by', 'with', 'and', 'your', 'you', 'please'].map(root));
 
 // Candidates carry the number to say, a label, and the page element to outline when there is one.
 function question(candidates, choose) {
@@ -1445,6 +1452,29 @@ function interpretInCircle(utterance, context) {
   const madeChoice = (wanted && selectOption(wanted, options)) ??
     (madeIn && selectOption(making[1].slice(normalize(madeIn.name).length + 1).replace(/^(?:be|to|into) /, ''), [madeIn]));
   if (madeChoice) return madeChoice;
+  // The same among radio buttons ("the paperback is fine" beside Paperback and Hardback buttons): those in the circle
+  // and just outside it, since a group's buttons sit together.
+  if (wanted) {
+    const radios = [...context.elements, ...(context.nearby ?? [])].filter(element => element.role === 'radio' && element.name);
+    const meant = radios.length >= 2 ? meantOptions(wanted, [{ id: 'radios', name: '', options: radios.map(radio => radio.name) }]) : [];
+    const pickRadio = option => ({ type: 'select-radio', targetId: radios[option.optionIndex].id });
+    if (meant.length === 1) return pickRadio(meant[0]);
+    if (meant.length > 1) return question(meant.map((option, index) => ({ number: index + 1, label: option.name, elementId: radios[option.optionIndex].id })), number => pickRadio(meant[number - 1]));
+  }
+  // "Add another one": the one control here that adds ("Add a new address", "Add another item").
+  if (/^(?:add|create) (?:another|one more|a new|an extra|a further)(?: one)?$/.test(text)) {
+    const adders = [...context.elements, ...(context.nearby ?? [])].filter(element => ['button', 'link'].includes(element.role) && /^(?:\+\s*)?add\b/i.test((element.name ?? '').trim()));
+    if (adders.length === 1) return { type: 'activate', targetId: adders[0].id };
+    if (adders.length > 1) return clarify(adders, element => ({ type: 'activate', targetId: element.id }));
+  }
+  // "I'd like a copy of this sent to me": a wish naming every word of a checkbox's name ticks it ("Send me a copy").
+  const wish = /^(?:i'd like|i would like|i want|i'd love|i would love)(?: to (?:get|receive|have))? (.+)$/.exec(text);
+  if (wish) {
+    const said = new Set(roots(wish[1]));
+    const boxes = [...context.elements, ...(context.nearby ?? [])].filter(element => ['checkbox', 'switch'].includes(element.role) && element.name && !element.checked)
+      .filter(box => { const own = roots(box.name).filter(word => !WISH_FILLER.has(word)); return own.length > 0 && own.every(word => said.has(word)); });
+    if (boxes.length === 1) return { type: 'check', targetId: boxes[0].id, checked: true };
+  }
   // Choosing a value from a dropdown inside the circle.
   const choose = /^(?:choose|select|pick|set)\s+(.+?)(?:\s+(?:from|in|for)\s+(?:the\s+)?(.+))?$/.exec(text);
   if (choose) {
@@ -1528,7 +1558,8 @@ function interpretInCircle(utterance, context) {
   if (prefixed && verbless !== text) verbless = `${prefixed[2]} ${prefixed[1]}`;
   const hint = /\s(link|button|tab|checkbox|box|field|menu|list|dropdown|option)$/.exec(verbless)?.[1];
   const query = verbless.replace(/^the\s+/, '').replace(/\s(link|button|checkbox|box|field|menu|option)$/, hint && prefixed ? '' : '$&').trim();
-  const act = element => ({ type: 'activate', targetId: element.id });
+  // A checkbox or switch named without "click" or "press" is ticked, never clicked off ("send me a copy too").
+  const act = element => (verbless === text && TICKED_BY_NAME.has(element.role) ? { type: 'check', targetId: element.id, checked: true } : { type: 'activate', targetId: element.id });
   const prior = previous(context, query);
   if (prior) return act(prior);
   if (DEICTIC.test(query)) return deictic(context.elements, act);
@@ -1551,6 +1582,13 @@ function interpretInCircle(utterance, context) {
   if (resolved.type === 'unknown') {
     const selects = context.elements.filter(element => element.options?.length);
     resolved = selectOption(query, selects) ?? namedOption(query, selects) ?? resolved;
+  }
+  // So does an option of a radio group said in other words ("softback" for a Paperback button), in the circle or just
+  // outside it.
+  if (resolved.type === 'unknown' && verbless === text) {
+    const radios = [...context.elements, ...(context.nearby ?? [])].filter(element => element.role === 'radio' && element.name);
+    const meant = radios.length >= 2 ? meantOptions(query, [{ id: 'radios', name: '', options: radios.map(radio => radio.name) }]) : [];
+    if (meant.length === 1) return { type: 'select-radio', targetId: radios[meant[0].optionIndex].id };
   }
   // Unknown results say why, so an assisting model can be asked only about naming a target:
   // `targetQuery` when an activation was requested but no control matched, `unparsed` otherwise.

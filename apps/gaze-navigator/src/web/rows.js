@@ -18,18 +18,20 @@ const PHRASES = [
 ];
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const COUNT = `(\\d{1,2}|${NUMBERS.slice(1).join('|')})`;
-// "Make the mug two", "change the socks quantity to 3", "I want three hats", "just one hat".
+// "Make the mug two", "change the socks quantity to 3", "I want three hats", "just one hat", "three hats please". A count
+// said with nothing else ("three hats please") is about a row only when one mentions what it names.
 const AMOUNTS = [
   [new RegExp(`^(?:make|set)\\s+(.+?)\\s+(?:to\\s+)?${COUNT}$`), 1, 2],
   [new RegExp(`^(?:change|set|make)\\s+(.+?)\\s+(?:quantity|qty|amount)\\s+(?:to\\s+)?${COUNT}$`), 1, 2],
   [new RegExp(`^(?:i (?:want|need|'ll take|will take|'d like|would like)|give me|get me|i'll have)\\s+${COUNT}\\s+(.+)$`), 2, 1],
   [new RegExp(`^(?:just|only)\\s+${COUNT}\\s+(.+)$`), 2, 1],
+  [new RegExp(`^(?:make (?:it|that)\\s+)?${COUNT}\\s+(.+?)(?:\\s+please)?$`), 2, 1, true],
 ];
 // Word stems: lower case, possessives and plurals dropped ("mum's" is mum, "hats" hat, "boxes" box, "addresses" address).
 const stem = word => word.replace(/'s$|s'$/, '').replace(/sses$/, 'ss').replace(/ies$/, 'y').replace(/(?:xes|ches|shes)$/, m => m.slice(0, -2)).replace(/(?<![su])s$/, '');
 const words = text => (text ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9' ]+/g, ' ').split(' ').filter(Boolean).map(stem);
 // Words that name no row: who, which, and the kind of thing the row is.
-const FILLER = new Set(('the a an my your our this that these those one ones of for in on from to with please item items entry entries row rows '
+const FILLER = new Set(('the a an my your our this that these those one ones of for in on at from to with please item items entry entries row rows '
   + 'line lines thing things product products address addresses task tasks note notes reminder reminders any more it them basket cart bag trolley '
   + 'list order quantity').split(' ').map(stem));
 const POSITIONS = /^(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last|next|previous|top|bottom|\d{1,2}(?:st|nd|rd|th))$/;
@@ -65,14 +67,14 @@ const named = chosen => chosen.map(element => ({ ...element, name: `${element.na
  * builds the interpreter's question among controls, given what choosing one does.
  */
 export function rowAction(text, context, ask) {
-  for (const [pattern, itemAt, countAt] of AMOUNTS) {
+  for (const [pattern, itemAt, countAt, loose] of AMOUNTS) {
     const match = pattern.exec(text);
     if (!match) continue;
     const said = meaningful(match[itemAt]);
     if (!said || namedDirectly(said, context)) continue;
     const raw = match[countAt], count = /^\d+$/.test(raw) ? Number(raw) : NUMBERS.indexOf(raw);
     const { chosen, seen } = inRows(said, element => element.options?.length > 0 && QUANTITY.test(element.name ?? ''), context);
-    if (!seen) continue;
+    if (!seen || (loose && !chosen.length)) continue;
     if (!chosen.length) return { type: 'unknown', message: `No row here mentions ${match[itemAt]}.` };
     if (chosen.length > 1) return ask(named(chosen), element => ({ type: 'select-option', targetId: element.id, optionIndex: element.options.findIndex(label => label.trim() === String(count)) }));
     const quantity = chosen[0], optionIndex = quantity.options.findIndex(label => label.trim() === String(count) || label.trim().toLowerCase() === NUMBERS[count]);

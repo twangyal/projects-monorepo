@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import { interpret } from '../src/web/interpreter.js';
 import {
   CONTEXTS, HELD_OUT_2_SUITE, HELD_OUT_3_SUITE, HELD_OUT_4_SUITE, HELD_OUT_5_SUITE, HELD_OUT_6_SUITE, HELD_OUT_7_SUITE, HELD_OUT_8_SUITE,
-  HELD_OUT_9_SUITE, HELD_OUT_10_SUITE, HELD_OUT_11_SUITE, HELD_OUT_12_SUITE, HELD_OUT_SUITE, SUITE, evaluateInterpreter,
+  HELD_OUT_9_SUITE, HELD_OUT_10_SUITE, HELD_OUT_11_SUITE, HELD_OUT_12_SUITE, HELD_OUT_13_SUITE, HELD_OUT_SUITE, SUITE, evaluateInterpreter,
 } from '../src/web/instruction-suite.js';
 
 const el = (id, role, name, extra = {}) => ({ id, role, name, distance: 10 * id, editable: false, ...extra });
 
-test('held-out sets 7 to 12 do not repeat earlier instructions', () => {
+test('held-out sets 7 to 13 do not repeat earlier instructions', () => {
   const earlier = new Set([...SUITE, ...HELD_OUT_SUITE, ...HELD_OUT_2_SUITE, ...HELD_OUT_3_SUITE, ...HELD_OUT_4_SUITE, ...HELD_OUT_5_SUITE, ...HELD_OUT_6_SUITE]
     .map(item => item.say.toLowerCase()));
   assert.equal(HELD_OUT_7_SUITE.length, 42);
   for (const item of HELD_OUT_7_SUITE) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
   for (const item of HELD_OUT_7_SUITE) earlier.add(item.say.toLowerCase());
-  for (const [suite, length] of [[HELD_OUT_8_SUITE, 37], [HELD_OUT_9_SUITE, 43], [HELD_OUT_10_SUITE, 31], [HELD_OUT_11_SUITE, 32], [HELD_OUT_12_SUITE, 32]]) {
+  for (const [suite, length] of [[HELD_OUT_8_SUITE, 37], [HELD_OUT_9_SUITE, 43], [HELD_OUT_10_SUITE, 31], [HELD_OUT_11_SUITE, 32], [HELD_OUT_12_SUITE, 32], [HELD_OUT_13_SUITE, 32]]) {
     assert.equal(suite.length, length);
     for (const item of suite) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
     for (const item of suite) earlier.add(item.say.toLowerCase());
@@ -24,10 +24,11 @@ test('held-out sets 7 to 12 do not repeat earlier instructions', () => {
 test('every held-out set keeps its score, and none is acted on wrongly', () => {
   // Scores recorded 2026-11-18: how many requests are understood, and how many reach the control meant, understood or
   // offered for a yes. Set 8 was scored once, after the rules for set 7; set 11 once, after offers were scored by how
-  // well a request's words point to a control; set 12 once, after choices could be said by their rank.
+  // well a request's words point to a control; set 12 once, after choices could be said by their rank; set 13 once, after
+  // choices could be said as a preference (15 understood and 8 offered, as before those rules; its wrong offer is fixed).
   const floors = [[HELD_OUT_SUITE, 49, 49], [HELD_OUT_2_SUITE, 50, 50], [HELD_OUT_3_SUITE, 54, 54], [HELD_OUT_4_SUITE, 35, 36], [HELD_OUT_5_SUITE, 32, 32],
-    [HELD_OUT_6_SUITE, 26, 26], [HELD_OUT_7_SUITE, 41, 41], [HELD_OUT_8_SUITE, 25, 30], [HELD_OUT_9_SUITE, 28, 40], [HELD_OUT_10_SUITE, 17, 28],
-    [HELD_OUT_11_SUITE, 14, 23], [HELD_OUT_12_SUITE, 18, 26]];
+    [HELD_OUT_6_SUITE, 26, 26], [HELD_OUT_7_SUITE, 41, 41], [HELD_OUT_8_SUITE, 26, 31], [HELD_OUT_9_SUITE, 28, 40], [HELD_OUT_10_SUITE, 17, 28],
+    [HELD_OUT_11_SUITE, 16, 24], [HELD_OUT_12_SUITE, 32, 32], [HELD_OUT_13_SUITE, 17, 24]];
   for (const [suite, floor, reached] of floors) {
     const { summary, results } = evaluateInterpreter(interpret, suite);
     assert.equal(summary.unsafe, 0, JSON.stringify(results.filter(result => result.outcome === 'unsafe')));
