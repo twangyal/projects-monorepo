@@ -4,7 +4,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -83,7 +83,7 @@ function samplePack(product: Product, date: string): TechPack {
   }
   bom.push(label('T2', 'Neck label', 'Woven label, 5 × 2 cm', 'Centre back neck'),
     { ...label('T3', 'Care and content label', 'Printed satin label', 'Left side seam, 8 cm above hem'), color: 'White' });
-  const dims = teeDimensions(product), modules = optionsOf(product), dart = bustDartOf(product);
+  const dims = teeDimensions(product), modules = optionsOf(product), dart = bustDartOf(product), waistDarts = waistDartsOf(product);
   if (modules.zip) bom.push({ item: 'Z1 Zip', description: 'Open-end #5 coil zip with a locking slider', color: 'Match front body',
     placement: 'Centre front, neck to hem', quantity: `1 × ${cm(zipLength(product))}` });
   const placket = placketOf(product);
@@ -129,6 +129,7 @@ function samplePack(product: Product, date: string): TechPack {
     ] : []),
     pom('U', 'Shoulder drop', 'High point shoulder line vertically down to the shoulder point at the armhole', dims.shoulderDrop, 0, 0.5),
     ...(dart ? [pom('BD', 'Bust dart intake', 'Taken in at each side seam by its bust dart, measured along the seam', dart.intake, 0, 0.25)] : []),
+    ...(waistDarts ? [pom('WD', 'Waist dart intake', 'Taken out of the bodice\'s waist edge by each waist dart', waistDarts.front.intake, 0, 0.25)] : []),
     ...(modules.chestPocket ? [
       pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
       pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
@@ -173,6 +174,8 @@ function samplePack(product: Product, date: string): TechPack {
       : (gather => (gather ? { area: 'Sleeves', operation: 'Run two gathering rows over each sleeve cap, draw it up to the armhole, then 4-thread overlock (set in flat)',
         detail: `Puff sleeves: each cap is cut ${gather}× its armhole (${cm(sleeveCap(product).cut)} against ${cm(sleeveCap(product).armhole)}), spread most at the top; gather evenly and match the sleeve head to the shoulder seam` }
         : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' }))(topMeasurements(product).sleeveGather),
+    ...(waistDarts ? [{ area: 'Waist darts', operation: 'Sew each dart from the bodice\'s waist edge to its point, tie off at the point, and press it toward the centre',
+      detail: `${cm(waistDarts.front.intake)} taken in by each of four darts: two in the front bodice, ${cm(waistDarts.front.x)} each side of the centre front and ${cm(waistDarts.front.waist - waistDarts.front.apex)} long, toward the bust; two in the back, ${cm(waistDarts.back.x)} each side of the centre back and ${cm(waistDarts.back.waist - waistDarts.back.apex)} long; sew before the waist seam` }] : []),
     ...(product.base === 'tee' && modules.waistSeam ? [(gather => ({ area: 'Waist seam',
       operation: gather > 1 ? 'Run two gathering rows along each skirt’s waist edge, draw it up to the bodice’s, then 4-thread overlock and press the seam up' : '4-thread overlock each skirt to its bodice, then press the seam up',
       detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; `
