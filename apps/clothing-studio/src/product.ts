@@ -33,8 +33,8 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
     const named = product.options.zip ? (product.options.collar ? 'Bomber jacket' : 'Zip sweatshirt') : 'Funnel-neck sweatshirt', length = topMeasurements(product).length;
     return length <= CROP_LENGTH ? `Cropped ${named.toLowerCase()}` : length >= DRESS_LENGTH ? `${product.options.zip ? 'Zip' : 'Funnel-neck'} sweatshirt dress` : named;
   }
-  // A shirt cut long and roomy to go over other tops is a coat.
-  if (product.base === 'tee' && product.options?.coat) return 'Coat';
+  // A shirt cut long and roomy to go over other tops is a coat; one with lapels that ends at the hips is a blazer.
+  if (product.base === 'tee' && product.options?.coat) return product.options.lapels && topMeasurements(product).length <= BLAZER_LENGTH ? 'Blazer' : 'Coat';
   // A tee with a button front is a shirt: with the collar a button-up shirt, without it a collarless one.
   if (product.base === 'tee' && product.options?.buttons) {
     const { length, sleeve } = topMeasurements(product);
@@ -58,11 +58,11 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   }
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket', 'frontPocket', 'beltLoop'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket', 'frontPocket', 'beltLoop', 'lapel'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
   cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket',
-  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets', frontPocket: 'Front pockets', beltLoop: 'Belt loops' };
+  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets', frontPocket: 'Front pockets', beltLoop: 'Belt loops', lapel: 'Lapels' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -109,10 +109,12 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
     : product.base === 'trousers' && (product.measurements as LegMeasurements | undefined)?.cuffHeight
       ? [...BASE_PARTS.trousers, 'cuffLeft' as const, 'cuffRight' as const] : BASE_PARTS[product.base];
   const kept = sleeveless(product) ? parts.filter(part => part !== 'sleeveLeft' && part !== 'sleeveRight') : parts;
-  // A polo's knit collar takes the neck rib's place, and its buttoned placket lies on the front.
-  const { collar, buttons } = optionsOf(product), placket = product.base === 'tee' && (collar || buttons);
+  // A polo's knit collar takes the neck rib's place, and its buttoned placket lies on the front. A coat with lapels
+  // buttons below them without a placket.
+  const { collar, buttons, lapels } = optionsOf(product), placket = product.base === 'tee' && (collar || buttons) && !lapels;
   const collared = !collar && !placket ? kept
-    : [...kept.filter(part => !collar || part !== 'neckband'), ...(collar ? ['collar' as const] : []), ...(placket ? ['placket' as const] : [])];
+    : [...kept.filter(part => !collar || part !== 'neckband'), ...(collar ? ['collar' as const] : []), ...(placket ? ['placket' as const] : []),
+      ...(product.base === 'tee' && lapels ? ['lapel' as const] : [])];
   // A dress cut at the waist: the front and back bodies end at the waist seam, and a skirt front and back hang from it.
   const seamed = product.base === 'tee' && optionsOf(product).waistSeam ? [...collared, 'skirtFront' as const, 'skirtBack' as const] : collared;
   // A shirt's back yoke, across the shoulders above the back body, or trousers', across the seat below the waist.
@@ -139,6 +141,12 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
   if (product.base === 'tee' && product.options?.coat && !coatAllowed(product, product.options)) {
     const options = { ...product.options };
     delete options.coat;
+    // Its lapels go with it, and it buttons on a placket again.
+    if (options.lapels) {
+      delete options.lapels;
+      const placket = (parts: Product['parts']) => { parts.placket ??= structuredClone(parts.lapel ?? parts.front); delete (parts as Partial<Product['parts']>).lapel; };
+      placket(product.parts); for (const colourway of product.colorways ?? []) placket(colourway.parts);
+    }
     product.options = options;
   }
   if (product.base === 'tee' && product.options?.cuffs && sleeve < CUFFED_SLEEVE) {
@@ -224,7 +232,10 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
   /** Buttoned cuffs (long-sleeved shirts): each sleeve ends SHIRT_CUFF_CM above its measured length in a woven cuff,
    * styled on its own, into which it is pleated. */ cuffs?: boolean;
   /** A coat (shirts at least COAT_LENGTH long with long sleeves): worn over a T-shirt, shirt, polo or dress, with coat
-   * buttons and hems. */ coat?: boolean }
+   * buttons and hems. */ coat?: boolean;
+  /** Notched lapels (coats): above the top button each front folds back along a roll line into a lapel lying on the
+   * chest, styled on its own, and the collar runs round the back neck from one lapel to the other, notched where they
+   * meet; the fronts button below without a placket (see lapelOf). */ lapels?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -251,12 +262,44 @@ export function cuffsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Produ
 }
 /** The shortest coat, cm. */
 export const COAT_LENGTH = 70;
+/** A coat with lapels at most this long (to the hips) is a blazer, cm. */
+export const BLAZER_LENGTH = 82;
 /** A coat is a long shirt: a T-shirt base with a button front and collar, at least COAT_LENGTH long, with sleeves at
  * least CUFFED_SLEEVE long. */
 export function coatAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
   const m = product.measurements as Measurements | undefined;
   return product.base === 'tee' && !!options.buttons && !!options.collar && (m?.length ?? 0) >= COAT_LENGTH && (m?.sleeve ?? 0) >= CUFFED_SLEEVE;
 }
+/** Notched lapels go on a coat. */
+export function lapelsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
+  return !!options.coat && coatAllowed(product, options);
+}
+/** A lapel's width at its point, square from the roll line, and how far it lies off the front (the front and its
+ * facing folded back), cm. Jacket buttons are this far apart below the top one. */
+export const LAPEL_CM = 8, LAPEL_LIFT_CM = 0.45, JACKET_BUTTON_GAP_CM = 10;
+/** How far a lapel rolls up off the chest along its fold, and how wide the roll is, cm. Its flat coordinates are moved
+ * this far across, clear of zero, so its stitching can be drawn on it. */
+const LAPEL_ROLL = { height: 0.7, width: 2.5 };
+export const LAPEL_UV_SHIFT = 30;
+/**
+ * A coat's notched lapels, in the front's flat coordinates centred on the centre front (x across, y down from the neck
+ * points), from its front neckline (from one neck point round to the other). The break point, where the fronts stop
+ * overlapping and the top button sits, is at the centre front at the waist; the roll line runs from it up to the
+ * neckline 60% of the way out to the neck point, and each front folds back along it. The lapel on the x > 0 side lies
+ * folded on the chest (the other is its mirror image): from the break point up the roll line, out along the gorge to
+ * its point, where the collar's end meets it with the notch between them, and back down its outer edge.
+ */
+export function lapelOf(product: Product, neck: Pt[]): { breakY: number; roll: [Pt, Pt]; lapel: Pt[]; point: Pt } {
+  const d = teeDimensions(product), B = { x: 0, y: d.waistY }, x = d.neckHalf * 0.6;
+  const k = neck.findIndex((p, i) => i > 0 && (neck[i - 1]!.x - x) * (p.x - x) <= 0), a = neck[k - 1]!, b = neck[k]!;
+  const R = { x, y: a.x === b.x ? b.y : a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x) };
+  const length = Math.hypot(R.x - B.x, R.y - B.y), u = { x: (R.x - B.x) / length, y: (R.y - B.y) / length }, n = { x: -u.y, y: u.x };
+  const at = (t: number, w: number): Pt => ({ x: B.x + u.x * length * t + n.x * w, y: B.y + u.y * length * t + n.y * w });
+  const point = at(0.8, LAPEL_CM);
+  return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.97, 3), point, at(0.5, LAPEL_CM * 0.82), at(0.22, LAPEL_CM * 0.45)], point };
+}
+/** The coat's lapels as lapelOf draws them (on its own front neckline). */
+export function lapelShape(product: Product): ReturnType<typeof lapelOf> { return lapelOf(product, topFrame(product).front.neck); }
 /** A waist seam goes on a dress: a T-shirt base at least DRESS_LENGTH long. */
 export function waistSeamAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
   return product.base === 'tee' && ((product.measurements as Measurements | undefined)?.length ?? 0) >= DRESS_LENGTH;
@@ -270,7 +313,13 @@ const SHIRT_PLACKET_CM = 3.2, BUTTON_SPACING_CM = 9.5, SHORT_SLEEVE = 35;
 /** A tee's placket: a polo's short one under the collar, or a button front's from the neckline to the hem. */
 export function placketOf(product: Product): { length: number; width: number; buttons: number } {
   if (!optionsOf(product).buttons) return PLACKET_CM;
-  const d = teeDimensions(product), length = Math.round((d.length - d.neckDepthFront) * 2) / 2;
+  const d = teeDimensions(product);
+  // A coat with lapels buttons from the waist down, a jacket's buttons apart: two on a hip-length jacket.
+  if (optionsOf(product).lapels) {
+    const length = Math.round((d.length - d.waistY) * 2) / 2;
+    return { length, width: SHIRT_PLACKET_CM, buttons: Math.max(1, Math.min(4, Math.round(length / 16))) };
+  }
+  const length = Math.round((d.length - d.neckDepthFront) * 2) / 2;
   return { length, width: SHIRT_PLACKET_CM, buttons: Math.max(4, Math.round(length / BUTTON_SPACING_CM)) };
 }
 /** A front zip's length: from the centre-front neck down through the hem band. */
@@ -298,6 +347,7 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.cuffs && !cuffsAllowed(product, next)) fail(`Cuffs go on a long-sleeved shirt: add the button front and make the sleeves at least ${CUFFED_SLEEVE} cm first.`);
   if (next.coat && !coatAllowed(product, next)) fail(`A coat is a long shirt: add the button front and collar, and make it at least ${COAT_LENGTH} cm long with sleeves of at least ${CUFFED_SLEEVE} cm first.`);
   if (next.coat && next.waistSeam) fail('A coat is not cut at the waist: take the waist seam off first.');
+  if (next.lapels && !lapelsAllowed(product, next)) fail('Lapels go on a coat: make it a coat first.');
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -310,8 +360,11 @@ export function withOptions(product: Product, next: Options): Product {
       delete all.neckband;
     }
     else if (all.collar) { all.neckband ??= structuredClone(all.collar); delete all.collar; }
-    if (product.base === 'tee' && (next.collar || next.buttons)) all.placket ??= structuredClone(parts.front);
+    if (product.base === 'tee' && (next.collar || next.buttons) && !next.lapels) all.placket ??= structuredClone(parts.front);
     else delete all.placket;
+    // Lapels are the front's facing turned back: they start in the front's style.
+    if (product.base === 'tee' && next.lapels) all.lapel ??= structuredClone(parts.front);
+    else delete all.lapel;
   };
   setCollar(draft.parts);
   for (const colorway of draft.colorways ?? []) setCollar(colorway.parts);
@@ -768,7 +821,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'lapels', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -799,8 +852,10 @@ export function validateProduct(value: unknown): Product {
     if (o.coat !== undefined && typeof o.coat !== 'boolean') fail('A coat must be on or off.');
     if (o.coat && !coatAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`A coat is a shirt at least ${COAT_LENGTH} cm long, with a button front, a collar and sleeves of at least ${CUFFED_SLEEVE} cm.`);
     if (o.coat && o.waistSeam) fail('A coat is not cut at the waist.');
+    if (o.lapels !== undefined && typeof o.lapels !== 'boolean') fail('Lapels must be on or off.');
+    if (o.lapels && !o.coat) fail('Lapels go on a coat.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.coat && o.lapels ? { lapels: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -864,6 +919,8 @@ const coat = (body: PartStyle) => {
   delete parts.neckband;
   return { ...parts, collar: { ...body }, placket: { ...body } } as Record<PartId, PartStyle>;
 };
+// A jacket with lapels buttons without a placket.
+const blazer = (body: PartStyle) => { const parts: Partial<Record<PartId, PartStyle>> = coat(body); delete parts.placket; return { ...parts, lapel: { ...body } } as Record<PartId, PartStyle>; };
 // A bomber jacket's parts: the shell fabric, and rib cuffs, hem band and stand collar in place of the neck rib.
 const bomber = (shell: PartStyle, rib: PartStyle) => {
   const parts: Partial<Record<PartId, PartStyle>> = allParts(shell, { cuffLeft: rib, cuffRight: rib, hemBand: rib }, 'sweatshirt');
@@ -911,6 +968,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'coat', name: 'Wool coat', description: 'Knee-length charcoal wool twill with a button front and collar, cut roomy to go over a shirt or tee.',
     product: { base: 'tee', name: 'Wool coat', measurements: { chest: 118, length: 96, sleeve: 64 }, neckline: 'crew',
       options: { hem: 'straight', chestPocket: false, buttons: true, collar: true, coat: true }, parts: coat(style('wool-260', '#3f3b38')), artwork: [] } },
+  { id: 'blazer', name: 'Blazer', description: 'Hip-length navy wool jacket with notched lapels and two buttons, to wear over a shirt or tee.',
+    product: { base: 'tee', name: 'Blazer', measurements: { chest: 108, length: 74, sleeve: 63 }, neckline: 'crew',
+      options: { hem: 'straight', chestPocket: false, buttons: true, collar: true, coat: true, lapels: true }, parts: blazer(style('wool-260', '#2b3243')), artwork: [] } },
   { id: 'crew-sweat', name: 'Crew sweatshirt', description: 'Heather grey French terry with rib neck, cuffs and hem.',
     product: { base: 'sweatshirt', name: 'Crew sweatshirt', measurements: fleece, neckline: 'crew', parts: allParts(style('terry-300', '#b7b4ad'), {}, 'sweatshirt'), artwork: [] } },
   { id: 'sweat-dress', name: 'Sweatshirt dress', description: 'Oatmeal French terry, long sleeves and a rib hem above the knee.',
@@ -1193,6 +1253,36 @@ export function trouserDimensions(product: Product) {
 
 function makePiece(part: PartId, outline: { x: number; y: number }[], cutCount: number): PatternPiece {
   return { part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline) };
+}
+
+/** A jacket's front facing, the piece that shows as the lapel, is this wide below the lapel, cm. */
+const FACING_CM = 8;
+/**
+ * A coat's front half with its lapel cut on, as the left half is cut (the right is its mirror image), in pattern cm: the
+ * lapel is the front beyond its roll line, so above the break point the centre front and the neckline inside the roll
+ * line give way to the lapel's edge, which folds back along the roll line to lie as lapelOf draws it. The facing (the
+ * piece styled as the lapels) is cut to the same lapel edge and runs down the front edge to the hem, FACING_CM wide, and
+ * up to the shoulder beside the neck.
+ */
+function lapelPieces(product: Product): { front: Pt[]; roll: [Pt, Pt]; facing: Pt[] } {
+  const frame = topFrame(product), lapel = lapelOf(product, frame.front.neck), cf = flare(product) + panelSize(topMeasurements(product)).width / 2;
+  const toPattern = (p: Pt): Pt => ({ x: cf - p.x, y: p.y });
+  const [B, R] = lapel.roll.map(toPattern) as [Pt, Pt], length = Math.hypot(R.x - B.x, R.y - B.y), u = { x: (R.x - B.x) / length, y: (R.y - B.y) / length };
+  const reflect = (p: Pt): Pt => { const v = { x: p.x - B.x, y: p.y - B.y }, along = v.x * u.x + v.y * u.y; return { x: B.x + 2 * along * u.x - v.x, y: B.y + 2 * along * u.y - v.y }; };
+  const [, , G, P, Q1, Q2] = lapel.lapel.map(toPattern).map(reflect);
+  const edge = [B, Q2!, Q1!, P!, G!, R];
+  // Inside the roll line: right of it (toward the centre front) above the break point.
+  const rollX = (y: number) => (y <= R.y ? R.x : B.x + (R.x - B.x) * (y - B.y) / (R.y - B.y));
+  const half = leftOf(topBodyOutline(product, true), cf), front: Pt[] = [];
+  for (const p of half) {
+    if (p.y < B.y - 1e-9 && p.x > rollX(p.y) + 1e-9) { if (!front.includes(B)) front.push(...edge); continue; }
+    front.push(p);
+  }
+  const hemY = Math.max(...half.filter(p => Math.abs(p.x - cf) < 1e-6).map(p => p.y)), neckPoint = front[0]!, shoulder = front[1]!;
+  const neckline = [neckPoint, ...front.slice(front.indexOf(R) + 1).reverse()];
+  const inner = { x: neckPoint.x - 3, y: neckPoint.y + (shoulder.y - neckPoint.y) * 3 / Math.max(3, neckPoint.x - shoulder.x) };
+  const facing = [...neckline, ...[...edge].reverse(), { x: cf, y: hemY }, { x: cf - FACING_CM, y: hemY }, { x: cf - FACING_CM, y: B.y }, inner];
+  return { front, roll: [B, R], facing };
 }
 
 /** Front and back leg panels (each cut as a mirrored pair, side seam on the left) and the folded waistband. */
@@ -1678,10 +1768,11 @@ export function patternPieces(product: Product): PatternPiece[] {
     const sleeves = sleeveless(product) ? [] : [make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1)];
     // A polo's or shirt's collar is as long as the neckline between the placket's edges; the placket is cut as a folded
     // pair. A button front's front is cut as a mirrored pair of halves, which the placket joins.
-    const { collar, buttons } = optionsOf(product), placket = placketOf(product);
+    const { collar, buttons } = optionsOf(product), placket = placketOf(product), lapelled = optionsOf(product).lapels ? lapelPieces(product) : null;
+    // A coat with lapels has a front facing (cut to the lapel) instead of a placket.
     const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
-      ...(collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
-    const front = buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
+      ...(lapelled ? [make('lapel', lapelled.facing, 2)] : collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
+    const front = lapelled ? lapelled.front : buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
     // A shirt's cuffs are cut on the fold, twice their height, and 2 cm longer than the opening for the button's overlap.
     const cuffs = optionsOf(product).cuffs ? [make('cuffLeft', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1)] : [];
     // A back yoke is cut double (the outer yoke and its facing) above its seam, and the back body below it, laid out
@@ -1703,7 +1794,8 @@ export function patternPieces(product: Product): PatternPiece[] {
       return [make('front', bodice(front), cut), ...backs(bodice(body(false))), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
         ...sleeves, ...cuffs, ...neck, ...modules];
     }
-    return [make('front', front, cut), ...backs(body(false)), ...sleeves, ...cuffs, ...neck, ...modules];
+    // The lapel folds back along the roll line, marked on the front as a fold.
+    return [lapelled ? { ...make('front', front, cut), foldLine: lapelled.roll } : make('front', front, cut), ...backs(body(false)), ...sleeves, ...cuffs, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;
@@ -1859,8 +1951,17 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   // A zip front worn open: its front halves (and hem band, and a sweatshirt's neck rib or collar) part at the centre front.
   const zipped = zipAllowed(product.base) && !!optionsOf(product).zip, buttoned = product.base === 'tee' && !!optionsOf(product).buttons;
   const open = (zipped || buttoned) && !!optionsOf(product).zipOpen;
+  // A coat with lapels: above the top button each front is folded back along its roll line, so the front ends there and
+  // the neckline between the roll lines is open.
+  const lapels = product.base === 'tee' && optionsOf(product).lapels ? lapelOf(product, front.neck) : null;
   for (const [side, o] of [['front', front], ['back', back]] as const) {
-    const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, ...o.neck.slice(0, -1)];
+    const outside = (neck: Pt[]) => {
+      if (side !== 'front' || !lapels) return neck.slice(0, -1);
+      // The neckline runs from one neck point round to the other: keep each end beyond its roll line.
+      const [B, R] = lapels.roll, first = Math.sign(neck[0]!.x) || 1;
+      return [...neck.filter(p => first * p.x > R.x + 1e-9), { x: first * R.x, y: R.y }, B, { x: -first * R.x, y: R.y }, ...neck.filter(p => -first * p.x > R.x + 1e-9).slice(0, -1)];
+    };
+    const sign = side === 'front' ? 1 : -1, region = [o.neckLeft, ...o.armholeLeft, ...o.sideLeft, ...o.hem, ...o.sideRight, ...o.armholeRight, ...outside(o.neck)];
     // A dress cut at the waist is sewn there: the bodice and skirt share the waist line's points, which the drape joins.
     const seamed: [PartId, Pt[]][] = product.base === 'tee' && optionsOf(product).waistSeam
       ? [[side, clipAt(region, dims.waistY, true)], [side === 'front' ? 'skirtFront' : 'skirtBack', clipAt(region, dims.waistY, false)]] : [[side, region]];
@@ -1891,7 +1992,15 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     fillRegion(groups.get('chestPocket')!, chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY),
       Delaunator, p => rise(p) + 0.35, top, 'front');
   }
-  if (product.base === 'tee' && (optionsOf(product).collar || buttoned)) {
+  if (lapels) {
+    // Each lapel lies folded back on the chest, the front and its facing a little proud of the front body, rolling up
+    // off it along the fold.
+    const [B, R] = lapels.roll, roll = (p: Pt) => LAPEL_ROLL.height * Math.max(0, 1 - segmentDistance({ x: Math.abs(p.x), y: p.y }, B, R) / LAPEL_ROLL.width);
+    for (const lapel of [lapels.lapel, lapels.lapel.map(p => ({ x: -p.x, y: p.y }))]) {
+      fillRegion(groups.get('lapel')!, lapel, Delaunator, p => rise(p) + LAPEL_LIFT_CM + roll(p), top, 'front', p => ({ x: p.x + LAPEL_UV_SHIFT, y: p.y }));
+    }
+  }
+  if (product.base === 'tee' && (optionsOf(product).collar || buttoned) && !lapels) {
     // A polo's or shirt's placket: a strip down the centre front from the neckline, slightly proud of the front body. A
     // button front stops just short of the hem; worn open, each half carries its own side of it.
     const placket = placketOf(product), y0 = dims.neckDepthFront, y1 = Math.min(dims.neckDepthFront + placket.length, m.length - 0.5), x = placket.width / 2;
@@ -2070,7 +2179,9 @@ function collarDraft(product: Product, frame = topFrame(product)): PartMesh {
   const { front, back, shell } = frame, flat = [...[...front.neck].reverse(), ...back.neck];
   const neck = [...[...front.neck].reverse().map(p => shell(p, 1)), ...back.neck.map(p => shell(p, -1))];
   const mesh: PartMesh = { part: 'collar', positions: [], uvs: [], indices: [] };
-  collarMesh(mesh, neck, flat, front.neck.length, COLLAR_CM, placketOf(product).width, isWovenCollar(product));
+  // With lapels the collar runs round the back neck between the roll lines, its ends meeting the lapels.
+  const opening = optionsOf(product).lapels ? 2 * lapelOf(product, front.neck).roll[1].x : placketOf(product).width;
+  collarMesh(mesh, neck, flat, front.neck.length, COLLAR_CM, opening, isWovenCollar(product));
   return mesh;
 }
 

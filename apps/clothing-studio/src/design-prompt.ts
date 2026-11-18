@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, textPlace, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, lapelsAllowed, COAT_LENGTH, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -36,6 +36,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\b(?:t-?shirt|tee) dress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
+  // A blazer (or sport coat or suit jacket) is a hip-length coat with notched lapels; it is read before coats and jackets.
+  [/\b(?:blazers?|sports? coats?|suit jackets?|tailored jackets?)\b/, 'blazer', 'tee'],
   // Coats (not a waistcoat, which is a vest): a long shirt cut to go over other tops.
   [/\b(?:rain|over|top)?coats?\b/, 'coat', 'tee'],
   // Jackets start from the bomber, the one jacket so far.
@@ -74,6 +76,8 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bcuffs?\b/, () => ['cuffLeft', 'cuffRight']],
   [/\bhoods?\b/, () => ['hood']],
   [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, parts => [parts.has('collar') ? 'collar' : 'neckband']],
+  // A coat's lapels, before the collar.
+  [/\blapels?\b/, parts => (parts.has('lapel') ? ['lapel'] : [])],
   // A shirt's back yoke, before "back" alone takes the word.
   [/\b(?:back )?yokes?\b/, parts => (parts.has('yoke') ? ['yoke'] : [])],
   [/\b(front panels?|front)\b/, () => ['front']],
@@ -167,6 +171,15 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       // A tee described as a shirt keeps its styling and gains the button front and collar, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), buttons: true, collar: true });
       garment.push(`garment: ${garmentName(product)}`);
+    } else if (base === product.base && id === 'blazer') {
+      // A top described as a blazer keeps its styling and becomes a coat with lapels, at least as roomy and long-sleeved
+      // as the blazer template and at least coat length.
+      const blazer = topMeasurements(template('blazer')), m = topMeasurements(product);
+      product.measurements = { ...m, chest: Math.max(m.chest, blazer.chest), length: Math.max(m.length, COAT_LENGTH), sleeve: Math.max(m.sleeve, blazer.sleeve) };
+      const kept = { ...optionsOf(product) };
+      delete kept.waistSeam;
+      product = withOptions({ ...product, neckline: 'crew' }, { ...kept, buttons: true, collar: true, coat: true, lapels: true });
+      garment.push(`garment: ${garmentName(product)} with notched lapels, ${topMeasurements(product).length} cm long`);
     } else if (base === product.base && id === 'coat') {
       // A top described as a coat keeps its styling and becomes one: a button front and collar on a round neck, at
       // least as long, roomy and long-sleeved as the coat template, and not cut at the waist.
@@ -266,6 +279,22 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const contrast = product.parts.sleeveLeft.color.toLowerCase() === '#f7f7f4' ? '#1f2a4f' : '#f7f7f4';
     product.parts = { ...product.parts, cuffLeft: { ...product.parts.cuffLeft, color: contrast }, cuffRight: { ...product.parts.cuffRight, color: contrast } };
     garment.push('contrast cuffs');
+  }
+  // A coat's notched lapels: added by naming them ("notched lapels", "satin lapels", which also styles them), taken off
+  // with "no lapels". They go on a coat or blazer only.
+  const noLapels = !!take(/\b(?:no|without) (?:notched )?lapels?\b/), wantsLapels = !noLapels && /\blapels?\b/.test(text);
+  take(/\bnotched(?= lapels?\b)/);
+  if (noLapels && optionsOf(product).lapels) {
+    product = withOptions(product, { ...optionsOf(product), lapels: false });
+    garment.push('lapels removed: buttoned up to the collar');
+  } else if (wantsLapels && !optionsOf(product).lapels) {
+    if (lapelsAllowed(product, optionsOf(product))) {
+      product = withOptions(product, { ...optionsOf(product), lapels: true });
+      garment.push('notched lapels added');
+    } else {
+      notApplied.push(`lapels (they go on a coat or blazer, not a ${garmentName(product).toLowerCase()})`);
+      while (take(/\blapels?\b/));
+    }
   }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
   const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /(?<!back )\bpockets?\b/.test(text) && top) ? true : null;

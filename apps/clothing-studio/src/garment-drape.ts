@@ -64,7 +64,7 @@ export function bendingLength(fabric: Material): number {
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
-const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35], ['frontPocket', 0.3], ['beltLoop', 0.35]]);
+const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35], ['frontPocket', 0.3], ['beltLoop', 0.35], ['lapel', 0.45]]);
 /** The part each carried part is sewn to, where it is not the front. */
 const CARRIER: ReadonlyMap<PartId, PartId> = new Map([['backPocket', 'back'], ['beltLoop', 'waistband']]);
 
@@ -663,6 +663,8 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
         if (score < bestScore) { bestScore = score; best = { part: mesh.part, vertex: v, triangle: tri, weights: [w0, w1, w2], lift }; }
         if (score === 0) break;
       }
+      // A lapel keeps its own height off the front (it rolls up along its fold).
+      if (best && mesh.part === 'lapel') best.lift = Math.max(lift, z - best.weights.reduce((sum, w, k) => sum + w * p(best!.triangle[k]!, 2), 0));
       if (best) carried.push(best);
     }
   }

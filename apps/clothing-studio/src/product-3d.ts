@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { ARTWORK_PART_NAMES, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { ARTWORK_PART_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_UV_SHIFT, lapelShape, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -147,9 +147,17 @@ class ProductModel {
         rest?.find(mesh => mesh.part === 'waistband') ?? null, band, holder, holder === this.worn ? `${product.name}: Waistband button` : 'Waistband button');
       return;
     }
-    const target = parts.get('placket');
+    const lapels = !!optionsOf(product).lapels, target = parts.get(lapels ? 'front' : 'placket');
     if (!target) return;
     const d = teeDimensions(product), top = d.length - d.neckDepthFront, placket = placketOf(product), open = !!optionsOf(product).buttons && !!optionsOf(product).zipOpen;
+    if (lapels) {
+      // A jacket buttons below its lapels without a placket: the top button at the break point, the rest a jacket's gap
+      // apart (see placketOf), on the wearer's left front when worn open.
+      const count = placket.buttons, length = count * JACKET_BUTTON_GAP_CM, first = length * 0.75 / (count + 0.5), width = 3;
+      this.addDecal(this.buttonTexture(product.parts.front.color, width, length, count, false), { front: true, x: open ? -(OPEN_ZIP_GAP + width / 2) : 0, y: d.length - (d.waistY - first) - length / 2, width, height: length },
+        rest?.find(mesh => mesh.part === 'front') ?? null, target, holder, holder === this.worn ? `${product.name}: Buttons` : 'Buttons');
+      return;
+    }
     const width = open ? placket.width / 2 - OPEN_ZIP_GAP : placket.width, x = open ? -(OPEN_ZIP_GAP + width / 2) : 0, length = Math.min(placket.length, d.length - d.neckDepthFront - 0.5);
     this.addDecal(this.buttonTexture(product.parts.placket?.color ?? product.parts.front.color, width, length, placket.buttons), { front: true, x, y: top - length / 2, width, height: length },
       rest?.find(mesh => mesh.part === 'placket') ?? null, target, holder, holder === this.worn ? `${product.name}: Buttons` : 'Buttons');
@@ -162,6 +170,16 @@ class ProductModel {
    * drawn on a clear layer over its part, placed by the part's pattern coordinates, so it follows the drape.
    */
   private addTopstitching(product: Product, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
+    if (product.base === 'tee' && optionsOf(product).lapels) {
+      // A jacket's lapels are edge-stitched from the gorge round the point and down to the break, a shade darker than
+      // their fabric, half a centimetre in (the fold along the roll line has none).
+      const lapel = lapelShape(product), inset = insetPolygon(lapel.lapel, 0.5), edge = [inset[2]!, inset[3]!, inset[4]!, inset[5]!, inset[0]!];
+      const thread = `#${new THREE.Color(product.parts.lapel!.color).multiplyScalar(0.7).getHexString()}`;
+      this.addStitchLayer(product, 'lapel', rest, parts, holder, LAPEL_UV_SHIFT * 2, lapel.breakY + 2, thread, draw => {
+        for (const side of [1, -1]) draw(edge.map(p => ({ x: side * p.x + LAPEL_UV_SHIFT, y: p.y })), false);
+      });
+      return;
+    }
     if (product.base !== 'trousers') return;
     const thread = (part: PartId) => (material(product.parts[part]!.material).id.startsWith('denim') ? '#c9973f' : `#${new THREE.Color(product.parts[part]!.color).multiplyScalar(0.7).getHexString()}`);
     const pocket = optionsOf(product).backPockets ? backPocketOf(product) : null;
@@ -265,15 +283,15 @@ class ProductModel {
   }
 
   /** `count` buttons evenly down a placket `widthCm` by `lengthCm`, with a stitched edge, on a transparent ground. */
-  private buttonTexture(colour: string, widthCm: number, lengthCm: number, count: number): THREE.Texture {
-    const key = `buttons:${colour}:${widthCm.toFixed(2)}:${lengthCm.toFixed(1)}:${count}`, cached = this.artworkTextures.get(key);
+  private buttonTexture(colour: string, widthCm: number, lengthCm: number, count: number, stitched = true): THREE.Texture {
+    const key = `buttons:${colour}:${widthCm.toFixed(2)}:${lengthCm.toFixed(1)}:${count}:${stitched}`, cached = this.artworkTextures.get(key);
     if (cached) return cached;
     const scale = lengthCm > 40 ? 12 : 24, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
     canvas.width = Math.round(widthCm * scale); canvas.height = Math.round(lengthCm * scale);
-    // The placket's edge stitching, a little darker than its fabric.
+    // The placket's edge stitching, a little darker than its fabric (a jacket's buttons have none round them).
     const thread = new THREE.Color(colour).multiplyScalar(0.7);
     context.strokeStyle = `#${thread.getHexString()}`; context.lineWidth = 1.5; context.setLineDash([4, 3]);
-    context.strokeRect(scale * 0.25, 0, canvas.width - scale * 0.5, canvas.height - scale * 0.25);
+    if (stitched) context.strokeRect(scale * 0.25, 0, canvas.width - scale * 0.5, canvas.height - scale * 0.25);
     context.setLineDash([]);
     // Buttons a shade lighter or darker than the fabric, so they read on any colour.
     const fabric = new THREE.Color(colour), light = fabric.r * 0.2126 + fabric.g * 0.7152 + fabric.b * 0.0722 > 0.5;
