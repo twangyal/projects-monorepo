@@ -32,6 +32,15 @@ test('a control named closely beats one inside the circle that only shares some 
   assert.deepEqual(asked.choose(2), { type: 'activate', targetId: 201 });
   // With nothing better anywhere, the loose match acts as before.
   assert.deepEqual(interpret('open actions', { elements: [link], nearby: [], onScreen: () => [] }), { type: 'activate', targetId: 1 });
+  // Two loose matches inside the circle are asked about with the closely named control first, and just outside the
+  // circle that control is used.
+  const other = el(2, 'the action menu button example that uses aria-activedescendant', 'link');
+  const both = interpret('open actions', { elements: [link, other], nearby: [], onScreen: () => [el(201, 'Actions', 'button', 400)] });
+  assert.equal(both.message, 'Which one? 1: Actions; 2: Action Menu Button Example Using aria-activedescendant; 3: the action menu button example that uses aria-activedescendant. Say a number or cancel.');
+  assert.deepEqual(both.choose(1), { type: 'activate', targetId: 201 });
+  assert.deepEqual(both.choose(3), { type: 'activate', targetId: 2 });
+  assert.deepEqual(interpret('open actions', { elements: [link, other], nearby: [el(101, 'Actions', 'button', 150)] }), { type: 'activate', targetId: 101, outside: true });
+  assert.equal(interpret('open actions', { elements: [link, other], nearby: [], onScreen: () => [] }).type, 'clarify');
 });
 
 test('"cancel" never presses a website button, but says how when one is in view', () => {

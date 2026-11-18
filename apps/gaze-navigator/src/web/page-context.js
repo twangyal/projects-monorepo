@@ -179,8 +179,11 @@ function sameOriginDocument(frame) {
 
 // The element actually painted at a top-level point, descending into open shadow roots and
 // same-origin frames.
-export function deepElementFromPoint(document, x, y) {
+// The element at a point, inside open shadow roots and same-origin frames. The navigator's own panel (`exclude`) is
+// looked through: a control under it is hidden only from view, and the navigator can still press it.
+export function deepElementFromPoint(document, x, y, exclude = null) {
   let hit = document.elementFromPoint(x, y);
+  if (exclude && hit && composedContains(exclude, hit)) hit = document.elementsFromPoint(x, y).find(element => !composedContains(exclude, element)) ?? null;
   for (let depth = 0; hit && depth < 32; depth++) {
     if (hit.shadowRoot) {
       const inner = hit.shadowRoot.elementFromPoint(x, y);
@@ -214,13 +217,14 @@ export function composedContains(ancestor, node) {
   return false;
 }
 
-// Visible where the user could be looking: at the point nearest the gaze center or at the element center.
-function unobscured(document, element, rect, x, y) {
+// Visible where the user could be looking: at the point nearest the gaze center or at the element center. With the
+// navigator's panel as `exclude`, a control under the panel counts as visible (see deepElementFromPoint).
+function unobscured(document, element, rect, x, y, exclude = null) {
   const inset = Math.min(2, rect.width / 2, rect.height / 2);
   return [
     [clamp(x, rect.left + inset, rect.right - inset), clamp(y, rect.top + inset, rect.bottom - inset)],
     [rect.left + rect.width / 2, rect.top + rect.height / 2],
-  ].some(([px, py]) => composedContains(element, deepElementFromPoint(document, px, py)));
+  ].some(([px, py]) => composedContains(element, deepElementFromPoint(document, px, py, exclude)));
 }
 
 // Same-origin frames (with their chains) so pointer input inside them can be translated.
@@ -771,7 +775,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     const distance = distanceToRect(x, y, rect);
     if (distance > reach || exclude?.contains(element)) return;
     if (distance > radius) {
-      if (usable(element, exclude) && unobscured(document, element, rect, x, y)) outside.push({ element, rect, distance, frames });
+      if (usable(element, exclude) && unobscured(document, element, rect, x, y, exclude)) outside.push({ element, rect, distance, frames });
       return;
     }
     // Explicit state commands must retain visible locked targets for refusal.
@@ -781,7 +785,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
       if (style.visibility !== 'hidden' && style.display !== 'none') blocked.push({ element, rect, distance, frames });
       return;
     }
-    if (!unobscured(document, element, rect, x, y)) return;
+    if (!unobscured(document, element, rect, x, y, exclude)) return;
     candidates.push({ element, rect, distance, frames });
   };
   const now = document.defaultView?.performance?.now() ?? 0;
@@ -838,7 +842,7 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     const rect = viewportRect(element, frames);
     if (listed.has(element) || !(rect.width > 0 && rect.height > 0) || rect.right <= 0 || rect.bottom <= 0 || rect.left >= view.innerWidth || rect.top >= view.innerHeight) return [];
     const distance = distanceToRect(x, y, rect);
-    if (distance <= radius || roleOf(element) === 'generic' || !usable(element, exclude) || !unobscured(document, element, rect, x, y)) return [];
+    if (distance <= radius || roleOf(element) === 'generic' || !usable(element, exclude) || !unobscured(document, element, rect, x, y, exclude)) return [];
     return [{ element, rect, distance, frames }];
   }).sort((a, b) => a.distance - b.distance).slice(0, SCREEN_LIMIT).map((candidate, index) => ({
     id: SCREEN_FIRST_ID + index, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,

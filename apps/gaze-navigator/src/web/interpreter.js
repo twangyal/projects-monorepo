@@ -280,7 +280,7 @@ function intoDateBoxes(text, act, now = new Date()) {
 function chooseField(fieldName, context, act, { recover = false, kind = null } = {}) {
   let fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
-  if (recover && !fields.length) return { type: 'unknown', message: 'No text field is inside the gaze circle.', fieldMiss: true };
+  if (recover && !fields.length) return { type: 'unknown', message: 'No text field is inside the gaze circle.', fieldMiss: true, kind };
   if (act.sameDate?.(fields)) fields = [fields.reduce((a, b) => (b.distance < a.distance ? b : a))];
   // Text of a clear kind (an email address, "12 High Street") goes to the one field asking for it among several, and
   // a field just outside the circle that asks for it is offered when the gaze rests on a field asking for another.
@@ -292,6 +292,11 @@ function chooseField(fieldName, context, act, { recover = false, kind = null } =
     if (fields.length > 1 && fitting.length === 1) return act(fitting[0]);
     const near = (context.nearby ?? []).filter(element => textField(element) && element.holds === kind);
     if (fields.length && fields.every(element => element.holds && element.holds !== kind) && near.length === 1) return { ...act(near[0]), far: true };
+    // Among several fields in the circle, none asking for it, the one just outside that does is asked about first.
+    if (fields.length > 1 && !fitting.length && near.length === 1) {
+      const choices = [near[0], ...fields];
+      return question(choices.map((element, index) => ({ number: index + 1, label: element.name || element.role, elementId: element.id })), number => act(choices[number - 1]));
+    }
   }
   if (focused) return act(focused);
   return deictic(fields, act, 'text field');
@@ -533,12 +538,29 @@ function interpretHeard(utterance, context) {
       ], number => (number === 1 ? action : chosen));
     }
   }
+  // Several controls inside the circle that share only some of the words said ("open actions" against two "Action Menu
+  // Button Example" links) give way in the same way: to one just outside the circle that is named closely, or, further
+  // away, to a question that offers that one first.
+  if (weak && action.type === 'clarify') {
+    const elsewhere = elements => ({ ...context, elements, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null });
+    const strong = found => found && !found.weak && found.type !== 'clarify' && !action.candidates.some(candidate => candidate.elementId === found.targetId);
+    const near = context.nearby?.length ? beyond(utterance, elsewhere(context.nearby), 'outside', 'Not inside the gaze circle, but nearby') : null;
+    if (strong(near)) { const { weak: _, ...closer } = near; return closer; }
+    const screen = context.onScreen?.() ?? [];
+    const far = screen.length ? beyond(utterance, elsewhere(screen), 'far', 'Not near your gaze', FAR_CHOICES) : null;
+    if (strong(far)) {
+      const { far: _far, weak: _weak, ...chosen } = far, there = screen.find(element => element.id === far.targetId);
+      const options = [{ label: there?.name || there?.role || 'The control elsewhere', elementId: far.targetId },
+        ...action.candidates.map(candidate => ({ label: candidate.label, elementId: candidate.elementId }))].map((option, index) => ({ ...option, number: index + 1 }));
+      return question(options, number => (number === 1 ? chosen : action.choose(action.candidates[number - 2].number)));
+    }
+  }
   return action;
 }
 
 function interpretWithin(utterance, context) {
   const action = interpretInCircle(utterance, context);
-  if (action.fieldMiss) { const { fieldMiss: _, ...missed } = action; return typingElsewhere(utterance, context) ?? missed; }
+  if (action.fieldMiss) { const { fieldMiss: _, kind, ...missed } = action; return typingElsewhere(utterance, context, kind) ?? missed; }
   if (!action.missing && !action.unparsed) return action;
   const elsewhere = { ...context, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null };
   const near = context.nearby?.length ? beyond(utterance, { ...elsewhere, elements: context.nearby }, 'outside', 'Not inside the gaze circle, but nearby') : null;
@@ -549,15 +571,23 @@ function interpretWithin(utterance, context) {
 
 // The instruction tried on controls outside the circle; null when it names none of them (or too many).
 // Typing into an unnamed field when none is inside the circle, as after a large gaze miss: the nearest few text fields
-// just outside the circle, or else the only few on screen, are offered and never used without a yes.
-function typingElsewhere(utterance, context) {
+// just outside the circle, or else the only few on screen, are offered and never used without a yes. Text of a clear
+// kind ("12 High Street", an email address) is offered to the one field asking for it, just outside the circle or
+// anywhere on screen, however far the gaze landed from it.
+function typingElsewhere(utterance, context, kind = null) {
   const nearest = list => list.filter(textField).sort((a, b) => a.distance - b.distance);
+  const offer = fields => beyond(utterance, { ...context, elements: fields, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null },
+    'far', 'No text field is inside the gaze circle. Type into');
+  const fitting = list => list.filter(element => element.holds === kind);
+  if (kind) {
+    const around = fitting(nearest(context.nearby ?? []));
+    const anywhere = around.length ? around : fitting(nearest(context.onScreen?.() ?? []));
+    if (anywhere.length === 1) return offer(anywhere);
+  }
   const near = nearest(context.nearby ?? []).slice(0, FAR_CHOICES);
   const screen = near.length ? [] : nearest(context.onScreen?.() ?? []);
   const fields = near.length ? near : screen.length <= FAR_CHOICES ? screen : [];
-  if (!fields.length) return null;
-  const elsewhere = { ...context, elements: fields, nearby: [], disclosureElements: undefined, pageSearch: null, focusedId: null, selectionFocusedId: null };
-  return beyond(utterance, elsewhere, 'far', 'No text field is inside the gaze circle. Type into');
+  return fields.length ? offer(fields) : null;
 }
 
 function beyond(utterance, context, flag, where, most = Infinity) {
@@ -709,8 +739,9 @@ function detailsCommand(command, text) {
 // "cookie settings", "close the pop-up". Their buttons are found wherever the banner is. Closing gives way to what is
 // in the gaze circle: an open toggle, or a Close or Dismiss control there.
 function popupCommand(text, context) {
-  const kinds = '(?:optional |non ?essential |unnecessary |tracking |marketing |advertising )?';
-  if (/^(?:accept|allow|agree to|ok|okay) (?:all )?(?:the )?cookies$|^accept all cookies$/.test(text)) return { type: 'popup', want: 'accept' };
+  // The kinds of cookie banners name ("Reject additional cookies", "Accept analytics cookies").
+  const kinds = '(?:optional |additional |non ?essential |non ?necessary |unnecessary |analytics? |analytical |performance |functional |third ?party |tracking |marketing |advertising )?';
+  if (new RegExp(`^(?:accept|allow|agree to|ok|okay) (?:all )?(?:the )?${kinds}cookies$|^accept all cookies$`).test(text)) return { type: 'popup', want: 'accept' };
   if (new RegExp(`^(?:reject|decline|refuse|deny|block|no) (?:all )?(?:the )?${kinds}cookies$|^(?:only|just) (?:the )?(?:necessary|essential) cookies$|^(?:necessary|essential) cookies only$`).test(text)) return { type: 'popup', want: 'reject' };
   if (/^(?:open )?(?:the )?(?:cookie|privacy|consent) (?:settings|preferences|options|choices)$|^(?:manage|customi[sz]e|choose) (?:the |my )?cookies$/.test(text)) return { type: 'popup', want: 'settings' };
   if (/^(?:close|dismiss|hide|get rid of|shut) (?:the |this |that )?(?:pop ?up|dialog|banner|overlay|modal|notice|cookie (?:banner|notice|message|pop ?up))$/.test(text) &&

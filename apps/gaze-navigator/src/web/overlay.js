@@ -324,6 +324,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
   let point = null;
+  // Where the gaze rests on the panel, while it does (see withScreen).
+  let panelGaze = null;
   let cameraUnavailable = false;
   let cameraSilenceTimer = null;
   let cameraEstimateAt = null;
@@ -712,6 +714,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       const panel = ui.panel.getBoundingClientRect(), inside = next.x >= panel.left && next.x <= panel.right && next.y >= panel.top && next.y <= panel.bottom;
       const edge = inside ? pageEdgeOfPanel(next, panel) : null;
       frozen = inside && !edge;
+      panelGaze = frozen ? next : null;
       if (frozen) {
         ui.circle.classList.add('frozen');
         return;
@@ -728,6 +731,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (settings.source !== 'pointer') return;
     // Looking at the panel keeps the last page context, so instructions can be typed or chosen there.
     frozen = event.composedPath().includes(host);
+    panelGaze = frozen ? { x: event.clientX, y: event.clientY } : null;
     if (frozen) {
       ui.circle.classList.add('frozen');
       return;
@@ -832,6 +836,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   document.addEventListener('focusout', onFocusOut, true);
   onFocusIn();
 
+  // Gaze resting on the panel keeps the last page context. Before the gaze has rested anywhere on the page there is none,
+  // so a control said by name is still looked for anywhere on screen: offered, not used, as any control far from the gaze.
+  function withScreen(used) {
+    if (used.onScreen || used.trackingUnavailable || !frozen || !panelGaze) return used;
+    return { ...used, onScreen: captureContext(document, { x: panelGaze.x, y: panelGaze.y, radius: 1, exclude: host, scopeCache }).onScreen };
+  }
+
   // `via` says where the instruction came from (speech, typed or a panel button) for `onResult`, which hears each
   // instruction's final answer. Only the website's own pages pass `onResult`; the extension never does.
   function run(utterance, captured, via = 'panel', alternatives = []) {
@@ -844,7 +855,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       ? { elements: [], region: null, trackingUnavailable: 'calibration' }
       : settings.source === 'camera' && cameraUnavailable
         ? { elements: [], region: null, trackingUnavailable: true }
-        : captured ?? spokenContext ?? (recapture(true), context);
+        : withScreen(captured ?? spokenContext ?? (recapture(true), context));
     spokenContext = null;
     // Numbers stay usable without the gaze, but not while calibrating.
     if (numbering && used.trackingUnavailable !== 'calibration') used.numbered = numbered;

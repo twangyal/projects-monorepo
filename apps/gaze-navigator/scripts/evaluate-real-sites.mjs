@@ -3,13 +3,14 @@
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
 //   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
-//     [--gaze-error PX] [--trials N] [--seed S] [--panel-typing]
+//     [--gaze-error PX] [--circle small|medium|large] [--trials N] [--seed S] [--panel-typing]
 // Instructions are typed in keyboard command mode (Alt+Shift+G), which, like speech, leaves the website's focus where
 // it is, so menus and dialogs that close or trap focus behave as they would for a speaking user. --panel-typing types
 // into the navigator panel's box instead, which moves focus to the panel.
 // --gaze-error offsets each look by random Gaussian error with that standard deviation per axis, like
 // webcam gaze (often 100-200 px), instead of resting exactly on the control. --trials repeats each task
-// with fresh offsets; --seed makes the offsets reproducible.
+// with fresh offsets; --seed makes the offsets reproducible. --circle first says "use a large circle" (or small or
+// medium), as the accuracy check after calibration would recommend for that much error.
 // DIR must be an extension build with host access granted (automation cannot click the permission prompt).
 import { chromium } from '@playwright/test';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -22,6 +23,8 @@ const panelTyping = process.argv.includes('--panel-typing');
 const gazeError = Number(argument('--gaze-error') ?? 0), trials = Math.max(1, Number(argument('--trials') ?? 1)), seed = Number(argument('--seed') ?? 1);
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
 if (!(gazeError >= 0)) throw new Error('--gaze-error must be a number of pixels.');
+const circle = argument('--circle');
+if (circle && !['small', 'medium', 'large'].includes(circle)) throw new Error('--circle must be small, medium or large.');
 
 // Seeded generator (mulberry32) and normal samples (Box-Muller), so a run's offsets can be repeated.
 function random(state) {
@@ -56,7 +59,7 @@ export const TASKS = [
     { look: null, say: 'go back', done: url(/\/wiki\/Ada_Lovelace$/) },
   ] },
   { site: 'Wikipedia', goal: 'Reach the log-in page', start: 'https://en.wikipedia.org/wiki/Main_Page', steps: [
-    { look: link('Log in'), say: 'sign in', target: 'Log in', done: url(/Special:UserLogin/) },
+    { look: link('Log in'), say: 'sign in', target: 'Log in', done: url(/Special:UserLogin|Special:CentralAutoLogin/) },
   ] },
   { site: 'Wikipedia', goal: 'Open the page history of the Main Page', start: 'https://en.wikipedia.org/wiki/Main_Page', steps: [
     { look: link('View history'), say: 'show me the past versions of this page', target: 'View history', done: url(/action=history/) },
@@ -152,7 +155,7 @@ export const TASKS = [
     { look: page => page.getByRole('dialog', { name: 'Add Delivery Address' }).getByRole('button', { name: 'Cancel', exact: true }), say: 'click cancel', target: 'Cancel', done: async page => !(await page.getByRole('dialog', { name: 'Add Delivery Address' }).isVisible()) },
   ] },
   { site: 'WAI-ARIA APG', goal: 'Open one answer in a FAQ', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/', steps: [
-    { look: page => page.getByRole('button', { name: /lose my permit/ }), say: 'open what do I do if I lose my permit', done: expanded(page => page.getByRole('button', { name: /lose my permit/ }), 'true') },
+    { look: page => page.getByRole('button', { name: /lose my permit/ }), say: 'open what do I do if I lose my permit', target: 'What do I do if I lose my permit or if my permit is stolen?', done: expanded(page => page.getByRole('button', { name: /lose my permit/ }), 'true') },
   ] },
   { site: 'WAI-ARIA APG', goal: 'Set a date spin button to a value', start: 'https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/examples/datepicker-spinbuttons/', steps: [
     { look: page => page.getByRole('spinbutton', { name: 'Day' }), say: 'set day to 15', done: async page => (await page.getByRole('spinbutton', { name: 'Day' }).getAttribute('aria-valuenow')) === '15' },
@@ -216,6 +219,13 @@ async function run() {
       await page.goto(task.start, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await status.waitFor({ timeout: 20000 });
       await page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+      if (circle) {
+        await page.keyboard.press('Alt+Shift+G');
+        await page.keyboard.type(`use a ${circle} circle`);
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(500);
+        record.circleReply = await status.textContent().catch(() => '');
+      }
       if (assist) {
         await panel.locator('details.settings').evaluate(details => { details.open = true; });
         const box = panel.getByLabel('Smarter target matching');
@@ -277,9 +287,17 @@ async function run() {
           if (!chosen) break;
           await say(chosen.split(':')[0]);
         }
-        if (await step.done(page, measured).catch(() => false)) entry.outcome = 'done';
+        // A page that is still loading or redirecting (Wikipedia's log-in goes through another site) gets a few seconds.
+        let done = await step.done(page, measured).catch(() => false);
+        for (let wait = 0; !done && page.url() !== before && wait < 6; wait++) {
+          await page.waitForTimeout(500);
+          await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
+          done = await step.done(page, measured).catch(() => false);
+        }
+        if (done) entry.outcome = 'done';
         else if (page.url() !== before) entry.outcome = 'unintended';
         else entry.outcome = entry.questions ? 'unanswered-question' : 'failed';
+        if (!done) entry.url = page.url();
         if (entry.outcome !== 'done') break;
       }
       record.completed = record.steps.length === task.steps.length && record.steps.every(step => step.outcome === 'done');
@@ -287,11 +305,11 @@ async function run() {
       record.error = error.message.split('\n')[0];
     }
     results.push(record);
-    console.log(JSON.stringify({ site: record.site, goal: record.goal, trial, completed: record.completed, steps: record.steps.map(s => [s.say, s.outcome, s.utterances, s.questions, s.offset]), error: record.error }));
+    console.log(JSON.stringify({ site: record.site, goal: record.goal, trial, completed: record.completed, steps: record.steps.map(s => [s.say, s.outcome, s.utterances, s.questions, s.offset, ...(s.url ? [s.url.slice(0, 120)] : [])]), error: record.error, circle: record.circleReply }));
     await context.close();
   }
   const steps = results.flatMap(result => result.steps);
-  const summary = { assist, gazeError, trials, seed, date: new Date().toISOString().slice(0, 10), tasks: results.length, completed: results.filter(result => result.completed).length,
+  const summary = { assist, gazeError, circle: circle ?? 'medium', trials, seed, date: new Date().toISOString().slice(0, 10), tasks: results.length, completed: results.filter(result => result.completed).length,
     steps: steps.length, stepsDone: steps.filter(step => step.outcome === 'done').length, unintended: steps.filter(step => step.outcome === 'unintended').length,
     utterances: steps.reduce((sum, step) => sum + step.utterances, 0), questions: steps.reduce((sum, step) => sum + step.questions, 0) };
   console.log(JSON.stringify(summary));

@@ -11,6 +11,10 @@ test('cookie banner and pop-up commands are read from speech', () => {
   assert.deepEqual(interpret('accept cookies', nothing), { type: 'popup', want: 'accept' });
   assert.deepEqual(interpret('reject all cookies', nothing), { type: 'popup', want: 'reject' });
   assert.deepEqual(interpret('only necessary cookies', nothing), { type: 'popup', want: 'reject' });
+  // Banners' own kinds of cookies, as GOV.UK's "Reject additional cookies".
+  assert.deepEqual(interpret('reject additional cookies', nothing), { type: 'popup', want: 'reject' });
+  assert.deepEqual(interpret('accept analytics cookies', nothing), { type: 'popup', want: 'accept' });
+  assert.deepEqual(interpret('refuse third party cookies', nothing), { type: 'popup', want: 'reject' });
   assert.deepEqual(interpret('cookie settings', nothing), { type: 'popup', want: 'settings' });
   assert.deepEqual(interpret('close the pop-up', nothing), { type: 'popup', want: 'close' });
   assert.notEqual(interpret('close', nothing).type, 'popup');

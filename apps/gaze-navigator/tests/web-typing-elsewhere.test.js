@@ -20,6 +20,25 @@ test('typing after a gaze miss offers the text field just outside the circle, ne
   assert.deepEqual(many, { type: 'unknown', message: 'No text field is inside the gaze circle.' });
 });
 
+test('text of a clear kind is offered to the one field asking for it, however far the gaze landed from it', () => {
+  // The gaze landed below a dialog's address fields: the street goes to the Street field, not the nearest ones.
+  const street = { ...field(201, 'Street', 450), holds: 'street' }, nearby = [field(101, 'Special instructions', 150), { ...field(102, 'Zip', 170), holds: 'postal-code' }];
+  assert.deepEqual(interpret('type 12 High Street', missed(nearby, [street, field(202, 'City', 420)])),
+    { type: 'edit', targetId: 201, edit: { kind: 'append', text: '12 High Street' }, far: true });
+  // A postcode goes to the Zip field just outside the circle; text of no clear kind still offers the nearest fields.
+  assert.equal(interpret('type SW1A 1AA', missed(nearby, [street])).targetId, 102);
+  assert.match(interpret('type hello', missed(nearby, [street])).message, /^No text field is inside the gaze circle\. Type into: 1: Special instructions; 2: Zip\./);
+  // Among several fields in the circle that ask for nothing in particular, the street field just outside comes first.
+  const near = { ...field(103, 'Street', 160), holds: 'street' };
+  const inside = { elements: [field(1, 'Special instructions', 0), { ...field(2, 'Zip', 20), holds: 'postal-code' }], nearby: [near] };
+  const asked = interpret('type 12 High Street', inside);
+  assert.equal(asked.message, 'Which one? 1: Street; 2: Special instructions; 3: Zip. Say a number or cancel.');
+  assert.deepEqual(asked.choose(1), { type: 'edit', targetId: 103, edit: { kind: 'append', text: '12 High Street' } });
+  // Two fields asking for the same kind are not guessed between.
+  const twice = interpret('type 12 High Street', missed(nearby, [street, { ...field(203, 'Billing street', 500), holds: 'street' }]));
+  assert.notEqual(twice.targetId, 201);
+});
+
 test('changing text the person cannot see never reaches outside the circle', () => {
   for (const said of ['clear the field', 'delete the last word', 'new line', 'undo']) {
     assert.notEqual(interpret(said, missed([field(101, 'Email', 150)])).far, true, said);
