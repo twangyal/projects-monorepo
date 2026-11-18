@@ -46,12 +46,14 @@ const RULES = [
   // Tasks said as what is wanted rather than which control does it.
   [/^(?:i (?:need|want|would like|'d like) to |how (?:do|can) i |let me )?(?:get in touch(?: with (?:you|someone|somebody|the team))?|reach you|contact you|talk to (?:someone|somebody|a person|a human))$/, 'open contact'],
   [/^(?:i (?:need|want|would like|'d like) to |let me |please )?(?:log|sign) (?:in|into|on|onto|on to)(?: (?:my|your|the) account)?$/, 'sign in'],
-  [/^(?:(?:go |take me |bring me )?back to |go to |take me to )?the (?:start|front|main|home|landing) page$/, 'go home'],
+  [/^(?:(?:go |take me |bring me )?back to |go to |take me to |open |visit |show me )?the (?:start|front|main|home|landing) page$|^(?:(?:take|bring|get|send) me|go|head) (?:back )?home$/, 'go home'],
   [/^(?:please )?(?:put|pop|add|place|stick|throw|chuck|drop) (?:it|this|that|this one|that one|(?:this|the|that) (?:book|item|product|one)) (?:in|into|to|in to) (?:my|the|your) (?:shopping )?(cart|basket|bag|trolley)$/,
     () => 'add to cart'],
   [/^(?:(?:go ahead and |please )?(?:complete|finish|finalise|finalize|confirm|place|submit) (?:my|the|this|your) (?:order|purchase)|(?:go ahead and )?(?:order|purchase) (?:it|this|that|this one|it now|this now)|proceed to (?:the )?checkout)$/, 'place order'],
-  [/^(?:what do (?:other )?(?:people|readers|customers|buyers|users|others) (?:think|say)(?: about (?:it|this|that))?|(?:read|see|show me) what (?:other )?(?:people|readers|customers|buyers|others) (?:wrote|said|think|say)(?: about (?:it|this|that))?|(?:are there )?any reviews)$/, 'open reviews'],
-  [/^(?:how much (?:does (?:it|this|that) cost|is (?:it|this|that)|do you charge|will (?:it|this) cost)|what (?:are|is) (?:your|the) (?:prices?|costs?|fees?|rates?)|what does (?:it|this) cost)$/, 'open pricing'],
+  // Paying is placing the order (or going to the checkout): "buy it now", "check out now", "time to pay", "I'm ready to order".
+  [/^(?:(?:i'?m|i am) ready to |(?:it'?s |it is )?time to )?(?:buy (?:it|this|that|this one)(?: now)?|check ?out(?: now)?|pay(?: now| for (?:it|this|that|them))?|make (?:the|a|my) payment|order(?: (?:it|this|now))?)$/, 'place order'],
+  [/^(?:what do (?:other )?(?:people|readers|customers|buyers|users|others) (?:think|say)(?: (?:about|of) (?:it|this|that))?|(?:read|see|show me) what (?:other )?(?:people|readers|customers|buyers|others) (?:wrote|said|think|say)(?: about (?:it|this|that))?|(?:are there )?any reviews)$/, 'open reviews'],
+  [/^(?:(?:show me |tell me )?how much (?:does (?:it|this|that) cost|(?:it|this|that) costs?|is (?:it|this|that)|do you charge|will (?:it|this) cost)|what (?:are|is) (?:your|the) (?:prices?|costs?|fees?|rates?)|what does (?:it|this) cost)$/, 'open pricing'],
   [/^(?:do you have|have you got|is there|are there|got) (?:anything|something|any(?: books?)?) (?:about|on|for|with) (.+)$|^(?:i'?m|i am) looking for (?!.*\b(?:page|link|button|form|section|tab)$)(.+)$/,
     match => `search for ${match[1] ?? match[2]}`],
   [/^(?:remove|delete|get rid of|bin|discard|take out) (?:it|this|that)$/, 'remove'],
@@ -83,6 +85,9 @@ export function choiceSaid(text) {
     ?? /^the (.+?) one$/.exec(text) ?? /^in (.+)$/.exec(text) ?? /^do you have (?:it|this|that|one|these|them) in (.+?)(?: please)?$/.exec(text)
     ?? /^(?:just|only) (.+)$/.exec(text) ?? /^(?:i|we) (?:live|am|'m|are|'re)(?: based| living| located)? in (.+)$/.exec(text.replace(/^(i|we)'/, '$1 \''))
     ?? /^(?:ship|send|deliver|post)(?: it| them| this| that| these| those)? to (.+)$/.exec(text);
+  // "I'll collect it myself": a way of doing it, named by an option ("Click and collect").
+  const doing = !said && /^i(?:'ll| will) (?!take\b|have\b|go\b|get\b)(\w+)(?: (?:it|them|this|that|one))?(?: (?:myself|ourselves|in person))?$/.exec(text);
+  if (doing) return doing[1];
   // "Just one" is a number of things; a bare "one" elsewhere ("that one") names no choice.
   if (/^(?:just|only) one$/.test(text)) return 'one';
   return said && !/^(?:it|that|this|one|yes|ok|okay|sure|thanks|thank you)$/.test(said[1]) ? said[1] : null;

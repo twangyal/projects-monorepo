@@ -97,9 +97,9 @@ test('a request to choose never just opens a dropdown, and word corrections need
   const action = await createAssistedInterpreter({ model })('choose the audio version', CONTEXTS.product);
   assert.notEqual(action.type, 'activate');
   assert.equal((await createAssistedInterpreter({ model: scripted({ Topic: 9 }) })('open the topic list', CONTEXTS.form)).type, 'activate');
-  // "set the subject to …" with nothing focused no longer rewrites the gazed name field.
+  // "set the subject to …" with nothing focused never rewrites the gazed name field; the subject is the Topic dropdown.
   const { interpret } = await import('../src/web/interpreter.js');
-  assert.equal(interpret('set the subject to book suggestion', CONTEXTS.form).type, 'unknown');
+  assert.deepEqual(interpret('set the subject to book suggestion', CONTEXTS.form), { type: 'select-option', targetId: 5, optionIndex: 2, optionName: 'Book suggestion' });
   assert.deepEqual(interpret('change Tuesday to Friday', CONTEXTS.focused), { type: 'edit', targetId: 3, edit: { kind: 'replace', find: 'Tuesday', text: 'Friday' } });
 });
 

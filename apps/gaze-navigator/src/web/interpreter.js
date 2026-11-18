@@ -8,14 +8,16 @@ import { choicesMeant, namesIn, nextSize, sentence } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
-const STOPWORDS = new Set(['the', 'a', 'an', 'on', 'to', 'please', 'my', 'this', 'that', 'link', 'button', 'tab', 'field', 'box', 'checkbox', 'menu', 'option', 'page', 'item', 'input']);
-const ROLE_HINTS = { link: ['link'], button: ['button'], tab: ['tab'], checkbox: ['checkbox', 'switch'], box: ['checkbox', 'textbox', 'searchbox'], field: ['textbox', 'searchbox', 'combobox'], menu: ['combobox', 'menuitem'], option: ['option', 'combobox', 'radio'] };
+const STOPWORDS = new Set(['the', 'a', 'an', 'on', 'to', 'please', 'my', 'this', 'that', 'link', 'button', 'tab', 'field', 'box', 'checkbox', 'menu', 'list', 'dropdown', 'option', 'page', 'item', 'input']);
+const ROLE_HINTS = { link: ['link'], button: ['button'], tab: ['tab'], checkbox: ['checkbox', 'switch'], box: ['checkbox', 'textbox', 'searchbox'], field: ['textbox', 'searchbox', 'combobox'], menu: ['combobox', 'menuitem'], list: ['combobox', 'listbox'], dropdown: ['combobox'], option: ['option', 'combobox', 'radio'] };
 // Scores closer than this are treated as equally plausible and trigger a question.
 const MARGIN = 0.05;
 // A match below this shares only some of the words said; a control named this well just outside the circle wins.
 const STRONG = 0.8;
+// A name said in other words (a synonym, see variants) scores this much.
+const SAID_OTHERWISE = 0.85;
 const DEICTIC = /^(this|that|it|here|there|this one|that one)$/;
-const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check(?! out\b)|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|jump to|skip to|show me|bring up|show|view|visit|see|load|go)\s+(?:on\s+)?/;
+const ACTIVATE_VERB = /^(?:click|tap|press|push|hit|open up|open|follow|select|choose|pick|activate|check(?! out\b)|uncheck|tick|untick|toggle|expand|collapse|go to|navigate to|take me to|jump to|skip to|show me|bring up|show|view|visit|see|load|read|go)\s+(?:on\s+)?/;
 // Politeness and lead-ins that carry no instruction; dictated text keeps everything after its verb.
 const LEADING_FILLER = /^(?:(?:please|ok|okay|now|hey|so|um|uh)\s+|(?:can|could|would|will) you(?: please)?\s+|(?:i(?:'d| would) like to|i want to|i need to|let's|let me|go ahead and)\s+)+/i;
 // "Thanks" is not stripped: it is often the content ("change it to Thanks").
@@ -25,12 +27,13 @@ const ORDINAL = /^(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|te
 const SYNONYMS = [['log in', 'sign in'], ['login', 'sign in'], ['log on', 'sign in'], ['log out', 'sign out'], ['logout', 'sign out'], ['log off', 'sign out'],
   ['sign up', 'register'], ['create account', 'register'], ['basket', 'cart'], ['bag', 'cart'], ['trolley', 'cart'], ['shopping cart', 'cart'],
   ['check out', 'checkout'], ['place order', 'checkout'], ['place order', 'buy now'], ['place order', 'complete purchase'], ['prices', 'pricing'], ['price', 'pricing'], ['fees', 'pricing'], ['plans', 'pricing'],
-  ['home page', 'home'], ['homepage', 'home'], ['main page', 'home'], ['start page', 'home'],
+  ['home page', 'home'], ['homepage', 'home'], ['main page', 'home'], ['start page', 'home'], ['front page', 'home'], ['landing page', 'home'],
   ['past versions', 'history'], ['previous versions', 'history'], ['old versions', 'history'], ['revisions', 'history'], ['revision history', 'history'],
   ['version history', 'history'], ['edit history', 'history'],
   ['preferences', 'settings'], ['options', 'settings'], ['frequently asked questions', 'faq'],
   ['get in touch', 'contact'], ['contact us', 'contact'], ['customer service', 'contact'], ['customer support', 'contact'], ['support', 'contact'],
-  ['help desk', 'contact'], ['helpdesk', 'contact'], ['my account', 'account'], ['profile', 'account'],
+  ['help desk', 'contact'], ['helpdesk', 'contact'], ['my account', 'account'], ['profile', 'account'], ['my account', 'sign in'],
+  ['subject', 'topic'], ['hardback', 'hardcover'], ['audio version', 'audiobook'], ['audio book', 'audiobook'],
   ['ratings', 'reviews'], ['rating', 'reviews'], ['customer ratings', 'reviews'], ['customer reviews', 'reviews'], ['comments', 'reviews'], ['testimonials', 'reviews'],
   ['navigation', 'menu'], ['nav', 'menu'], ['dark theme', 'dark mode'], ['alerts', 'notifications'], ['inbox', 'messages']];
 // "The stuff about cars", "information on visas": the topic is what names the control, not the lead-in.
@@ -112,6 +115,9 @@ function variants(query) {
   }
   return found;
 }
+
+// How well something said names a control, its synonyms counted ("subject" for Topic).
+const nameScore = (query, name) => Math.max(...variants(query).map(({ text, weight }) => matchScore(text, name) * weight));
 
 // With `topics`, words for the same topic count too ("cars" finds "Driving and transport"); `related` marks a
 // control found only that way.
@@ -378,6 +384,8 @@ function selectOption(optionQuery, selects, selected) {
   if (together) return together;
   const meant = found(exact.length ? exact : containing);
   if (meant.length) return meant.length === 1 ? pick(meant[0]) : ask(meant);
+  // One option named exactly in other words ("hardback" for Hardcover) is meant; partial matches stay below this.
+  if (close.length === 1 && ranked[0].score >= SAID_OTHERWISE) return pick(close[0]);
   return close.length > 1 ? ask(close) : null;
 }
 
@@ -912,7 +920,8 @@ function interpretInCircle(utterance, context) {
   // Dictation keeps its own words; commands also drop trailing politeness.
   const raw = heard.replace(LEADING_FILLER, '') || heard;
   // Everyday ways of saying the navigator's own commands ("hang on", "yep", "down a bit") read as those commands.
-  const command = everydayCommand(raw.replace(TRAILING_FILLER, '') || raw, normalize);
+  const said = raw.replace(TRAILING_FILLER, '') || raw;
+  const command = everydayCommand(said, normalize);
   const text = normalize(command);
   if (!text) return { type: 'unknown', message: 'No instruction was heard.' };
 
@@ -923,7 +932,9 @@ function interpretInCircle(utterance, context) {
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
   // A control named by everything said ("Find out more", "Check availability") is the one meant, though the words
   // begin like a command that would find, type, tick or clear something else.
-  const named = namedControl(text, context);
+  // A control named by the words as said wins over their everyday reading ("check out now" presses a Check out now
+  // button rather than placing the order).
+  const named = namedControl(normalize(said), context) ?? namedControl(text, context);
   if (named) return named;
   // Editor toolbars: "insert a link", "add a picture", "make it bold", "bullet points".
   const toolbar = toolbarCommand(text, context);
@@ -1010,7 +1021,7 @@ function interpretInCircle(utterance, context) {
     if ((context.nearby ?? []).some(pager)) return { type: 'unknown', missing: true, message: 'No page link is inside the gaze circle. Look at it and try again.' };
     if (paging[1] === 'next') return { type: 'unknown', message: 'No next-page link is near the gaze circle. Look at it and try again, or say “go forward” to use the browser’s Forward button.' };
   }
-  if (/^(?:go |take me )?back(?: a page| to the previous page)?$|^(?:go|return) (?:back )?to the previous page$|^previous page$/.test(text)) return { type: 'back' };
+  if (/^(?:go |take me |bring me )?back(?: (?:a|one) page| to the previous page| to where i was| where i was| to where i came from)?$|^(?:go|return) (?:back )?to the previous page$|^previous page$/.test(text)) return { type: 'back' };
   if (/^(go )?forward( a page)?$/.test(text)) return { type: 'forward' };
   if (/^(page down|next screen)$/.test(text)) return { type: 'scroll', direction: 'down', amount: 'page' };
   if (/^page up$/.test(text)) return { type: 'scroll', direction: 'up', amount: 'page' };
@@ -1232,12 +1243,12 @@ function interpretInCircle(utterance, context) {
   // otherwise "change Tuesday to Friday" corrects a word in the current field.
   if ((match = /^(?:set|change|switch)\s+(?:the\s+)?(.+?)\s+to\s+(.+)$/i.exec(command))) {
     const [, target, value] = match;
-    const selects = context.elements.filter(element => element.options?.length && matchScore(target, element.name) >= 0.5);
+    const selects = context.elements.filter(element => element.options?.length && nameScore(target, element.name) >= 0.5);
     if (selects.length) {
       return selectOption(value, selects) ?? { type: 'unknown', message: `"${value}" is not one of the choices in ${selects[0].name}.` };
     }
     // A custom combobox's options may exist only once it is open, so the choice is found when acting.
-    const lists = context.elements.filter(element => element.customList && matchScore(target, element.name) >= 0.5);
+    const lists = context.elements.filter(element => element.customList && nameScore(target, element.name) >= 0.5);
     if (lists.length) return resolve(target, lists, null, chooseFrom(unquote(value)), 'list');
     const typed = typedSet(target, value, context, now);
     if (typed) return typed;
@@ -1248,6 +1259,9 @@ function interpretInCircle(utterance, context) {
     if (!focused) return { type: 'unknown', missing: true, message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
     return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }
+  // "Get rid of the message" clears a text field called that; getting rid of anything else ("the second one", a row's
+  // item) is removing it.
+  if ((match = /^get rid of (?:the |my )?(.+?)(?: field| box)?$/.exec(text)) && fieldCalled(match[1], context)) return chooseField(match[1], context, edit('clear'));
   if ((match = /^(?:clear|empty|erase)(?: (?:the )?(.+?))?$/.exec(text))) {
     const name = match[1] && !/^(it|that|this|text|field|box|everything|all)$/.test(match[1]) ? match[1].replace(/ (field|box)$/, '') : null;
     return chooseField(name, context, edit('clear'));
@@ -1375,7 +1389,7 @@ function interpretInCircle(utterance, context) {
   // "The link to pricing", "the button for checkout": the kind of control comes first and names a role hint.
   const prefixed = /^(?:the\s+)?(link|button|checkbox|box|field|menu|option)\s+(?:for|to|called|named|labell?ed)\s+(.+)$/.exec(verbless);
   if (prefixed && verbless !== text) verbless = `${prefixed[2]} ${prefixed[1]}`;
-  const hint = /\s(link|button|tab|checkbox|box|field|menu|option)$/.exec(verbless)?.[1];
+  const hint = /\s(link|button|tab|checkbox|box|field|menu|list|dropdown|option)$/.exec(verbless)?.[1];
   const query = verbless.replace(/^the\s+/, '').replace(/\s(link|button|checkbox|box|field|menu|option)$/, hint && prefixed ? '' : '$&').trim();
   const act = element => ({ type: 'activate', targetId: element.id });
   const prior = previous(context, query);
@@ -1385,6 +1399,11 @@ function interpretInCircle(utterance, context) {
   const counted = ORDINAL.exec(query);
   if (counted) return ordinal(counted[1], counted[2], context.elements, act);
   let resolved = resolve(query, context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);
+  // "Click the button", "open the link": with no control named so, the only control of that kind in the circle, or a
+  // question among them.
+  const kind = resolved.type === 'unknown' && verbless !== text ? /^(link|button|tab|checkbox|box|field|menu|list|dropdown)$/.exec(query)?.[1] : null;
+  const ofKind = kind ? context.elements.filter(element => ROLE_HINTS[kind].includes(element.role)) : [];
+  if (ofKind.length) return deictic(ofKind, act, kind);
   // "Check out now", "sign in now": a last "now" says when, not which, unless a control's name has it ("Book now").
   if (resolved.type === 'unknown' && / now$/.test(query)) {
     const sooner = resolve(query.slice(0, -4), context.elements, hint ? ROLE_HINTS[hint] : null, act, 'control', true);

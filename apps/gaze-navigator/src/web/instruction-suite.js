@@ -483,6 +483,102 @@ const HELD_OUT_6 = [
 
 export const HELD_OUT_6_SUITE = HELD_OUT_6.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Held-out set 7 (2026-11-18): requests wrapped in politeness or said as the goal rather than the control ("could you
+// take me to the home page", "I need to get in touch with you", "I no longer want the mug", "time to pay"), on the
+// existing contexts, plus requests the pages cannot meet, which must not act. Written before the rules for them, by the
+// same developer, after reading the misses left in the earlier held-out sets (which then served as development cases).
+// Three instructions that turned out to repeat earlier sets were dropped, not replaced.
+const HELD_OUT_7 = [
+  ['activate', 'navigation', 'could you take me to the home page', act(1)],
+  ['activate', 'navigation', 'bring me back to the start page', act(1)],
+  ['activate', 'navigation', 'please open the pricing page', act(2)],
+  ['activate', 'navigation', 'I need to get in touch with you', act(3)],
+  ['activate', 'navigation', 'sign me in please', act(4)],
+  ['search', 'navigation', 'can you search for jazz records', { type: 'search', targetId: 5, text: 'jazz records' }],
+  ['select', 'product', 'I would like the hardcover', option(1, 1)],
+  ['select', 'product', 'make it the audiobook', option(1, 3)],
+  ['select', 'product', 'the large print one please', option(1, 2)],
+  ['activate', 'product', 'let me see the reviews', act(4)],
+  ['activate', 'product', 'show me what other readers said', act(4)],
+  ['activate', 'product', 'could you add it to my cart', act(2)],
+  ['activate', 'product', 'I am ready to order', act(3)],
+  ['dictate', 'form', 'put grace@example.com in the email box', edit(2, 'append', { text: 'grace@example.com' })],
+  ['select', 'form', 'the topic is an order problem', option(5, 1)],
+  ['activate', 'form', 'yes please send me a copy', act(4)],
+  ['activate', 'form', 'send my message', act(6)],
+  ['edit', 'form', 'get rid of the message', edit(3, 'clear')],
+  ['edit', 'form', 'empty the email box', edit(2, 'clear')],
+  ['select', 'shop', 'I need a large', option(1, 3)],
+  ['select', 'shop', 'can I have it in green', option(2, 1)],
+  ['select', 'shop', "I'll collect it myself", option(4, 2)],
+  ['select', 'shop', 'send it to Ireland', option(5, 2)],
+  ['select', 'shop', 'two of these please', option(3, 1)],
+  ['activate', 'shop', 'stick it in my bag', act(6)],
+  ['activate', 'basket', 'I no longer want the mug', act(8)],
+  ['activate', 'basket', 'keep the hat for later', act(6)],
+  ['activate', 'basket', 'time to pay', act(10)],
+  ['select', 'basket', 'I want three pairs of socks', option(1, 2)],
+  ['activate', 'addresses', 'change my home address', act(1)],
+  ['activate', 'addresses', "I don't need the work address anymore", act(4)],
+  ['activate', 'addresses', 'I have a new address to add', act(7)],
+  ['navigate', 'empty', 'take me back one page', plain('back')],
+  ['navigate', 'empty', 'go back to where I was', plain('back')],
+  ['navigate', 'empty', 'could you go forward', plain('forward')],
+  ['control', 'navigation', 'hang on a second', plain('pause')],
+  ['control', 'navigation', 'forget it', plain('cancel')],
+  ['refuse', 'product', 'buy the whole series', plain('unknown')],
+  ['refuse', 'shop', 'make it yellow', plain('unknown')],
+  ['refuse', 'basket', 'remove the gloves', plain('unknown')],
+  ['refuse', 'addresses', 'delete the address in Bristol', plain('unknown')],
+  ['refuse', 'navigation', 'open my settings', plain('unknown')],
+];
+
+export const HELD_OUT_7_SUITE = HELD_OUT_7.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
+// Held-out set 8 (2026-11-18): more requests of the same kinds, written after the rules for set 7 and scored once, with
+// no rule changed for it, to measure how far those rules carry to wording they were not written for.
+const HELD_OUT_8 = [
+  ['activate', 'navigation', 'go to the homepage please', act(1)],
+  ['activate', 'navigation', 'show me your prices please', act(2)],
+  ['activate', 'navigation', 'is there a way to contact you', act(3)],
+  ['activate', 'navigation', 'log me into my account', act(4)],
+  ['search', 'navigation', 'please look up second hand bikes', { type: 'search', targetId: 5, text: 'second hand bikes' }],
+  ['select', 'product', 'I prefer the paperback', option(1, 0)],
+  ['select', 'product', 'switch it to the audio book', option(1, 3)],
+  ['activate', 'product', 'put this one in my cart please', act(2)],
+  ['activate', 'product', 'I would like to buy it now', act(3)],
+  ['activate', 'product', 'are there any reviews', act(4)],
+  ['activate', 'product', 'what are people saying about it', act(4)],
+  ['select', 'form', 'my question is about an order problem', option(5, 1)],
+  ['dictate', 'form', 'type hello there into the message box', edit(3, 'append', { text: 'hello there' })],
+  ['edit', 'form', 'erase my name', edit(1, 'clear')],
+  ['activate', 'form', 'submit my message', act(6)],
+  ['select', 'shop', 'go up to an extra large', option(1, 4)],
+  ['select', 'shop', 'I would like it in grey', option(2, 2)],
+  ['select', 'shop', 'I need it by tomorrow', option(4, 1)],
+  ['select', 'shop', 'ship it to France', option(5, 3)],
+  ['activate', 'shop', 'add it to my bag', act(6)],
+  ['select', 'shop', 'three of them', option(3, 2)],
+  ['activate', 'basket', 'take the socks out', act(2)],
+  ['activate', 'basket', 'save the mug for another time', act(9)],
+  ['activate', 'basket', 'go to the checkout', act(10)],
+  ['select', 'basket', 'make it two hats', option(4, 1)],
+  ['activate', 'addresses', "edit mum's address", act(5)],
+  ['activate', 'addresses', 'remove the York address', act(4)],
+  ['activate', 'addresses', 'add another address', act(7)],
+  ['navigate', 'empty', 'take me back to the last page', plain('back')],
+  ['navigate', 'empty', 'forward one page', plain('forward')],
+  ['control', 'navigation', 'give me a sec', plain('pause')],
+  ['control', 'navigation', 'cancel it please', plain('cancel')],
+  ['refuse', 'product', 'wrap it as a present', plain('unknown')],
+  ['refuse', 'shop', 'size 16', plain('unknown')],
+  ['refuse', 'basket', 'remove the shoes', plain('unknown')],
+  ['refuse', 'addresses', 'delete the Glasgow address', plain('unknown')],
+  ['refuse', 'navigation', 'open the careers page', plain('unknown')],
+];
+
+export const HELD_OUT_8_SUITE = HELD_OUT_8.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 
