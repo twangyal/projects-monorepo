@@ -301,6 +301,37 @@ def _path(log_probs, tokens: list[int]):
     return first, peak
 
 
+# A line's first letters are sometimes laid one or a few at a time across a long pause before it (most often a song's
+# intro), where the model hears them only faintly, with the rest of its letters where it is sung. Leading runs of letters
+# more than GATHER_GAP seconds before the next, each of at most three letters or SCATTERED_SHARE of the line's and heard
+# less clearly than SCATTERED on average, are passed over, so the line starts where its letters gather. On the first two
+# minutes of 20 benchmark songs (431 lines), this started 12 more lines within a second of the singing, mostly first
+# lines after an intro, and moved none that were already there.
+GATHER_GAP, SCATTERED_SHARE, SCATTERED = 1.0, 0.2, 0.3
+# A line is reported unsure when its letters were heard less than FAINT as clearly as the song's typical line, or go at
+# less than half its typical pace (letters a second): stretched over a pause, it has most likely been laid in one. On the
+# same songs this reported 27 lines, 11 of the 18 still more than a second off; going by clearness alone, at half the
+# typical line, reported 30, 8 of them off.
+FAINT = 0.3
+
+
+def _gathered(first, peak, letters: list[int]) -> int:
+    """The frame where a line's ``letters`` (token indices, in order) gather: see GATHER_GAP."""
+    frames = [int(first[k]) for k in letters]
+    runs, begin = [], 0
+    for k in range(1, len(frames) + 1):
+        if k == len(frames) or (frames[k] - frames[k - 1]) * FRAME > GATHER_GAP:
+            runs.append((begin, k))
+            begin = k
+    at = 0
+    while at + 1 < len(runs):
+        a, b = runs[at]
+        if b - a > max(3, SCATTERED_SHARE * len(frames)) or float(peak[letters[a:b]].mean()) >= SCATTERED:
+            break
+        at += 1
+    return frames[runs[at][0]]
+
+
 def force_align(lines: list[str], log_probs, duration: float, language: str | None = None) -> list[dict] | None:
     """Cues for supplied ``lines`` placed on the singing: start, end, text and ``matched`` (how surely each was found).
 
@@ -333,21 +364,28 @@ def force_align(lines: list[str], log_probs, duration: float, language: str | No
     first, peak = found
     spans: list[tuple[float, float] | None] = []
     clarity: list[float | None] = []
+    pace: list[float | None] = []
     for words in owned:
         if not words:
             spans.append(None)
             clarity.append(None)
+            pace.append(None)
             continue
-        begin, (last, count) = words[0][0], words[-1]
+        last, count = words[-1]
         letters = [k for at, n in words for k in range(at, at + n)]
-        spans.append((int(first[begin]) * FRAME, (int(first[last + count - 1]) + 1) * FRAME))
+        start, end = _gathered(first, peak, letters) * FRAME, (int(first[last + count - 1]) + 1) * FRAME
+        spans.append((start, end))
         clarity.append(float(peak[letters].mean()))
-    # How clearly each line's letters were heard, against the song's typical line: one heard less than half as clearly
-    # is reported unsure. (On the benchmark that flagged 6% of lines, a third of them misplaced; a fixed bar flagged a
-    # quarter, mostly in French, where the English-trained model is less sure of every line.)
+        pace.append(len(letters) / max(end - start, FRAME))
+    # How surely each line was placed, against the song's typical line: below 0.5 when heard less than FAINT as clearly
+    # or sung at less than half the pace (see FAINT). (Measured against a fixed bar, French lines, which the
+    # English-trained model is less sure of throughout, were reported far more often.)
     heard = sorted(value for value in clarity if value is not None)
     typical = heard[len(heard) // 2] if heard else 0.0
-    scores = [0.0 if value is None or typical <= 0 else min(1.0, value / typical) for value in clarity]
+    paces = sorted(value for value in pace if value is not None)
+    usual = paces[len(paces) // 2] if paces else 0.0
+    scores = [0.0 if value is None or typical <= 0 else min(1.0, value / typical / (2 * FAINT), (rate or 0.0) / usual if usual > 0 else 1.0)
+              for value, rate in zip(clarity, pace, strict=True)]
     # A line without letters (numbers or symbols only) sits between its neighbours.
     for index, span in enumerate(spans):
         if span is None:

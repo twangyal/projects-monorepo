@@ -78,7 +78,7 @@ export function parseAlignment(value: unknown, duration: number, lines: readonly
   return result;
 }
 
-/** “lines 3, 7 and 12” for aligned lines that were not clearly heard, or an empty string. */
+/** “lines 3, 7 and 12” for aligned lines placed unsurely (heard faintly, or stretched over a pause), or an empty string. */
 export function uncertainSummary(aligned: readonly AlignedCue[]): string {
   return lineList(aligned.flatMap((cue, index) => (cue.matched < UNCERTAIN_SHARE ? [index + 1] : [])));
 }

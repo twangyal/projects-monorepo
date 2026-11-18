@@ -92,6 +92,32 @@ class ForcedAlignmentTests(unittest.TestCase):
         self.assertGreater(cues[1]['matched'], 0.9)
         self.assertLess(cues[2]['matched'], 0.5)
 
+    def test_a_line_starts_where_its_letters_gather_not_where_a_few_were_faintly_heard_in_the_intro(self):
+        # The opening consonants are barely heard where the line is sung, and the separated vocals' intro holds faint
+        # traces of them: the most likely path lays them there, the rest of the line twenty seconds later.
+        lines = ['hello there my friend', 'we sing along tonight']
+        log_probs = np.exp(sung([(lines[0], 20.0), (lines[1], 26.0)], 32))
+        onset = int(round(20.0 / FRAME))
+        for frame, letter in ((int(round(4.0 / FRAME)), 'H'), (int(round(9.0 / FRAME)), 'E')):
+            log_probs[frame] = 1e-4
+            log_probs[frame, BLANK], log_probs[frame, LETTERS[letter]] = 0.8, 0.2
+        log_probs[onset:onset + 8] = 1e-4
+        log_probs[onset:onset + 8, BLANK] = 0.98
+        log_probs[onset:onset + 8, LETTERS['H']] = log_probs[onset:onset + 8, LETTERS['E']] = 0.01
+        log_probs = np.log(log_probs / log_probs.sum(axis=1, keepdims=True)).astype(np.float32)
+        cues = force_align(lines, log_probs, 32)
+        self.assertAlmostEqual(cues[0]['start'] + LEAD_IN, 20.2, delta=0.3)
+        self.assertAlmostEqual(cues[1]['start'] + LEAD_IN, 26.0, delta=0.05)
+
+    def test_a_line_stretched_over_a_pause_is_reported_unsure_though_clearly_heard(self):
+        sung_at = [('one more time tonight', 1.0), ('we sing it', 5.0), ('one more time', 14.0), ('and once again', 17.0), ('we sing along', 21.0)]
+        # The second line's last word comes eight seconds late, after a pause the line now spans.
+        lines = [text for text, _ in sung_at]
+        log_probs = sung([*sung_at[:1], ('we sing', 5.0), ('it', 12.5), *sung_at[2:]], 26)
+        cues = force_align(lines, log_probs, 26)
+        self.assertGreater(min(cue['matched'] for k, cue in enumerate(cues) if k != 1), 0.9)
+        self.assertLess(cues[1]['matched'], 0.5)
+
     def test_lyrics_that_cannot_be_laid_on_the_frames_are_left_to_the_fallback(self):
         log_probs = sung([('la la', 0.5)], 2)
         self.assertIsNone(force_align(['东京的夜'], log_probs, 2))

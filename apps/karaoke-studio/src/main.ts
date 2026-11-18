@@ -2233,7 +2233,7 @@ async function alignPasted() {
     retireSrt('Aligning lyrics cancelled the lyric import review.');
     working.cues = aligned.map(({ start, end, text }) => ({ start, end, text })); draftDirty = false; renderCues(); changed(); workspace.show('lyrics');
     const unsure = uncertainSummary(aligned);
-    message(`Aligned ${aligned.length} ${aligned.length === 1 ? 'line' : 'lines'} to the sung vocals. ${unsure ? `Check ${unsure}: their words were not clearly heard, so they were placed between neighbouring lines.` : 'Every line was matched to recognized words.'} Listen and adjust before saving.`);
+    message(`Aligned ${aligned.length} ${aligned.length === 1 ? 'line' : 'lines'} to the sung vocals. ${unsure ? `Check ${unsure}: they were heard faintly or stretch over a pause, so they may not start where they are sung.` : 'Every line was heard clearly where it was placed.'} Listen and adjust before saving.`);
   } catch (error) { message(`${error instanceof Error ? error.message : 'Could not align these lyrics.'} Your pasted words are kept.`, true); }
   finally { aligning = false; controls(); }
 }
