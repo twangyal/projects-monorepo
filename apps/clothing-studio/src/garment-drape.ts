@@ -1,3 +1,4 @@
+import { grainAngleOf, grainDirection } from './grain.ts';
 import { DRESS_LENGTH, RIB_PARTS, isBottoms, layerOrder, material, sleeveAngleOf, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtFit, skirtHeight } from './product-skirt.ts';
 
@@ -14,7 +15,7 @@ import { skirtDraft, skirtFit, skirtHeight } from './product-skirt.ts';
  * - Fabric weight comes from each part's library material (g/m²). Bending and stretch come from approximate physical
  *   properties of its construction (FABRIC): bending resists folding through an isometric bending energy, and each
  *   edge's stretch stiffness is its share of the fabric's membrane stiffness along that edge's direction to the grain
- *   (vertical on every pattern piece), so wovens are soft on the bias and knits stretch more across than along. The ratio of bending rigidity to weight
+ *   (set per pattern part; vertical by default), so wovens are soft on the bias and knits stretch more across than along. The ratio of bending rigidity to weight
  *   (the fabric's bending length, about 1.8 cm for jersey and 2.7 cm for denim) is what makes fabrics hang differently.
  * Units are centimetres, grams and seconds; y is up with the hem at 0, as in the product's 3D view.
  */
@@ -48,13 +49,14 @@ export function fabricProperties(fabric: Material): { bending: number; tensile: 
   return { bending: base.bending * base.drape * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
 }
 /**
- * Membrane stiffness of a fabric stretched along a flat direction (dx, dy), the grain running along y: the
+ * Membrane stiffness along a flat direction (dx, dy), with grainAngle clockwise from upward pattern y: the
  * orthotropic off-axis modulus 1/E(θ) = cos⁴θ/E₁ + sin⁴θ/E₂ + (1/G − 2ν/E₁)·sin²θ·cos²θ, θ from the grain.
  */
-export function directionalStiffness(properties: ReturnType<typeof fabricProperties>, dx: number, dy: number): number {
+export function directionalStiffness(properties: ReturnType<typeof fabricProperties>, dx: number, dy: number, grainAngle = 0): number {
   const length = Math.hypot(dx, dy);
   if (length < 1e-12) return properties.tensile;
-  const c = dy / length, s = dx / length;
+  const grain = grainDirection(grainAngle);
+  const c = (dx * grain.x + dy * grain.y) / length, s = (-dx * grain.y + dy * grain.x) / length;
   return 1 / (c ** 4 / properties.tensile + s ** 4 / properties.weft + (1 / properties.shear - 2 * POISSON / properties.tensile) * s * s * c * c);
 }
 /** Bending length (cm): the cube root of bending rigidity over weight per area, the classic measure of drape stiffness. */
@@ -507,14 +509,14 @@ export function bendingStencil(p0: [number, number], p1: [number, number], p2: [
 
 /** Sews the product's parts into one cloth: coincident vertices become one particle. */
 export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
-  return clothFromMeshes(meshes, part => material(product.parts[part].material));
+  return clothFromMeshes(meshes, part => material(product.parts[part].material), part => grainAngleOf(product.parts[part]));
 }
 
 /**
  * One cloth from part meshes, each part of the material `materialOf` names: coincident vertices become one particle.
  * Rest shapes are flat fabric coordinates: each vertex's UVs, its position on its flat pattern piece.
  */
-export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material): Cloth {
+export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material, grainOf: (part: PartId) => number = () => 0): Cloth {
   const particles = new Map<string, number>(), position: number[] = [], vertices = new Map<PartId, Int32Array>();
   const key = (x: number, y: number, z: number) => `${Math.round(x * 1000)},${Math.round(y * 1000)},${Math.round(z * 1000)}`;
   const simulated = meshes.filter(mesh => !CARRIED.has(mesh.part));
@@ -583,7 +585,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
         let edge = edges.get(k);
         if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : Math.hypot(fi[0] - fj[0], fi[1] - fj[1]), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
         // Each edge stretches with the fabric's stiffness along its flat direction; modelled parts have no flat grain.
-        edge.tensile += modelled ? properties.tensile : directionalStiffness(properties, fj[0] - fi[0], fj[1] - fi[1]); edge.bend += bend; edge.area += area; edge.count++;
+        edge.tensile += modelled ? properties.tensile : directionalStiffness(properties, (fj[0] - fi[0]) * (mesh.grainMirrors?.[t / 3] ?? 1), fj[1] - fi[1], grainOf(mesh.part)); edge.bend += bend; edge.area += area; edge.count++;
         // Flat corners in the edge's own (low id, high id) order.
         edge.opposite.push({ vertex: opposite, modelled, edgeI: i < j ? fi : fj, edgeJ: i < j ? fj : fi, corner: flats[(e + 2) % 3]! });
       }

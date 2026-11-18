@@ -595,7 +595,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const understood = readings.find(([, reading]) => reading.understood.length)?.[1];
     if (understood) {
       for (const [id, reading] of readings) {
-        product.parts[id] = RIB_PARTS.has(id) || id === 'waistband' ? { material: product.parts[id].material, color: reading.style.color, print: null } : reading.style;
+        product.parts[id] = RIB_PARTS.has(id) || id === 'waistband' ? { ...product.parts[id], material: product.parts[id].material, color: reading.style.color, print: null } : reading.style;
       }
       scopes.push({ label: 'Whole garment', understood: understood.understood });
     }

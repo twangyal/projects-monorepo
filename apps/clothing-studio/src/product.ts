@@ -438,7 +438,7 @@ export type PrintMotif = Motif | `upload:${string}`;
 export interface Print { motif: PrintMotif; color: string; scaleCm: number; layout: Layout; direction?: 'horizontal' | 'vertical' }
 /** A designer's own motif image, repeated like library motifs (drawn as uploaded; print color does not tint it). */
 export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
-export interface PartStyle { material: string; color: string; print: Print | null }
+export interface PartStyle { material: string; color: string; print: Print | null; /** Clockwise from upward pattern vertical; absent means 0°. */ grainAngle?: number }
 /** Where artwork goes: the front or back body, projected straight on as seen from that side, or on a top with sleeves
  * either sleeve, placed on the sleeve's pattern piece so that it wraps round the arm (see sleeveArtworkFrame). */
 export const ARTWORK_PARTS = ['front', 'back', 'sleeveLeft', 'sleeveRight'] as const;
@@ -731,10 +731,12 @@ function validateArtwork(value: unknown, measurements: Measurements | null): Art
 function validateParts(value: unknown, uploaded: ReadonlySet<string>, ids: readonly PartId[]): Record<PartId, PartStyle> {
   const rawParts = plain(value, ids, 'Parts');
   return Object.fromEntries(ids.map(id => {
-    const s = plain(rawParts[id], ['material', 'color', 'print'], PART_NAMES[id]);
+    const hasGrain = !!rawParts[id] && typeof rawParts[id] === 'object' && Object.hasOwn(rawParts[id] as object, 'grainAngle');
+    const s = plain(rawParts[id], ['material', 'color', 'print', ...(hasGrain ? ['grainAngle'] : [])], PART_NAMES[id]);
     if (typeof s.material !== 'string') fail('Choose a fabric from the library.');
     material(s.material as string);
-    return [id, { material: s.material as string, color: hex(s.color, `${PART_NAMES[id]} color`), print: validatePrint(s.print, uploaded) }];
+    const grainAngle = s.grainAngle === undefined ? 0 : finite(s.grainAngle, [-90, 90], `${PART_NAMES[id]} grain angle (degrees)`);
+    return [id, { ...(grainAngle ? { grainAngle } : {}), material: s.material as string, color: hex(s.color, `${PART_NAMES[id]} color`), print: validatePrint(s.print, uploaded) }];
   })) as Record<PartId, PartStyle>;
 }
 const plainText = (value: unknown, limit: number, label: string) =>
@@ -1872,6 +1874,7 @@ function chestPocketOutline(width: number, height: number, x: number, y: number)
 // 3D mesh ---------------------------------------------------------------------------------------
 
 export interface PartMesh { part: PartId; positions: number[]; uvs: number[]; indices: number[];
+  /** Per triangle, +1 or -1: reflect print-UV x back into that cut piece's grain basis. Rest geometry stays in UVs. */ grainMirrors?: number[];
   /** Shaped in 3D rather than cut flat: the drape keeps the shape it is given (a neck rib or stand collar). */ modelled?: boolean;
   /** Pressed folds (pleats): pairs of vertices along a fold line, whose crease the drape keeps. */ creases?: number[];
   /** How many layers in from the outside each vertex lies (a pleat's underlays), so layers stay in order on the body. */ layers?: number[];
@@ -2084,7 +2087,21 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     }
     band.modelled = true;
   }
-  return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+  const meshes = partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+  // A mirrored cut uses its source half's grain. A closed front still has triangles across the centre seam;
+  // choose their side by centroid instead of folding vertex coordinates, which would collapse those edges.
+  for (const mesh of meshes) {
+    const splitFront = (zipped || buttoned) && (mesh.part === 'front' || mesh.part === 'skirtFront'), splitPocket = zipped && mesh.part === 'pocket';
+    const splitBand = zipped && mesh.part === 'hemBand';
+    if (!splitFront && !splitPocket && !splitBand) continue;
+    const middle = splitBand ? Math.max(...mesh.uvs.filter((_, i) => i % 2 === 0)) / 2 : 0;
+    mesh.grainMirrors = Array.from({ length: mesh.indices.length / 3 }, (_, triangle) => {
+      const ids = mesh.indices.slice(triangle * 3, triangle * 3 + 3);
+      const centre = ids.reduce((sum, id) => sum + (splitBand ? mesh.uvs[id * 2]! : mesh.positions[id * 3]!), 0) / 3;
+      return centre > middle ? -1 : 1;
+    });
+  }
+  return meshes;
 }
 
 /**
@@ -2145,6 +2162,7 @@ function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, 
     if (Math.abs(cross) < 1e-9) continue;
     const [a, b, d] = tri.map(vertex);
     if ((side === 'front') === (cross < 0)) group.indices.push(a, b, d); else group.indices.push(a, d, b);
+    (group.grainMirrors ??= []).push(side === 'back' ? -1 : 1);
   }
 }
 
@@ -2282,6 +2300,7 @@ function hoodMesh(hood: PartMesh, ring: { x: number; y: number; z: number }[], f
     for (let j = 0; j < rows; j++) for (let k = 0; k + 1 < width; k++) {
       const a = start + j * width + k, b = a + 1, c = a + width, d = c + 1;
       hood.indices.push(...(mirror ? [a, c, b, b, c, d] : [a, b, c, b, d, c]));
+      (hood.grainMirrors ??= []).push(mirror ? -1 : 1, mirror ? -1 : 1);
     }
   }
 }

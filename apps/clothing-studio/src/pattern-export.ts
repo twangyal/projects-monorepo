@@ -2,6 +2,8 @@
 // allowance, a grainline and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG (cm).
 import { garmentName, material, partName, patternPieces, type PatternPiece, type Product } from './product.ts';
 
+import { grainAngleOf, grainLine } from './grain.ts';
+
 type Pt = { x: number; y: number };
 export const SEAM_ALLOWANCE_CM = 1;
 /** Uniform export offset only; finished measurements and simulation do not change. */
@@ -56,10 +58,10 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     const sewing = cleanOutline(piece.outline), cutting = offsetOutline(sewing, allowance);
     const minX = Math.min(...cutting.map(p => p.x)), minY = Math.min(...cutting.map(p => p.y));
     const shift = (p: Pt) => ({ x: p.x - minX + x, y: p.y - minY + allowance });
-    const xs = sewing.map(p => p.x), ys = sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, top = Math.min(...ys), bottom = Math.max(...ys);
-    const grain: [Pt, Pt] = [shift({ x: cx, y: top + (bottom - top) * 0.2 }), shift({ x: cx, y: top + (bottom - top) * 0.8 })];
+    const angle = grainAngleOf(product.parts[piece.part]);
+    const grain = grainLine(sewing, angle).map(shift) as [Pt, Pt];
     const fabric = material(product.parts[piece.part].material).name;
-    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · ${allowance} cm uniform seam allowance`,
+    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · grain ${angle}° CW from up · ${allowance} cm uniform seam allowance`,
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}),
       ...(piece.pleats ? { pleats: piece.pleats.map(line => ({ fold: line.fold.map(shift) as [Pt, Pt], placement: line.placement.map(shift) as [Pt, Pt] })) } : {}),
       ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}), at: { x, y: allowance } });
@@ -115,7 +117,8 @@ function pieceSvg(item: LaidOutPiece, labels = true): string {
   const [a, b] = item.grain;
   return `<g data-piece="${item.piece.part}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
     `<polygon points="${points(item.sewing)}" fill="none" stroke="#666" stroke-width="0.04" stroke-dasharray="0.4 0.3"/>` +
-    `<line x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
+    `<defs><clipPath id="grain-clip-${item.piece.part}"><polygon points="${points(item.sewing)}"/></clipPath></defs>` +
+    `<line clip-path="url(#grain-clip-${item.piece.part})" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
     (item.foldLine ? `<line data-fold="${item.piece.part}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
     (item.darts ?? []).map(dart => `<polyline data-dart="${item.piece.part}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
     (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${item.piece.part}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +

@@ -1,3 +1,4 @@
+import { grainAngleOf } from './grain.ts';
 // What a saved copy of a design changes from the current one, in plain words, for comparing versions.
 import { colourDifference } from './photo-colours.ts';
 import { NAMED_COLOURS } from './style-prompt.ts';
@@ -17,9 +18,9 @@ export function colourWord(hex: string): string {
 const MEASURE_NAMES: Record<string, string> = { chest: 'Chest', length: 'Body length', sleeve: 'Sleeve length', waist: 'Waist', hip: 'Hip', rise: 'Rise',
   inseam: 'Inseam', legOpening: 'Leg opening', cuffHeight: 'Ankle cuff height', waistbandHeight: 'Waistband height', hem: 'Hem', slant: 'Side slant', gather: 'Gathering', sleeveGather: 'Sleeve cap gathering' };
 const MODULE_NAMES: Record<string, string> = { chestPocket: 'Chest pocket', zip: 'Front zip', zipOpen: 'Worn open', collar: 'Collar', buttons: 'Button front', waistSeam: 'Waist seam', yoke: 'Back yoke', cuffs: 'Shirt cuffs', coat: 'Coat', backPockets: 'Back pockets', frontPockets: 'Front pockets', fly: 'Fly front', beltLoops: 'Belt loops' };
-const style = (product: Product, part: PartStyle) => `${material(part.material).name}, ${colourWord(part.color)}${part.print ? `, ${printName(part.print, product).toLowerCase()}` : ''}`;
+const style = (product: Product, part: PartStyle) => `${material(part.material).name}, ${colourWord(part.color)}${part.print ? `, ${printName(part.print, product).toLowerCase()}` : ''}${grainAngleOf(part) ? `, grain ${grainAngleOf(part)}°` : ''}`;
 const sameStyle = (one: PartStyle, two: PartStyle) => one.material === two.material && one.color.toLowerCase() === two.color.toLowerCase()
-  && JSON.stringify(one.print) === JSON.stringify(two.print);
+  && JSON.stringify(one.print) === JSON.stringify(two.print) && grainAngleOf(one) === grainAngleOf(two);
 
 /** One line per difference, "Saved → now", or an empty list when the designs are the same. */
 export function designDifferences(saved: Project, current: Project): string[] {

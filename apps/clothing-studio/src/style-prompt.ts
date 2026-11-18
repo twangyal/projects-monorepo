@@ -176,7 +176,7 @@ export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapp
   }
   const ground = groundColor?.hex, ink = inkColor?.hex;
 
-  const style: PartStyle = { material, color: ground ?? current.color, print: current.print };
+  const style: PartStyle = { ...current, material, color: ground ?? current.color, print: current.print };
   if (plain && !motif) style.print = null;
   else if (motif || (current.print && (ink || layout || scale !== null || direction))) {
     const base: Print = current.print ?? { motif: motif ?? 'stripe', color: '#1f2a4f', scaleCm: 6, layout: 'grid' };

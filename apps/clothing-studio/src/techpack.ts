@@ -1,9 +1,10 @@
+import { grainAngleOf, grainLine } from './grain.ts';
 import { DEFAULT_GRADING } from './grading.ts';
 import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, skirtIntake, skirtPanelDraft, skirtPieces, skirtPleats } from './product-skirt.ts';
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -18,7 +19,7 @@ const round = (value: number, step = 0.5) => Math.round(value / step) * step;
 const cm = (value: number) => `${round(value, 0.1).toFixed(1)} cm`;
 
 export interface FabricUsage { style: PartStyle; parts: PartId[]; areaM2: number; linearM: number }
-/** Fabric needed per garment for each distinct fabric + colour + print: finished pattern area plus waste. */
+/** Fabric needed per garment for each distinct fabric + colour + print + grain: finished pattern area plus waste. */
 export function fabricUsage(product: Product): FabricUsage[] {
   const groups = new Map<string, { style: PartStyle; parts: PartId[]; area: number }>();
   for (const piece of patternPieces(product)) {
@@ -56,7 +57,7 @@ function samplePack(product: Product, date: string): TechPack {
     const { style } = usage, fabric = material(style.material);
     const colours = style.print?.motif.startsWith('upload:') ? 'from supplied artwork in its own colours' : `${style.print?.color} on ground`;
     const print = style.print ? `; ${printName(style.print, product)} print ${colours}, ${LAYOUT_NAMES[style.print.layout].toLowerCase()} repeat ${style.print.scaleCm} cm` : '';
-    return { item: `F${index + 1} ${fabric.name}`, description: `${fabric.composition}, ${fabric.gsm} gsm${print}`, color: style.color,
+    return { item: `F${index + 1} ${fabric.name}`, description: `${fabric.composition}, ${fabric.gsm} gsm${print}; grain ${grainAngleOf(style)}° clockwise from upward pattern vertical`, color: style.color,
       placement: usage.parts.map(part => partName(product, part)).join(', '),
       quantity: `${usage.areaM2.toFixed(2)} m² (≈ ${usage.linearM.toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide)` };
   });
@@ -400,6 +401,13 @@ ${techPackSections(pack, images.diagram, 2)}
 }
 
 /** Flat front sketch and sleeve with the points of measure drawn on them (cm user units). */
+function grainMark(product: Product, piece: { part: PartId; outline: { x: number; y: number }[] }, dx = 0): string {
+  const angle = grainAngleOf(product.parts[piece.part]), [a, b] = grainLine(piece.outline, angle);
+  const length = Math.hypot(b.x - a.x, b.y - a.y), ux = (b.x - a.x) / length, uy = (b.y - a.y) / length, head = Math.min(1, length / 5);
+  const arrow = (p: typeof a, sign: number) => `M${p.x - sign * ux * head - uy * head / 2},${p.y - sign * uy * head + ux * head / 2} L${p.x},${p.y} L${p.x - sign * ux * head + uy * head / 2},${p.y - sign * uy * head - ux * head / 2}`;
+  return `<defs><clipPath id="tech-grain-${piece.part}"><polygon points="${piece.outline.map(p => `${p.x},${p.y}`).join(' ')}"/></clipPath></defs><g transform="translate(${dx} 0)" clip-path="url(#tech-grain-${piece.part})" stroke="#476775" fill="none" stroke-width="0.25"><line data-grain="${piece.part}" data-angle="${angle}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"><title>Grain ${angle}°, clockwise from upward pattern vertical</title></line><path d="${arrow(a, -1)} ${arrow(b, 1)}"/></g>`;
+}
+
 export function measurementDiagram(product: Product): string {
   if (product.base === 'skirt') return skirtDiagram(product);
   if (isBottoms(product)) return trouserDiagram(product);
@@ -413,11 +421,11 @@ export function measurementDiagram(product: Product): string {
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
   const collar = product.base === 'tee' ? pieces.find(piece => piece.part === 'collar') : undefined;
   const collarY = Math.max(front.height, sleeve.height) + 10;
-  const collarSketch = collar ? `<g data-piece="collar" transform="translate(0 ${collarY})"><polygon points="${collar.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`
+  const collarSketch = collar ? `<g data-piece="collar" transform="translate(0 ${collarY})"><polygon points="${collar.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>` + grainMark(product, collar)
     + (collar.foldLine ? `<line data-fold="collar" x1="${collar.foldLine[0].x}" y1="${collar.foldLine[0].y}" x2="${collar.foldLine[1].x}" y2="${collar.foldLine[1].y}" stroke="#b5452b" stroke-width="0.25" stroke-dasharray="1 0.6"/>` : '')
     + arrow(collar.width / 2, 0, collar.width / 2, collar.height, 'K', collar.width / 2 + 2, collar.height / 2)
     + `<text x="0" y="${collar.height + 5}" font-size="2.5">Collar · cut ${collar.cutCount}${collar.cutCount === 2 ? ' (upper and under)' : ' flat-knit'} · dashed: stand/fall fold</text></g>` : '';
-  const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`;
+  const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>` + grainMark(product, piece.part === 'front' && seamed ? bodice : piece, dx + (piece.part === 'front' && seamed ? bodiceShift(product) : 0));
   // Marks are drawn on the unflared body (the group below shifts them onto a flared piece).
   const half = d.half, body = d.panelWidth, chest = chestLine(product), armY = chest.y;
   // The chest pocket is on the wearer's left, which is the right of a front view.
@@ -440,7 +448,7 @@ ${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D'
 ${arrow(body + 2.5, 0, body + 2.5, d.shoulderDrop, 'U', body + 4, d.shoulderDrop / 2)}
 ${pocketMarks}${hemMarks}${waistMarks}</g>
 ${sleeve.outline.length ? `${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}` : ''}
-${collarSketch}</svg>`;
+${seamed ? `<text x="0" y="${Math.max(front.height, sleeve.height) + 5}" font-size="2.5">Bodice grain: arrow above. Skirt front grain ${grainAngleOf(product.parts.skirtFront)}°: see its cutting piece.</text>` : ''}${collarSketch}</svg>`;
 }
 
 /** Shorts and trousers: the front and back leg panels with their measurements. */
@@ -449,7 +457,7 @@ function trouserDiagram(product: Product): string {
   const d = trouserDimensions(product), gap = 16, bx = front.width + gap;
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.5" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="4.2" fill="#b5452b" font-weight="700">${code}</text>`;
-  const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.5"/>`;
+  const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.5"/>` + grainMark(product, piece, dx);
   const crotchY = d.rise, hemY = d.rise + d.inseam, centre = (d.frontHip + d.frontCrotch) / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 ${-d.waistbandHeight - 8} ${bx + back.width + 16} ${Math.max(front.height, back.height) + d.waistbandHeight + 16}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 <title>Finished waistband shown schematically above the front leg panel; H includes the band, J measures its finished height.</title>
@@ -474,7 +482,7 @@ function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: s
     poms:[pom('A','Waist circumference','Around the waist seam',d.waist,DEFAULT_GRADING.waistStep,1),pom('B','Hem circumference','Around the hem seam',d.hem,DEFAULT_GRADING.hemStep,1),pom('C','Side seam slant','Waist seam to hem along a side seam, excluding the band',d.slant,DEFAULT_GRADING.slantStep,1),...(band ? [pom('D','Waistband height','Finished height above the waist seam; cut twice this height',band,0,1)] : []),
       ...(pleats ? [pom('E','Pleat depth','Fold to inner fold at the waist seam; deeper toward the hem in proportion',pleats.depth,0,0.3)] : []),
       ...(fit ? [pom('E','Hip circumference',`Around the hip, ${FITTED_HIP_DEPTH} cm below the waist seam`,fit.hip,DEFAULT_GRADING.waistStep,1)] : [])],
-    construction:[{area:'Panels',operation:'Cut one front and one back',detail:fit ? 'Matching fitted panels, the side seams curving in above the hip; grain along each panel centre' : `Matching annular sectors; grain along each panel centre${pleats ? `, cut ${wider}% wider than the finished skirt for the pleats` : ''}`},
+    construction:[{area:'Panels',operation:'Cut one front and one back',detail:fit ? 'Matching fitted panels, the side seams curving in above the hip; follow the marked grainlines' : `Matching annular sectors; follow the marked grainlines${pleats ? `, cut ${wider}% wider than the finished skirt for the pleats` : ''}`},
       ...(fit ? [{area:'Darts',operation:'Fold each dart on its centre, sew from the waist edge to the point, tapering to nothing, and press toward the centre',
         detail:`${fit.darts.length} darts per panel, each ${round1(fit.darts[0]!.width)} cm wide at the waist and ${fit.darts[0]!.length} cm long; with the side seams they take the ${fit.hip} cm hip in to the ${d.waist} cm waist`}] : []),
       ...(pleats ? [{area:'Pleats',operation:pleats.style === 'box' ? 'Fold each pair of fold lines away from each other to the placement line between them, press and baste across the waist' : 'Fold each fold line over to its placement line, all the same way round, press and baste across the waist',
@@ -492,5 +500,5 @@ function skirtPack(product: Product, spec: NonNullable<Product['spec']>, date: s
 }
 function skirtDiagram(product:Product):string {
   const piece=skirtPieces(product)[0],band=skirtBandHeight(product);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -5 ${piece.width+6+(band?24:0)} ${piece.height+10}" role="img" aria-label="Measurement diagram"><title>Matching skirt panels: A waist arc, B hem arc, C side seam slant${band?", D waistband height":""}${piece.pleats?". Solid blue: pleat fold lines; dashed: the placement lines they are folded to":""}${piece.darts?". Darts from the waist edge":""}</title><polygon points="${piece.outline.map(p=>`${p.x},${p.y}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>${(piece.darts ?? []).map(dart=>`<polyline points="${dart.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#333" stroke-width="0.3"/>`).join('')}${(piece.pleats ?? []).map(line=>`<line x1="${line.fold[0].x}" y1="${line.fold[0].y}" x2="${line.fold[1].x}" y2="${line.fold[1].y}" stroke="#2f5d8a" stroke-width="0.25"/><line x1="${line.placement[0].x}" y1="${line.placement[0].y}" x2="${line.placement[1].x}" y2="${line.placement[1].y}" stroke="#2f5d8a" stroke-width="0.25" stroke-dasharray="1 0.8"/>`).join('')}<g font-family="sans-serif" font-size="3" fill="#b5452b"><text x="${piece.width/2}" y="1">A</text><text x="${piece.width/2}" y="${piece.height-1}">B</text><text x="1" y="${piece.height/2}">C</text></g>${band?`<g transform="translate(${piece.width+6} 0)"><rect width="18" height="${band}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/><text x="20" y="${band/2}" font-family="sans-serif" font-size="3" fill="#b5452b">D</text><text x="0" y="${band+4}" font-family="sans-serif" font-size="2">Finished band</text></g>`:""}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -5 ${piece.width+6+(band?24:0)} ${piece.height+10}" role="img" aria-label="Measurement diagram"><title>Matching skirt panels: A waist arc, B hem arc, C side seam slant${band?", D waistband height":""}${piece.pleats?". Solid blue: pleat fold lines; dashed: the placement lines they are folded to":""}${piece.darts?". Darts from the waist edge":""}</title><polygon points="${piece.outline.map(p=>`${p.x},${p.y}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>${grainMark(product, piece)}${(piece.darts ?? []).map(dart=>`<polyline points="${dart.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#333" stroke-width="0.3"/>`).join('')}${(piece.pleats ?? []).map(line=>`<line x1="${line.fold[0].x}" y1="${line.fold[0].y}" x2="${line.fold[1].x}" y2="${line.fold[1].y}" stroke="#2f5d8a" stroke-width="0.25"/><line x1="${line.placement[0].x}" y1="${line.placement[0].y}" x2="${line.placement[1].x}" y2="${line.placement[1].y}" stroke="#2f5d8a" stroke-width="0.25" stroke-dasharray="1 0.8"/>`).join('')}<g font-family="sans-serif" font-size="3" fill="#b5452b"><text x="${piece.width/2}" y="1">A</text><text x="${piece.width/2}" y="${piece.height-1}">B</text><text x="1" y="${piece.height/2}">C</text></g>${band?`<g transform="translate(${piece.width+6} 0)"><rect width="18" height="${band}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/><text x="20" y="${band/2}" font-family="sans-serif" font-size="3" fill="#b5452b">D</text><text x="0" y="${band+4}" font-family="sans-serif" font-size="2">Finished band</text></g>`:""}</svg>`;
 }

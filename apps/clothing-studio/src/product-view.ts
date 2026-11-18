@@ -1,3 +1,4 @@
+import { grainAngleOf, grainLine } from './grain.ts';
 import { buildOutfitBundle } from './outfit-bundle.ts';
 import { replaceOutfitProduct, switchOutfitEditing, type OutfitLayer } from './outfit-edit.ts';
 import { FITTED_HIP_DEPTH, GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, skirtBandHeight, skirtDraft, skirtFit, skirtGather, skirtPleats, type PleatStyle } from './product-skirt.ts';
@@ -80,6 +81,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to the garment</button></div>
         <p id="describe-result" class="fine-print" role="status"></p></div>
       <label class="field">Fabric<select id="part-material">${MATERIALS.map(m => `<option value="${m.id}">${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>
+      <label class="field">Fabric grain angle (°)<input id="part-grain" type="number" min="-90" max="90" step="any" aria-describedby="part-grain-help"></label>
+      <p id="part-grain-help" class="fine-print">0° follows the upward pattern vertical; 45° or −45° cuts on the bias; 90° cuts across. Positive angles turn clockwise. Changes cutting arrows and directional stretch, not the print or finished measurements. Fabric properties remain approximate; modelled trims keep their existing response.</p>
       ${drapeTestMarkup}
       <div class="color-row"><label for="part-color">Fabric color</label><input id="part-color" type="color"></div>
       <label class="field">Print<select id="part-print"><option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}</select></label>
@@ -234,7 +237,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     return shapeFor(design);
   };
-  const shapeKey = (design: Product) => [design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline, partsOf(design).map(id => design.parts[id].material)];
+  const shapeKey = (design: Product) => [design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline, partsOf(design).map(id => [design.parts[id].material, grainAngleOf(design.parts[id])])];
   const appliedBodyReference = (design: Product) => wholeOutfitSize || shownSize !== null
     ? [design, ...(companionOf(design) ? [companionOf(design)!] : []), ...(alsoOf(design) ? [alsoOf(design)!] : [])]
     : null;
@@ -771,6 +774,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const drapeTestPanel = mountDrapeTest(() => product()?.parts[selected].material ?? MATERIALS[0]!.id);
   // Inspector fields commit on change.
   $('part-material').addEventListener('change', () => applySwatch(selected, { kind: 'material', id: ($('part-material') as HTMLSelectElement).value }));
+  $('part-grain').addEventListener('change', () => update(draft => {
+    const raw = ($('part-grain') as HTMLInputElement).value;
+    if (!raw.trim()) throw new Error('Choose a fabric grain angle from -90 to 90 degrees.');
+    draft.parts[selected].grainAngle = Number(raw);
+  }, `${label(selected)}: fabric grain updated. You can undo this.`));
   $('part-color').addEventListener('change', () => applySwatch(selected, { kind: 'color', value: ($('part-color') as HTMLInputElement).value }));
   $('part-print').addEventListener('change', () => {
     const motif = ($('part-print') as HTMLSelectElement).value;
@@ -1318,11 +1326,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       aria-valuemin="${LIMITS.fit[h.key][0]}" aria-valuemax="${LIMITS.fit[h.key][1]}" aria-valuenow="${(Math.round(fitValue(design, h.key) * 10) / 10)}" aria-valuetext="${(Math.round(fitValue(design, h.key) * 10) / 10)} cm" aria-orientation="${h.axis === 'x' ? 'horizontal' : 'vertical'}"><title>${h.label}: drag to change ${FIT_NAMES[h.key].toLowerCase()}</title></circle>`).join('');
     const handleLayer = handles ? `<g class="fit-handles" transform="translate(${frontAt} 0)">${handles}<text class="fit-readout" x="0" y="-0.5" font-size="3"></text></g>` : '';
     const height = Math.max(...pieces.map(p => p.height));
+    const grainClips = pieces.map(piece => `<clipPath id="preview-grain-${piece.part}"><polygon points="${piece.outline.map(p => `${p.x},${p.y}`).join(' ')}"/></clipPath>`).join('');
     const defs = partsOf(design).map(id => {
       const { canvas: tile, tileCm } = paintTile(design.parts[id], undefined, design.motifs);
       return `<pattern id="fill-${id}" patternUnits="userSpaceOnUse" width="${tileCm}" height="${tileCm}"><image href="${tile.toDataURL('image/png')}" width="${tileCm}" height="${tileCm}"/></pattern>`;
     }).join('');
-    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="group" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/>${piece.foldLine ? `<line data-fold="${piece.part}" x1="${piece.foldLine[0].x.toFixed(2)}" y1="${piece.foldLine[0].y.toFixed(2)}" x2="${piece.foldLine[1].x.toFixed(2)}" y2="${piece.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.25" stroke-dasharray="1 0.6"><title>Fold line</title></line>` : ''}${(piece.darts ?? []).map(dart => `<polyline class="dart-line" points="${dart.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="none" stroke="#4b3b2f" stroke-width="0.3"/>`).join('')}${(piece.pleats ?? []).map(line => `<line class="pleat-line" x1="${line.fold[0].x.toFixed(2)}" y1="${line.fold[0].y.toFixed(2)}" x2="${line.fold[1].x.toFixed(2)}" y2="${line.fold[1].y.toFixed(2)}" stroke="#4b3b2f" stroke-width="0.25"/><line class="pleat-line" x1="${line.placement[0].x.toFixed(2)}" y1="${line.placement[0].y.toFixed(2)}" x2="${line.placement[1].x.toFixed(2)}" y2="${line.placement[1].y.toFixed(2)}" stroke="#4b3b2f" stroke-width="0.25" stroke-dasharray="1 0.8"/>`).join('')}<text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm · cut ${piece.cutCount}</text></g>`).join('')}${handleLayer}</svg>`;
+    const grain = (piece: typeof pieces[number]) => {
+      const angle = grainAngleOf(design.parts[piece.part]), [a, b] = grainLine(piece.outline, angle);
+      return `<line clip-path="url(#preview-grain-${piece.part})" data-grain="${piece.part}" data-angle="${angle}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#476775" stroke-width="0.35" marker-start="url(#pattern-grain)" marker-end="url(#pattern-grain)"><title>Grain ${angle}°, clockwise from upward pattern vertical</title></line>`;
+    };
+    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="group" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}${grainClips}<marker id="pattern-grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#476775"/></marker></defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/>${grain(piece)}${piece.foldLine ? `<line data-fold="${piece.part}" x1="${piece.foldLine[0].x.toFixed(2)}" y1="${piece.foldLine[0].y.toFixed(2)}" x2="${piece.foldLine[1].x.toFixed(2)}" y2="${piece.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.25" stroke-dasharray="1 0.6"><title>Fold line</title></line>` : ''}${(piece.darts ?? []).map(dart => `<polyline class="dart-line" points="${dart.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="none" stroke="#4b3b2f" stroke-width="0.3"/>`).join('')}${(piece.pleats ?? []).map(line => `<line class="pleat-line" x1="${line.fold[0].x.toFixed(2)}" y1="${line.fold[0].y.toFixed(2)}" x2="${line.fold[1].x.toFixed(2)}" y2="${line.fold[1].y.toFixed(2)}" stroke="#4b3b2f" stroke-width="0.25"/><line class="pleat-line" x1="${line.placement[0].x.toFixed(2)}" y1="${line.placement[0].y.toFixed(2)}" x2="${line.placement[1].x.toFixed(2)}" y2="${line.placement[1].y.toFixed(2)}" stroke="#4b3b2f" stroke-width="0.25" stroke-dasharray="1 0.8"/>`).join('')}<text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm · cut ${piece.cutCount}</text></g>`).join('')}${handleLayer}</svg>`;
   }
   function commitFit(key: FitKey, value: number) {
     if (hasDrafts('fit')) { options.notice('Apply or discard pending fit edits before using fit handles. Your drafts are kept.', true); return; }
@@ -1469,6 +1482,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
+    ($('part-grain') as HTMLInputElement).value = String(grainAngleOf(style));
     drapeTestPanel.sync();
     renderMotifs(design);
     const palette = design.palette ?? [], chips = palette.map(c => `<button class="color-chip" draggable="true" style="background:${c}" data-swatch='${JSON.stringify({ kind: 'color', value: c })}' aria-label="Apply photo color ${c}"></button>`).join('');

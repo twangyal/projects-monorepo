@@ -39,9 +39,9 @@ export function tiledDrawingHtml(drawings: DrawingTiles[], paper: PaperFormat, t
     const layout = drawing.layout, art = layout.svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
     for (const t of layout.tiles) {
       const index = tileIndex++;
-      // Marker references must follow their tile-local ids; no SVG shares another tile's definitions.
+      // All local references (markers and clipping) follow tile-local ids; no SVG shares definitions.
       const copy = art.replace(/\bid="([^"]+)"/g, (_, id) => `id="tile-${index}-${id}"`)
-        .replace(/(marker-(?:start|end)="url\(#)([^)]+)(\)")/g, (_, start, id, end) => `${start}tile-${index}-${id}${end}`);
+        .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#tile-${index}-${id})`);
       let guides = '';
       for (let row = 0; row < layout.rows; row++) for (let col = 0; col < layout.columns; col++) {
         const x = col * (layout.tileWidth - 1) + .5, y = row * (layout.tileHeight - 1) + .5;
