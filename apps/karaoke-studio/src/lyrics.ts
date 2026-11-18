@@ -1,7 +1,10 @@
+import { cueWords } from './word-timing.ts';
 /** Who sings a line of a duet: singer 1, singer 2, or both together. A line without one is sung by whoever sings. */
 export type Singer = 1 | 2 | 'both';
 export const SINGERS: readonly Singer[] = [1, 2, 'both'];
-export interface Cue { start: number; end: number; text: string; singer?: Singer }
+export interface Cue { start: number; end: number; text: string; singer?: Singer;
+  /** When each of its words starts (see cueWords), set by hand: it highlights them in place of the studio's own timing. */
+  wordStarts?: number[] }
 export interface Project { schemaVersion: 1; id: string; title: string; duration: number; revision: number; cues: Cue[]; /** The song file's cover picture (JPEG data URL). */ cover?: string }
 
 export const MAX_DURATION = 600;
@@ -33,6 +36,16 @@ export function validateTitle(title: unknown): string {
   return title as string;
 }
 
+/**
+ * A line's hand-set word starts while they still fit it, to the millisecond: one for each word, in order, inside the
+ * line (a start or end moved past them pulls them along). Changing how many words the line has drops them.
+ */
+export function keptWordStarts(cue: Cue): number[] | undefined {
+  const words: unknown = cue.wordStarts;
+  if (!Array.isArray(words) || words.length !== cueWords(cue.text).length || !words.every(at => typeof at === 'number' && Number.isFinite(at))) return undefined;
+  let last = cue.start;
+  return (words as number[]).map(at => (last = Math.round(Math.min(Math.max(at, last), cue.end) * 1000) / 1000));
+}
 export function validateCues(cues: Cue[], duration: number): Cue[] {
   if (!Number.isFinite(duration) || duration < 1 || duration > MAX_DURATION) throw new Error(`Choose a clip between 1 and ${MAX_DURATION} seconds.`);
   if (!Array.isArray(cues) || cues.length > MAX_CUES) throw new Error('Use at most 200 lyric lines.');
@@ -43,7 +56,8 @@ export function validateCues(cues: Cue[], duration: number): Cue[] {
     if (characters > MAX_LYRIC_CHARS) throw new Error('Use at most 20,000 lyric characters.');
     if (cue.singer !== undefined && !SINGERS.includes(cue.singer)) throw new Error(`Line ${index + 1}: choose singer 1, singer 2 or both.`);
     previous = cue.end;
-    return { start: cue.start, end: cue.end, text: cue.text, ...(cue.singer !== undefined ? { singer: cue.singer } : {}) };
+    const wordStarts = keptWordStarts(cue);
+    return { start: cue.start, end: cue.end, text: cue.text, ...(cue.singer !== undefined ? { singer: cue.singer } : {}), ...(wordStarts ? { wordStarts } : {}) };
   });
 }
 /** Pasted lyrics as stripped, nonempty lines (Python splitlines() semantics). */

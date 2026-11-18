@@ -86,5 +86,6 @@ export function shiftImportedCues(cues: Cue[], duration: number, raw: string, fi
   }
   return { offset, cues: milliseconds || lastEnd !== undefined ? validateCues(cues.map((cue, index) => ({
     ...cue, start: move(cue.start), end: index === cues.length - 1 && lastEnd !== undefined ? lastEnd : move(cue.end),
+    ...(cue.wordStarts ? { wordStarts: cue.wordStarts.map(move) } : {}),
   })), duration) : cues };
 }

@@ -8,7 +8,7 @@ import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from 
 import './style.css';
 import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
 import { correctionReport, reportCsv, reportSummary, type CorrectionReport, type ReportClip } from './correction-report.ts';
-import { activeCue, countIn, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Cue, type Project } from './lyrics.ts';
+import { activeCue, countIn, draftCues, draftLines, formatTime, keptWordStarts, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Cue, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt, shiftImportedCues } from './srt.ts';
 import { MAX_LRC_BYTES, parseLrc } from './lrc.ts';
@@ -28,7 +28,8 @@ import { framed, joinPieces, lineWords, litWords, sungStretches, type WordPlace 
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { MAX_PASSAGES, passageLabel, retrySpan, unheardSinging, type Span } from './unheard-singing.ts';
-import { parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
+import { cueWords, parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
+import { TAP_LEAD, WordTapping } from './word-tapping.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
@@ -359,6 +360,7 @@ function draftSnapshot(): LyricDraft {
   return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty, rawTimings: captureTimingDrafts() };
 }
 function changed(group: string | null = null, keepReview: SrtOwner | null = null) {
+  stopWordTapping('The lyric editor changed, so word timing stopped. Nothing was changed by it.');
   retirePractice('The lyric editor changed. Practice stopped.');
   if (!working) return;
   const keeping = keepReview && srtReview?.owner === keepReview && srtCurrent(keepReview);
@@ -491,7 +493,9 @@ let wordTiming: { key: string; value: WordTiming } | null = null;
 let wordTimingWanted = '', wordTimingTimer = 0;
 let wordTimingEpoch = 0;
 function currentWordTiming(project: Project): WordTiming | null {
-  const cues = project.cues.map(({ start, end, text }) => ({ start, end, text }));
+  // Hand-set word starts go as they still fit the line (an edit since may have moved it or changed its words).
+  const timed = (cue: Cue) => { const wordStarts = keptWordStarts(cue); return { start: cue.start, end: cue.end, text: cue.text, ...(wordStarts ? { wordStarts } : {}) }; };
+  const cues = project.cues.map(timed);
   const key = `${wordTimingEpoch}|${project.id}|${JSON.stringify(cues)}`;
   if (wordTimingWanted !== key) {
     wordTimingWanted = key; window.clearTimeout(wordTimingTimer);
@@ -500,7 +504,7 @@ function currentWordTiming(project: Project): WordTiming | null {
     if (!cues.length) return null;
     wordTimingTimer = window.setTimeout(() => void (async () => {
       const isCurrent = () => wordTimingWanted === key && working?.id === project.id
-        && JSON.stringify(working.cues.map(({ start, end, text }) => ({ start, end, text }))) === JSON.stringify(cues);
+        && JSON.stringify(working.cues.map(timed)) === JSON.stringify(cues);
       try {
         const value = parseWordTiming(await request<unknown>(`/api/projects/${project.id}/word-timings`, json('POST', { cues })), cues);
         if (isCurrent()) { wordTiming = { key, value }; draw(); }
@@ -2087,7 +2091,62 @@ function offerCurrentRepeats(index: number, host: HTMLElement): void {
   host.append(note, apply); host.hidden = false;
 }
 
+// Timing a line's words by tapping while it plays (see word-tapping.ts): one session at a time, in the line's row.
+let wordTap: { tapping: WordTapping; host: HTMLElement; frame: number } | null = null;
+const cueWordsTimed = (cue: Cue, starts: number[]) => cueWords(cue.text).map((word, at) => `${word} ${starts[at]!.toFixed(2)} s`).join(', ');
+function stopWordTapping(note?: string): void {
+  const session = wordTap;
+  if (!session) return;
+  wordTap = null; cancelAnimationFrame(session.frame);
+  if (!audio.paused) audio.pause();
+  session.host.replaceChildren(); session.host.hidden = true;
+  if (note) message(note);
+}
+function startWordTapping(index: number, host: HTMLElement): void {
+  stopWordTapping();
+  if (!working) return;
+  const project = working, cue = project.cues[index];
+  let tapping: WordTapping;
+  try { validateCues(project.cues, project.duration); tapping = new WordTapping(cue); }
+  catch (error) { message(`${error instanceof Error ? error.message : 'Check the lyric lines first.'} Fix the lines before timing words.`, true); return; }
+  const status = document.createElement('p'); status.className = 'fine'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+  const tap = document.createElement('button'); tap.type = 'button'; tap.className = 'word-tap';
+  const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'text-button'; cancel.textContent = 'Cancel word timing';
+  const show = () => {
+    status.textContent = `Press this button, or Space, as each word starts: ${tapping.tapped} of ${tapping.words.length} timed.`;
+    tap.textContent = `Word ${tapping.tapped + 1}: ${tapping.next}`;
+  };
+  // A held key would tap every word at once.
+  tap.addEventListener('keydown', event => { if (event.repeat) event.preventDefault(); });
+  tap.addEventListener('click', () => {
+    if (wordTap?.tapping !== tapping) return;
+    tapping.tap(audio.currentTime);
+    if (!tapping.done) { show(); return; }
+    const times = tapping.result(), late = tapping.late;
+    stopWordTapping();
+    if (working !== project || project.cues[index] !== cue) { message('The lyric lines changed while timing words. Nothing was changed.', true); return; }
+    cue.wordStarts = times; renderCues(); changed();
+    message(`Word times set by hand for line ${index + 1} as one unsaved edit: the preview and exports light its words at these times. Undo puts back the studio's times.${late
+      ? ` ${late === 1 ? 'One word was' : `${late} words were`} tapped after the line ends and ${late === 1 ? 'starts' : 'start'} at its end: move its end later if ${late === 1 ? 'it is' : 'they are'} sung after it.` : ''}`);
+  });
+  cancel.addEventListener('click', () => stopWordTapping('Word timing cancelled. Nothing was changed.'));
+  retirePractice('Timing words stopped practice.');
+  host.replaceChildren(status, tap, cancel); host.hidden = false; show();
+  audio.currentTime = Math.max(0, cue.start - TAP_LEAD);
+  void audio.play().catch(() => stopWordTapping('The player could not start, so word timing stopped. Nothing was changed.'));
+  const watch = () => {
+    if (wordTap?.tapping !== tapping) return;
+    if (tapping.overdue(audio.currentTime) || audio.ended) {
+      stopWordTapping(`Line ${index + 1} ended with ${tapping.words.length - tapping.tapped} of its ${tapping.words.length} words still to tap, so nothing was changed. Try again; a slower playback speed under Practice makes tapping easier.`);
+      return;
+    }
+    wordTap.frame = requestAnimationFrame(watch);
+  };
+  wordTap = { tapping, host, frame: requestAnimationFrame(watch) };
+  tap.focus();
+}
 function renderCues(rawTimings: RawTiming[] = []) {
+  stopWordTapping('The lyric lines were redrawn, so word timing stopped. Nothing was changed by it.');
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Add a lyric line or paste your words above and create draft timings to begin.'; list.append(empty); return; }
   for (const [index, cue] of working.cues.entries()) {
@@ -2107,12 +2166,28 @@ function renderCues(rawTimings: RawTiming[] = []) {
       changed(); draw();
     });
     singer.append(choice); row.append(singer);
+    // Word starts set by hand replace the studio's word timing for this line until cleared or its words change.
+    const handStarts = keptWordStarts(cue);
+    if (handStarts) {
+      const hand = document.createElement('p'); hand.className = 'fine cue-words';
+      hand.textContent = `Word times set by hand: ${cueWordsTimed(cue, handStarts)}.`;
+      const automatic = document.createElement('button'); automatic.type = 'button'; automatic.className = 'text-button';
+      automatic.textContent = 'Use automatic word times'; automatic.setAttribute('aria-label', `Use automatic word times line ${index + 1}`);
+      automatic.addEventListener('click', () => {
+        delete cue.wordStarts; renderCues(); changed();
+        message(`Line ${index + 1} highlights its words at the studio's times again, as one unsaved edit. Undo puts back the hand-set times.`);
+      });
+      hand.append(' ', automatic); row.append(hand);
+    }
+    const tapping = document.createElement('div'); tapping.className = 'word-tapping'; tapping.hidden = true;
+    tapping.setAttribute('role', 'group'); tapping.setAttribute('aria-label', `Time the words of line ${index + 1}`);
     const actions = document.createElement('div'); actions.className = 'cue-actions';
     for (const [label, action] of [
       ['Select timing', () => { workspace.reveal(element('timing-workbench')); timeline.selectCue(index); }],
       ['Mark start', () => { cue.start = Math.round(audio.currentTime * 1000) / 1000; renderCues(); changed(); }],
       ['Mark end', () => { cue.end = Math.min(working!.duration, Math.round(audio.currentTime * 1000) / 1000); renderCues(); changed(); }],
       ['Play line', () => startPractice('once', index)],
+      ['Time words', () => startWordTapping(index, tapping)],
       ['Remove', () => { working!.cues.splice(index, 1); renderCues(); changed(); }],
     ] as const) {
       const button = document.createElement('button'); button.className = 'text-button'; button.textContent = label;
@@ -2131,7 +2206,7 @@ function renderCues(rawTimings: RawTiming[] = []) {
     const repeats = document.createElement('div'); repeats.className = 'repeat-offer'; repeats.hidden = true;
     repeats.setAttribute('role', 'group'); repeats.setAttribute('aria-label', `Current repeats of line ${index + 1}`);
     text.querySelector('textarea')!.addEventListener('change', () => offerCurrentRepeats(index, repeats));
-    row.append(actions, repeats); list.append(row);
+    row.append(actions, tapping, repeats); list.append(row);
   }
   const hint = document.createElement('p'); hint.className = 'fine';
   hint.textContent = 'Corrected automatic lines offer similar untouched repeats when you leave their words field. Reusing wording is one unsaved Undo/Redo edit; Save lyrics is separate. Split: place a caret between words and seek the playhead inside that line. Merge with next: joins words with a newline and includes any gap. Each action is one unsaved Undo/Redo edit.';
@@ -2248,7 +2323,8 @@ element('save').addEventListener('click', async () => {
   if (reviewOwner) reviewOwner.edit = editGeneration;
   saving = true; controls();
   try {
-    const sent = structuredClone(working);
+    // Sent as validated, so hand-set word starts go only while they fit their lines, as the studio keeps them.
+    const sent = structuredClone(working); sent.cues = validateCues(sent.cues, sent.duration);
     const reply = await request<unknown>(`/api/projects/${sent.id}`, json('PUT', { title: sent.title, cues: sent.cues, revision: sent.revision }));
     const saved = validateSaveReply(reply, sent);
     working = saved; savedLyrics = structuredClone(saved.cues);
@@ -2947,10 +3023,11 @@ window.addEventListener('blur', blockTimingKeys);
 element('timing-apply').addEventListener('click', () => {
   const owner = timingOwner; if (!owner || owner.capture.state.phase !== 'review' || timingBusy() || !working || !lyricHistory) return;
   try {
-    // The same lines, newly timed, keep who sings them.
+    // The same lines, newly timed, keep who sings them, and hand-set word starts move with the line's start.
     const cues = owner.capture.review().map((cue, index) => {
       const before = working!.cues[index];
-      return before?.text === cue.text && before.singer !== undefined ? { ...cue, singer: before.singer } : cue;
+      if (before?.text !== cue.text) return cue;
+      return { ...cue, ...(before.singer !== undefined ? { singer: before.singer } : {}), ...(before.wordStarts ? { wordStarts: before.wordStarts.map(at => at + cue.start - before.start) } : {}) };
     });
     validateCues(cues, owner.duration);
     if (session && (owner.duration > session.maxDuration || cues.length > session.maxCues || cues.reduce((sum, cue) => sum + Array.from(cue.text).length, 0) > session.maxLyricChars)) throw Error('The captured lyrics exceed the connected studio’s limits.');

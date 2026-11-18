@@ -870,6 +870,11 @@ button {
 #srt-review-list .unsure-words { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin: .35rem 0; }
 .repeat-offer { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .35rem 0; }
 .repeat-offer[hidden] { display: none; }
+/* Timing a line's words by tapping (see word-tapping.ts), and a line's hand-set word times. */
+.word-tapping { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .35rem 0; grid-column: 2 / -1; }
+.word-tapping[hidden] { display: none; }
+.word-tapping .word-tap { font-size: 1.05rem; min-width: 12rem; }
+.cue-words { grid-column: 2 / -1; margin: .25rem 0 0; }
 .repeat-offer p { margin: 0; }
 #srt-review-list .unsure-word { padding: .15rem .5rem; border: 1px dashed #8a4b12; border-radius: 4px; background: #fff7ec; color: #6a3a0e; font: inherit; cursor: pointer; }
 #srt-review-list .unsure-word:focus-visible { outline: 2px solid #8a4b12; outline-offset: 2px; }

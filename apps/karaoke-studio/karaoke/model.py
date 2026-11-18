@@ -6,6 +6,7 @@ import math
 import re
 
 from .limits import MAX_DURATION, MIN_DURATION, MAX_CUES, MAX_LYRIC_CHARS
+from .lyrics_auto import lyric_words
 
 # Who sings a line of a duet: singer 1, singer 2, or both together.
 SINGERS = (1, 2, 'both')
@@ -42,6 +43,19 @@ def _text(value: object, limit: int, label: str) -> str:
     except UnicodeEncodeError as exc:
         raise ValidationError(f'{label} must contain valid Unicode text.') from exc
     return value
+
+
+def _word_starts(value: object, text: str, start: float, end: float, label: str) -> list[float]:
+    """A line's hand-set word starts: one for each of its words (as ``lyric_words`` splits them), in order, inside it."""
+    if not isinstance(value, list) or len(value) != len(lyric_words(text)):
+        raise ValidationError(f'{label} word times must give one start for each word of the line.')
+    starts: list[float] = []
+    for item in value:
+        at = _number(item, f'{label} word time')
+        if not start <= at <= end or (starts and at < starts[-1]):
+            raise ValidationError(f'{label} word times must run in order inside the line.')
+        starts.append(at)
+    return starts
 
 
 def create_project(project_id: str, title: str, duration: float) -> dict:
@@ -100,7 +114,11 @@ def validate_project(value: object) -> dict:
         singer = cue.get('singer')
         if singer is not None and (type(singer) not in (int, str) or singer not in SINGERS):
             raise ValidationError(f'Cue {index + 1} singer must be 1, 2 or both.')
-        cues.append(dict(start=start, end=end, text=text, **({'singer': singer} if singer is not None else {})))
+        # When each word starts, set by hand: it highlights the words in place of the studio's own word timing.
+        words = cue.get('wordStarts')
+        words = _word_starts(words, text, start, end, f'Cue {index + 1}') if words is not None else None
+        cues.append(dict(start=start, end=end, text=text, **({'singer': singer} if singer is not None else {}),
+                         **({'wordStarts': words} if words is not None else {})))
         previous_end = end
     cover = validate_cover(value['cover']) if value.get('cover') is not None else None
     return dict(schemaVersion=1, id=project_id, title=title, duration=duration,

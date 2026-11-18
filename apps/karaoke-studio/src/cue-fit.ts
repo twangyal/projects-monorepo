@@ -1,5 +1,5 @@
 import { validateCues, type Cue } from './lyrics.ts';
-import type { CuePassage } from './cue-edit.ts';
+import { movedCue, type CuePassage } from './cue-edit.ts';
 
 /** Fit one inclusive passage without altering audio, literal text or outside cues. */
 export function fitCues(cues: Cue[], duration: number, rawStart: string, rawEnd: string, passage: CuePassage): Cue[] {
@@ -20,9 +20,8 @@ export function fitCues(cues: Cue[], duration: number, rawStart: string, rawEnd:
   if (start === origin && end === finish) throw new Error('This passage already fits that window. Choose different start or end seconds.');
   // Normalize first: end/start division could overflow for a tiny valid source span.
   const map = (value: number) => start + ((value - origin) / (finish - origin)) * (end - start);
-  const after = validateCues(before.map((cue, index) => index < first || index > last ? cue : {
-    ...cue, start: index === first ? start : map(cue.start), end: index === last ? end : map(cue.end),
-  }), duration);
+  const after = validateCues(before.map((cue, index) => index < first || index > last ? cue
+    : movedCue(cue, map, index === first ? start : map(cue.start), index === last ? end : map(cue.end))), duration);
   for (let index = first + 1; index <= last; index++) {
     if (before[index].start > before[index - 1].end && after[index].start <= after[index - 1].end) {
       throw new Error('The target window is too narrow to retain every positive lyric gap at this precision.');

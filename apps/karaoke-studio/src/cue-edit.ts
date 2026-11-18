@@ -1,4 +1,10 @@
 import { validateCues, type Cue } from './lyrics.ts';
+import { cueWords } from './word-timing.ts';
+
+/** The line moved in time by `move`, its hand-set word starts with it. */
+export function movedCue(cue: Cue, move: (time: number) => number, start = move(cue.start), end = move(cue.end)): Cue {
+  return { ...cue, start, end, ...(cue.wordStarts ? { wordStarts: cue.wordStarts.map(move) } : {}) };
+}
 
 function validIndex(cues: Cue[], index: number): void {
   if (!Number.isInteger(index) || index < 0 || index >= cues.length) throw new Error('Select an existing lyric line.');
@@ -18,10 +24,11 @@ export function splitCue(cues: Cue[], index: number, caret: number, time: number
   const left = cue.text.charCodeAt(offset - 1), right = cue.text.charCodeAt(offset);
   if (left >= 0xd800 && left <= 0xdbff && right >= 0xdc00 && right <= 0xdfff) throw new Error('Place the caret between complete Unicode code points.');
   if (!Number.isFinite(time) || time <= cue.start || time >= cue.end) throw new Error('Seek the audio playhead strictly inside this line’s start and end before splitting.');
-  // Both halves are sung by the line's singer.
-  const singer = cue.singer !== undefined ? { singer: cue.singer } : {};
-  next.splice(index, 1, { start: cue.start, end: time, text: cue.text.slice(0, offset), ...singer },
-    { start: time, end: cue.end, text: cue.text.slice(offset), ...singer });
+  // Both halves are sung by the line's singer, and keep their words' hand-set starts when the caret is between words.
+  const singer = cue.singer !== undefined ? { singer: cue.singer } : {}, before = cueWords(cue.text.slice(0, offset)).length;
+  const starts = (part: number[] | undefined) => (part ? { wordStarts: part } : {});
+  next.splice(index, 1, { start: cue.start, end: time, text: cue.text.slice(0, offset), ...singer, ...starts(cue.wordStarts?.slice(0, before)) },
+    { start: time, end: cue.end, text: cue.text.slice(offset), ...singer, ...starts(cue.wordStarts?.slice(before)) });
   return validateCues(next, duration);
 }
 
@@ -32,7 +39,8 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
   const first = next[index], second = next[index + 1];
   // Lines for different singers become one the two sing together.
   const singer = first.singer !== undefined && second.singer !== undefined && first.singer !== second.singer ? 'both' : first.singer ?? second.singer;
-  next.splice(index, 2, { start: first.start, end: second.end, text: `${first.text}\n${second.text}`, ...(singer !== undefined ? { singer } : {}) });
+  next.splice(index, 2, { start: first.start, end: second.end, text: `${first.text}\n${second.text}`, ...(singer !== undefined ? { singer } : {}),
+    ...(first.wordStarts && second.wordStarts ? { wordStarts: [...first.wordStarts, ...second.wordStarts] } : {}) });
   return validateCues(next, duration);
 }
 
@@ -81,7 +89,7 @@ export function shiftCues(cues: Cue[], duration: number, rawSeconds: string, pas
   }
   const delta = Number(raw), selected = (index: number) => index >= first && index <= last;
   const after = validateCues(before.map((cue, index) => selected(index)
-    ? { ...cue, start: cue.start + delta, end: cue.end + delta } : cue), duration);
+    ? movedCue(cue, time => time + delta) : cue), duration);
   if (after.some((cue, index) => selected(index) && (cue.start === before[index].start || cue.end === before[index].end))) {
     throw new Error('The shift is too small to change every boundary. Choose a larger number of seconds.');
   }
@@ -101,7 +109,7 @@ export function copyCues(cues: Cue[], duration: number, rawSeconds: string, pass
   validIndex(before, passage.firstIndex); validIndex(before, passage.lastIndex);
   if (passage.lastIndex < passage.firstIndex) throw new Error('Choose an ordered passage of existing lyric lines.');
   const source = before.slice(passage.firstIndex, passage.lastIndex + 1), start = Number(raw);
-  const copies = source.map(cue => ({ ...cue, start: start + (cue.start - source[0].start), end: start + (cue.end - source[0].start) }));
+  const copies = source.map(cue => movedCue(cue, time => start + (time - source[0].start)));
   const end = copies[copies.length - 1].end;
   if (before.some(cue => cue.start < end && cue.end > start)) throw new Error('The complete copied passage must fit in an empty span without overlapping existing lines.');
   const nextIndex = before.findIndex(cue => cue.start >= end), insertIndex = nextIndex < 0 ? before.length : nextIndex;

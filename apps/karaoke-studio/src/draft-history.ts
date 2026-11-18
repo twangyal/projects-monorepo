@@ -6,7 +6,8 @@ export interface LyricDraft { title: string; cues: Cue[]; pastedText: string; pa
 function sameLyrics(a: LyricDraft, b: LyricDraft): boolean {
   return a.title === b.title && a.cues.length === b.cues.length && a.cues.every((cue, index) => {
     const other = b.cues[index];
-    return cue.text === other.text && Object.is(cue.start, other.start) && Object.is(cue.end, other.end) && cue.singer === other.singer;
+    return cue.text === other.text && Object.is(cue.start, other.start) && Object.is(cue.end, other.end) && cue.singer === other.singer
+      && (cue.wordStarts ?? []).length === (other.wordStarts ?? []).length && (cue.wordStarts ?? []).every((at, word) => Object.is(at, other.wordStarts![word]));
   });
 }
 function sameDraft(a: LyricDraft, b: LyricDraft): boolean {

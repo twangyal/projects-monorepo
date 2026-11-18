@@ -322,7 +322,8 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
     ``alignment``), a line in Latin letters or Korean, or in Chinese when ``language`` (the song's
     recognized language) is Mandarin, is laid on them instead: each word, heard or not, starts where
     its letters were sung, which on the developer benchmarks is closer to the annotated starts than
-    the recognizers' own word times. Starts never decrease within a line and stay inside the cue.
+    the recognizers' own word times. A line whose word starts were set by hand (its ``wordStarts``, see
+    ``model.validate_project``) keeps them. Starts never decrease within a line and stay inside the cue.
     """
     from .alignment import LINES_ONLY, alignable, force_words
     words = clean_words(words, duration)
@@ -334,49 +335,55 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
         if not tokens:
             result.append([])
             continue
-        # A timed line starts when its singing starts (marked, imported or aligned); recognized words
-        # refine that, and automatic lines' short lead-in is covered by their recognized first word.
-        span = end - start
-        sing_start = start
-        sing_end = max(end - min(HOLD, span * 0.2), sing_start)
-        nearby = [w for w in words if w['end'] > start - NEARBY and w['start'] < end + NEARBY]
-        reference = [_token(token) for token in tokens]
-        matches = _align(reference, [_token(w['text']) for w in nearby], budget) if nearby else [None] * len(tokens)
-        anchors: list[float | None] = [None] * len(tokens)
-        last = -math.inf
-        for index, match in enumerate(matches):
-            if match is None or not reference[index]:
-                continue
-            at = min(max(nearby[match]['start'], start), sing_end)
-            if at >= last:  # an anchor that runs backwards is a stray match
-                anchors[index], last = at, at
-        weights = [len(token) + 1 for token in tokens]
-        starts = list(anchors)
-        index = 0
-        while index < len(tokens):
-            if starts[index] is not None:
-                index += 1
-                continue
-            run_end = index
-            while run_end < len(tokens) and anchors[run_end] is None:
-                run_end += 1
-            # The run shares the time from the previous heard word (or the start of singing) to the
-            # next heard word (or the end of singing), in proportion to word length.
-            first = index - 1 if index > 0 else index
-            left = starts[index - 1] if index > 0 else sing_start
-            right = anchors[run_end] if run_end < len(tokens) else sing_end
-            right = max(right, left)
-            total = sum(weights[first:run_end])
-            for k in range(index, run_end):
-                starts[k] = left + (right - left) * sum(weights[first:k]) / total
-            index = run_end
-        forced = (force_words(cue['text'], letters, start, end, language=language)
-                  if letters is not None and language not in LINES_ONLY and alignable([cue['text']], language) else None)
-        if forced is not None and len(forced) == len(tokens):
-            for k in range(len(tokens)):
-                starts[k] = min(max(forced[k], start), sing_end)
-            for k in range(1, len(tokens)):
-                starts[k] = max(starts[k], starts[k - 1])
+        hand = cue.get('wordStarts')
+        if hand is not None and len(hand) == len(tokens):
+            # Set by hand: kept as they are.
+            starts = [float(at) for at in hand]
+            anchors = list(starts)
+        else:
+            # A timed line starts when its singing starts (marked, imported or aligned); recognized words
+            # refine that, and automatic lines' short lead-in is covered by their recognized first word.
+            span = end - start
+            sing_start = start
+            sing_end = max(end - min(HOLD, span * 0.2), sing_start)
+            nearby = [w for w in words if w['end'] > start - NEARBY and w['start'] < end + NEARBY]
+            reference = [_token(token) for token in tokens]
+            matches = _align(reference, [_token(w['text']) for w in nearby], budget) if nearby else [None] * len(tokens)
+            anchors: list[float | None] = [None] * len(tokens)
+            last = -math.inf
+            for index, match in enumerate(matches):
+                if match is None or not reference[index]:
+                    continue
+                at = min(max(nearby[match]['start'], start), sing_end)
+                if at >= last:  # an anchor that runs backwards is a stray match
+                    anchors[index], last = at, at
+            weights = [len(token) + 1 for token in tokens]
+            starts = list(anchors)
+            index = 0
+            while index < len(tokens):
+                if starts[index] is not None:
+                    index += 1
+                    continue
+                run_end = index
+                while run_end < len(tokens) and anchors[run_end] is None:
+                    run_end += 1
+                # The run shares the time from the previous heard word (or the start of singing) to the
+                # next heard word (or the end of singing), in proportion to word length.
+                first = index - 1 if index > 0 else index
+                left = starts[index - 1] if index > 0 else sing_start
+                right = anchors[run_end] if run_end < len(tokens) else sing_end
+                right = max(right, left)
+                total = sum(weights[first:run_end])
+                for k in range(index, run_end):
+                    starts[k] = left + (right - left) * sum(weights[first:k]) / total
+                index = run_end
+            forced = (force_words(cue['text'], letters, start, end, language=language)
+                      if letters is not None and language not in LINES_ONLY and alignable([cue['text']], language) else None)
+            if forced is not None and len(forced) == len(tokens):
+                for k in range(len(tokens)):
+                    starts[k] = min(max(forced[k], start), sing_end)
+                for k in range(1, len(tokens)):
+                    starts[k] = max(starts[k], starts[k - 1])
         if len(tokens) > MAX_STEPS:
             # Group words into at most MAX_STEPS highlight steps; each group starts with its first word.
             group = [k * len(tokens) // MAX_STEPS for k in range(MAX_STEPS)]
