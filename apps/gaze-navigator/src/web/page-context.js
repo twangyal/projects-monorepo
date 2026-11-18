@@ -135,7 +135,16 @@ export function accessibleName(element) {
     const text = clean(visibleText(element));
     if (text) return text.slice(0, 80);
   }
-  return clean(element.getAttribute('title')) || clean(element.getAttribute('placeholder')) || '';
+  const given = clean(element.getAttribute('title')) || clean(element.getAttribute('placeholder'));
+  if (given || !isEditable(element)) return given || '';
+  // A field with no name of its own is called what a reader sees: the label just before it, even when that label's
+  // "for" points at another field by mistake, or else, for a password field, its kind.
+  const before = element.previousElementSibling;
+  if (before?.tagName === 'LABEL' && before.control !== element) {
+    const text = clean(visibleText(before));
+    if (text) return text;
+  }
+  return element.tagName === 'INPUT' && element.type === 'password' ? 'Password' : '';
 }
 
 function usable(element, exclude) {
@@ -684,6 +693,8 @@ const RECT_MARGIN = 48;
 // so a named control just outside the circle can still be found; ids start here to stay distinct.
 export const NEARBY_FACTOR = 3;
 const NEARBY_FIRST_ID = 101;
+// Controls inside a crowded circle beyond its nearest ones that are still looked for by name (ids up to 199).
+const CROWD_LIMIT = 60;
 // Beyond that ring, controls anywhere on screen are listed only when an instruction needs them (onScreen), so a
 // clearly named control far from where the gaze landed can be offered for confirmation.
 export const SCREEN_FIRST_ID = 201;
@@ -852,10 +863,13 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const disclosureElements = [...elements, ...blocked.sort((a, b) => a.distance - b.distance).slice(0, limit).map((candidate, index) => ({
     id: limit + index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames, ...describe(candidate.element),
   }))].sort((a, b) => a.distance - b.distance).slice(0, limit);
-  const nearby = outside.filter(({ element }) => roleOf(element) !== 'generic')
-    .sort((a, b) => a.distance - b.distance).slice(0, limit).map((candidate, index) => ({
+  // On a crowded page (a list of links, say), controls inside the circle beyond its nearest `limit` are still looked
+  // for by name, ahead of those just outside it, and used as directly as the nearest ones: they are marked inside.
+  const crowded = distinct.slice(limit).filter(({ element }) => roleOf(element) !== 'generic').slice(0, CROWD_LIMIT).map(candidate => ({ ...candidate, inside: true }));
+  const nearby = [...crowded, ...outside.filter(({ element }) => roleOf(element) !== 'generic')
+    .sort((a, b) => a.distance - b.distance).slice(0, limit)].map((candidate, index) => ({
       id: NEARBY_FIRST_ID + index, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,
-      ...describe(candidate.element),
+      ...(candidate.inside ? { inside: true } : {}), ...describe(candidate.element),
     }));
   const unreachable = outOfReach
     .filter(({ frame, frames }) => {

@@ -2,7 +2,7 @@
 // (it rests on the control a person would look at) and typed text stands in for speech. Each step records
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
-//   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
+//   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal'] [--site 'text in a site name']
 //     [--gaze-error PX] [--circle small|medium|large] [--trials N] [--seed S] [--panel-typing]
 // Instructions are typed in keyboard command mode (Alt+Shift+G), which, like speech, leaves the website's focus where
 // it is, so menus and dialogs that close or trap focus behave as they would for a speaking user. --panel-typing types
@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : null; };
-const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json'), only = argument('--only');
+const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json'), only = argument('--only'), site = argument('--site');
 const panelTyping = process.argv.includes('--panel-typing');
 const gazeError = Number(argument('--gaze-error') ?? 0), trials = Math.max(1, Number(argument('--trials') ?? 1)), seed = Number(argument('--seed') ?? 1);
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
@@ -40,7 +40,8 @@ const normal = () => Math.sqrt(-2 * Math.log(1 - uniform())) * Math.cos(2 * Math
 
 const link = name => page => page.getByRole('link', { name, exact: typeof name === 'string' }).first();
 const button = name => page => page.getByRole('button', { name, exact: true }).first();
-const field = name => page => page.getByRole('searchbox', { name, exact: true }).or(page.getByRole('textbox', { name, exact: true })).or(page.getByRole('combobox', { name, exact: true })).first();
+// The visible one: Wikipedia swaps in a new search input on focus and hides the old one.
+const field = name => page => page.getByRole('searchbox', { name, exact: true }).or(page.getByRole('textbox', { name, exact: true })).or(page.getByRole('combobox', { name, exact: true })).filter({ visible: true }).first();
 const url = pattern => async page => pattern.test(decodeURIComponent(page.url()));
 const select = name => page => page.getByRole('combobox', { name, exact: true }).first();
 const scrolled = selector => page => page.evaluate(css => css ? document.querySelector(css).scrollTop : scrollY, selector);
@@ -189,6 +190,31 @@ export const TASKS = [
   { site: 'MUI', goal: 'Refuse analytics cookies, then pick a film in an autocomplete by saying its name', start: 'https://mui.com/material-ui/react-autocomplete/', steps: [
     { look: button('Essential only'), say: 'click essential only', target: 'Essential only', done: async page => !(await button('Essential only')(page).isVisible()) },
     { look: select('Movie'), say: 'set movie to the godfather', done: async page => (await select('Movie')(page).inputValue()) === 'The Godfather' },
+  ] },  // A shop, a log-in form whose Password label points at the wrong field, a news site and a link aggregator.
+  { site: 'Books to Scrape', goal: 'Open a category from the side list', start: 'https://books.toscrape.com/', steps: [
+    { look: link('Travel'), say: 'open travel', target: 'Travel', done: url(/category\/books\/travel_2\//) },
+  ] },
+  { site: 'Books to Scrape', goal: 'Go to the next page of books', start: 'https://books.toscrape.com/', steps: [
+    { look: link('next'), say: 'next page', target: 'next', done: url(/page-2\.html/) },
+  ] },
+  { site: 'Books to Scrape', goal: 'Open a book, then go back to the shop', start: 'https://books.toscrape.com/', steps: [
+    { look: link('A Light in the Attic'), say: 'open a light in the attic', target: 'A Light in the Attic', done: url(/a-light-in-the-attic_1000/) },
+    { look: link('Home'), say: 'go to the home page', target: 'Home', done: url(/books\.toscrape\.com\/(index\.html)?$/) },
+  ] },
+  { site: 'Quotes to Scrape', goal: 'Log in with a made-up name and password', start: 'https://quotes.toscrape.com/', steps: [
+    { look: link('Login'), say: 'log in', target: 'Login', done: url(/\/login$/) },
+    { look: page => page.locator('#username'), say: 'type alice into username', done: async page => (await page.locator('#username').inputValue()) === 'alice' },
+    { look: page => page.locator('#password'), say: 'type secret into the password', done: async page => (await page.locator('#password').inputValue()) === 'secret' },
+    { look: page => page.locator('input[type=submit]'), say: 'press login', target: 'Login', done: async page => (await page.getByRole('link', { name: 'Logout' }).count()) > 0 },
+  ] },
+  { site: 'Hacker News', goal: 'Show more stories', start: 'https://news.ycombinator.com/', steps: [
+    { look: link('More'), say: 'show more', target: 'More', done: url(/\?p=2/) },
+  ] },
+  { site: 'Hacker News', goal: 'Open the newest stories', start: 'https://news.ycombinator.com/', steps: [
+    { look: link('new'), say: 'open new', target: 'new', done: url(/\/newest/) },
+  ] },
+  { site: 'BBC News', goal: 'Open the Sport section', start: 'https://www.bbc.co.uk/news', steps: [
+    { look: link('Sport'), say: 'go to sport', target: 'Sport', done: url(/bbc\.(?:co\.uk|com)\/sport/) },
   ] },
 ];
 
@@ -209,7 +235,7 @@ async function browser() {
 
 async function run() {
   const results = [];
-  const runs = TASKS.filter(item => !only || item.goal.includes(only)).flatMap(task => Array.from({ length: trials }, (_, trial) => ({ task, trial })));
+  const runs = TASKS.filter(item => (!only || item.goal.includes(only)) && (!site || item.site.includes(site))).flatMap(task => Array.from({ length: trials }, (_, trial) => ({ task, trial })));
   for (const { task, trial } of runs) {
     const context = await browser();
     const page = await context.newPage();
@@ -239,7 +265,12 @@ async function run() {
         record.steps.push(entry);
         if (step.look) {
           const target = step.look(page);
-          await target.scrollIntoViewIfNeeded({ timeout: 10000 });
+          // A page the site served differently (still loading, or a "too many requests" page) has no target to look
+          // at: that is recorded as the site's, not the navigator's, failure.
+          try { await target.scrollIntoViewIfNeeded({ timeout: 10000 }); } catch {
+            entry.outcome = 'target-missing'; record.error = `Nothing to look at for "${step.say}" on "${await page.title().catch(() => '')}" (${await target.count().catch(() => 0)} found).`;
+            break;
+          }
           const box = await target.boundingBox();
           if (!box) { entry.outcome = 'target-missing'; break; }
           const viewport = page.viewportSize();

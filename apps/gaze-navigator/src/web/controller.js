@@ -743,9 +743,11 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'unknown': return action.alike ? offer(action, context) : reply(action.message, 'error');
       default: {
         const response = perform(action, context);
-        // A control found just outside the circle: say so, so the user knows where the action happened.
-        if (action.outside && response.tone === 'success') response.message = `${response.message} It was just outside the gaze circle.`;
-        else if (action.outside && response.tone === 'question') response.message = `Just outside the gaze circle: ${response.message}`;
+        // A control found just outside the circle: say so, so the user knows where the action happened. One inside a
+        // crowded circle, beyond its nearest controls, was where the user looked.
+        const outside = action.outside && !targetOf(context, action.targetId)?.inside;
+        if (outside && response.tone === 'success') response.message = `${response.message} It was just outside the gaze circle.`;
+        else if (outside && response.tone === 'question') response.message = `Just outside the gaze circle: ${response.message}`;
         return response;
       }
     }
