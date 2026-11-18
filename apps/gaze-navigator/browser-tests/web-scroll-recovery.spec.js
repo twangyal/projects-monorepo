@@ -369,3 +369,27 @@ test('a border clipping a sidebar to a painted sliver does not hide that scroll 
   expect(await page.locator('#thin').evaluate(node => node.scrollTop)).toBe(35);
   expect(await page.evaluate(() => scrollY)).toBe(0);
 });
+
+test('an area named by its label or heading scrolls wherever the gaze is, and a name no area carries scrolls nothing', async ({ page }) => {
+  // Both areas lie within the narrowest viewport, away from the gaze in its top left corner.
+  await setup(page, `<h3 style="position:absolute;left:200px;top:150px;margin:0">Terms and conditions</h3>
+    <div id="terms" class="vertical" style="left:200px;top:190px;width:150px;height:100px"><div style="height:600px">You agree</div></div>
+    <div id="list" class="vertical" aria-label="Reader reviews" style="left:120px;top:320px;width:140px;height:100px"><div style="height:600px">Great</div></div>`);
+  const far = () => window.capture(20, 20);
+  let result = await page.evaluate(far => window.say('scroll the reviews down', eval(far)()), far.toString());
+  expect(result.performed).toBe('scroll');
+  expect(result.message).toContain('“reviews” was away from the gaze circle');
+  const reviews = await page.evaluate(() => document.querySelector('#list').scrollTop);
+  expect(reviews).toBeGreaterThan(0);
+  // "Again" scrolls the same area again.
+  await page.evaluate(far => window.say('again', eval(far)()), far.toString());
+  expect(await page.evaluate(() => document.querySelector('#list').scrollTop)).toBeGreaterThan(reviews);
+  // A heading just before the box names it.
+  result = await page.evaluate(far => window.say('scroll down the terms and conditions', eval(far)()), far.toString());
+  expect(result.performed).toBe('scroll');
+  expect(await page.evaluate(() => document.querySelector('#terms').scrollTop)).toBeGreaterThan(0);
+  result = await page.evaluate(far => window.say('scroll the shipping options down', eval(far)()), far.toString());
+  expect(result.performed).toBeNull();
+  expect(result.message).toContain('No area called “shipping options” can scroll down');
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});

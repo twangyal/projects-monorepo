@@ -922,6 +922,15 @@ function interpretInCircle(utterance, context) {
     return { type: 'scroll', direction: scroll[1] ?? 'down', amount: /bit|little|slightly/.test(scroll[2] ?? '') ? 'small' : 'page',
       ...(/\bpage\b/.test(text) ? { scope: 'page' } : {}), ...(kind ? { kind } : {}) };
   }
+  // A scrolling area named by its label or heading, wherever it is on screen: "scroll the reviews down", "scroll down
+  // the terms and conditions", "scroll through the new arrivals".
+  const area = /^scroll (up|down|left|right) (?:through )?(?:the |my )?(.+?)(?: (a bit|a little|slightly|more|a lot))?$/.exec(text);
+  const areaFirst = !area && /^scroll (?:through )?(?:the |my )?(.+?)(?: (up|down|left|right))?(?: (a bit|a little|slightly|more|a lot))?$/.exec(text);
+  const areaName = area ? area[2] : areaFirst?.[1];
+  if (areaName && !/^(?:to|back|all|page|it|this|that|again|slowly|quickly|fast|further|more|now|please)\b/.test(areaName) && areaName.split(' ').length <= 6) {
+    const amount = (area ? area[3] : areaFirst[3]) ?? '';
+    return { type: 'scroll', direction: (area ? area[1] : areaFirst[2]) ?? 'down', amount: /bit|little|slightly/.test(amount) ? 'small' : 'page', name: areaName };
+  }
 
   // Explicit add/remove never replaces the other choices in a native multi-select.
   const multiple = /^(add|remove) option\s+("[^"]+"|“[^”]+”|.+?)(?:\s+(to|from)\s+(?:the\s+)?(.+))?$/i.exec(command);

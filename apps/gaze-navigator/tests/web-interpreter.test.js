@@ -102,6 +102,11 @@ test('scrolling takes direction and size', () => {
   assert.equal(interpret('scroll the navigation down a bit', context()).kind, 'menu');
   assert.equal(interpret('scroll the messages up', context()).kind, 'chat');
   assert.equal(interpret('scroll the comments down', context()).kind, 'comments');
+  // An area named by its label or heading is found wherever it is on screen.
+  assert.deepEqual(interpret('scroll the reviews down', context()), { type: 'scroll', direction: 'down', amount: 'page', name: 'reviews' });
+  assert.deepEqual(interpret('scroll down the terms and conditions a bit', context()), { type: 'scroll', direction: 'down', amount: 'small', name: 'terms and conditions' });
+  assert.deepEqual(interpret('scroll through the new arrivals right', context()), { type: 'scroll', direction: 'right', amount: 'page', name: 'new arrivals' });
+  for (const said of ['scroll to the reviews', 'scroll it down', 'scroll back up', 'scroll all the way down', 'scroll down slowly', 'scroll down please']) assert.equal(interpret(said, context()).name, undefined, said);
   assert.deepEqual(interpret('scroll the page down', context()), { type: 'scroll', direction: 'down', amount: 'page', scope: 'page' });
   assert.deepEqual(interpret('scroll the area down', context()), { type: 'scroll', direction: 'down', amount: 'page' });
   assert.deepEqual(interpret('scroll to the top', context()), { type: 'scroll', direction: 'top', amount: 'page' });

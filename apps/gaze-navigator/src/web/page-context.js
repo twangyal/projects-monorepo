@@ -391,6 +391,34 @@ const REGION_KINDS = {
 export const REGION_NAMES = Object.keys(REGION_KINDS);
 export function regionIs(element, kind) { return Boolean(REGION_KINDS[kind]?.(element)); }
 
+const AREA_HEADINGS = 'h1, h2, h3, h4, h5, h6, [role=heading], legend, caption';
+/**
+ * What a scrolling area is called: its label (aria-labelledby, aria-label or title), its heading (the first inside it,
+ * or one right before it or the box it sits in) and the words of its id and classes. Not its contents, so a name
+ * said finds the area that name labels, not every area that mentions it.
+ */
+export function regionLabel(element) {
+  const document = element.ownerDocument, scope = element.getRootNode(), parts = [];
+  const labelledBy = element.getAttribute('aria-labelledby');
+  if (labelledBy) parts.push(labelledBy.split(/\s+/).map(id => ((scope.getElementById ? scope.getElementById(id) : null) ?? document.getElementById(id))?.textContent ?? '').join(' '));
+  parts.push(element.getAttribute('aria-label') ?? '', element.getAttribute('title') ?? '', element.querySelector(AREA_HEADINGS)?.textContent ?? '');
+  // The heading right before the area, or before the box it sits in; one further back belongs to something else.
+  for (let node = element, level = 0; node && level < 2; node = node.parentElement, level++) {
+    const sibling = node.previousElementSibling;
+    if (sibling?.matches(AREA_HEADINGS)) { parts.push(sibling.textContent ?? ''); break; }
+    if (sibling) break;
+  }
+  parts.push(`${element.id} ${element.getAttribute('class') ?? ''}`.replace(/[-_]+/g, ' '));
+  return clean(parts.join(' ')).slice(0, 400);
+}
+const AREA_STOP = new Set(['the', 'a', 'an', 'my', 'of', 'and', 'box', 'area', 'section', 'panel', 'pane', 'window', 'part']);
+const areaWords = text => String(text).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(word => word && !AREA_STOP.has(word)).map(word => (word.length > 3 ? word.replace(/(?:es|s)$/, '') : word));
+/** How much of a spoken area name an area's label carries: the share of the name's words (plurals folded) found in it. */
+export function areaNameScore(name, element) {
+  const words = areaWords(name), label = new Set(areaWords(regionLabel(element)));
+  return words.length ? words.filter(word => label.has(word)).length / words.length : 0;
+}
+
 // Hit-test a fixed grid, rather than scanning every DOM node on every gaze update.
 // Only painted content within the circle can contribute a recovery candidate.
 function nearbyScrollRegions(document, x, y, radius, exclude) {

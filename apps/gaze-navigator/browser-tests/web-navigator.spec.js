@@ -231,6 +231,13 @@ test('dropdowns, scroll regions, search, and back navigation work without annota
   await typeInstruction(page, 'scroll down');
   await expect.poll(() => page.getByLabel('Reader reviews').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
   await expect(status(page)).toHaveText('Region scrolled down.');
+  // Named, the reviews scroll wherever the gaze is: here, above them, without moving the page.
+  await page.getByLabel('Reader reviews').evaluate(element => { element.scrollTop = 0; });
+  const reviews = await page.getByLabel('Reader reviews').boundingBox();
+  await page.mouse.move(reviews.x + reviews.width / 2, Math.max(4, reviews.y - 60));
+  await typeInstruction(page, 'scroll the reviews down');
+  await expect.poll(() => page.getByLabel('Reader reviews').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  await expect(status(page)).toContainText('“reviews” was');
   await typeInstruction(page, 'search for river');
   await page.waitForURL('**/search.html?q=river');
   await expect(page.getByRole('link', { name: 'The Quiet River' })).toBeVisible();

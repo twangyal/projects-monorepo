@@ -4,7 +4,7 @@ import { applyEdit, dictated, dictationControl, interpret as interpretRules } fr
 import * as pageActions from './page-actions.js';
 import { commandHelp } from './command-help.js';
 import { keyLabel } from './page-actions.js';
-import { captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
+import { areaNameScore, captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
 const CONFIRM_MS = 15000;
 // "It" can refer back to the control last used for this long, while it is still on the page.
@@ -357,6 +357,24 @@ export function createController({ window, actions = pageActions, interpret = in
             namedMatch = distance(nearest) > context.radius ? 'away from the gaze circle' : 'near your gaze';
           }
           namedScrollRegion = region;
+        } else if (action.name && action.scope !== 'page') {
+          // An area named by its label or heading: the one whose label carries most of the name, the nearer of equals.
+          const repeatRegion = context.repeatScrollRegion;
+          if (repeatRegion && areaNameScore(action.name, repeatRegion) < 0.5) {
+            return reply('The last scrolling region changed. Look at it and say what to do.', 'error', { performed: null });
+          }
+          const distance = item => distanceToRect(context.x, context.y, item.rect);
+          // The page itself is "the page"; it holds every heading, so it is not one of the named areas.
+          const page = element => element === context.pageRegion || element === element.ownerDocument?.scrollingElement || element === element.ownerDocument?.body;
+          const best = repeatRegion ? null : (context.screenRegions?.() ?? []).filter(candidate => candidate[axis] && !page(candidate.element))
+            .map(candidate => ({ ...candidate, score: areaNameScore(action.name, candidate.element) })).filter(candidate => candidate.score >= 0.5)
+            .sort((a, b) => b.score - a.score || distance(a) - distance(b) || (composedContains(a.element, b.element) ? 1 : composedContains(b.element, a.element) ? -1 : 0))[0];
+          if (!repeatRegion && !best) {
+            return reply(`No area called “${action.name}” can scroll ${action.direction} on screen. Look directly at it and say “scroll ${action.direction}”, or say “scroll the page ${action.direction}”.`, 'error', { performed: null });
+          }
+          region = repeatRegion ?? best.element;
+          if (best) namedMatch = distance(best) > context.radius ? 'away from the gaze circle' : 'near your gaze';
+          namedScrollRegion = region;
         } else if (action.scope !== 'page' && region === context.pageRegion && context.scrollRegions?.length) {
           const candidates = context.scrollRegions.filter(candidate => candidate[axis]);
           // Nested scroll containers describe one place; retain its innermost region.
@@ -367,7 +385,7 @@ export function createController({ window, actions = pageActions, interpret = in
         }
         result = actions.scroll(region, action.direction, action.amount, window);
         if (recovered && result.ok) result.message += ' Found at the edge of the gaze circle.';
-        if (namedMatch && result.ok) result.message += ` It was the ${action.kind} ${namedMatch}.`;
+        if (namedMatch && result.ok) result.message += action.name ? ` “${action.name}” was ${namedMatch}.` : ` It was the ${action.kind} ${namedMatch}.`;
         break;
       }
       case 'back':
