@@ -45,3 +45,17 @@ test('a misheard command word is offered, and done only after a yes', async ({ p
   await page.evaluate(() => window.__speech.say('confirm'));
   await expect(sort).toHaveValue('Newest');
 });
+
+test('a control name said alone and heard wrong is offered, and opened after a yes', async ({ page }) => {
+  const account = page.getByRole('link', { name: 'Account', exact: true });
+  await account.evaluate(element => window.scrollTo({ top: 0, behavior: 'instant' }));
+  const box = await account.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(panel(page).locator('.context li').first()).toBeAttached();
+  await page.evaluate(() => window.__speech.say('a count'));
+  await expect(status(page)).toContainText('Account');
+  await expect(panel(page).locator('.prompt button').first()).toHaveText('Confirm');
+  await expect(page).toHaveURL(/catalog\.html$/);
+  await page.evaluate(() => window.__speech.say('yes'));
+  await expect(page).toHaveURL(/account\.html$/);
+});

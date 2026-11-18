@@ -56,12 +56,14 @@ export function parseNumber(text) {
   return index > 0 ? index : null;
 }
 
-// 1 for an exact name, high for a contained phrase, otherwise weighted token overlap.
+// 1 for an exact name, high for a contained phrase, otherwise weighted token overlap. A name heard run together or
+// split ("login" for "Log in", "sign up" for "Signup") counts as said exactly: speech recognition often writes it either way.
 export function matchScore(query, name) {
   const q = normalize(query);
   const n = normalize(name);
   if (!q || !n) return 0;
   if (q === n) return 1;
+  if (q.replace(/ /g, '') === n.replace(/ /g, '')) return 0.95;
   const qTokens = tokens(query);
   const nTokens = tokens(name);
   if (!qTokens.length || !nTokens.length) return 0;
@@ -143,6 +145,9 @@ function editDistance(a, b) {
   }
   return row[b.length];
 }
+// Words said alone (no "open" or "click") are offered as a control's name heard wrong only when they have at least this
+// many letters, a doubled letter counted once ("hello" has four).
+const BARE_ALIKE = 5;
 // The one control whose name (or the start of it) sounds like `query`: within one letter for short names, two for
 // long ones. None when the name is very short or two controls are equally close.
 function soundsAlike(query, elements) {
@@ -1296,8 +1301,11 @@ function interpretInCircle(utterance, context) {
   }
   // Unknown results say why, so an assisting model can be asked only about naming a target:
   // `targetQuery` when an activation was requested but no control matched, `unparsed` otherwise.
+  // Words said alone that sound like a control's name ("signing" for Sign in) still offer it (see `alike`), unless they
+  // are a short word that could be said to anyone ("hello" is a letter from Help).
   if (resolved.type === 'unknown' && verbless === text && !hint) {
-    return { type: 'unknown', unparsed: true, message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
+    return { type: 'unknown', unparsed: true, message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".`,
+      ...(resolved.alike && soundKey(query).length >= BARE_ALIKE ? { alike: resolved.alike } : {}) };
   }
   // Only a spoken activation verb ("open …", "click …") makes this a request to name a control.
   if (resolved.type === 'unknown') return verbless !== text ? { ...resolved, targetQuery: query } : { ...resolved, unparsed: true };

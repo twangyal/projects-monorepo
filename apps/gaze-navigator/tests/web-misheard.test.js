@@ -26,6 +26,22 @@ test('a name that sounds like a control in the circle is offered, never used dir
   assert.equal(near.targetId, 101);
 });
 
+test('a name heard run together or split is said exactly, and one heard alone with a letter wrong is offered', () => {
+  // Speech recognition writes "log in" as "login" and "sign up" as "signup" as often as not.
+  const accounts = { elements: [control(1, 'Log in', 'link'), control(2, 'Signup'), control(3, 'Help', 'link')] };
+  assert.deepEqual(interpret('open login', accounts), { type: 'activate', targetId: 1 });
+  assert.deepEqual(interpret('click sign up', accounts), { type: 'activate', targetId: 2 });
+  assert.deepEqual(interpret('signup', accounts), { type: 'activate', targetId: 2 });
+  // A name said alone and heard a letter off ("signing" for Sign in) is offered, as one after "click" is.
+  const alone = interpret('signing', page);
+  assert.equal(alone.type, 'unknown');
+  assert.equal(alone.alike?.targetId, 2);
+  assert.ok(alone.unparsed, 'an assisting model may still be asked');
+  // A short word said alone may be said to anyone: "hello" is not taken for Help.
+  assert.equal(offered('hello', accounts), undefined);
+  assert.equal(offered('card'), undefined);
+});
+
 test('commonly misheard command words are corrected and offered; scrolling and cancelling just happen', () => {
   assert.deepEqual(offered('quick submit'), { type: 'activate', targetId: 1, heardAs: 'click submit' });
   assert.deepEqual(offered('dress submit'), { type: 'activate', targetId: 1, heardAs: 'press submit' });
