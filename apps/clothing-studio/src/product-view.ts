@@ -111,6 +111,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-yoke" type="checkbox" aria-describedby="yoke-help"> Back yoke</label><label class="check-field"><input id="product-cuffs" type="checkbox" aria-describedby="cuffs-help"> Shirt cuffs</label><label class="check-field"><input id="product-coat" type="checkbox" aria-describedby="coat-help"> Coat</label><p id="coat-help" class="fine-print" hidden>A coat goes over a T-shirt, shirt, polo or dress in an outfit, as well as with bottoms. Its hems are turned up and blind-stitched and its seams bound (it is unlined), with larger coat buttons.</p><p id="cuffs-help" class="fine-print" hidden>Each sleeve ends in a 6 cm buttoned cuff, styled on its own; the sleeve is cut 4 cm wider at its end and pleated into it. Long sleeves only.</p><p id="yoke-help" class="fine-print" hidden>The back is cut across 9 cm below the neck into a yoke over the shoulders (cut double, outer and facing) and the back body, each styled on its own.</p><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label><label class="check-field"><input id="product-waist-seam" type="checkbox" aria-describedby="waist-seam-help"> Waist seam (a dress cut into bodice and skirt)</label><p id="waist-seam-help" class="fine-print" hidden>The front and back are cut at the waist line (Fit: waist position) into a bodice and a skirt, which you can style on their own; artwork stays on the bodice. The hem width sets the skirt's flare.</p></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
+      <div id="trouser-modules" class="measure-grid" hidden><label class="check-field"><input id="product-trouser-yoke" type="checkbox" aria-describedby="trouser-yoke-help"> Back yoke</label><label class="check-field"><input id="product-back-pockets" type="checkbox" aria-describedby="back-pockets-help"> Back pockets</label><p id="trouser-yoke-help" class="fine-print" hidden>The back legs are cut across the seat below the waistband, deeper at the centre back than at the side seams, as jeans are: a yoke styled on its own.</p><p id="back-pockets-help" class="fine-print" hidden>A pointed patch pocket topstitched to each back leg, below the yoke or the waistband, styled on its own.</p></div>
       <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
       <p id="artwork-note" class="fine-print" hidden>Artwork placement is available on tops.</p>
@@ -984,6 +985,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     setModules(current => { const others = { ...current }; delete others.buttons; delete others.zipOpen; delete others.yoke; delete others.cuffs; return on ? { ...others, buttons: true, ...(current.yoke ? { yoke: true } : {}), ...(current.cuffs ? { cuffs: true } : {}) } : others; },
       on ? 'Button front added: the front is cut as halves joined by a buttoned placket; with the collar it is a shirt. You can undo this.' : 'Button front removed. You can undo this.');
   });
+  // Trousers' jeans details: a back yoke across the seat and back patch pockets.
+  $('product-trouser-yoke').addEventListener('change', () => {
+    const on = ($('product-trouser-yoke') as HTMLInputElement).checked;
+    if (on) selected = 'yoke';
+    else if (selected === 'yoke') selected = 'back';
+    setModules(current => { const others = { ...current }; delete others.yoke; return on ? { ...others, yoke: true } : others; },
+      on ? 'Back yoke added: the back legs are cut across the seat below the waistband, deeper at the centre back; the yoke starts in the back legs’ style. Style it on its own. You can undo this.'
+        : 'Back yoke removed: the back legs are cut in one piece again. You can undo this.');
+  });
+  $('product-back-pockets').addEventListener('change', () => {
+    const on = ($('product-back-pockets') as HTMLInputElement).checked;
+    if (on) selected = 'backPocket';
+    else if (selected === 'backPocket') selected = 'back';
+    setModules(current => { const others = { ...current }; delete others.backPockets; return on ? { ...others, backPockets: true } : others; },
+      on ? 'Back pockets added: a patch pocket on each back leg, starting in the back legs’ style. Style them on their own. You can undo this.' : 'Back pockets removed. You can undo this.');
+  });
   $('product-yoke').addEventListener('change', () => {
     const on = ($('product-yoke') as HTMLInputElement).checked;
     if (on) selected = 'yoke';
@@ -1381,6 +1398,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const yoke = $('product-yoke') as HTMLInputElement;
     yoke.checked = !!modules.yoke; yoke.closest('label')!.hidden = design.base !== 'tee' || !modules.buttons;
     $('yoke-help').hidden = !modules.yoke;
+    ($('product-trouser-yoke') as HTMLInputElement).checked = !!modules.yoke; ($('product-back-pockets') as HTMLInputElement).checked = !!modules.backPockets;
+    $('trouser-yoke-help').hidden = !modules.yoke; $('back-pockets-help').hidden = !modules.backPockets;
     const cuffs = $('product-cuffs') as HTMLInputElement, longSleeves = cuffsAllowed(design, { ...modules, buttons: true });
     cuffs.checked = !!modules.cuffs; cuffs.closest('label')!.hidden = design.base !== 'tee' || !modules.buttons;
     cuffs.disabled = !longSleeves && !modules.cuffs;
@@ -1414,7 +1433,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('print-scale') as HTMLInputElement).value = String(style.print?.scaleCm ?? 6);
     ($('product-name') as HTMLInputElement).value = design.name;
     const bottoms = isBottoms(design);
-    for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', design.base !== 'trousers'], ['skirt-measures', design.base !== 'skirt'], ['top-modules', bottoms], ['leg-modules', design.base !== 'trousers'],
+    for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', design.base !== 'trousers'], ['skirt-measures', design.base !== 'skirt'], ['top-modules', bottoms], ['leg-modules', design.base !== 'trousers'], ['trouser-modules', design.base !== 'trousers'],
       ['artwork-controls', bottoms], ['artwork-note', !bottoms], ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
     if (design.base === 'skirt') { const m=skirtDraft(design); for(const [id,,key] of SKIRT_FIELDS) ($(id) as HTMLInputElement).value=String(m[key]); ($('product-skirt-band') as HTMLInputElement).value=String(skirtBandHeight(design)); ($('product-skirt-gather') as HTMLInputElement).value=String(skirtGather(design)); ($('product-skirt-hip') as HTMLInputElement).value=String(skirtFit(design)?.hip ?? ''); const pleats=skirtPleats(design); ($('product-skirt-pleats') as HTMLSelectElement).value=pleats?.style ?? ''; ($('product-skirt-pleat-count') as HTMLInputElement).value=pleats ? String(pleats.count) : ''; ($('product-skirt-pleat-depth') as HTMLInputElement).value=pleats ? String(pleats.depth) : ''; }
     else if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key] ?? WAISTBAND_CM); ($('product-leg-cuff') as HTMLInputElement).value = String(m.cuffHeight ?? 0); }

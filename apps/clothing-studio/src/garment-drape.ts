@@ -64,7 +64,7 @@ export function bendingLength(fabric: Material): number {
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
-const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25]]);
+const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35]]);
 
 export const BODY_CHEST = [70, 140] as const;
 export const BODY_WAIST = [50, 180] as const;
@@ -598,17 +598,21 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
     bendWeights.push(...stencil.weights);
     bendStiffness.push(stencil.stiffness);
   }
-  // Pockets ride on the front body: each vertex keeps its place on the front triangle under it (flat coordinates).
-  const carried: Carried[] = [], front = meshes.find(mesh => mesh.part === 'front'), frontIds = vertices.get('front');
+  // Pockets ride on the body they are sewn to (trousers' back pockets on the back legs, the rest on the front): each
+  // vertex keeps its place on the triangle under it (flat coordinates).
+  const carried: Carried[] = [];
   for (const mesh of meshes) {
-    const lift = CARRIED.get(mesh.part);
+    const lift = CARRIED.get(mesh.part), host = mesh.part === 'backPocket' ? 'back' : 'front', facing = host === 'back' ? -1 : 1;
+    const front = meshes.find(other => other.part === host), frontIds = vertices.get(host);
     if (lift === undefined || !front || !frontIds) continue;
     for (let v = 0; v < mesh.positions.length / 3; v++) {
       const x = mesh.positions[v * 3]!, y = mesh.positions[v * 3 + 1]!;
       let best: Carried | null = null, bestScore = Infinity;
       for (let t = 0; t < front.indices.length; t += 3) {
         const tri: [number, number, number] = [frontIds[front.indices[t]!]!, frontIds[front.indices[t + 1]!]!, frontIds[front.indices[t + 2]!]!];
-        if (p(tri[0], 2) + p(tri[1], 2) + p(tri[2], 2) <= 0) continue;
+        if (facing * (p(tri[0], 2) + p(tri[1], 2) + p(tri[2], 2)) <= 0) continue;
+        // Each leg's pocket rides on its own leg.
+        if (host === 'back' && Math.sign(p(tri[0], 0) + p(tri[1], 0) + p(tri[2], 0)) !== Math.sign(x)) continue;
         const [x0, y0, x1, y1, x2, y2] = [p(tri[0], 0), p(tri[0], 1), p(tri[1], 0), p(tri[1], 1), p(tri[2], 0), p(tri[2], 1)];
         const det = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
         if (Math.abs(det) < 1e-12) continue;

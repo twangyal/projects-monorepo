@@ -9,11 +9,23 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { OPEN_ZIP_GAP, backPocketOf, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
 export type View = 'front' | 'back' | 'left' | 'right';
+/** A convex polygon (clockwise in pattern cm, y down) with each edge moved `inset` cm inward. */
+function insetPolygon(points: { x: number; y: number }[], inset: number): { x: number; y: number }[] {
+  const n = points.length, lines = points.map((a, i) => {
+    const b = points[(i + 1) % n]!, length = Math.hypot(b.x - a.x, b.y - a.y), normal = { x: -(b.y - a.y) / length, y: (b.x - a.x) / length };
+    return { a: { x: a.x + normal.x * inset, y: a.y + normal.y * inset }, d: { x: b.x - a.x, y: b.y - a.y } };
+  });
+  return lines.map((line, i) => {
+    const prev = lines[(i + n - 1) % n]!, cross = prev.d.x * line.d.y - prev.d.y * line.d.x;
+    const t = ((line.a.x - prev.a.x) * line.d.y - (line.a.y - prev.a.y) * line.d.x) / cross;
+    return { x: prev.a.x + prev.d.x * t, y: prev.a.y + prev.d.y * t };
+  });
+}
 /** A turntable export turns once in this many seconds, at this frame rate. */
 export const TURNTABLE_SECONDS = 6, TURNTABLE_FPS = 30, TURNTABLE_BACKDROP = 0xf1ebe0;
 
@@ -96,7 +108,8 @@ class ProductModel {
       if (target) this.addArtwork(garment, art, rest.find(part => part.part === art.part)!, target, this.worn);
     }
     for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
-    for (const { garment, rest, meshes } of wornMeshes) { this.addZip(garment, rest, meshes, this.worn); this.addButtons(garment, rest, meshes, this.worn); }
+    for (const { garment, rest, meshes } of wornMeshes) { this.addZip(garment, rest, meshes, this.worn); this.addButtons(garment, rest, meshes, this.worn); this.addTopstitching(garment, rest, meshes, this.worn); }
+    this.addTopstitching(product, restParts, this.parts, this.group);
     this.addZip(product, drape ? restParts : null, this.parts, this.group);
     this.addButtons(product, drape ? restParts : null, this.parts, this.group);
     this.requestRender();
@@ -128,6 +141,67 @@ class ProductModel {
     const width = open ? placket.width / 2 - OPEN_ZIP_GAP : placket.width, x = open ? -(OPEN_ZIP_GAP + width / 2) : 0, length = Math.min(placket.length, d.length - d.neckDepthFront - 0.5);
     this.addDecal(this.buttonTexture(product.parts.placket?.color ?? product.parts.front.color, width, length, placket.buttons), { front: true, x, y: top - length / 2, width, height: length },
       rest?.find(mesh => mesh.part === 'placket') ?? null, target, holder, holder === this.worn ? `${product.name}: Buttons` : 'Buttons');
+  }
+
+  /**
+   * Trousers' topstitching, as jeans show it: a double row round each back pocket's sides and point and across its top,
+   * and along the back yoke's seam, on the yoke. Gold thread on denim, a shade darker than the fabric otherwise. Each is
+   * drawn on a clear layer over its part, placed by the part's pattern coordinates, so it follows the drape.
+   */
+  private addTopstitching(product: Product, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
+    if (product.base !== 'trousers') return;
+    const thread = (part: PartId) => (material(product.parts[part]!.material).id.startsWith('denim') ? '#c9973f' : `#${new THREE.Color(product.parts[part]!.color).multiplyScalar(0.7).getHexString()}`);
+    const pocket = optionsOf(product).backPockets ? backPocketOf(product) : null;
+    if (pocket) {
+      const { width: w, height: h, point } = pocket, outline = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: w / 2, y: point }, { x: 0, y: h }];
+      this.addStitchLayer(product, 'backPocket', rest, parts, holder, w, point, thread('backPocket'), draw => {
+        // Two rows in from the sides and the point (the outline's edges moved in), and two across the top hem.
+        for (const inset of [0.3, 0.85]) {
+          const ring = insetPolygon(outline, inset);
+          draw([{ x: ring[1]!.x, y: 0 }, ring[2]!, ring[3]!, ring[4]!, { x: ring[0]!.x, y: 0 }], false);
+        }
+        for (const y of [1.5, 2.05]) draw([{ x: 0, y }, { x: w, y }], false);
+      });
+    }
+    if (optionsOf(product).yoke) {
+      const d = trouserDimensions(product), yoke = trouserYoke(product);
+      const side = { x: 0.5 - 0.5 * yoke.side / d.hipDepth, y: d.backRaise + yoke.side }, centre = { x: d.backHip - 0.5 + 0.5 * yoke.back / (d.backRaise + d.hipDepth), y: yoke.back };
+      const length = Math.hypot(centre.x - side.x, centre.y - side.y), up = { x: (centre.y - side.y) / length, y: -(centre.x - side.x) / length };
+      this.addStitchLayer(product, 'yoke', rest, parts, holder, d.backHip, Math.max(side.y, centre.y) + 1, thread('yoke'), draw => {
+        for (const gap of [0.3, 0.9]) draw([{ x: side.x + up.x * gap, y: side.y + up.y * gap }, { x: centre.x + up.x * gap, y: centre.y + up.y * gap }], false);
+      });
+    }
+  }
+
+  /** A clear layer over `part` (in its current, possibly draped, place) with stitches drawn in its pattern cm, which run
+   * from 0 to `widthCm` across and `heightCm` down. */
+  private addStitchLayer(product: Product, part: PartId, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D, widthCm: number, heightCm: number, colour: string,
+    paint: (draw: (points: { x: number; y: number }[], closed: boolean) => void) => void) {
+    const target = parts.get(part), shape = rest.find(mesh => mesh.part === part);
+    if (!target || !shape) return;
+    const key = `stitch:${part}:${colour}:${widthCm.toFixed(2)}:${heightCm.toFixed(2)}:${product.base}:${JSON.stringify(product.measurements)}`;
+    let texture = this.artworkTextures.get(key);
+    if (!texture) {
+      const scale = 24, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
+      canvas.width = Math.max(4, Math.round(widthCm * scale)); canvas.height = Math.max(4, Math.round(heightCm * scale));
+      context.strokeStyle = colour; context.lineWidth = 2; context.setLineDash([5, 3]); context.lineCap = 'round';
+      paint((points, closed) => {
+        context.beginPath();
+        points.forEach((point, i) => (i ? context.lineTo(point.x * scale, point.y * scale) : context.moveTo(point.x * scale, point.y * scale)));
+        if (closed) context.closePath();
+        context.stroke();
+      });
+      texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      this.artworkTextures.set(key, texture);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(Float32Array.from(target.geometry.getAttribute('position').array as ArrayLike<number>), 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(shape.uvs.map((value, i) => (i % 2 ? 1 - value / heightCm : value / widthCm)), 2));
+    geometry.setIndex(shape.indices); geometry.computeVertexNormals();
+    const layer = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide, roughness: 0.9 }));
+    layer.name = holder === this.worn ? `${product.name}: ${partName(product, part)} stitching` : `${partName(product, part)} stitching`;
+    holder.add(layer);
   }
 
   /** `count` buttons evenly down a placket `widthCm` by `lengthCm`, with a stitched edge, on a transparent ground. */

@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -46,7 +46,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/(?<!polo |t-|t )\bshirts?\b/, 'shirt', 'tee'],
   [/\bshorts\b/, 'shorts', 'trousers'],
   [/\b(joggers|sweat ?pants|track ?pants|jogging bottoms|track ?suit bottoms)\b/, 'joggers', 'trousers'],
-  [/\b(trousers|pants|chinos|jeans)\b/, 'trousers', 'trousers'],
+  [/\bjeans\b/, 'jeans', 'trousers'],
+  [/\b(trousers|pants|chinos)\b/, 'trousers', 'trousers'],
   [/\bskirts?\b/, 'flared-skirt', 'skirt'],
 ];
 
@@ -57,7 +58,8 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bleft cuffs?\b/, () => ['cuffLeft']],
   [/\bright cuffs?\b/, () => ['cuffRight']],
   [/\bchest pockets?\b/, () => ['chestPocket']],
-  [/\b(kangaroo pockets?|pouch|pockets?)\b/, parts => [parts.has('pocket') ? 'pocket' : 'chestPocket']],
+  [/\bback pockets?\b/, parts => (parts.has('backPocket') ? ['backPocket'] : [])],
+  [/\b(kangaroo pockets?|pouch|pockets?)\b/, parts => [parts.has('pocket') ? 'pocket' : parts.has('backPocket') ? 'backPocket' : 'chestPocket']],
   [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'collar', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
   [/\b(hem ?bands?|hem ribs?|bottom bands?)\b/, () => ['hemBand']],
   [/\b(waist ?bands?)\b/, () => ['waistband']],
@@ -146,6 +148,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
         garment.push('ankle cuffs: joggers');
       }
+      // Trousers described as jeans keep their styling and gain the back yoke and back pockets.
+      if (id === 'jeans' && (!optionsOf(product).yoke || !optionsOf(product).backPockets)) {
+        product = withOptions(product, { ...optionsOf(product), yoke: true, backPockets: true });
+        garment.push('jeans: back yoke and back pockets');
+      }
     } else if (base === product.base && id === 'polo') {
       // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), collar: true });
@@ -225,10 +232,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     product = withOptions(product, { ...optionsOf(product), yoke: false });
     garment.push('back yoke removed');
   } else if (!noYoke && yoked && !optionsOf(product).yoke) {
-    if (product.base === 'tee' && optionsOf(product).buttons) {
+    if (yokeAllowed(product.base, optionsOf(product))) {
       product = withOptions(product, { ...optionsOf(product), yoke: true });
-      garment.push('back yoke added: the back is cut across below the neck');
-    } else notApplied.push(`back yoke (it goes on a shirt with a button front, not a ${garmentName(product).toLowerCase()})`);
+      garment.push(product.base === 'trousers' ? 'back yoke added: the back legs are cut across the seat' : 'back yoke added: the back is cut across below the neck');
+    } else notApplied.push(`back yoke (it goes on a shirt with a button front or on trousers, not a ${garmentName(product).toLowerCase()})`);
   }
   if (take(/\bcontrast(?:ing)? (?:back )?yokes?\b/) && optionsOf(product).yoke) {
     // A contrast yoke without a colour named: the yoke in the collar's colour if that differs from the back, else navy.
@@ -255,7 +262,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     garment.push('contrast cuffs');
   }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
-  const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /\bpockets?\b/.test(text) && top) ? true : null;
+  const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /(?<!back )\bpockets?\b/.test(text) && top) ? true : null;
   if (pocket !== null) {
     if (pocket && !chestPocketAllowed(product.base)) notApplied.push(product.base === 'hoodie' ? 'chest pocket (a hoodie has a kangaroo pocket)' : 'chest pocket (goes on a top)');
     else {
@@ -263,6 +270,19 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       product = withOptions(product, { ...optionsOf(product), chestPocket: pocket });
       garment.push(pocket ? (had ? 'chest pocket' : 'chest pocket added') : (had ? 'chest pocket removed' : 'no chest pocket'));
     }
+  }
+  // Trousers' back patch pockets: added by naming them ("back pockets", "white pockets"), taken off with "no back pockets"
+  // (or "no pockets").
+  const noBackPockets = !!take(/\b(?:no|without) back pockets?\b/) || (!!noPocket && product.base === 'trousers');
+  const backPocketed = /\bback pockets?\b/.test(text) || (product.base === 'trousers' && /(?<!chest |kangaroo )\bpockets?\b/.test(text));
+  if (noBackPockets && optionsOf(product).backPockets) {
+    product = withOptions(product, { ...optionsOf(product), backPockets: false });
+    garment.push('back pockets removed');
+  } else if (!noBackPockets && backPocketed && !optionsOf(product).backPockets) {
+    if (backPocketsAllowed(product.base)) {
+      product = withOptions(product, { ...optionsOf(product), backPockets: true });
+      garment.push('back pockets added');
+    } else notApplied.push(`back pockets (they go on trousers or shorts, not a ${garmentName(product).toLowerCase()})`);
   }
 
   let skirtFitPreset: 'pencil' | 'straight' | null = null;
