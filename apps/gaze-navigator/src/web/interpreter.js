@@ -4,7 +4,7 @@ import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValu
 import { relatedWords, stem } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
 import { rowAction } from './rows.js';
-import { choicesMeant, namesIn, nextSize, sentence } from './choices.js';
+import { choicesMeant, namesIn, nextSize, rankSaid, rankedOption, sentence } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -1427,6 +1427,18 @@ function interpretInCircle(utterance, context) {
     const at = sizes.options.indexOf(sizes.value), next = at + step;
     if (at >= 0 && next >= 0 && next < sizes.options.length) return { type: 'select-option', targetId: sizes.id, optionIndex: next, optionName: sizes.options[next] };
     return { type: 'unknown', message: `There is no size ${step > 0 ? 'above' : 'below'} ${sizes.value ?? 'this one'} in ${sizes.name}.` };
+  }
+  // "The largest size", "the cheapest", "the quickest delivery", "the last option": a choice by where it comes among a
+  // dropdown's options, or among the radio buttons in the circle.
+  const ranked = rankSaid(text);
+  if (ranked) {
+    // A radio group's buttons sit together, so those just outside the circle count with the one looked at.
+    const radios = [...context.elements, ...(context.nearby ?? [])].filter(element => element.role === 'radio' && element.name);
+    const lists = [...options.map(element => ({ name: element.name, options: element.options, element })),
+      ...(radios.length >= 2 ? [{ name: radios.map(radio => radio.name).join(' '), options: radios.map(radio => radio.name), radios }] : [])];
+    const found = rankedOption(ranked, lists);
+    if (found?.list.element) return { type: 'select-option', targetId: found.list.element.id, optionIndex: found.optionIndex, optionName: found.name };
+    if (found) return { type: 'select-radio', targetId: found.list.radios[found.optionIndex].id };
   }
   const wanted = choiceSaid(text), making = /^make (?:the )?(.+)$/.exec(text);
   const madeIn = making && options.find(element => normalize(element.name ?? '') && making[1].startsWith(`${normalize(element.name)} `));

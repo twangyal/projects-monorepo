@@ -705,6 +705,44 @@ const HELD_OUT_11 = [
 
 export const HELD_OUT_11_SUITE = HELD_OUT_11.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Held-out set 12, written after choices could be said by their rank ("the largest size"), and scored once.
+const HELD_OUT_12 = [
+  ['activate', 'navigation', 'take me to the start page', act(1)],
+  ['activate', 'navigation', 'how much will it set me back', act(2)],
+  ['activate', 'navigation', 'who can I ring about this', act(3)],
+  ['activate', 'navigation', 'sign me in', act(4)],
+  ['select', 'product', 'softback is fine', option(1, 0)],
+  ['activate', 'product', 'any reviews worth reading', act(4)],
+  ['activate', 'product', 'pop it in my cart', act(2)],
+  ['select', 'product', 'the large print edition please', option(1, 2)],
+  ['select', 'form', 'I have a complaint about my order', option(5, 1)],
+  ['select', 'form', "I'd like a copy of this sent to me", { type: 'check', targetId: 4, checked: true }],
+  ['select', 'form', "I've got an idea for a book", option(5, 2)],
+  ['activate', 'form', 'fire it off', act(6)],
+  ['select', 'shop', 'the biggest one you have', option(1, 4)],
+  ['select', 'shop', 'go for the tiniest size', option(1, 0)],
+  ['select', 'shop', 'the fastest way to get it', option(4, 1)],
+  ['select', 'shop', 'the quickest option', option(4, 1)],
+  ['select', 'shop', 'the grey please', option(2, 2)],
+  ['select', 'shop', 'two of them', option(3, 1)],
+  ['select', 'shop', 'ship it to Germany', option(5, 4)],
+  ['select', 'shop', "I'll pick it up from the shop", option(4, 2)],
+  ['activate', 'basket', 'get rid of the socks', act(2)],
+  ['activate', 'basket', 'keep the mug for later', act(9)],
+  ['activate', 'basket', "I'm ready to pay", act(10)],
+  ['select', 'basket', 'three hats please', option(4, 2)],
+  ['activate', 'addresses', 'update the address at work', act(3)],
+  ['activate', 'addresses', "remove mum's house", act(6)],
+  ['activate', 'addresses', 'add another one', act(7)],
+  ['navigate', 'empty', 'go to the previous page', plain('back')],
+  ['navigate', 'empty', 'go forward a page', plain('forward')],
+  ['control', 'navigation', 'stop listening for a moment', plain('pause')],
+  ['refuse', 'shop', 'the cheapest size', plain('unknown')],
+  ['refuse', 'product', "don't add it to my cart", plain('unknown')],
+];
+
+export const HELD_OUT_12_SUITE = HELD_OUT_12.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 

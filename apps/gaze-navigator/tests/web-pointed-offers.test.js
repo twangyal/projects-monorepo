@@ -17,7 +17,6 @@ test('a request not understood as a command offers the one control its words poi
   assert.deepEqual(offer('any good ratings', product), { type: 'activate', targetId: 4, heardAs: 'Reviews' });
   // A dropdown's choice, with the list's own name counting for it; a box to tick.
   assert.deepEqual(offer('bigger print please', product), { type: 'select-option', targetId: 1, optionIndex: 2, optionName: 'Large print', heardAs: 'Large print' });
-  assert.deepEqual(offer('the largest size', shop), { type: 'select-option', targetId: 1, optionIndex: 4, optionName: 'XL', heardAs: 'XL' });
   assert.deepEqual(offer('I want a copy too', form), { type: 'check', targetId: 4, checked: true, heardAs: 'Send me a copy' });
   // A control repeated on each row is offered on the row the words name.
   assert.deepEqual(offer('move the socks to my saved items', basket), { type: 'activate', targetId: 3, heardAs: 'Save for later' });
