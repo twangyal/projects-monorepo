@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -65,7 +65,11 @@ function samplePack(product: Product, date: string): TechPack {
   if (product.base === 'skirt') return { ...skirtPack(product, spec, date), bom: [...bom, ...artworkBom(product)] };
   if (isBottoms(product)) {
     const legs = trouserDimensions(product);
-    bom.push({ item: 'T2 Waistband elastic', description: 'Knitted elastic, 3 cm wide', color: 'White', placement: 'Waistband channel', quantity: `${cm(legs.elastic)} (relaxed waist less 4 cm)` },
+    // A buttoned waistband (with the fly) closes with a zip and a shank button instead of an elastic.
+    bom.push(...(legs.fly ? [
+      { item: 'T2 Fly zip', description: 'Metal jeans zip with a locking slider', color: 'Brass', placement: 'Centre front fly', quantity: `1 pc, ${cm(legs.flyLength)} long` },
+      { item: 'T5 Waistband button', description: '17 mm metal shank (tack) button', color: 'Brass', placement: 'Centre front waistband', quantity: '1 pc' },
+    ] : [{ item: 'T2 Waistband elastic', description: 'Knitted elastic, 3 cm wide', color: 'White', placement: 'Waistband channel', quantity: `${cm(legs.elastic)} (relaxed waist less 4 cm)` }]),
       label('T3', 'Waistband label', 'Woven label, 5 × 2 cm', 'Centre back waistband, inside'),
       { ...label('T4', 'Care and content label', 'Printed satin label', 'Left side seam, 10 cm below the waistband'), color: 'White' });
     // Front pocket bags: each 6 cm wider than its opening and 18 cm deeper, cut double.
@@ -235,11 +239,13 @@ function pomMaker(sampleSize: Size) {
 /** Shorts and trousers: leg points of measure and construction; the bill of materials is shared. */
 function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date: string): Omit<TechPack, 'bom'> {
   const d = trouserDimensions(product), pom = pomMaker(spec.sampleSize), shorts = d.inseam < 35;
-  // Rises are measured along the centre seam: from the centre waist (outline point 1) round the crotch curve (to point 8).
-  const seam = (part: 'front' | 'back') => { const o = patternPieces(product).find(piece => piece.part === part)!.outline; let length = 0; for (let i = 1; i < 8; i++) length += Math.hypot(o[i + 1].x - o[i].x, o[i + 1].y - o[i].y); return length; };
+  // Rises are measured along the centre seam, from the waist round the crotch curve.
+  const seam = (part: 'front' | 'back') => trouserRise(product, part === 'front');
   const poms = [
-    pom('A', 'Waist (½), relaxed', 'Along the top of the waistband, elastic relaxed', d.waist / 2, 2.5, 1),
-    pom('B', 'Waist (½), extended', 'Along the top of the waistband, fully stretched', d.waistbandLength / 2, 2.5, 1),
+    ...(d.fly ? [pom('A', 'Waist (½), buttoned', 'Along the top of the waistband, buttoned', d.waist / 2, 2.5, 1),
+      pom('B', 'Fly opening', 'Waist seam to the foot of the zip, along the centre front', d.flyLength, 0, 0.5)]
+      : [pom('A', 'Waist (½), relaxed', 'Along the top of the waistband, elastic relaxed', d.waist / 2, 2.5, 1),
+        pom('B', 'Waist (½), extended', 'Along the top of the waistband, fully stretched', d.waistbandLength / 2, 2.5, 1)]),
     pom('C', 'Hip (½)', `${cm(d.hipDepth)} below the waist seam, side seam to side seam`, (d.frontHip + d.backHip) - 1, 2.5, 1),
     pom('D', 'Front rise', 'Waist seam to the inseam, along the centre front seam', seam('front'), 0.5, 0.5),
     pom('E', 'Back rise', 'Waist seam to the inseam, along the centre back seam', seam('back'), 0.75, 0.5),
@@ -252,8 +258,10 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
   ];
   // Jeans details: the front pockets' openings, the back yoke's seam and the back pockets, measured on the finished garment.
   const yoke = optionsOf(product).yoke ? trouserYoke(product) : null, pocket = optionsOf(product).backPockets ? backPocketOf(product) : null;
-  const scoop = optionsOf(product).frontPockets ? frontPocketOf(product) : null;
+  const scoop = optionsOf(product).frontPockets ? frontPocketOf(product) : null, loops = d.fly && optionsOf(product).beltLoops;
+  const loopLength = d.waistbandHeight + BELT_LOOP_CM.above + BELT_LOOP_CM.below;
   const details: [string, string, number][] = [
+    ...(loops ? [['Belt loop length', 'Finished, from below the waistband to over its top', loopLength], ['Belt loop width', 'Finished', BELT_LOOP_CM.width]] as [string, string, number][] : []),
     ...(scoop ? [['Front pocket opening', 'Along the waist seam, from the side seam to the pocket’s edge', scoop.opening], ['Front pocket depth', 'Along the side seam, from the waist seam to the pocket’s edge', scoop.depth]] as [string, string, number][] : []),
     ...(yoke ? [['Back yoke at the side seam', 'Waist seam to the yoke seam, along the side seam', yoke.side], ['Back yoke at the centre back', 'Waist seam to the yoke seam, along the centre back seam', yoke.back]] as [string, string, number][] : []),
     ...(pocket ? [['Back pocket width', 'Across the top of the pocket', pocket.width], ['Back pocket height', 'Top of the pocket to its point', pocket.point]] as [string, string, number][] : []),
@@ -268,8 +276,15 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
       detail: `${cm(pocket.width)} wide, ${cm(pocket.point)} to the point; ${yoke ? '1.5 cm below the yoke seam' : '6 cm below the waist'}, its centre ${cm(pocket.x + pocket.width / 2)} from the side seam` }] : []),
     { area: 'Inseams', operation: '4-thread overlock, then topstitch', detail: 'Join each front leg to its back leg from hem to crotch' },
     { area: 'Side seams', operation: '4-thread overlock', detail: 'Waist to hem; insert the care label at the left side' },
-    { area: 'Crotch seam', operation: 'Overlock, then double-stitch through the crotch', detail: 'Join the two legs from centre front waist through the crotch to centre back waist' },
-    { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(d.waistbandHeight)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
+    ...(d.fly ? [{ area: 'Fly front', operation: 'Sew the zip to the right front’s fly extension and fold it under as the shield; sew the other tape to the left front’s extension, then topstitch the J through the left front twice and bar-tack the foot of the fly',
+      detail: `${cm(d.flyLength)} metal zip; the extensions are cut on, ${cm(FLY_EXTENSION_CM)} past the centre front; J-stitch ${cm(FLY_WIDTH_CM)} from the centre front` }] : []),
+    { area: 'Crotch seam', operation: 'Overlock, then double-stitch through the crotch', detail: d.fly ? 'Join the two legs from the foot of the fly through the crotch to centre back waist' : 'Join the two legs from centre front waist through the crotch to centre back waist' },
+    d.fly
+      ? { area: 'Waistband', operation: 'Attach the folded band to the waist with its extension at the right front, close its ends and topstitch; work a buttonhole at the left front and set the shank button',
+        detail: `${cm(d.waistbandHeight)} finished, cut ${cm(d.waistbandLength)} long including a ${cm(FLY_EXTENSION_CM)} extension; 17 mm shank button` }
+      : { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(d.waistbandHeight)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
+    ...(loops ? [{ area: 'Belt loops', operation: 'Fold the strip in three, cover-stitch, cut into five loops and bar-tack each below the waistband and over its top',
+      detail: `${cm(loopLength)} long and ${cm(BELT_LOOP_CM.width)} wide; one on each front leg between the pocket and the fly, one on each back leg near the side seam and one at the centre back` }] : []),
     d.cuffHeight
       ? { area: 'Ankle cuffs', operation: 'Close into a loop, fold, then overlock to the leg opening, stretching the cuff to fit',
         detail: `${cm(d.cuffHeight)} finished; cut ${cm(d.cuffLength)} around, about a third shorter than the ${cm(d.legOpening)} leg opening it gathers` }
@@ -278,7 +293,7 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
   ];
   return {
     name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: garmentName(product),
-    neckline: 'Elasticated waistband', date, poms, construction,
+    neckline: d.fly ? 'Buttoned waistband, zip fly' : 'Elasticated waistband', date, poms, construction,
     notes: [
       `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,
       `Points of measure are for the sample size (${spec.sampleSize}); other sizes are measured from the design graded by ${LEG_GRADES.waist} cm of waist and hip per size. Confirm with a fit sample.`,
@@ -422,7 +437,7 @@ function trouserDiagram(product: Product): string {
   const crotchY = d.rise, hemY = d.rise + d.inseam, centre = (d.frontHip + d.frontCrotch) / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 ${-d.waistbandHeight - 8} ${bx + back.width + 16} ${Math.max(front.height, back.height) + d.waistbandHeight + 16}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 <title>Finished waistband shown schematically above the front leg panel; H includes the band, J measures its finished height.</title>
-${outline(front, 0)}${outline(back, bx)}<rect data-finished-waistband="true" x="0.5" y="${-d.waistbandHeight}" width="${d.frontHip - 1}" height="${d.waistbandHeight}" fill="#e8e3d9" stroke="#333" stroke-width="0.5"/>
+${outline(front, 0)}${outline(back, bx)}<rect data-finished-waistband="true" x="${d.sideAt(true, 0).toFixed(2)}" y="${-d.waistbandHeight}" width="${(d.centreAt(true, 0) - d.sideAt(true, 0)).toFixed(2)}" height="${d.waistbandHeight}" fill="#e8e3d9" stroke="#333" stroke-width="0.5"/>
 ${arrow(d.frontHip / 2, -d.waistbandHeight, d.frontHip / 2, 0, 'J', d.frontHip / 2 + 1.5, -d.waistbandHeight / 2 + 1.5)}
 ${arrow(0, d.hipDepth, d.frontHip, d.hipDepth, 'C', d.frontHip / 2 - 2, d.hipDepth - 1.5)}${arrow(d.frontHip + 2.5, 0, d.frontHip + 2.5, crotchY, 'D', d.frontHip + 4, crotchY / 2)}
 ${arrow(centre + d.frontHem / 2 + 3, crotchY + 2, centre + d.frontHem / 2 + 3, hemY, 'G', centre + d.frontHem / 2 + 4.5, (crotchY + hemY) / 2)}${arrow(-3, -d.waistbandHeight, -3, hemY, 'H', -7.5, (hemY - d.waistbandHeight) / 2)}

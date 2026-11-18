@@ -64,7 +64,9 @@ export function bendingLength(fabric: Material): number {
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
-const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35], ['frontPocket', 0.3]]);
+const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35], ['frontPocket', 0.3], ['beltLoop', 0.35]]);
+/** The part each carried part is sewn to, where it is not the front. */
+const CARRIER: ReadonlyMap<PartId, PartId> = new Map([['backPocket', 'back'], ['beltLoop', 'waistband']]);
 
 export const BODY_CHEST = [70, 140] as const;
 export const BODY_WAIST = [50, 180] as const;
@@ -219,11 +221,19 @@ export function skirtBodyProxy(product: Product, shape: { waist?: number; hip?: 
  * between them. By default the waist and hip are the ones the trousers were drafted for. The legs keep within the
  * trouser legs' circumference where they are inside them. The waistband is held round the body waist.
  */
+/** The body waist trousers drape on unless one is given: the waist they were drafted for, or, for a buttoned waist (with
+ * the fly), 2 cm less, as a fitted skirt is worn. */
+export function trouserBodyWaist(product: Product): number {
+  const d = trouserDimensions(product);
+  return d.fly ? Math.max(BODY_WAIST[0], d.waist - 2) : d.waist;
+}
+
 export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?: number; height?: number; hipDepth?: number } = {}): BodyProxy {
-  const d = trouserDimensions(product), waist = shape.waist ?? d.waist, hip = shape.hip ?? d.hip, height = validateBodyHeight(shape.height);
+  const d = trouserDimensions(product), waist = shape.waist ?? trouserBodyWaist(product), hip = shape.hip ?? d.hip, height = validateBodyHeight(shape.height);
   if (typeof waist !== 'number' || !Number.isFinite(waist) || waist < BODY_WAIST[0] || waist > BODY_WAIST[1]) throw new Error('Body waist must be from 50 to 180 cm.');
   if (typeof hip !== 'number' || !Number.isFinite(hip) || hip < BODY_HIP[0] || hip > BODY_HIP[1]) throw new Error('Body hip must be from 50 to 220 cm.');
-  if (hip > d.waistbandLength - 2) throw new Error(`The body hip must be at least 2 cm smaller than the trousers' ${d.waistbandLength} cm hip.`);
+  if (hip > d.hipRoom - 2) throw new Error(`The body hip must be at least 2 cm smaller than the trousers' ${d.hipRoom} cm hip.`);
+  if (d.fly && waist > d.waist - 1) throw new Error(`The body waist must be at least 1 cm smaller than the trousers' ${d.waist} cm buttoned waist.`);
   if (waist > hip) throw new Error('The body waist must not be larger than its hip.');
   const hipDepth = validateBodyHipDepth(shape.hipDepth);
   const waistHalf = stadiumHalfWidth(waist, 0.8), hipHalf = stadiumHalfWidth(hip, 0.75), top = d.length + d.waistbandHeight;
@@ -622,24 +632,24 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
     bendStiffness.push(stencil.stiffness);
   }
   // Pockets ride on the body they are sewn to (trousers' back pockets on the back legs, their front pockets' facings
-  // on the front legs, the rest on the front): each
-  // vertex keeps its place on the triangle under it (flat coordinates).
+  // on the front legs, the rest on the front), and belt loops on the waistband: each vertex keeps its place on the
+  // triangle under it (flat coordinates).
   const carried: Carried[] = [];
   for (const mesh of meshes) {
-    const lift = CARRIED.get(mesh.part), host = mesh.part === 'backPocket' ? 'back' : 'front', facing = host === 'back' ? -1 : 1;
+    const lift = CARRIED.get(mesh.part), host = CARRIER.get(mesh.part) ?? 'front', facing = host === 'back' ? -1 : 1, round = host === 'waistband';
     const front = meshes.find(other => other.part === host), frontIds = vertices.get(host);
     if (lift === undefined || !front || !frontIds) continue;
-    // A front pocket's facing reaches the side seam, where the legs turn away edge-on to the front view: its points take
-    // the nearest point of the front in 3D instead.
-    const spatial = mesh.part === 'frontPocket';
+    // A front pocket's facing reaches the side seam, where the legs turn away edge-on to the front view, and belt loops
+    // go round the waist: their points take the nearest point of their host in 3D instead.
+    const spatial = mesh.part === 'frontPocket' || round;
     for (let v = 0; v < mesh.positions.length / 3; v++) {
       const x = mesh.positions[v * 3]!, y = mesh.positions[v * 3 + 1]!, z = mesh.positions[v * 3 + 2]!;
       let best: Carried | null = null, bestScore = Infinity;
       for (let t = 0; t < front.indices.length; t += 3) {
         const tri: [number, number, number] = [frontIds[front.indices[t]!]!, frontIds[front.indices[t + 1]!]!, frontIds[front.indices[t + 2]!]!];
-        if (facing * (p(tri[0], 2) + p(tri[1], 2) + p(tri[2], 2)) <= 0) continue;
+        if (!round && facing * (p(tri[0], 2) + p(tri[1], 2) + p(tri[2], 2)) <= 0) continue;
         // Each leg's pocket rides on its own leg.
-        if ((host === 'back' || spatial) && Math.sign(p(tri[0], 0) + p(tri[1], 0) + p(tri[2], 0)) !== Math.sign(x)) continue;
+        if ((host === 'back' || (spatial && !round)) && Math.sign(p(tri[0], 0) + p(tri[1], 0) + p(tri[2], 0)) !== Math.sign(x)) continue;
         if (spatial) {
           const corner = (id: number): Vec => [p(id, 0), p(id, 1), p(id, 2)], near = nearestOnTriangle([x, y, z], corner(tri[0]), corner(tri[1]), corner(tri[2]));
           if (near.distance < bestScore) { bestScore = near.distance; best = { part: mesh.part, vertex: v, triangle: tri, weights: near.weights, lift }; }
@@ -1118,7 +1128,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
     if (!trousers && marks.height !== undefined) fit.sleeveBeyondWrist = (3 + teeDimensions(product).sleeveLength) - (3 + 0.33 * marks.height);
     else if (marks.sleeveBeyondWrist !== undefined) fit.sleeveBeyondWrist = marks.sleeveBeyondWrist;
   }
-  const ease = skirt ? skirtDraft(product).waist - body.waist : trousers ? trouserDimensions(product).waistbandLength - body.hip : topMeasurements(product).chest - body.chest;
+  const ease = skirt ? skirtDraft(product).waist - body.waist : trousers ? trouserDimensions(product).hipRoom - body.hip : topMeasurements(product).chest - body.chest;
   return { parts, body, settings: { frames: completed, substeps, frameSeconds: FRAME }, metrics: { ease, minClearance, contact: touching / count, maxStrain, residualSpeed: speed, ...(Object.keys(fit).length ? { fit } : {}) } };
 }
 

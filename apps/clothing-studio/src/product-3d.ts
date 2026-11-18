@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -136,8 +136,15 @@ class ProductModel {
     }
   }
 
-  /** A polo's or shirt's buttons, down its placket from the neckline; worn open, on the wearer's right half only. */
+  /** A polo's or shirt's buttons, down its placket from the neckline; worn open, on the wearer's right half only. A fly's
+   * waistband has a metal shank button at the centre front. */
   private addButtons(product: Product, rest: PartMesh[] | null, parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
+    if (product.base === 'trousers') {
+      const band = parts.get('waistband'), d = trouserDimensions(product);
+      if (band && d.fly) this.addDecal(this.shankButtonTexture(), { front: true, x: 0, y: d.length + d.waistbandHeight / 2, width: 2, height: 2 },
+        rest?.find(mesh => mesh.part === 'waistband') ?? null, band, holder, holder === this.worn ? `${product.name}: Waistband button` : 'Waistband button');
+      return;
+    }
     const target = parts.get('placket');
     if (!target) return;
     const d = teeDimensions(product), top = d.length - d.neckDepthFront, placket = placketOf(product), open = !!optionsOf(product).buttons && !!optionsOf(product).zipOpen;
@@ -148,7 +155,8 @@ class ProductModel {
 
   /**
    * Trousers' topstitching, as jeans show it: a double row round each back pocket's sides and point and across its top,
-   * along each front pocket's opening, and along the back yoke's seam, on the yoke. Gold thread on denim, a shade darker than the fabric otherwise. Each is
+   * along each front pocket's opening, along the back yoke's seam, on the yoke, in a J down the fly on the wearer's left
+   * front, and across each belt loop's ends. Gold thread on denim, a shade darker than the fabric otherwise. Each is
    * drawn on a clear layer over its part, placed by the part's pattern coordinates, so it follows the drape.
    */
   private addTopstitching(product: Product, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
@@ -181,15 +189,54 @@ class ProductModel {
         for (const gap of [0.3, 0.9]) draw([{ x: side.x + up.x * gap, y: side.y + up.y * gap }, { x: centre.x + up.x * gap, y: centre.y + up.y * gap }], false);
       });
     }
+    const d = trouserDimensions(product);
+    if (d.fly) {
+      // Two rows down the fly, FLY_WIDTH_CM in from the centre front, curving into it at the foot of the zip: on the
+      // wearer's left front leg only, the one that laps over the zip.
+      const length = d.flyLength;
+      this.addStitchLayer(product, 'front', rest, parts, holder, d.frontHip + d.frontCrotch, length + 2, thread('front'), draw => {
+        for (const width of [FLY_WIDTH_CM - 0.3, FLY_WIDTH_CM + 0.3]) {
+          const straight = Array.from({ length: 6 }, (_, i) => { const y = (length - width) * i / 5; return { x: d.centreAt(true, y) - width, y }; });
+          const curve = Array.from({ length: 8 }, (_, i) => { const t = Math.PI / 2 * (i + 1) / 8, y = length - width + width * Math.sin(t); return { x: d.centreAt(true, y) - width * Math.cos(t), y }; });
+          draw([...straight, ...curve], false);
+        }
+      }, 1);
+    }
+    if (d.fly && optionsOf(product).beltLoops) {
+      // Each belt loop is stitched down both long edges and bar-tacked across its ends.
+      const height = d.waistbandHeight + BELT_LOOP_CM.above + BELT_LOOP_CM.below;
+      this.addStitchLayer(product, 'beltLoop', rest, parts, holder, BELT_LOOP_CM.width, height, thread('beltLoop'), draw => {
+        for (const x of [0.2, BELT_LOOP_CM.width - 0.2]) draw([{ x, y: 0.15 }, { x, y: height - 0.15 }], false);
+        for (const y of [0.35, 0.5, height - 0.5, height - 0.35]) draw([{ x: 0.15, y }, { x: BELT_LOOP_CM.width - 0.15, y }], false);
+      });
+    }
+  }
+
+  /** A jeans button: a metal disc with a raised rim and a shank, on a transparent ground. */
+  private shankButtonTexture(): THREE.Texture {
+    const key = 'shank-button', cached = this.artworkTextures.get(key);
+    if (cached) return cached;
+    const canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
+    canvas.width = canvas.height = 64;
+    const shine = context.createRadialGradient(26, 24, 2, 32, 32, 30);
+    shine.addColorStop(0, '#f1d9a6'); shine.addColorStop(0.55, '#b98a45'); shine.addColorStop(1, '#6e4f22');
+    context.fillStyle = shine; context.beginPath(); context.arc(32, 32, 30, 0, Math.PI * 2); context.fill();
+    context.strokeStyle = '#5a3f19'; context.lineWidth = 3; context.beginPath(); context.arc(32, 32, 22, 0, Math.PI * 2); context.stroke();
+    context.fillStyle = '#7d5a2a'; context.beginPath(); context.arc(32, 32, 6, 0, Math.PI * 2); context.fill();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.artworkTextures.set(key, texture);
+    return texture;
   }
 
   /** A clear layer over `part` (in its current, possibly draped, place) with stitches drawn in its pattern cm, which run
-   * from 0 to `widthCm` across and `heightCm` down. */
+   * from 0 to `widthCm` across and `heightCm` down. With `half` (1 or -1), only over the part's triangles on that side
+   * of the centre (x > 0 is the wearer's left). */
   private addStitchLayer(product: Product, part: PartId, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D, widthCm: number, heightCm: number, colour: string,
-    paint: (draw: (points: { x: number; y: number }[], closed: boolean) => void) => void) {
+    paint: (draw: (points: { x: number; y: number }[], closed: boolean) => void) => void, half: 1 | -1 | 0 = 0) {
     const target = parts.get(part), shape = rest.find(mesh => mesh.part === part);
     if (!target || !shape) return;
-    const key = `stitch:${part}:${colour}:${widthCm.toFixed(2)}:${heightCm.toFixed(2)}:${product.base}:${JSON.stringify(product.measurements)}`;
+    const key = `stitch:${part}:${half}:${colour}:${widthCm.toFixed(2)}:${heightCm.toFixed(2)}:${product.base}:${JSON.stringify(product.measurements)}:${JSON.stringify(product.options ?? {})}`;
     let texture = this.artworkTextures.get(key);
     if (!texture) {
       const scale = 24, canvas = document.createElement('canvas'), context = canvas.getContext('2d')!;
@@ -208,7 +255,8 @@ class ProductModel {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(Float32Array.from(target.geometry.getAttribute('position').array as ArrayLike<number>), 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(shape.uvs.map((value, i) => (i % 2 ? 1 - value / heightCm : value / widthCm)), 2));
-    geometry.setIndex(shape.indices); geometry.computeVertexNormals();
+    const P = shape.positions, indices = half ? shape.indices.filter((_, k) => { const t = k - (k % 3); return Math.sign(P[shape.indices[t]! * 3]! + P[shape.indices[t + 1]! * 3]! + P[shape.indices[t + 2]! * 3]!) === half; }) : shape.indices;
+    geometry.setIndex(indices); geometry.computeVertexNormals();
     const layer = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide, roughness: 0.9 }));
     layer.name = holder === this.worn ? `${product.name}: ${partName(product, part)} stitching` : `${partName(product, part)} stitching`;
     holder.add(layer);

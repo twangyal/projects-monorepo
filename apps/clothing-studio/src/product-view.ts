@@ -5,7 +5,7 @@ import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import { bodyPhotoMarkup, mountBodyPhotos, type BodyField } from './body-photo-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
-import { GARMENT_FRAMES, LONG_GARMENT_FRAMES, previewDrapeFrames, BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, BODY_HIP_DEPTH, BODY_UPPER_ARM_GIRTH, BODY_NECK_GIRTH, BODY_UNDERBUST, canTuck, defaultBodyChest, garmentBody, outfitShape, threePiece, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
+import { trouserBodyWaist, GARMENT_FRAMES, LONG_GARMENT_FRAMES, previewDrapeFrames, BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, BODY_HEIGHT, BODY_HIP_DEPTH, BODY_UPPER_ARM_GIRTH, BODY_NECK_GIRTH, BODY_UNDERBUST, canTuck, defaultBodyChest, garmentBody, outfitShape, threePiece, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { listDesigns, readDesign } from './design-library.ts';
 import { gradedProduct, gradedOutfit } from './size-grades.ts';
 import { decodeProductFile } from './media.ts';
@@ -111,7 +111,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label><label class="check-field"><input id="product-collar" type="checkbox"> <span id="product-collar-name">Polo collar and placket</span></label><label class="check-field"><input id="product-zip" type="checkbox"> Front zip</label><label class="check-field"><input id="product-buttons" type="checkbox"> Button front</label><label class="check-field"><input id="product-yoke" type="checkbox" aria-describedby="yoke-help"> Back yoke</label><label class="check-field"><input id="product-cuffs" type="checkbox" aria-describedby="cuffs-help"> Shirt cuffs</label><label class="check-field"><input id="product-coat" type="checkbox" aria-describedby="coat-help"> Coat</label><p id="coat-help" class="fine-print" hidden>A coat goes over a T-shirt, shirt, polo or dress in an outfit, as well as with bottoms. Its hems are turned up and blind-stitched and its seams bound (it is unlined), with larger coat buttons.</p><p id="cuffs-help" class="fine-print" hidden>Each sleeve ends in a 6 cm buttoned cuff, styled on its own; the sleeve is cut 4 cm wider at its end and pleated into it. Long sleeves only.</p><p id="yoke-help" class="fine-print" hidden>The back is cut across 9 cm below the neck into a yoke over the shoulders (cut double, outer and facing) and the back body, each styled on its own.</p><label class="check-field"><input id="product-zip-open" type="checkbox"> Worn open</label><label class="check-field"><input id="product-waist-seam" type="checkbox" aria-describedby="waist-seam-help"> Waist seam (a dress cut into bodice and skirt)</label><p id="waist-seam-help" class="fine-print" hidden>The front and back are cut at the waist line (Fit: waist position) into a bodice and a skirt, which you can style on their own; artwork stays on the bodice. The hem width sets the skirt's flare.</p></div>
       <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
       <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
-      <div id="trouser-modules" class="measure-grid" hidden><label class="check-field"><input id="product-trouser-yoke" type="checkbox" aria-describedby="trouser-yoke-help"> Back yoke</label><label class="check-field"><input id="product-front-pockets" type="checkbox" aria-describedby="front-pockets-help"> Front pockets</label><label class="check-field"><input id="product-back-pockets" type="checkbox" aria-describedby="back-pockets-help"> Back pockets</label><p id="trouser-yoke-help" class="fine-print" hidden>The back legs are cut across the seat below the waistband, deeper at the centre back than at the side seams, as jeans are: a yoke styled on its own.</p><p id="front-pockets-help" class="fine-print" hidden>Each front leg is cut away in a curve from the waist to the side seam, as jeans are, showing the pocket facing behind it, styled on its own; the pocket bags are in the tech pack.</p><p id="back-pockets-help" class="fine-print" hidden>A pointed patch pocket topstitched to each back leg, below the yoke or the waistband, styled on its own.</p></div>
+      <div id="trouser-modules" class="measure-grid" hidden><label class="check-field"><input id="product-trouser-yoke" type="checkbox" aria-describedby="trouser-yoke-help"> Back yoke</label><label class="check-field"><input id="product-front-pockets" type="checkbox" aria-describedby="front-pockets-help"> Front pockets</label><label class="check-field"><input id="product-back-pockets" type="checkbox" aria-describedby="back-pockets-help"> Back pockets</label><label class="check-field"><input id="product-fly" type="checkbox" aria-describedby="fly-help"> Fly front</label><label class="check-field"><input id="product-belt-loops" type="checkbox" aria-describedby="belt-loops-help"> Belt loops</label><p id="trouser-yoke-help" class="fine-print" hidden>The back legs are cut across the seat below the waistband, deeper at the centre back than at the side seams, as jeans are: a yoke styled on its own.</p><p id="front-pockets-help" class="fine-print" hidden>Each front leg is cut away in a curve from the waist to the side seam, as jeans are, showing the pocket facing behind it, styled on its own; the pocket bags are in the tech pack.</p><p id="back-pockets-help" class="fine-print" hidden>A pointed patch pocket topstitched to each back leg, below the yoke or the waistband, styled on its own.</p><p id="fly-help" class="fine-print" hidden>The front legs close with a zip under a fly topstitched in a J on the wearer’s left, and the waistband is a straight band fastened with a button, so the waist is fitted: the legs narrow from the hips to the waist instead of being gathered by an elastic.</p><p id="belt-loops-help" class="fine-print">Five loops round a buttoned waistband, styled on their own. They need the fly front.</p></div>
       <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
       <div id="artwork-controls" class="artwork-controls">
@@ -230,7 +230,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (bottomsWorn) try { return outfitShape(bottomsWorn, chestFor(design), entered); } catch { return entered; }
     if (design.base === 'trousers') {
       const drafted = legMeasurements(design);
-      return {waist:bodyWaist??drafted.waist,hip:bodyHip??drafted.hip,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,neckGirth:bodyNeckGirth??undefined};
+      return {waist:bodyWaist??trouserBodyWaist(design),hip:bodyHip??drafted.hip,height:bodyHeight??undefined,hipDepth:bodyHipDepth??undefined,upperArmGirth:bodyArmGirth??undefined,neckGirth:bodyNeckGirth??undefined};
     }
     return shapeFor(design);
   };
@@ -303,7 +303,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (design.base === 'skirt') return `Draped on a body with a ${Number(result.body.waist.toFixed(2))} cm waist and ${Number(result.body.hip.toFixed(2))} cm hip, held at the waistline with ${Math.round(ease * 10) / 10} cm of waist ease; `
       + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. Stiffer fabrics hold more of the flare.`
       + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension).` : '');
-    if (design.base === 'trousers') return `Draped on a body with a ${Number(result.body.waist.toFixed(2))} cm waist and ${Number(result.body.hip.toFixed(2))} cm hip, the elastic waistband gathered onto the waist, with ${Math.round(ease * 10) / 10} cm of hip ease; `
+    if (design.base === 'trousers') return `Draped on a body with a ${Number(result.body.waist.toFixed(2))} cm waist and ${Number(result.body.hip.toFixed(2))} cm hip, ${design.options?.fly ? 'the buttoned waistband at the waist' : 'the elastic waistband gathered onto the waist'}, with ${Math.round(ease * 10) / 10} cm of hip ease; `
       + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}.`
       + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension).` : '');
     return `Draped on a body with a ${result.body.underbust === undefined ? `${result.body.chest} cm chest` : `${result.body.chest} cm bust over a ${result.body.underbust} cm underbust`}: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; ${Number(result.body.waist.toFixed(2))} cm waist / ${Number(result.body.hip.toFixed(2))} cm hip / ${Number(result.body.chestDepth.toFixed(2))} cm chest depth on the proxy${result.body.neckGirth === undefined ? '' : ` / ${result.body.neckGirth} cm neck girth`}${result.body.upperArmGirth === undefined ? '' : ` / ${result.body.upperArmGirth} cm upper-arm girth`}; `
@@ -1000,6 +1000,21 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     setModules(current => { const others = { ...current }; delete others.frontPockets; return on ? { ...others, frontPockets: true } : others; },
       on ? 'Front pockets added: a curved opening on each front leg, its facing starting in the front legs’ style. Style the facings on their own. You can undo this.' : 'Front pockets removed. You can undo this.');
   });
+  $('product-fly').addEventListener('change', () => {
+    const on = ($('product-fly') as HTMLInputElement).checked;
+    // Belt loops need the buttoned waistband, so they go with the fly.
+    if (!on && selected === 'beltLoop') selected = 'waistband';
+    setModules(current => { const others = { ...current }; delete others.fly; delete others.beltLoops; return on ? { ...others, fly: true } : others; },
+      on ? 'Fly front added: the front legs close with a zip under a J-stitched fly and the waistband is buttoned, so the waist is fitted. You can undo this.'
+        : `Fly front removed: the waistband is elasticated again${product()?.options?.beltLoops ? ', without belt loops' : ''}. You can undo this.`);
+  });
+  $('product-belt-loops').addEventListener('change', () => {
+    const on = ($('product-belt-loops') as HTMLInputElement).checked;
+    if (on) selected = 'beltLoop';
+    else if (selected === 'beltLoop') selected = 'waistband';
+    setModules(current => { const others = { ...current }; delete others.beltLoops; return on ? { ...others, beltLoops: true } : others; },
+      on ? 'Belt loops added: five round the waistband, starting in the waistband’s style. Style them on their own. You can undo this.' : 'Belt loops removed. You can undo this.');
+  });
   $('product-back-pockets').addEventListener('change', () => {
     const on = ($('product-back-pockets') as HTMLInputElement).checked;
     if (on) selected = 'backPocket';
@@ -1408,6 +1423,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-trouser-yoke') as HTMLInputElement).checked = !!modules.yoke; ($('product-back-pockets') as HTMLInputElement).checked = !!modules.backPockets;
     $('trouser-yoke-help').hidden = !modules.yoke; $('back-pockets-help').hidden = !modules.backPockets;
     ($('product-front-pockets') as HTMLInputElement).checked = !!modules.frontPockets; $('front-pockets-help').hidden = !modules.frontPockets;
+    ($('product-fly') as HTMLInputElement).checked = !!modules.fly; $('fly-help').hidden = !modules.fly;
+    const loops = $('product-belt-loops') as HTMLInputElement;
+    loops.checked = !!modules.fly && !!modules.beltLoops; loops.disabled = !modules.fly; $('belt-loops-help').hidden = !!modules.beltLoops;
+    // A buttoned waist is measured fastened; an elasticated one relaxed.
+    ($('product-waist').parentElement!.firstChild as Text).data = modules.fly ? 'Waist, buttoned (cm)' : 'Waist, relaxed (cm)';
     const cuffs = $('product-cuffs') as HTMLInputElement, longSleeves = cuffsAllowed(design, { ...modules, buttons: true });
     cuffs.checked = !!modules.cuffs; cuffs.closest('label')!.hidden = design.base !== 'tee' || !modules.buttons;
     cuffs.disabled = !longSleeves && !modules.cuffs;

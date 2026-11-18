@@ -60,6 +60,7 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bchest pockets?\b/, () => ['chestPocket']],
   [/\b(?:front|scoop) pockets?\b|\bpocket facings?\b/, parts => (parts.has('frontPocket') ? ['frontPocket'] : [])],
   [/\bback pockets?\b/, parts => (parts.has('backPocket') ? ['backPocket'] : [])],
+  [/\bbelt loops?\b/, parts => (parts.has('beltLoop') ? ['beltLoop'] : [])],
   [/\b(kangaroo pockets?|pouch|pockets?)\b/, parts => [parts.has('pocket') ? 'pocket' : parts.has('backPocket') ? 'backPocket' : 'chestPocket']],
   [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'collar', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
   [/\b(hem ?bands?|hem ribs?|bottom bands?)\b/, () => ['hemBand']],
@@ -151,10 +152,12 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
         garment.push('ankle cuffs: joggers');
       }
-      // Trousers described as jeans keep their styling and gain front pockets, the back yoke and back pockets.
-      if (id === 'jeans' && (!optionsOf(product).yoke || !optionsOf(product).backPockets || !optionsOf(product).frontPockets)) {
-        product = withOptions(product, { ...optionsOf(product), yoke: true, backPockets: true, frontPockets: true });
-        garment.push('jeans: front pockets, back yoke and back pockets');
+      // Trousers described as jeans keep their styling and gain the fly and belt loops, front pockets, the back yoke and
+      // back pockets.
+      const jeans = optionsOf(product);
+      if (id === 'jeans' && (!jeans.yoke || !jeans.backPockets || !jeans.frontPockets || !jeans.fly || !jeans.beltLoops)) {
+        product = withOptions(product, { ...jeans, yoke: true, backPockets: true, frontPockets: true, fly: true, beltLoops: true });
+        garment.push('jeans: zip fly, belt loops, front pockets, back yoke and back pockets');
       }
     } else if (base === product.base && id === 'polo') {
       // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
@@ -211,8 +214,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (!top || !hemAllowed(product.base, hem)) notApplied.push(`${hem} hem (a ${BASE_NAMES[product.base].toLowerCase()} keeps its own hem)`);
     else { product = withOptions(product, { ...optionsOf(product), hem }); garment.push(`hem: ${hem === 'curved' ? 'curved shirttail' : 'straight'}`); }
   }
-  // A front zip ("zip hoodie", "zip-up", "full-zip"), or none ("pullover").
-  const zipped = take(/\b(?:full[- ]?)?zip(?:ped|[- ]?(?:up|through))?\b/) ? true : take(/\bpull[- ]?over\b/) ? false : null;
+  // A front zip ("zip hoodie", "zip-up", "full-zip"), or none ("pullover"); a zip fly is trousers' (below).
+  const zipped = take(/\b(?:full[- ]?)?zip(?:ped|[- ]?(?:up|through))?\b(?! fly)/) ? true : take(/\bpull[- ]?over\b/) ? false : null;
   if (zipped !== null && zipAllowed(product.base)) {
     const had = !!optionsOf(product).zip, before = garmentName(product), others = { ...optionsOf(product) };
     delete others.zip; delete others.zipOpen;
@@ -286,6 +289,25 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       garment.push('front pockets added');
     }
   }
+  // Trousers' fly front: added by naming it ("zip fly", "button fly", "fly front"), or belt loops, which need its
+  // buttoned waistband; an elasticated or pull-on waist, or "no fly", takes it off, and its belt loops with it. Belt
+  // loops come off alone with "no belt loops".
+  if (product.base === 'trousers') {
+    const noLoops = !!take(/\b(?:no|without) belt loops?\b/), noFly = !!take(/\b(?:no|without) (?:zip )?fly\b/) || /\belastic(?:ated)? waist(?:band)?\b|\bpull-on\b/.test(text);
+    const wantsLoops = !noLoops && !noFly && /\bbelt loops?\b/.test(text), wantsFly = !noFly && (wantsLoops || /\b(?:zip |button )?fly(?: front)?\b/.test(text));
+    const now = optionsOf(product);
+    if (noFly && now.fly) {
+      product = withOptions(product, { ...now, fly: false, beltLoops: false });
+      garment.push(now.beltLoops ? 'fly front and belt loops removed: elasticated waist' : 'fly front removed: elasticated waist');
+    } else if (wantsFly && (!now.fly || (wantsLoops && !now.beltLoops))) {
+      product = withOptions(product, { ...now, fly: true, ...(wantsLoops || now.beltLoops ? { beltLoops: true } : {}) });
+      garment.push(wantsLoops && !now.fly ? 'fly front and belt loops added: buttoned waistband' : wantsLoops ? 'belt loops added' : 'fly front added: buttoned waistband');
+    }
+    if (noLoops && optionsOf(product).beltLoops) {
+      product = withOptions(product, { ...optionsOf(product), beltLoops: false });
+      garment.push('belt loops removed');
+    }
+  } else if (/\bbelt loops?\b|\b(?:zip|button) fly\b|\bfly front\b/.test(text)) notApplied.push(`fly front and belt loops (they go on trousers or shorts, not a ${garmentName(product).toLowerCase()})`);
   // Trousers' back patch pockets: added by naming them ("back pockets", "white pockets"), taken off with "no back pockets"
   // (or "no pockets").
   const noBackPockets = !!take(/\b(?:no|without) back pockets?\b/) || (!!noPocket && product.base === 'trousers');

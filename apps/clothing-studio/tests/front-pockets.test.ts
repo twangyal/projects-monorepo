@@ -50,15 +50,16 @@ test('the front pattern is cut away along the pocket’s curve, and the facing i
   assert.ok(Math.abs(area(jeans, 'frontPocket') - facing) < 4, `${area(jeans, 'frontPocket')} against ${facing}`);
   const front = patternPieces(jeans).find(piece => piece.part === 'front')!, piece = patternPieces(jeans).find(piece => piece.part === 'frontPocket')!;
   assert.equal(piece.cutCount, 2);
-  // The front's waist starts at the pocket's opening, not at the side seam.
-  assert.ok(Math.abs(front.outline[0]!.x - (0.5 + opening)) < 1e-9 && front.outline[0]!.y === 0);
-  assert.ok(!front.outline.some(p => p.y < 0.01 && p.x < 0.5 + opening - 1e-9), 'no waist left beside the side seam');
+  // The front's waist starts at the pocket's opening, not at the side seam (in from the hips, as the fly fits the waist).
+  const side = trouserDimensions(jeans).sideAt(true, 0);
+  assert.ok(side > 0.5 && Math.abs(front.outline[0]!.x - (side + opening)) < 1e-9 && front.outline[0]!.y === 0);
+  assert.ok(!front.outline.some(p => p.y < 0.01 && p.x < side + opening - 1e-9), 'no waist left beside the side seam');
 });
 
 test('in 3D each facing lies on its front leg at the side of the waist, and rides on it through the drape', () => {
   const mesh = teeMesh(jeans, Delaunator), facings = points(mesh.find(part => part.part === 'frontPocket')!), legs = points(mesh.find(part => part.part === 'front')!);
   const top = trouserDimensions(jeans).length, { depth } = frontPocketOf(jeans);
-  assert.ok(facings.every(p => p[2]! > 0), 'on the front');
+  assert.ok(facings.every(p => p[2]! > -0.1), 'on the front, reaching round to the side seam');
   assert.ok(Math.max(...facings.map(p => p[1]!)) <= top + 0.5 && Math.min(...facings.map(p => p[1]!)) >= top - depth - 0.5, 'within the pocket’s depth below the waist');
   assert.ok(Math.abs(Math.max(...facings.map(p => p[0]!)) + Math.min(...facings.map(p => p[0]!))) < 1e-6, 'one on each leg, mirrored');
   const gap = (p: number[]) => Math.min(...legs.map(q => Math.hypot(q[0]! - p[0]!, q[1]! - p[1]!, q[2]! - p[2]!)));

@@ -13,7 +13,7 @@ const points = (mesh: PartMesh) => Array.from({ length: mesh.positions.length / 
 
 test('trousers and shorts can have a back yoke and back pockets, each styled on its own; other garments cannot', () => {
   assert.ok(partsOf(jeans).includes('yoke') && partsOf(jeans).includes('backPocket'));
-  assert.deepEqual(validateProduct(jeans).options, { hem: 'straight', chestPocket: false, yoke: true, backPockets: true, frontPockets: true });
+  assert.deepEqual(validateProduct(jeans).options, { hem: 'straight', chestPocket: false, yoke: true, backPockets: true, frontPockets: true, fly: true, beltLoops: true });
   const added = withOptions(shorts, { ...optionsOf(shorts), yoke: true, backPockets: true });
   assert.deepEqual(added.parts.backPocket, shorts.parts.back);
   assert.deepEqual(added.parts.yoke, shorts.parts.back);
@@ -28,18 +28,24 @@ test('trousers and shorts can have a back yoke and back pockets, each styled on 
 test('the yoke seam runs deeper at the centre back than at the side seam, and every seam is sewn as without it', () => {
   const yoke = trouserYoke(jeans);
   assert.ok(yoke.back > yoke.side + 3 && yoke.side >= 2 && yoke.side <= 6, JSON.stringify(yoke));
-  const mesh = teeMesh(jeans, Delaunator), seam = points(mesh.find(part => part.part === 'yoke')!), top = Math.max(...seam.map(p => p[1]!));
+  // On pull-on jeans, whose back legs run straight up to the waist as plain trousers' do (a fly narrows them).
+  const pullOn = withOptions(jeans, { ...optionsOf(jeans), fly: false, beltLoops: false });
+  const mesh = teeMesh(pullOn, Delaunator), seam = points(mesh.find(part => part.part === 'yoke')!), top = Math.max(...seam.map(p => p[1]!));
   // The yoke's lowest points near the centre back seam and near the side seam.
   const depth = (near: (x: number) => boolean) => top - Math.min(...seam.filter(p => near(Math.abs(p[0]!))).map(p => p[1]!));
   const widest = Math.max(...seam.map(p => Math.abs(p[0]!)));
   assert.ok(depth(x => x < 1) > depth(x => x > widest - 1) + 2, `${depth(x => x < 1)} against ${depth(x => x > widest - 1)}`);
   // The yoke shares its seam's points with the back legs, and the back legs' side seams stay where the front legs' are:
   // the cloth has as many particles as plain trousers'.
-  const withoutPockets = withOptions(jeans, { ...optionsOf(jeans), backPockets: false });
+  const withoutPockets = withOptions(pullOn, { ...optionsOf(pullOn), backPockets: false });
   assert.equal(buildCloth(withoutPockets, teeMesh(withoutPockets, Delaunator)).inverseMass.length, buildCloth(trousers, teeMesh(trousers, Delaunator)).inverseMass.length);
-  // The pattern's yoke and back legs are the plain back leg cut in two.
+  // The pattern's yoke and back legs are the back leg without a yoke cut in two, with the fly's fitted waist or without.
   const area = (product: Product, part: string) => patternPieces(product).filter(piece => piece.part === part).reduce((sum, piece) => sum + piece.areaCm2, 0);
-  assert.ok(Math.abs(area(jeans, 'yoke') + area(jeans, 'back') - area(trousers, 'back')) < 0.5, `${area(jeans, 'yoke') + area(jeans, 'back')} against ${area(trousers, 'back')}`);
+  for (const cut of [jeans, pullOn]) {
+    const whole = withOptions(cut, { ...optionsOf(cut), yoke: false });
+    assert.ok(Math.abs(area(cut, 'yoke') + area(cut, 'back') - area(whole, 'back')) < 0.5, `${area(cut, 'yoke') + area(cut, 'back')} against ${area(whole, 'back')}`);
+  }
+  assert.ok(Math.abs(area(pullOn, 'back') + area(pullOn, 'yoke') - area(trousers, 'back')) < 0.5);
   assert.equal(patternPieces(jeans).find(piece => piece.part === 'yoke')!.cutCount, 2);
 });
 
