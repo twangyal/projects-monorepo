@@ -4,7 +4,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -83,7 +83,7 @@ function samplePack(product: Product, date: string): TechPack {
   }
   bom.push(label('T2', 'Neck label', 'Woven label, 5 × 2 cm', 'Centre back neck'),
     { ...label('T3', 'Care and content label', 'Printed satin label', 'Left side seam, 8 cm above hem'), color: 'White' });
-  const dims = teeDimensions(product), modules = optionsOf(product);
+  const dims = teeDimensions(product), modules = optionsOf(product), dart = bustDartOf(product);
   if (modules.zip) bom.push({ item: 'Z1 Zip', description: 'Open-end #5 coil zip with a locking slider', color: 'Match front body',
     placement: 'Centre front, neck to hem', quantity: `1 × ${cm(zipLength(product))}` });
   const placket = placketOf(product);
@@ -128,6 +128,7 @@ function samplePack(product: Product, date: string): TechPack {
       pom('T', 'Hem curve drop', 'Hem at the side seam to hem at centre front, measured straight down', dims.hemCurve, 0, 0.5),
     ] : []),
     pom('U', 'Shoulder drop', 'High point shoulder line vertically down to the shoulder point at the armhole', dims.shoulderDrop, 0, 0.5),
+    ...(dart ? [pom('BD', 'Bust dart intake', 'Taken in at each side seam by its bust dart, measured along the seam', dart.intake, 0, 0.25)] : []),
     ...(modules.chestPocket ? [
       pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
       pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
@@ -179,6 +180,8 @@ function samplePack(product: Product, date: string): TechPack {
           : `the skirt flares from ${cm(seamHalfAt(dims, dims.waistY) * 2)} (½) at the seam to ${cm(dims.hemHalf * 2)} at the hem`) }))(topMeasurements(product).gather ?? 1)] : []),
     ...(product.base === 'tee' && modules.cuffs ? [{ area: 'Cuffs', operation: 'Fuse, sew and turn each cuff; pleat the sleeve end into it (two pleats), set it and topstitch 0.6 cm; one buttonhole and button',
       detail: `Cuffs cut on the fold, ${cm(SHIRT_CUFF_CM)} finished and ${cm(dims.cuffHalf * 2)} round with a 2 cm overlap; each sleeve is cut 4 cm wider at its end than the cuff and stops ${cm(SHIRT_CUFF_CM)} short of the measured length, ${product.parts.cuffLeft?.material === product.parts.sleeveLeft?.material ? 'in the sleeve fabric' : 'in the chosen cuff fabric'}` }] : []),
+    ...(dart ? [{ area: 'Bust darts', operation: 'Sew each dart from the side seam to its point, tie off at the point, and press it down',
+      detail: `${cm(dart.intake)} taken in at each side seam, ${cm(dart.side.y)} below the high point shoulder (${cm(dart.side.y - dims.shoulderDrop - dims.armDepth)} below the underarm), each dart ${cm(Math.hypot(dart.side.x - dart.apex.x, dart.side.y - dart.apex.y))} long and ending ${cm(Math.hypot(dart.apex.x - dart.bust.x, dart.apex.y - dart.bust.y))} short of the bust point, ${cm(dart.bust.x)} from the centre front; sew before the side seams` }] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' && modules.coat ? [
       // A coat's woven hems are turned up deeper and blind-stitched, and its unlined seams bound.

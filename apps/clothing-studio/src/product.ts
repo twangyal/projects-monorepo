@@ -324,7 +324,8 @@ export function placketOf(product: Product): { length: number; width: number; bu
     const length = Math.round((d.length - d.waistY) * 2) / 2;
     return { length, width: SHIRT_PLACKET_CM, buttons: Math.max(1, Math.min(4, Math.round(length / 16))) };
   }
-  const length = Math.round((d.length - d.neckDepthFront) * 2) / 2;
+  // Bust darts lengthen the front edge it is sewn to.
+  const length = Math.round((d.length - d.neckDepthFront + (bustDartOf(product)?.intake ?? 0)) * 2) / 2;
   return { length, width: SHIRT_PLACKET_CM, buttons: Math.max(4, Math.round(length / BUTTON_SPACING_CM)) };
 }
 /** A front zip's length: from the centre-front neck down through the hem band. */
@@ -456,11 +457,15 @@ export interface Measurements { chest: number; length: number; sleeve: number;
   /** A dress cut at the waist: its skirt's waist edge is cut this many times longer than the seam and gathered into it
    * (DRESS_GATHER); absent for a smooth skirt. */ gather?: number;
   /** Puff sleeves: each sleeve cap is cut this many times as long as the armhole it is gathered into (SLEEVE_GATHER);
-   * absent for a plain sleeve, whose cap is CAP_EASE longer. */ sleeveGather?: number }
+   * absent for a plain sleeve, whose cap is CAP_EASE longer. */ sleeveGather?: number;
+  /** Side bust darts (T-shirt bases): how much each takes out of its side seam, cm (BUST_DART; see bustDartOf); absent
+   * for none. */ bustDart?: number }
 /** How many times longer a dress skirt's waist edge may be cut than the waist seam it is gathered into. */
 export const DRESS_GATHER = [1.1, 2] as const;
 /** How many times as long as its armhole a puff sleeve's cap may be cut. */
 export const SLEEVE_GATHER = [1.2, 1.7] as const;
+/** How much a side bust dart may take out of its side seam, cm, and how much a dart added by name takes. */
+export const BUST_DART = [1, 5] as const, DEFAULT_BUST_DART = 2.5;
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), shoulder drop (U), neck width (F), front
  * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
@@ -814,13 +819,15 @@ export function validateProduct(value: unknown): Product {
     if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
   } else {
     const has = (key: string) => !!p.measurements && typeof p.measurements === 'object' && Object.hasOwn(p.measurements, key);
-    const gathered = has('gather'), puffed = has('sleeveGather');
-    const m = plain(p.measurements, ['chest', 'length', 'sleeve', ...(gathered ? ['gather'] : []), ...(puffed ? ['sleeveGather'] : [])], 'Measurements');
+    const gathered = has('gather'), puffed = has('sleeveGather'), darted = has('bustDart');
+    const m = plain(p.measurements, ['chest', 'length', 'sleeve', ...(gathered ? ['gather'] : []), ...(puffed ? ['sleeveGather'] : []), ...(darted ? ['bustDart'] : [])], 'Measurements');
     // A tee's sleeve length of 0 makes it sleeveless.
     const sleeve = base === 'tee' && m.sleeve === 0 ? 0 : finite(m.sleeve, LIMITS.sleeve, base === 'tee' ? 'Sleeve length (cm; 0 for sleeveless)' : 'Sleeve length (cm)');
     measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve,
       ...(gathered ? { gather: finite(m.gather, DRESS_GATHER, 'Skirt gathering (× waist seam)') } : {}),
-      ...(puffed ? { sleeveGather: finite(m.sleeveGather, SLEEVE_GATHER, 'Sleeve cap gathering (× armhole)') } : {}) };
+      ...(puffed ? { sleeveGather: finite(m.sleeveGather, SLEEVE_GATHER, 'Sleeve cap gathering (× armhole)') } : {}),
+      ...(darted ? { bustDart: finite(m.bustDart, BUST_DART, 'Bust dart intake (cm)') } : {}) };
+    if (darted && base !== 'tee') fail('Bust darts go on T-shirts, shirts, coats and tee dresses; a knit sweatshirt or hoodie is shaped by its stretch.');
     if (puffed && (base !== 'tee' || sleeve === 0)) fail(base === 'tee' ? 'A sleeveless top has no sleeves to puff: give it sleeves first.' : 'Puff sleeves go on T-shirts, shirts and tee dresses; a sweatshirt\'s sleeves end in rib cuffs.');
   }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
@@ -1129,6 +1136,117 @@ export function seamHalfAt(d: ReturnType<typeof teeDimensions>, y: number): numb
 /** How far a flared hem reaches past the chest on each side of the flat body piece (0 when it does not). */
 export function flare(product: Product): number { const d = teeDimensions(product); return Math.max(0, d.hemHalf - d.half); }
 
+/** A bust dart starts at the side seam this far below the underarm and ends this far short of the bust point, cm. */
+const DART_BELOW_ARMHOLE = 4, DART_SHORT_OF_BUST = 2.5;
+/** How far below its dart lines a front is lengthened over the bust, at most, cm. */
+const DART_SPREAD = 8;
+/**
+ * A front's side bust darts (Measurements.bustDart), described for the dart on the wearer's left in centred cm (x from
+ * the centre front to the side seam, y down from the neck points); the other mirrors it. Each runs from the side seam
+ * DART_BELOW_ARMHOLE below the underarm up toward the bust point, which lies a little under a tenth of the chest out
+ * from the centre and 2.5 cm above the underarm line, and ends DART_SHORT_OF_BUST short of it. Sewing it takes `intake`
+ * out of the side seam, so the front is cut that much longer below the dart lines (see dartFlat): the extra length
+ * reaches over the bust, and the side seams still meet the back's. `spread` is how far below the dart lines that extra
+ * length is let in at the centre. Null without darts.
+ */
+export interface BustDart { intake: number; bust: Pt; apex: Pt; side: Pt; spread: number }
+export function bustDartOf(product: Product): BustDart | null {
+  const intake = product.base === 'tee' ? (product.measurements as Measurements).bustDart : undefined;
+  if (!intake) return null;
+  const m = topMeasurements(product), d = teeDimensions(product), armY = d.shoulderDrop + d.armDepth;
+  const bust = { x: Math.min(m.chest * 0.095, d.half - 8), y: armY - 2.5 }, sideY = armY + DART_BELOW_ARMHOLE;
+  // The side seam where the dart starts, as the front outline draws it (a curved hem bends the seam's lower end).
+  const outline = topBodyOutline(product, true), centre = flare(product) + d.half;
+  const xs = outline.flatMap((p, i) => {
+    const q = outline[(i + 1) % outline.length]!;
+    return (p.y - sideY) * (q.y - sideY) <= 0 && p.y !== q.y ? [Math.abs(p.x + (q.x - p.x) * (sideY - p.y) / (q.y - p.y) - centre)] : [];
+  });
+  const side = { x: Math.max(...xs), y: sideY }, along = Math.hypot(side.x - bust.x, side.y - bust.y);
+  const apex = { x: bust.x + (side.x - bust.x) * DART_SHORT_OF_BUST / along, y: bust.y + (side.y - bust.y) * DART_SHORT_OF_BUST / along };
+  // The extra length is let in before the hem, or the waist seam, so the piece's lower edge is lowered evenly.
+  const bottom = optionsOf(product).waistSeam ? d.waistY : d.length - d.band;
+  return { intake, bust, apex, side, spread: Math.max(2, Math.min(DART_SPREAD, bottom - side.y - 0.5)) };
+}
+/** The dart lines as one line across the front (centred cm): level between the two apexes, then up each dart to its
+ * side seam and on past it. */
+export function dartLine(dart: BustDart): (x: number) => number {
+  const slope = (dart.side.y - dart.apex.y) / (dart.side.x - dart.apex.x);
+  return x => dart.apex.y + Math.max(0, Math.abs(x) - dart.apex.x) * slope;
+}
+/**
+ * Where a point of a darted front (centred cm, as sewn) lies on the cut piece. Above the dart lines nothing moves. Below
+ * them a point is lower by the intake, except near the darts: just under a dart's lower leg it is lower by the leg's
+ * share of the intake, from none at the apex to all of it at the side seam, and toward the centre the extra length is let
+ * in over `spread` below the line. A point on the line itself is taken as above it.
+ */
+export function dartFlat(dart: BustDart): (p: Pt) => Pt {
+  const line = dartLine(dart), lower = lowered(dart);
+  return p => (p.y - line(p.x) <= 0 ? p : lower(p));
+}
+/** dartFlat for the part of the front below the dart lines, the lines included: there, a point on a dart's line is on
+ * its lower leg. */
+function lowered(dart: BustDart): (p: Pt) => Pt {
+  const line = dartLine(dart);
+  return p => {
+    const leg = Math.min(1, Math.max(0, (Math.abs(p.x) - dart.apex.x) / (dart.side.x - dart.apex.x))), t = Math.min(1, Math.max(0, p.y - line(p.x)) / dart.spread);
+    return { x: p.x, y: p.y + dart.intake * (t + (1 - t) * leg) };
+  };
+}
+/** Where a point of the cut piece (centred cm) lies on the darted front as sewn: the inverse of dartFlat. A point inside
+ * a dart's wedge, folded away when it is sewn, goes to the dart line. */
+export function dartUnflat(dart: BustDart): (p: Pt) => Pt {
+  const line = dartLine(dart), flat = dartFlat(dart);
+  return p => {
+    if (p.y <= line(p.x)) return p;
+    let low = line(p.x), high = p.y;
+    if (flat({ x: p.x, y: low + 1e-9 }).y >= p.y) return { x: p.x, y: low };
+    for (let i = 0; i < 60; i++) { const mid = (low + high) / 2; if (flat({ x: p.x, y: mid }).y < p.y) low = mid; else high = mid; }
+    return { x: p.x, y: (low + high) / 2 };
+  };
+}
+/**
+ * A front region (centred cm) cut along its dart lines into the part above them and the part below. Both share the
+ * line's points, the apexes among them, so the drape sews them back together there: where the line runs between the
+ * apexes the two sides lie together on the cut piece too, and along each dart they are its two legs.
+ */
+function splitAtDarts(region: Pt[], dart: BustDart): { above: Pt[]; below: Pt[] } {
+  const line = dartLine(dart), lifted = region.map(p => ({ x: p.x, y: p.y - line(p.x) }));
+  const back = (points: Pt[]) => {
+    const out: Pt[] = [];
+    points.forEach((p, i) => {
+      out.push(p);
+      const q = points[(i + 1) % points.length]!;
+      // The cut runs along y = 0 here: it gains a point at each apex it passes.
+      if (Math.abs(p.y) < 1e-9 && Math.abs(q.y) < 1e-9) {
+        for (const x of [-dart.apex.x, dart.apex.x].sort((a, b) => (q.x > p.x ? a - b : b - a))) if ((x - p.x) * (x - q.x) < -1e-9) out.push({ x, y: 0 });
+      }
+    });
+    return out.map(p => ({ x: p.x, y: p.y + line(p.x) }));
+  };
+  return { above: back(clipAt(lifted, 0, true)), below: back(clipAt(lifted, 0, false)) };
+}
+/**
+ * A front piece's outline (pattern cm, its centre line at x = `centre`) as cut with bust darts, and each dart's legs from
+ * the side seam to the apex and back: below the dart lines the piece is lower (dartFlat), and each side seam opens by the
+ * intake where its dart is. The fabric between the legs stays on the piece, folded away when the dart is sewn.
+ */
+export function dartedOutline(outline: Pt[], dart: BustDart, centre: number): { outline: Pt[]; darts: [Pt, Pt, Pt][] } {
+  const line = dartLine(dart), flat = dartFlat(dart), centred = (p: Pt) => ({ x: p.x - centre, y: p.y }), piece = (p: Pt) => ({ x: p.x + centre, y: p.y });
+  const below = (p: Pt) => p.y - line(p.x - centre) > 0, out: Pt[] = [];
+  outline.forEach((p, i) => {
+    out.push(piece(flat(centred(p))));
+    const q = outline[(i + 1) % outline.length]!;
+    if (below(p) === below(q)) return;
+    // Where the outline crosses a dart line: the upper leg's end, then the lower's, or the other way round.
+    const vp = p.y - line(p.x - centre), vq = q.y - line(q.x - centre), t = vp / (vp - vq);
+    const at = centred({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t }), lower = { x: at.x, y: at.y + dart.intake * Math.min(1, Math.max(0, (Math.abs(at.x) - dart.apex.x) / (dart.side.x - dart.apex.x))) };
+    // Between the apexes (a half front's centre edge) the line does not open.
+    out.push(...(lower.y - at.y < 1e-9 ? [at] : below(p) ? [lower, at] : [at, lower]).map(piece));
+  });
+  const darts = [1, -1].map(sign => [{ x: sign * dart.side.x, y: dart.side.y }, { x: sign * dart.apex.x, y: dart.apex.y }, { x: sign * dart.side.x, y: dart.side.y + dart.intake }].map(piece) as [Pt, Pt, Pt]);
+  return { outline: out, darts };
+}
+
 /** Edited points of measure must still make a garment: the neck inside the shoulders, the armhole and neck within the body. */
 function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit' | 'options'>) {
   if (product.base !== 'hoodie' && (product.fit?.hoodHeight !== undefined || product.fit?.hoodWidth !== undefined)) fail('Hood side dimensions apply only to hoodies.');
@@ -1144,6 +1262,9 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (d.neckHalf + 4 > d.shoulderX) fail('The neck must be at least 8 cm narrower than the shoulders.');
   if (d.shoulderX > d.half + 8) fail('The shoulders can drop at most 8 cm past the chest on each side.');
   if (d.neckDepthFront + 4 > d.shoulderDrop + d.armDepth) fail('The front neck must end above the underarm.');
+  const dart = bustDartOf(product as Product);
+  if (dart && d.neckDepthFront + 3 > dart.apex.y) fail('Bust darts point to just below the front neckline: raise the neckline or take the darts off.');
+  if (dart && optionsOf(product).waistSeam && d.waistY - dart.side.y < 2.5) fail('The waist seam runs too close under the bust darts: lower it or take the darts off.');
   if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
   if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
   if (WAIST_FIT_KEYS.some(key => product.fit?.[key] !== undefined) && product.base !== 'tee') fail('Waist shaping applies only to T-shirts, shirts and tee dresses; sweatshirts and hoodies are held by their hem band.');
@@ -1771,6 +1892,16 @@ export function patternPieces(product: Product): PatternPiece[] {
     part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline),
   });
   const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
+  // A front with bust darts is cut longer below them and opens at each side seam where its dart is (see dartedOutline);
+  // a button or lapel front's halves are cut from it, each with its own dart.
+  const dart = bustDartOf(product), centreLine = flare(product) + panel.width / 2;
+  const darted = (outline: Pt[], half: 'left' | 'right' | null = null, shift = 0): { outline: Pt[]; darts?: [Pt, Pt, Pt][] } => {
+    const moved = (p: Pt) => ({ x: p.x - shift, y: p.y });
+    if (!dart) return { outline: outline.map(moved) };
+    const cut = dartedOutline(outline, dart, centreLine), keep = (legs: [Pt, Pt, Pt]) => half === null || (half === 'left') === (legs[1].x < centreLine);
+    return { outline: cut.outline.map(moved), darts: cut.darts.filter(keep).map(legs => legs.map(moved) as [Pt, Pt, Pt]) };
+  };
+  const dartedPiece = (part: PartId, cut: { outline: Pt[]; darts?: [Pt, Pt, Pt][] }, cutCount: number): PatternPiece => ({ ...make(part, cut.outline, cutCount), ...(cut.darts ? { darts: cut.darts } : {}) });
   if (product.base === 'tee') {
     const sleeves = sleeveless(product) ? [] : [make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1)];
     // A polo's or shirt's collar is as long as the neckline between the placket's edges; the placket is cut as a folded
@@ -1778,8 +1909,8 @@ export function patternPieces(product: Product): PatternPiece[] {
     const { collar, buttons } = optionsOf(product), placket = placketOf(product), lapelled = optionsOf(product).lapels ? lapelPieces(product) : null;
     // A coat with lapels has a front facing (cut to the lapel) instead of a placket.
     const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
-      ...(lapelled ? [make('lapel', lapelled.facing, 2)] : collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
-    const front = lapelled ? lapelled.front : buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
+      ...(lapelled ? [make('lapel', darted(lapelled.facing).outline, 2)] : collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
+    const front = lapelled ? lapelled.front : buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1, half = lapelled || buttons ? 'left' as const : null;
     // A shirt's cuffs are cut on the fold, twice their height, and 2 cm longer than the opening for the button's overlap.
     const cuffs = optionsOf(product).cuffs ? [make('cuffLeft', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1)] : [];
     // A back yoke is cut double (the outer yoke and its facing) above its seam, and the back body below it, laid out
@@ -1798,11 +1929,12 @@ export function patternPieces(product: Product): PatternPiece[] {
         const below = clipAt(outline, waist, false).map(q => ({ x: centre + (q.x - centre) * skirtGatherAt(dims, gather, q.y), y: q.y })), left = Math.min(...below.map(q => q.x));
         return below.map(q => ({ x: q.x - left, y: q.y - waist }));
       };
-      return [make('front', bodice(front), cut), ...backs(bodice(body(false))), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
+      return [dartedPiece('front', darted(clipAt(front, waist, true), half, shift), cut), ...backs(bodice(body(false))), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
         ...sleeves, ...cuffs, ...neck, ...modules];
     }
     // The lapel folds back along the roll line, marked on the front as a fold.
-    return [lapelled ? { ...make('front', front, cut), foldLine: lapelled.roll } : make('front', front, cut), ...backs(body(false)), ...sleeves, ...cuffs, ...neck, ...modules];
+    const fronts = dartedPiece('front', darted(front, half), cut);
+    return [lapelled ? { ...fronts, foldLine: lapelled.roll } : fronts, ...backs(body(false)), ...sleeves, ...cuffs, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;
@@ -1962,6 +2094,8 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   // A coat with lapels: above the top button each front is folded back along its roll line, so the front ends there and
   // the neckline between the roll lines is open.
   const lapels = product.base === 'tee' && optionsOf(product).lapels ? lapelOf(product, front.neck) : null;
+  // Parts lying on a darted front (the placket, lapels) are as long on the cut piece as the front under them.
+  const dart = bustDartOf(product), frontFlat = dart ? dartFlat(dart) : (p: Pt) => p;
   for (const [side, o] of [['front', front], ['back', back]] as const) {
     const outside = (neck: Pt[]) => {
       if (side !== 'front' || !lapels) return neck.slice(0, -1);
@@ -1980,10 +2114,17 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     const gather = m.gather ?? 1, flat = (p: Pt) => ({ x: p.x * skirtGatherAt(dims, gather, p.y), y: p.y });
     for (const [part, piece] of pieces) {
       const cut = part === 'skirtFront' || part === 'skirtBack' ? flat : undefined;
+      // A front with bust darts is filled above and below its dart lines, so its flat shape can open at each dart.
+      const fill = (region: Pt[]) => {
+        if (part !== 'front' || !dart) { fillRegion(groups.get(part)!, region, Delaunator, p => sign * rise(p), top, side, cut); return; }
+        const { above, below } = splitAtDarts(region, dart);
+        if (above.length > 2) fillRegion(groups.get(part)!, above, Delaunator, p => sign * rise(p), top, side);
+        if (below.length > 2) fillRegion(groups.get(part)!, below, Delaunator, p => sign * rise(p), top, side, lowered(dart));
+      };
       if (side === 'front' && open) {
         const mirror = (points: Pt[]) => points.map(p => ({ x: -p.x, y: p.y }));
-        for (const half of [leftOf(piece, -OPEN_ZIP_GAP), mirror(leftOf(mirror(piece), -OPEN_ZIP_GAP))]) fillRegion(groups.get(part)!, half, Delaunator, p => sign * rise(p), top, side, cut);
-      } else fillRegion(groups.get(part)!, piece, Delaunator, p => sign * rise(p), top, side, cut);
+        for (const half of [leftOf(piece, -OPEN_ZIP_GAP), mirror(leftOf(mirror(piece), -OPEN_ZIP_GAP))]) fill(half);
+      } else fill(piece);
     }
   }
   if (product.base === 'hoodie') {
@@ -2005,15 +2146,16 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
     // off it along the fold.
     const [B, R] = lapels.roll, roll = (p: Pt) => LAPEL_ROLL.height * Math.max(0, 1 - segmentDistance({ x: Math.abs(p.x), y: p.y }, B, R) / LAPEL_ROLL.width);
     for (const lapel of [lapels.lapel, lapels.lapel.map(p => ({ x: -p.x, y: p.y }))]) {
-      fillRegion(groups.get('lapel')!, lapel, Delaunator, p => rise(p) + LAPEL_LIFT_CM + roll(p), top, 'front', p => ({ x: p.x + LAPEL_UV_SHIFT, y: p.y }));
+      fillRegion(groups.get('lapel')!, lapel, Delaunator, p => rise(p) + LAPEL_LIFT_CM + roll(p), top, 'front', p => { const q = frontFlat(p); return { x: q.x + LAPEL_UV_SHIFT, y: q.y }; });
     }
   }
   if (product.base === 'tee' && (optionsOf(product).collar || buttoned) && !lapels) {
     // A polo's or shirt's placket: a strip down the centre front from the neckline, slightly proud of the front body. A
     // button front stops just short of the hem; worn open, each half carries its own side of it.
-    const placket = placketOf(product), y0 = dims.neckDepthFront, y1 = Math.min(dims.neckDepthFront + placket.length, m.length - 0.5), x = placket.width / 2;
+    // Bust darts lengthen the placket with the front edge it is sewn to, over the bust: as sewn it is no longer.
+    const placket = placketOf(product), y0 = dims.neckDepthFront, y1 = Math.min(dims.neckDepthFront + placket.length - (dart?.intake ?? 0), m.length - 0.5), x = placket.width / 2;
     for (const [left, right] of open ? [[-x, -OPEN_ZIP_GAP], [OPEN_ZIP_GAP, x]] : [[-x, x]]) {
-      fillRegion(groups.get('placket')!, [{ x: left, y: y0 }, { x: right, y: y0 }, { x: right, y: y1 }, { x: left, y: y1 }], Delaunator, p => rise(p) + 0.25, top, 'front');
+      fillRegion(groups.get('placket')!, [{ x: left, y: y0 }, { x: right, y: y0 }, { x: right, y: y1 }, { x: left, y: y1 }], Delaunator, p => rise(p) + 0.25, top, 'front', frontFlat);
     }
   }
   // Sleeves, posed along the sleeve angle like the body's arms; flat directions have y down. A sleeveless top's

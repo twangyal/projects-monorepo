@@ -5,7 +5,7 @@
 import Delaunator from 'delaunator';
 import { ARTWORK_SHOULDER_OFFSET } from './artwork-placement.ts';
 import {
-  ARTWORK_PART_NAMES, bodiceShift, bottomsArtworkFrame, flare, isBottoms, isSleeveArtwork, optionsOf, panelSize, patternPieces,
+  ARTWORK_PART_NAMES, bodiceShift, bottomsArtworkFrame, bustDartOf, dartFlat, dartLine, dartUnflat, flare, isBottoms, isSleeveArtwork, optionsOf, panelSize, patternPieces,
   sleeveArtworkFrame, teeMesh, topMeasurements, YOKE_CM, type Artwork, type PartId, type PartMesh, type PatternPiece, type Product,
 } from './product.ts';
 
@@ -139,7 +139,7 @@ export function artworkMarks(product: Product): ArtworkMark[] {
     const height = art.widthCm * art.height / art.width, name = ARTWORK_PART_NAMES[art.part];
     const label = `${name[0]!.toUpperCase()}${name.slice(1)} artwork${art.name ? ` (${art.name})` : ''}, ${cm(art.widthCm)} × ${cm(height)} cm`;
     if (isSleeveArtwork(art.part)) marks.push(...flatMarks(art, index, label, piece, sleeveOrigin(product), false));
-    else if (!isBottoms(product)) marks.push(...flatMarks(art, index, label, piece, topOrigin(product, art), piece.cutCount === 2));
+    else if (!isBottoms(product)) marks.push(...flatMarks(art, index, label, piece, topOrigin(product, art), piece.cutCount === 2, art.part === 'front' ? frontDarts(product) : null));
     else marks.push(...projectedMarks(product, art, index, label, piece, (meshes ??= teeMesh(product, Delaunator))));
   });
   return marks;
@@ -157,14 +157,34 @@ function topOrigin(product: Product, art: Artwork): { at: Pt; top: number } {
 }
 function sleeveOrigin(product: Product): { at: Pt; top: number } { return { at: { x: sleeveArtworkFrame(product).centre, y: 0 }, top: 0 }; }
 
+/** A front with bust darts is cut longer below them (see dartFlat), so a print there lands lower on the cut piece: how
+ * a point of the front (centred, as sewn) lands on it, and how far below the dart lines it is (negative above them). */
+interface FrontDarts { flat: (p: Pt) => Pt; unflat: (p: Pt) => Pt; depth: (p: Pt) => number; spread: number }
+function frontDarts(product: Product): FrontDarts | null {
+  const dart = bustDartOf(product);
+  if (!dart) return null;
+  const line = dartLine(dart);
+  return { flat: dartFlat(dart), unflat: dartUnflat(dart), depth: p => p.y - line(p.x), spread: dart.spread };
+}
+/** Points along the segment no more than 0.25 cm apart, both ends included. */
+function along(a: Pt, b: Pt): Pt[] {
+  const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.25));
+  return Array.from({ length: n + 1 }, (_, k) => lerp(a, b, k / n));
+}
+
 /**
  * A print laid flat on its piece: a rectangle, cut back to the piece. A front cut as a mirrored pair (a button, zip or
  * lapel front) is drawn as the wearer's right front: the print's part on the wearer's left front is drawn where it lands
- * when the pattern is turned over to cut that piece.
+ * when the pattern is turned over to cut that piece. On a front with bust darts the print's edges are carried down with
+ * the fabric below the darts, and broken where a dart folds the fabric away; its image is drawn only where the whole
+ * print moves as one, wholly above the darts or well below them.
  */
-function flatMarks(art: Artwork, index: number, label: string, piece: PatternPiece, origin: { at: Pt; top: number }, pair: boolean): ArtworkMark[] {
+function flatMarks(art: Artwork, index: number, label: string, piece: PatternPiece, origin: { at: Pt; top: number }, pair: boolean, darts: FrontDarts | null = null): ArtworkMark[] {
   const height = art.widthCm * art.height / art.width, rotation = art.rotation ?? 0, centre = { x: art.xCm, y: origin.top + art.yCm + height / 2 };
   const corners = rectangle(centre, art.widthCm, height, rotation), outline = piece.outline;
+  const flat = darts ? darts.flat : (p: Pt) => p;
+  const edges = darts ? corners.flatMap((corner, i) => along(corner, corners[(i + 1) % 4]!)) : [];
+  const whole = !darts || edges.every(p => darts.depth(p) <= 0) || corners.every(p => darts.depth(p) >= darts.spread);
   const sides = pair
     ? [{ keep: (p: Pt) => -p.x, turned: false, who: 'wearer’s right front' }, { keep: (p: Pt) => p.x, turned: true, who: 'wearer’s left front' }]
     : [{ keep: () => 0, turned: false, who: '' }];
@@ -174,15 +194,19 @@ function flatMarks(art: Artwork, index: number, label: string, piece: PatternPie
     const segments: [Pt, Pt][] = [];
     corners.forEach((corner, i) => {
       const kept = keepWhere(corner, corners[(i + 1) % 4]!, side.keep);
-      if (kept) segments.push(...within(onPiece(kept[0]), onPiece(kept[1]), outline));
+      if (!kept) return;
+      if (!darts) { segments.push(...within(onPiece(kept[0]), onPiece(kept[1]), outline)); return; }
+      const points = along(kept[0], kept[1]).map(flat);
+      // A step that jumps across a dart's folded-away wedge is not drawn.
+      points.slice(1).forEach((q, k) => { const p = points[k]!; if (Math.hypot(q.x - p.x, q.y - p.y) < 0.75) segments.push(...within(onPiece(p), onPiece(q), outline)); });
     });
-    const middleAt = onPiece(centre), covers = side.keep(centre) >= 0 && inside(middleAt, outline);
+    const middleAt = onPiece(flat(centre)), covers = side.keep(centre) >= 0 && inside(middleAt, outline);
     if (!segments.length && !covers) continue;
     const lines = joinSegments(segments);
     marks.push({
       part: piece.part, index, label: side.who ? `${label}, ${side.who}${side.turned ? ', pattern turned over' : ''}` : label, lines,
       at: covers ? middleAt : middle(lines), turned: side.turned,
-      ...(side.turned ? {} : { image: { centre: middleAt, width: art.widthCm, height, rotation, region: pair ? polygonWhere(outline, p => origin.at.x - p.x) : outline } }),
+      ...(side.turned || !whole ? {} : { image: { centre: middleAt, width: art.widthCm, height, rotation, region: pair ? polygonWhere(outline, p => origin.at.x - p.x) : outline } }),
     });
   }
   return marks;
@@ -198,7 +222,9 @@ export function placementOnPattern(product: Product, index: number, centre: Pt):
   if (!art || isBottoms(product)) throw new Error('Only a print laid flat on a top or a sleeve can be moved on the pattern.');
   const height = art.widthCm * art.height / art.width, origin = isSleeveArtwork(art.part) ? sleeveOrigin(product) : topOrigin(product, art);
   const round = (value: number) => Math.round(value * 10) / 10;
-  return { xCm: round(centre.x - origin.at.x), yCm: round(centre.y - origin.at.y - origin.top - height / 2) };
+  // Below bust darts the cut piece is longer than the front as sewn: the print goes where that point is sewn.
+  const darts = art.part === 'front' ? frontDarts(product) : null, sewn = darts ? darts.unflat({ x: centre.x - origin.at.x, y: centre.y - origin.at.y }) : { x: centre.x - origin.at.x, y: centre.y - origin.at.y };
+  return { xCm: round(sewn.x), yCm: round(sewn.y - origin.top - height / 2) };
 }
 
 /** How far the decal reaches in front of and behind its centre, as in 3D (see Product3D.addDecal). */

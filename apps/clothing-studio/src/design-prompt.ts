@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, textPlace, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, lapelsAllowed, COAT_LENGTH, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DEFAULT_BUST_DART, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, lapelsAllowed, COAT_LENGTH, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -363,6 +363,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const gatheredSkirt = take(/\b(?:gathered|dirndl) (?:skirt|waist)s?\b|\bdirndl\b/) ?? gatheredDress;
     const smoothSkirt = !gatheredSkirt && take(/\b(?:smooth|ungathered) skirt\b/);
     const puffed = take(/\b(?:puff(?:ed|y)?|balloon|gathered) sleeves?\b/), plainSleeves = !puffed && take(/\b(?:plain|flat|unpuffed|ungathered) sleeves?\b|\bno puff sleeves?\b/);
+    // Bust darts shape the front over the bust.
+    const undarted = take(/\b(?:no|without)(?: side)?(?: bust)? darts\b|\bundarted\b/), dartedFront = !undarted && take(/\b(?:side )?(?:bust )?darts?\b|\bdarted\b/);
     const chest = take(/\b(oversized|boxy|baggy)(?: fit)?\b/) ? 12 : take(/\b(relaxed|loose)(?: fit)?\b/) ? 6 : take(/\b(slim|fitted(?! hip\b))(?: fit)?\b/) ? -6 : take(/\b(regular|classic)(?: fit)\b/) ? 0 : null;
     const cropped = take(/\bcropped\b/);
     const m = topMeasurements(product), r = topMeasurements(reference), next = { ...m };
@@ -372,6 +374,16 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (chest !== null) garment.push(`fit: ${next.chest} cm chest`);
     if (cropped) garment.push(`cropped: ${next.length} cm length`);
     product.measurements = next;
+    if (undarted && next.bustDart) {
+      const rest = { ...next };
+      delete rest.bustDart;
+      product.measurements = rest;
+      garment.push('no bust darts');
+    } else if (dartedFront && product.base !== 'tee') notApplied.push(`${dartedFront[0]} (bust darts go on T-shirts, shirts, coats and tee dresses; a knit sweatshirt or hoodie is shaped by its stretch)`);
+    else if (dartedFront && !next.bustDart) {
+      product.measurements = { ...next, bustDart: DEFAULT_BUST_DART };
+      garment.push(`bust darts: ${DEFAULT_BUST_DART} cm taken in at each side seam`);
+    }
     // A fitted waist takes 8 cm off each side of the front and back at the waist (16 cm round), from this chest.
     if (straightSides && product.fit && WAIST_FIT_KEYS.some(key => product.fit![key] !== undefined)) {
       const rest = { ...product.fit };
