@@ -866,6 +866,138 @@ function pressUnder(parts: GarmentDrapeResult['parts'], over: GarmentDrapeResult
   });
 }
 
+/** Which of the body's tubes a piece wraps: the torso (0), the left arm (1) or the right arm (2). */
+const tubeOf = (part: PartId) => part === 'sleeveLeft' || part === 'cuffLeft' ? 1 : part === 'sleeveRight' || part === 'cuffRight' ? 2 : 0;
+// A point of the top underneath farther than WITHIN_MOVE (cm) outside the outer top's cloth is not under it and is
+// left. The outer top's cloth is sorted into slabs AXIS_BAND deep across each axis. A sleeve's line that meets no cloth
+// within SLEEVE_REACH has left the outer sleeve through its armhole. The gap is kept across the cloth, so a line that
+// meets it aslant goes up to 1 / SLANT times as deep. FACE_ROUNDS rounds for the faces between points.
+const WITHIN_MOVE = 10, AXIS_BAND = 2, SLEEVE_REACH = 25, SLANT = 0.25, FACE_ROUNDS = 6;
+// Where a face is tested: its middle and its edges' middles.
+const FACE_SAMPLES: readonly (readonly [number, number, number])[] = [[1 / 3, 1 / 3, 1 / 3], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5]];
+/**
+ * The top underneath kept inside the one over it. pressUnder measures from the body's surface, so in the fold under the
+ * arm, where the outer top's sleeve and body part, cloth underneath can lie outside both and show between them. Here
+ * each point is measured along the line out from the axis of the tube its piece wraps (an arm's for a sleeve, the
+ * torso's, upright through the body's centre, for the rest) and, where the outer top's cloth crosses that line before
+ * it, moved in to a layer's gap inside; then the faces between the points, which can cross where the outer top's cloth
+ * folds in (where a sleeve turns into the body). A line that leaves the outer top without meeting its cloth (out
+ * through its neckline, below its hem or past its cuffs) leaves the point, which shows there. A sleeve's point beyond
+ * its arm's axis, or whose line goes out through the outer sleeve's armhole, is measured from the torso's axis.
+ */
+function keepWithin(parts: GarmentDrapeResult['parts'], meshes: PartMesh[], over: GarmentDrapeResult['parts'], overMeshes: PartMesh[], body: BodyProxy, below?: LayerField): GarmentDrapeResult['parts'] {
+  below?.scale(1);
+  const waist = body.landmarks?.waist ?? -Infinity;
+  const axes = [0, 1, -1].map(side => {
+    if (!side) return { from: [0, 0, 0] as Vec, along: [0, 1, 0] as Vec, length: Infinity };
+    const arm = body.capsules.filter(capsule => capsule.limb && Math.sign(capsule.a[0]) === side && capsule.a[1] > waist);
+    if (!arm.length) return null;
+    const from = arm[0]!.a, to = arm.at(-1)!.b, length = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+    return length > 0 ? { from, along: [(to[0] - from[0]) / length, (to[1] - from[1]) / length, (to[2] - from[2]) / length] as Vec, length } : null;
+  });
+  const along = (axis: { from: Vec; along: Vec }, x: number, y: number, z: number) => (x - axis.from[0]) * axis.along[0] + (y - axis.from[1]) * axis.along[1] + (z - axis.from[2]) * axis.along[2];
+  // The outer top's triangles, and for each axis the slabs across it that each one reaches into.
+  const corners: number[] = [];
+  for (const { part, positions } of over) {
+    const indices = overMeshes.find(mesh => mesh.part === part)?.indices;
+    if (indices) for (const index of indices) corners.push(positions[index * 3]!, positions[index * 3 + 1]!, positions[index * 3 + 2]!);
+  }
+  const slabs = axes.map(axis => {
+    const slab = new Map<number, number[]>();
+    if (axis) for (let id = 0; id < corners.length / 9; id++) {
+      let low = Infinity, high = -Infinity;
+      for (let k = 0; k < 3; k++) { const at = along(axis, corners[id * 9 + k * 3]!, corners[id * 9 + k * 3 + 1]!, corners[id * 9 + k * 3 + 2]!); low = Math.min(low, at); high = Math.max(high, at); }
+      for (let band = Math.floor(low / AXIS_BAND); band <= Math.floor(high / AXIS_BAND); band++) { const list = slab.get(band); if (list) list.push(id); else slab.set(band, [id]); }
+    }
+    return slab;
+  });
+  // Distance along a ray from o in direction e to triangle `id`, or Infinity.
+  const hit = (ox: number, oy: number, oz: number, ex: number, ey: number, ez: number, id: number) => {
+    const c = id * 9, ax = corners[c]!, ay = corners[c + 1]!, az = corners[c + 2]!;
+    const ux = corners[c + 3]! - ax, uy = corners[c + 4]! - ay, uz = corners[c + 5]! - az, vx = corners[c + 6]! - ax, vy = corners[c + 7]! - ay, vz = corners[c + 8]! - az;
+    const hx = ey * vz - ez * vy, hy = ez * vx - ex * vz, hz = ex * vy - ey * vx, det = ux * hx + uy * hy + uz * hz;
+    if (Math.abs(det) < 1e-12) return Infinity;
+    const sx = ox - ax, sy = oy - ay, sz = oz - az, a = (sx * hx + sy * hy + sz * hz) / det;
+    if (a < 0 || a > 1) return Infinity;
+    const qx = sy * uz - sz * uy, qy = sz * ux - sx * uz, qz = sx * uy - sy * ux, b = (ex * qx + ey * qy + ez * qz) / det;
+    if (b < 0 || a + b > 1) return Infinity;
+    const distance = (vx * qx + vy * qy + vz * qz) / det;
+    return distance > 1e-6 ? distance : Infinity;
+  };
+  // The line out through a point from its tube's axis (see above): the point's distance along it, its direction, and
+  // how far outside the outer top's cloth the point lies, a gap inside counting as outside.
+  const line = (own: number, x: number, y: number, z: number) => {
+    for (const tube of own ? [own, 0] : [0]) {
+      const axis = axes[tube];
+      if (!axis) continue;
+      const at = along(axis, x, y, z);
+      if (at < 0 || at > axis.length) continue;
+      const ox = axis.from[0] + axis.along[0] * at, oy = axis.from[1] + axis.along[1] * at, oz = axis.from[2] + axis.along[2] * at;
+      const radius = Math.hypot(x - ox, y - oy, z - oz);
+      if (!(radius > 1e-6)) return null;
+      const ex = (x - ox) / radius, ey = (y - oy) / radius, ez = (z - oz) / radius;
+      let cloth = Infinity, crossed = -1;
+      for (const id of slabs[tube]!.get(Math.floor(at / AXIS_BAND)) ?? []) { const distance = hit(ox, oy, oz, ex, ey, ez, id); if (distance < cloth) { cloth = distance; crossed = id; } }
+      if (tube && !(cloth <= SLEEVE_REACH)) continue;
+      let gap = LAYER_GAP;
+      if (crossed >= 0) {
+        const c = crossed * 9, ux = corners[c + 3]! - corners[c]!, uy = corners[c + 4]! - corners[c + 1]!, uz = corners[c + 5]! - corners[c + 2]!;
+        const wx = corners[c + 6]! - corners[c]!, wy = corners[c + 7]! - corners[c + 1]!, wz = corners[c + 8]! - corners[c + 2]!;
+        const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+        gap = LAYER_GAP / Math.max(Math.abs(nx * ex + ny * ey + nz * ez) / (Math.hypot(nx, ny, nz) || 1), SLANT);
+      }
+      return { radius, ex, ey, ez, cloth, outside: radius - (cloth - gap) };
+    }
+    return null;
+  };
+  const kept = parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions) }));
+  // A point moved in towards its axis, by at most half its way to the cloth.
+  const inward = (positions: Float32Array, v: number, own: number, by: number) => {
+    const ray = line(own, positions[v]!, positions[v + 1]!, positions[v + 2]!);
+    if (!ray || !(by > 0)) return;
+    const step = Math.min(by, ray.radius - Math.min(ray.radius, ray.cloth) / 2);
+    positions[v] -= ray.ex * step; positions[v + 1] -= ray.ey * step; positions[v + 2] -= ray.ez * step;
+  };
+  // Each point outside the cloth goes in to the gap inside it.
+  for (const { part, positions } of kept) {
+    const own = tubeOf(part);
+    for (let v = 0; v < positions.length; v += 3) {
+      const ray = line(own, positions[v]!, positions[v + 1]!, positions[v + 2]!);
+      if (ray && ray.outside > 0 && ray.outside <= WITHIN_MOVE) inward(positions, v, own, ray.outside);
+    }
+  }
+  // Then the faces between them: the cloth folds in where a sleeve meets the body, and a face between points inside it
+  // can cross the fold. Where a face's middle or an edge's lies outside, its corners go deeper; a few rounds, as each
+  // face moved moves its neighbours.
+  for (let round = 0; round < FACE_ROUNDS; round++) {
+    let moved = 0;
+    for (const { part, positions } of kept) {
+      const indices = meshes.find(mesh => mesh.part === part)?.indices, own = tubeOf(part), need = new Float32Array(positions.length / 3);
+      if (!indices) continue;
+      for (let t = 0; t + 2 < indices.length; t += 3) {
+        const a = indices[t]! * 3, b = indices[t + 1]! * 3, c = indices[t + 2]! * 3;
+        for (const [wa, wb, wc] of FACE_SAMPLES) {
+          const ray = line(own, wa * positions[a]! + wb * positions[b]! + wc * positions[c]!, wa * positions[a + 1]! + wb * positions[b + 1]! + wc * positions[c + 1]!, wa * positions[a + 2]! + wb * positions[b + 2]! + wc * positions[c + 2]!);
+          if (!ray || !(ray.outside > 0) || ray.outside > WITHIN_MOVE) continue;
+          for (const corner of [a, b, c]) need[corner / 3] = Math.max(need[corner / 3]!, ray.outside);
+        }
+      }
+      need.forEach((by, v) => { if (by > 0) { inward(positions, v * 3, own, by); moved++; } });
+    }
+    if (!moved) break;
+  }
+  // Never into bottoms worn under both, but no further out than the outer top's cloth allows: where it covers both too
+  // tightly, only the outer top shows.
+  if (below) for (const { positions } of kept) for (let v = 0; v < positions.length; v += 3) {
+    const need = below.radius(positions[v]!, positions[v + 1]!, positions[v + 2]!), round = Math.hypot(positions[v]!, positions[v + 2]!);
+    if (!(need > 0) || !(round > 1e-6) || round >= need + LAYER_GAP) continue;
+    const ray = line(0, positions[v]!, positions[v + 1]!, positions[v + 2]!), room = ray && Number.isFinite(ray.cloth) ? ray.radius - ray.outside : Infinity;
+    const to = Math.max(round, Math.min(need + LAYER_GAP, room));
+    positions[v] *= to / round; positions[v + 2] *= to / round;
+  }
+  return kept;
+}
+
 /** Frames, once the body has grown, over which the top underneath thickens the body to its full depth. */
 const INNER_FRAMES = 20;
 export function innerLayer(surfaces: { positions: Float32Array }[], body: BodyProxy, core: number): InnerLayer {
@@ -1248,21 +1380,21 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
   if (options.also) return simulateThreePiece([{ product: design, meshes: designMeshes }, { product: companion, meshes: companionMeshes }, options.also], bodyChest, { ...options, frames, steps });
   const report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 2 * frames);
   // A top over another: both on the outer top's body, the one underneath first; the outer one then rests on it as on a
-  // thicker body, and the one underneath is pressed in where the outer one covers it closer. The top underneath must
-  // be made for the same arm pose (see withSleeveAngle).
+  // thicker body, and the one underneath is pressed in where the outer one covers it closer and kept inside it (see
+  // keepWithin). Both tops must be made for the same arm pose (see layeredSleeveAngle).
   const layers = layerOrder(design, companion);
   if (layers) {
     if (options.tucked) throw new Error('A top worn over another cannot be tucked in.');
     const { inner, outer } = layers, innerMeshes = inner === design ? designMeshes : companionMeshes, outerMeshes = inner === design ? companionMeshes : designMeshes;
-    if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('The top underneath must be made for the outer top’s arm pose.');
+    if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('Two tops worn together must be made for the same arm pose.');
     const body = garmentBody(options.bodyProducts?.top ?? outer, bodyChest, options.bodyShape);
     const under = simulateGarment(inner, underTop(innerMeshes, inner, outer), bodyChest, { ...steps, body, progress: report(0) });
     const core = body.torso[1]!.y, over = simulateGarment(outer, outerMeshes, bodyChest, { ...steps, body, inner: innerLayer(under.parts, body, core), progress: report(frames) });
-    const pressed = { ...under, parts: pressUnder(under.parts, over.parts, body, core) };
+    const pressed = { ...under, parts: keepWithin(pressUnder(under.parts, over.parts, body, core), innerMeshes, over.parts, outerMeshes, body) };
     const [own, other] = inner === design ? [pressed, over] : [over, pressed];
     return { ...own, companion: { parts: other.parts, metrics: other.metrics, settings: other.settings } };
   }
-  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt, hoodie, button-up shirt or coat.');
+  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, or a sweatshirt under a coat.');
   const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
   if (options.tucked && !canTuck(top)) throw new Error('A dress cannot be tucked in. Shorten it to a top, or wear it untucked.');
   const topMeshes = designIsTop ? designMeshes : companionMeshes, bottomMeshes = designIsTop ? companionMeshes : designMeshes;
@@ -1298,7 +1430,7 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
   return { parts: under.parts, metrics: under.metrics, settings: under.settings, body: own, companion: { parts: back(over.parts), metrics: over.metrics, settings: over.settings } };
 }
 
-/** Whether three designs make an outfit: a top over another (a T-shirt under a sweatshirt, hoodie, button-up shirt or coat), worn
+/** Whether three designs make an outfit: a top over another (a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, or a sweatshirt under a coat), worn
  * with bottoms. */
 export function threePiece<T extends Pick<Product, 'base' | 'options'>>(garments: readonly T[]): { inner: T; outer: T; bottoms: T } | null {
   const bottoms = garments.filter(garment => isBottoms(garment)), tops = garments.filter(garment => !isBottoms(garment));
@@ -1316,11 +1448,11 @@ export function threePiece<T extends Pick<Product, 'base' | 'options'>>(garments
 function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[], bodyChest: number,
   options: { bodyShape?: TopBodyShape; bodyProducts?: { top: Product; bottoms?: Product }; tucked?: boolean; frames: number; steps: { frames?: number; substeps?: number }; progress?: (frame: number, frames: number) => boolean | void }): GarmentDrapeResult {
   const pieces = threePiece(garments.map(garment => garment.product));
-  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, with shorts, trousers or a skirt.');
+  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, or a sweatshirt under a coat, with shorts, trousers or a skirt.');
   if (options.tucked) throw new Error('A three-piece outfit is worn untucked.');
   const of = (product: Product) => garments.find(garment => garment.product === product)!;
   const { inner, outer, bottoms } = pieces;
-  if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('The top underneath must be made for the outer top’s arm pose.');
+  if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('Two tops worn together must be made for the same arm pose.');
   const { body, lower, shift } = outfitBodies(options.bodyProducts?.top ?? outer, options.bodyProducts?.bottoms ?? bottoms, bodyChest, options.bodyShape);
   const { frames, steps } = options, report = (offset: number) => (frame: number) => options.progress?.(offset + frame, 3 * frames);
   const lifted = (parts: GarmentDrapeResult['parts'], by: number) => parts.map(({ part, positions }) => ({ part, positions: Float32Array.from(positions, (value, i) => i % 3 === 1 ? value + by : value) }));
@@ -1331,7 +1463,7 @@ function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[]
   const top = simulateGarment(outer, of(outer).meshes, bodyChest, { ...steps, body, under: below, inner: innerLayer(tee.parts, body, core), progress: report(2 * frames) });
   const results = new Map<Product, DrapedPiece>([
     [bottoms, { parts: placed, metrics: legs.metrics, settings: legs.settings }],
-    [inner, { parts: pressUnder(tee.parts, top.parts, body, core, below), metrics: tee.metrics, settings: tee.settings }],
+    [inner, { parts: keepWithin(pressUnder(tee.parts, top.parts, body, core, below), of(inner).meshes, top.parts, of(outer).meshes, body, below), metrics: tee.metrics, settings: tee.settings }],
     [outer, { parts: top.parts, metrics: top.metrics, settings: top.settings }],
   ]);
   // Bottoms are given back in their own place, as alone; tops in the outfit body's.

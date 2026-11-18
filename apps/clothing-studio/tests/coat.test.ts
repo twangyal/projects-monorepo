@@ -4,8 +4,9 @@ import Delaunator from 'delaunator';
 import { readDesignPrompt } from '../src/design-prompt.ts';
 import { simulateOutfit } from '../src/garment-drape.ts';
 import { buildTechPack } from '../src/techpack.ts';
+import { shownThrough } from './helpers/shown-through.ts';
 import {
-  COAT_LENGTH, canWearTogether, garmentName, layerOrder, optionsOf, sleeveAngleOf, teeMesh, template,
+  COAT_LENGTH, canWearTogether, garmentName, layerOrder, layeredSleeveAngle, optionsOf, sleeveAngleOf, teeMesh, template,
   topMeasurements, validateProduct, withOptions, withSleeveAngle, withSleeveLength, type Product,
 } from '../src/product.ts';
 
@@ -27,13 +28,13 @@ test('a coat is a long shirt with a collar, and a shirt cut too short or given s
   assert.notEqual(garmentName(short), 'Coat');
 });
 
-test('a coat goes over a T-shirt, shirt, polo or dress, and nothing goes over a coat', () => {
-  for (const inner of [tee, shirt, template('polo') as Product, template('tee-dress') as Product]) {
+test('a coat goes over a T-shirt, shirt, polo, dress or sweatshirt, and nothing goes over a coat', () => {
+  for (const inner of [tee, shirt, template('polo') as Product, template('tee-dress') as Product, sweatshirt, template('bomber') as Product, template('sweat-dress') as Product]) {
     assert.deepEqual(layerOrder(inner, coat), { inner, outer: coat }, garmentName(inner));
     assert.ok(canWearTogether(coat, inner));
   }
-  // Knitted sweatshirts and hoodies are not draped under it yet, and a coat is not worn under anything.
-  for (const other of [sweatshirt, hoodie, structuredClone(coat)]) assert.equal(layerOrder(other, coat), null, garmentName(other));
+  // A hoodie does not go under it (its hood would lie out over the collar), and a coat is not worn under anything.
+  for (const other of [hoodie, template('zip-hoodie') as Product, structuredClone(coat)]) assert.equal(layerOrder(other, coat), null, garmentName(other));
   assert.equal(layerOrder(coat, template('trousers') as Product), null);
   // The other pairs keep their order: a shirt over a tee, and a sweatshirt over a shirt.
   assert.deepEqual(layerOrder(tee, shirt), { inner: tee, outer: shirt });
@@ -74,6 +75,18 @@ test('a top under a longer or shorter one meets its shoulders', () => {
     const result = simulateOutfit(outer, teeMesh(outer, Delaunator), inner, teeMesh(inner, Delaunator), 94, { frames: 60 });
     assert.ok(Math.abs(highest(result.parts) - highest(result.companion!.parts)) < 4, `${garmentName(under)} under ${garmentName(outer)}: ${highest(result.companion!.parts)} against ${highest(result.parts)}`);
   }
+});
+
+test('a sweatshirt goes under a coat: both are made for its lower arms, and none of it shows through the coat', () => {
+  const pose = layeredSleeveAngle(sweatshirt, coat);
+  assert.equal(pose, sleeveAngleOf(sweatshirt));
+  assert.equal(layeredSleeveAngle(tee, coat), sleeveAngleOf(coat), 'a T-shirt under a coat keeps the coat\'s pose');
+  const outer = withSleeveAngle(coat, pose), inner = withSleeveAngle(sweatshirt, pose), outerMeshes = teeMesh(outer, Delaunator);
+  const result = simulateOutfit(outer, outerMeshes, inner, teeMesh(inner, Delaunator), 102, { frames: 120 });
+  assert.ok(result.metrics.maxStrain < 0.8 && result.companion!.metrics.maxStrain < 0.8, `strain ${result.metrics.maxStrain}, ${result.companion!.metrics.maxStrain}`);
+  // Its sleeves (once seen between the coat's sleeves and sides) and its body below the armholes stay under the coat.
+  const armpit = result.body.torso[1]!.y, seen = shownThrough(result.parts, outerMeshes, result.companion!.parts, ['sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight', 'front', 'back', 'hemBand'], -Infinity, armpit, armpit + 30);
+  assert.equal(seen, 0, `${seen} points of the sweatshirt show through the coat`);
 });
 
 test('a coat drapes over a T-shirt and settles', () => {

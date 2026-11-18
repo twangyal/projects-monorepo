@@ -80,26 +80,31 @@ export function partName(product: Pick<Product, 'base'>, part: PartId): string {
 /** Bottoms use their own measured panels instead of top measurements or the top drape. */
 export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers' || product.base === 'skirt'; }
 /** A top worn over another: one made on the T-shirt base (a tee, tank, crop top, T-shirt dress or shirt) under a
- * sweatshirt, a hoodie or a coat, or one without a button front under a button-front shirt, worn open or buttoned.
- * Null for any other pair. */
+ * sweatshirt, a hoodie or a coat, one without a button front under a button-front shirt, worn open or buttoned, or a
+ * sweatshirt (a bomber, a sweatshirt dress) under a coat. Null for any other pair. */
 export function layerOrder<T extends Pick<Product, 'base' | 'options'>>(a: T, b: T): { inner: T; outer: T } | null {
   const shirt = (product: T) => product.base === 'tee' && !!product.options?.buttons;
   const coat = (product: T) => product.base === 'tee' && !!product.options?.coat;
-  const over = (outer: T, inner: T) => inner.base === 'tee' && !coat(inner)
-    && (coat(outer) || outer.base === 'sweatshirt' || outer.base === 'hoodie' || (shirt(outer) && !shirt(inner)));
+  // A hoodie does not go under a coat: its hood would lie out over the coat's collar.
+  const over = (outer: T, inner: T) => (inner.base === 'tee' && !coat(inner)
+    && (coat(outer) || outer.base === 'sweatshirt' || outer.base === 'hoodie' || (shirt(outer) && !shirt(inner))))
+    || (inner.base === 'sweatshirt' && coat(outer));
   if (over(b, a)) return { inner: a, outer: b };
   if (over(a, b)) return { inner: b, outer: a };
   return null;
 }
 /** Whether two designs make an outfit: a top with bottoms, or a top over another (see layerOrder). */
 export function canWearTogether(a: Pick<Product, 'base' | 'options'>, b: Pick<Product, 'base' | 'options'>): boolean { return isBottoms(a) !== isBottoms(b) || layerOrder(a, b) !== null; }
-// A top worn under another is made for the outer one's arm pose, so its sleeves lie round the same arms. The pose is
-// kept beside the copy made for the drape, never in the saved design.
+// Two tops worn together are made for one arm pose (see layeredSleeveAngle), so their sleeves lie round the same arms.
+// The pose is kept beside the copy made for the drape, never in the saved design.
 const SLEEVE_POSE = new WeakMap<object, number>();
 /** How far the arms are lowered from the horizontal for this top's 3D shell and drape, degrees. */
 export function sleeveAngleOf(product: Product): number { return SLEEVE_POSE.get(product) ?? (product.base === 'tee' ? 38 : 58); }
 /** A copy of `product` made and draped with its arms at `angle` degrees below the horizontal. */
 export function withSleeveAngle(product: Product, angle: number): Product { const copy = { ...product }; SLEEVE_POSE.set(copy, angle); return copy; }
+/** The arm pose two tops worn one over the other are made for: the lower of their own, so a coat over a sweatshirt
+ * hangs from the sweatshirt's lower arms rather than the sweatshirt's sleeves being raised into wings under it. */
+export function layeredSleeveAngle(inner: Product, outer: Product): number { return Math.max(sleeveAngleOf(inner), sleeveAngleOf(outer)); }
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'collar']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */

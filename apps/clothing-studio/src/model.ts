@@ -15,7 +15,7 @@ export interface Project {
   schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements; topBody?:ProfileBody; product?: ProductDesign;
   /** A garment worn with the product in Body & drape (a top over bottoms), kept as a copy. */
   wornWith?: ProductDesign;
-  /** A third garment of the outfit (a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, with bottoms), kept as a copy. */
+  /** A third garment of the outfit (a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, or a sweatshirt under a coat, with bottoms), kept as a copy. */
   wornAlso?: ProductDesign;
   /** In an outfit, the top is tucked into the bottoms. */
   tucked?: boolean;

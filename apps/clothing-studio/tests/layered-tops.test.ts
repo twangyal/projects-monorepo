@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { innerLayer, simulateOutfit } from '../src/garment-drape.ts';
-import { canWearTogether, layerOrder, sleeveAngleOf, teeDimensions, teeMesh, template, withSleeveAngle, type Product } from '../src/product.ts';
+import { canWearTogether, layerOrder, layeredSleeveAngle, sleeveAngleOf, teeDimensions, teeMesh, template, withSleeveAngle, type Product } from '../src/product.ts';
 import { switchOutfitEditing } from '../src/outfit-edit.ts';
+import { shownThrough } from './helpers/shown-through.ts';
 import { createProject } from '../src/model.ts';
 
 test('a T-shirt can be worn under a sweatshirt or hoodie, and not under another T-shirt or a hoodie under a sweatshirt', () => {
@@ -19,10 +20,12 @@ test('a T-shirt can be worn under a sweatshirt or hoodie, and not under another 
   assert.equal(project.product?.name, tee.name);
 });
 
-test('the top underneath is made for the outer top\'s arm pose, without changing the saved design', () => {
-  const tee = template('blank'), posed = withSleeveAngle(tee, sleeveAngleOf(template('hoodie')));
+test('two tops worn together are made for one arm pose, the lower of their own, without changing the saved design', () => {
+  const tee = template('blank'), posed = withSleeveAngle(tee, layeredSleeveAngle(tee, template('hoodie')));
   assert.equal(teeDimensions(tee).sleeveAngle, 38);
   assert.equal(teeDimensions(posed).sleeveAngle, 58);
+  assert.equal(layeredSleeveAngle(tee, template('coat')), 38);
+  assert.equal(layeredSleeveAngle(template('crew-sweat'), template('coat')), 58);
   assert.equal(JSON.stringify(posed), JSON.stringify(tee), 'the pose is not part of the design');
   assert.deepEqual(teeMesh(posed, Delaunator).map(part => part.positions.length), teeMesh(tee, Delaunator).map(part => part.positions.length));
   const hoodie = template('hoodie');
@@ -46,12 +49,22 @@ function insideCount(over: { positions: Float32Array }[], under: { positions: Fl
   return { covered, inside };
 }
 
-test('a zip hoodie over a T-shirt drapes on it, outside it, and both settle', () => {
-  const { result } = layered(template('zip-hoodie'));
+test('a zip hoodie over a T-shirt drapes on it, outside it, none of the tee shows through, and both settle', () => {
+  const hoodie = template('zip-hoodie'), { result } = layered(hoodie);
   assert.ok(result.companion, 'the tee comes back beside the hoodie');
-  const { covered, inside } = insideCount(result.parts, result.companion.parts, result.body);
+  // The hoodie's body lies outside the tee's. (The tee's short sleeves, posed for the hoodie's lower arms, gather
+  // beside the body, where a measure from the body's surface reads them as standing out over the hoodie's sleeves.)
+  const body = (parts: typeof result.parts) => parts.filter(({ part }) => !/^(sleeve|cuff)/.test(part));
+  const { covered, inside } = insideCount(body(result.parts), body(result.companion.parts), result.body);
   assert.ok(covered > 1500, `the hoodie lies over the tee (${covered} points)`);
   assert.ok(inside <= covered * 0.01, `${inside} of ${covered} hoodie points are inside the tee`);
+  // Seen from in front and behind, none of the tee shows through the hoodie: its sleeves, nor its body between the
+  // hoodie's hem band and the armholes.
+  const meshes = teeMesh(hoodie, Delaunator), armpit = result.body.torso[1]!.y;
+  const band = Math.max(...Array.from(result.parts.find(part => part.part === 'hemBand')!.positions).filter((_, i) => i % 3 === 1));
+  const sleeves = shownThrough(result.parts, meshes, result.companion.parts, ['sleeveLeft', 'sleeveRight'], -Infinity, Infinity, armpit + 30);
+  const bodyShown = shownThrough(result.parts, meshes, result.companion.parts, ['front', 'back'], band + 2, armpit, armpit + 30);
+  assert.equal(sleeves + bodyShown, 0, `${sleeves} sleeve and ${bodyShown} body points of the tee show through the hoodie`);
   assert.ok(result.metrics.maxStrain < 0.8 && result.companion.metrics.maxStrain < 0.3, `stretch ${result.metrics.maxStrain}, ${result.companion.metrics.maxStrain}`);
   assert.ok(result.metrics.residualSpeed < 10 && result.companion.metrics.residualSpeed < 10, `both garments settle (${result.metrics.residualSpeed}, ${result.companion.metrics.residualSpeed} cm/s)`);
   // The hoodie still hangs from the shoulders to below the hip, as it does alone.
