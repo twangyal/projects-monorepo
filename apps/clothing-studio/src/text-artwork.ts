@@ -2,7 +2,7 @@
 // back in white letters") or typed in the Artwork section, then drawn into an image the garment carries like any
 // uploaded artwork, so the 3D view, tech pack and exports need nothing new.
 import { readStylePrompt } from './style-prompt.ts';
-import type { Artwork, PartStyle } from './product.ts';
+import { artworkDefaults, type Artwork, type PartStyle, type Product } from './product.ts';
 
 export const TEXT_FONTS = { sans: 'Sans serif', serif: 'Serif', mono: 'Monospace' } as const;
 export type TextFont = keyof typeof TEXT_FONTS;
@@ -89,7 +89,8 @@ export function renderText(request: TextRequest, doc: Document = document): { da
   return { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
 }
 
-/** The artwork for drawn text, placed like uploaded artwork: centred, 10 cm below the shoulder at the front. */
-export function textArtwork(request: TextRequest, image: { dataUrl: string; width: number; height: number }, chest: number): Artwork {
-  return { part: request.side, ...image, name: `Text: ${request.text}`.slice(0, 120), xCm: 0, yCm: request.side === 'front' ? 10 : 12, widthCm: Math.min(24, chest / 4) };
+/** The artwork for drawn text, placed like uploaded artwork (see artworkDefaults): on a top, centred 10 cm below the
+ * shoulder at the front. */
+export function textArtwork(request: TextRequest, image: { dataUrl: string; width: number; height: number }, product: Product): Artwork {
+  return { part: request.side, ...image, name: `Text: ${request.text}`.slice(0, 120), ...artworkDefaults(product, request.side) };
 }

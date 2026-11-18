@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, keepBottomsArtworkInside, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -143,6 +143,8 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       // Shorts lose ankle cuffs; joggers gain them.
       if (id === 'shorts' && cuffs) product = withLegCuffs(product, 0);
       product.measurements = { ...legMeasurements(product), inseam };
+      // Artwork below the new hem moves up onto the shorter legs.
+      keepBottomsArtworkInside(product);
       garment.push(`${id === 'shorts' ? 'shorts' : 'full-length legs'}: ${inseam} cm inseam`);
       if (id === 'joggers' && !cuffs) {
         product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
@@ -454,6 +456,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const slant = values.get('slant') ?? Math.max(m.slant, 40);
     try {
       product.measurements = validateSkirtMeasures({ ...fitted, waist, hip, hem, slant });
+      keepBottomsArtworkInside(product);
       garment.push(`${skirtFitPreset} skirt: fitted to a ${hip} cm hip with darts, ${hem} cm hem`);
     } catch (error) {
       if (['waist', 'hip', 'hem', 'slant'].some(key => values.has(key))) throw error;
@@ -463,6 +466,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   if (values.size) {
     const { 'waistband height': waistband, 'ankle cuff height': cuff, ...dimensions } = Object.fromEntries(values);
     product.measurements = { ...product.measurements, ...dimensions } as Product['measurements'];
+    keepBottomsArtworkInside(product);
     // These change the available parts as well as the measurements. Apply after merging the other dimensions.
     if (waistband !== undefined) product = withSkirtWaistband(product, waistband);
     if (cuff !== undefined) product = withLegCuffs(product, cuff);
@@ -545,8 +549,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (understood.length) scopes.push({ label: clause.parts.map(id => partName(product, id)).join(', '), understood });
   }
   let printed: TextRequest | undefined;
-  if (slogan && isBottoms(product)) notApplied.push(`text “${slogan.request.text}” (goes on a top)`);
-  else if (slogan) {
+  if (slogan) {
     printed = { ...slogan.request, color: slogan.request.color ?? contrastingInk(product.parts.front.color) };
     scopes.push({ label: 'Artwork', understood: [`text “${printed.text}” on the ${printed.side}`] });
   }

@@ -4,7 +4,7 @@
 // measures each size from the graded design, so the 3D garment, its patterns and the size chart agree.
 import { DEFAULT_GRADING } from './grading.ts';
 import { pleatDepthLimit, skirtDraft, skirtPleats, type SkirtMeasures } from './product-skirt.ts';
-import { LIMITS, SIZES, fitValues, isBottoms, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
+import { LIMITS, SIZES, fitValues, isBottoms, keepBottomsArtworkInside, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
 
 /** Fit increments per size step for tops; points not listed stay the same in every size. */
 export const FIT_GRADES: Partial<Record<FitKey, number>> = {
@@ -67,6 +67,8 @@ export function gradedProduct(product: Product, size: Size): Product {
     const half = graded.measurements.chest / 4 + 1;
     for (const art of graded.artwork) { art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, graded.measurements.length); }
   }
+  // So does artwork on bottoms.
+  keepBottomsArtworkInside(graded);
   try { return validateProduct(graded); }
   catch (error) { throw new Error(`Size ${size} would be outside the supported measurements: ${error instanceof Error ? error.message : 'invalid'}`); }
 }

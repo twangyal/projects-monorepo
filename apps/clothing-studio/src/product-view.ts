@@ -14,7 +14,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  chestPocketAllowed, collarAllowed, buttonsAllowed, cuffsAllowed, CUFFED_SLEEVE, coatAllowed, COAT_LENGTH, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, SLEEVE_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  artworkDefaults, chestPocketAllowed, collarAllowed, buttonsAllowed, cuffsAllowed, CUFFED_SLEEVE, coatAllowed, COAT_LENGTH, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, SLEEVE_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -114,7 +114,6 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div id="trouser-modules" class="measure-grid" hidden><label class="check-field"><input id="product-trouser-yoke" type="checkbox" aria-describedby="trouser-yoke-help"> Back yoke</label><label class="check-field"><input id="product-back-pockets" type="checkbox" aria-describedby="back-pockets-help"> Back pockets</label><p id="trouser-yoke-help" class="fine-print" hidden>The back legs are cut across the seat below the waistband, deeper at the centre back than at the side seams, as jeans are: a yoke styled on its own.</p><p id="back-pockets-help" class="fine-print" hidden>A pointed patch pocket topstitched to each back leg, below the yoke or the waistband, styled on its own.</p></div>
       <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
-      <p id="artwork-note" class="fine-print" hidden>Artwork placement is available on tops.</p>
       <div id="artwork-controls" class="artwork-controls">
       <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option></select></label>
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
@@ -122,7 +121,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="inline-actions"><label class="color-row">Text colour<input id="artwork-text-colour" type="color" value="#1b1c1b"></label><button id="add-text-artwork" class="quiet">Print this text</button></div><p class="fine-print">Text replaces the artwork on the chosen side, as an image you can resize and move like uploaded artwork. Long text wraps at about 20 characters a line.</p>
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
         <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
-        <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
+        <label class="field"><span id="artwork-y-label">Below shoulder (cm)</span><input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
       <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button><button id="pick-artwork" class="quiet" aria-pressed="false" disabled>Pick artwork centre in 3D</button></div><p id="artwork-placement-status" class="fine-print" role="status">Pick a centre on the visible garment, then Apply placement. Numeric fields are the keyboard alternative; Escape cancels picking.</p></div>
     </aside>
   </div>
@@ -806,7 +805,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         // Words in quotes are printed on their side of the garment, replacing that side's artwork.
         if (reading.text) {
           draft.artwork = draft.artwork.filter(art => art.part !== reading.text!.side);
-          draft.artwork.push(textArtwork(reading.text, renderText(reading.text), topMeasurements(draft).chest));
+          draft.artwork.push(textArtwork(reading.text, renderText(reading.text), draft));
         }
         summary = `${reading.scopes.map(scope => `${scope.label}: ${scope.understood.join('; ')}`).join('. ')}.${reading.ignored.length ? ` Not applied: ${reading.ignored.join(', ')}.` : ''}`;
         return;
@@ -899,7 +898,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if ([...text].length > MAX_TEXT) throw new Error(`Text on a garment can be up to ${MAX_TEXT} characters.`);
       const request = { text, side, color: ($('artwork-text-colour') as HTMLInputElement).value, font: ($('artwork-font') as HTMLSelectElement).value as TextFont };
       draft.artwork = draft.artwork.filter(art => art.part !== side);
-      draft.artwork.push(textArtwork(request, renderText(request), topMeasurements(draft).chest));
+      draft.artwork.push(textArtwork(request, renderText(request), draft));
     }, `“${text}” printed on the ${side}. Adjust its width and position below.`);
   });
   $('artwork-file').addEventListener('change', async () => {
@@ -922,7 +921,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       }
       update(draft => {
         draft.artwork = draft.artwork.filter(art => art.part !== side);
-        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), xCm: 0, yCm: side === 'front' ? 10 : 12, widthCm: Math.min(24, topMeasurements(draft).chest / 4) });
+        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), ...artworkDefaults(draft, side) });
       }, `Artwork placed on the ${side}. Adjust its width and position below.`);
     } catch (error) { if (owned()) options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
     finally { bitmap?.close(); }
@@ -1366,6 +1365,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     fabricComparison.sync(project.product??null,compared);
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
+    $('artwork-y-label').textContent = isBottoms(design) ? 'Below waist (cm)' : 'Below shoulder (cm)';
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
     $('pick-artwork').toggleAttribute('disabled', !art);
@@ -1434,7 +1434,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-name') as HTMLInputElement).value = design.name;
     const bottoms = isBottoms(design);
     for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', design.base !== 'trousers'], ['skirt-measures', design.base !== 'skirt'], ['top-modules', bottoms], ['leg-modules', design.base !== 'trousers'], ['trouser-modules', design.base !== 'trousers'],
-      ['artwork-controls', bottoms], ['artwork-note', !bottoms], ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
+      ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
     if (design.base === 'skirt') { const m=skirtDraft(design); for(const [id,,key] of SKIRT_FIELDS) ($(id) as HTMLInputElement).value=String(m[key]); ($('product-skirt-band') as HTMLInputElement).value=String(skirtBandHeight(design)); ($('product-skirt-gather') as HTMLInputElement).value=String(skirtGather(design)); ($('product-skirt-hip') as HTMLInputElement).value=String(skirtFit(design)?.hip ?? ''); const pleats=skirtPleats(design); ($('product-skirt-pleats') as HTMLSelectElement).value=pleats?.style ?? ''; ($('product-skirt-pleat-count') as HTMLInputElement).value=pleats ? String(pleats.count) : ''; ($('product-skirt-pleat-depth') as HTMLInputElement).value=pleats ? String(pleats.depth) : ''; }
     else if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key] ?? WAISTBAND_CM); ($('product-leg-cuff') as HTMLInputElement).value = String(m.cuffHeight ?? 0); }
     else {

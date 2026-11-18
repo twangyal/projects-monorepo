@@ -22,10 +22,10 @@ test('a described garment carries its text, in a colour that reads on the garmen
   assert.ok(!black.ignored.some(word => /stay|wild/i.test(word)), 'the quoted words are not read as garment words');
   // On a light garment the text is dark; a quote alone is enough to describe.
   assert.equal(readDesignPrompt('"hello"', template('blank')).text?.color, '#1b1c1b');
-  // Bottoms carry no artwork.
+  // Bottoms carry text too, in ink that reads on their legs.
   const trousers = readDesignPrompt('navy trousers with "Team 7" on the back', template('trousers'));
-  assert.equal(trousers.text, undefined);
-  assert.ok(trousers.ignored.some(item => item.includes('Team 7')));
+  assert.deepEqual(trousers.text, { text: 'Team 7', side: 'back', color: '#f8f6f0', font: 'sans' });
+  assert.ok(!trousers.ignored.some(item => item.includes('Team 7')));
 });
 
 test('text is laid out on short lines and placed like uploaded artwork', () => {
@@ -33,6 +33,6 @@ test('text is laid out on short lines and placed like uploaded artwork', () => {
   assert.deepEqual(textLines('Stay Wild'), ['Stay Wild']);
   assert.equal(contrastingInk('#1f2a44'), '#f8f6f0');
   assert.equal(contrastingInk('#f4f2ec'), '#1b1c1b');
-  const tee = template('blank'), art = textArtwork({ text: 'Stay Wild', side: 'back', color: '#ffffff', font: 'sans' }, { dataUrl: 'data:image/png;base64,AA==', width: 800, height: 240 }, topMeasurements(tee).chest);
+  const tee = template('blank'), art = textArtwork({ text: 'Stay Wild', side: 'back', color: '#ffffff', font: 'sans' }, { dataUrl: 'data:image/png;base64,AA==', width: 800, height: 240 }, tee);
   assert.deepEqual([art.part, art.name, art.xCm, art.yCm, art.widthCm], ['back', 'Text: Stay Wild', 0, 12, Math.min(24, topMeasurements(tee).chest / 4)]);
 });

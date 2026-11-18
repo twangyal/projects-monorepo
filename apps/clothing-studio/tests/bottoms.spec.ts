@@ -14,11 +14,11 @@ test('shorts and trousers take leg measurements, leg presets and their own parts
   const parts = editor(page).getByRole('radiogroup', { name: 'Garment parts' }).getByRole('radio');
   await expect(parts).toHaveCount(3);
   await expect(editor(page).getByRole('radio', { name: 'Front legs' })).toBeChecked();
-  // Leg measurements replace chest, length and sleeve; artwork placement is for tops.
+  // Leg measurements replace chest, length and sleeve; artwork is placed below the waist.
   await expect(editor(page).getByLabel('Inseam (cm)', { exact: true })).toHaveValue('78');
   await expect(editor(page).getByLabel('Chest (cm)', { exact: true })).toBeHidden();
-  await expect(editor(page).locator('#artwork-note')).toBeVisible();
-  await expect(editor(page).locator('#artwork-controls')).toBeHidden();
+  await expect(editor(page).locator('#artwork-controls')).toBeVisible();
+  await expect(editor(page).locator('#artwork-y-label')).toHaveText('Below waist (cm)');
   await expect(editor(page).locator('#techpack-preview')).toContainText('Back rise');
   await expect(editor(page).locator('[data-piece="front"]')).toHaveAttribute('aria-label', /^Front legs, /);
 

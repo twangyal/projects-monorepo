@@ -1,4 +1,4 @@
-import { validateSkirtMeasures, skirtPieces, skirtMesh, skirtHeight, type SkirtMeasures } from './product-skirt.ts';
+import { validateSkirtMeasures, skirtBandHeight, skirtDraft, skirtPieces, skirtMesh, skirtHeight, type SkirtMeasures } from './product-skirt.ts';
 import { validateRasterHeader } from './media.ts';
 import { material } from './materials.ts';
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
@@ -170,6 +170,8 @@ export function withLegCuffs(product: Product, height: number): Product {
     }
   };
   update(draft.parts); for (const colourway of draft.colorways ?? []) update(colourway.parts);
+  // Cuffs shorten the legs, so artwork near the hem moves up.
+  keepBottomsArtworkInside(draft);
   return validateProduct(draft);
 }
 
@@ -184,6 +186,8 @@ export function withSkirtWaistband(product: Product, height: number): Product {
     else parts.waistband ??= structuredClone(parts.front);
   };
   update(draft.parts);for(const colourway of draft.colorways ?? [])update(colourway.parts);
+  // Measurements applied with the band may have shortened the skirt under its artwork.
+  keepBottomsArtworkInside(draft);
   return validateProduct(draft);
 }
 
@@ -445,7 +449,89 @@ function validatePrint(value: unknown, uploaded: ReadonlySet<string>): Print | n
   if (directional && (p.motif !== 'stripe' || !['horizontal', 'vertical'].includes(p.direction as string))) fail('Stripe direction must be horizontal or vertical and only applies to stripes.');
   return { motif: p.motif as PrintMotif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout, ...(directional ? { direction: p.direction as Print['direction'] } : {}) };
 }
-function validateArtwork(value: unknown, measurements: Measurements): Artwork {
+/** Artwork on bottoms is placed from the waist seam: the seam's height in 3D (where the panels end under any band) and
+ * the garment's length below it. */
+export function bottomsArtworkFrame(product: Product): { top: number; length: number } {
+  if (product.base === 'skirt') { const top = skirtHeight(product) - skirtBandHeight(product); return { top, length: top }; }
+  const d = trouserDimensions(product);
+  return { top: d.length, length: d.length };
+}
+type Placed = Pick<Artwork, 'part' | 'xCm' | 'yCm' | 'widthCm' | 'width' | 'height'>;
+/** The part that artwork on a side of bottoms is projected onto in 3D, unshaped by any drape, and the artwork's centre
+ * in the front view (behind, where artwork is measured as seen from behind, across is mirrored). */
+function bottomsTarget(product: Product, art: Placed): { mesh: PartMesh; x: number; y: number } {
+  const mesh = (product.base === 'skirt' ? skirtMesh(product) : trouserMesh(product)).find(part => part.part === art.part)!;
+  return { mesh, x: art.part === 'front' ? art.xCm : -art.xCm, y: bottomsArtworkFrame(product).top - art.yCm - art.widthCm * art.height / art.width / 2 };
+}
+/** Whether the point (x, y) of the front view lies over the mesh, so that a ray straight through it meets the mesh. */
+function over(mesh: PartMesh, x: number, y: number): boolean {
+  const p = mesh.positions, ix = mesh.indices;
+  for (let i = 0; i < ix.length; i += 3) {
+    const a = ix[i]! * 3, b = ix[i + 1]! * 3, c = ix[i + 2]! * 3;
+    // Triangles seen edge-on cover nothing.
+    if (Math.abs((p[b]! - p[a]!) * (p[c + 1]! - p[a + 1]!) - (p[b + 1]! - p[a + 1]!) * (p[c]! - p[a]!)) < 1e-9) continue;
+    const ab = (p[b]! - p[a]!) * (y - p[a + 1]!) - (p[b + 1]! - p[a + 1]!) * (x - p[a]!);
+    const bc = (p[c]! - p[b]!) * (y - p[b + 1]!) - (p[c + 1]! - p[b + 1]!) * (x - p[b]!);
+    const ca = (p[a]! - p[c]!) * (y - p[c + 1]!) - (p[a + 1]! - p[c + 1]!) * (x - p[c]!);
+    if ((ab >= 0 && bc >= 0 && ca >= 0) || (ab <= 0 && bc <= 0 && ca <= 0)) return true;
+  }
+  return false;
+}
+/** The nearest x of the front view at height y that lies over the mesh, a centimetre further in where the mesh is that
+ * wide, or null when the mesh does not reach that height. */
+function nearestOver(mesh: PartMesh, x: number, y: number): number | null {
+  for (let step = 1; step <= 400; step++) for (const sign of [1, -1]) {
+    const at = x + sign * step * 0.25;
+    if (over(mesh, at, y)) return over(mesh, at + sign, y) ? at + sign : at;
+  }
+  return null;
+}
+/**
+ * Why artwork would not print on bottoms, or null when it would. It is projected straight onto its side's part, as in
+ * 3D, so its centre must lie over that part as seen from outside (not beside the hips, between the legs or on a jeans
+ * yoke, which is a part of its own), and it must end above the hem.
+ */
+export function bottomsArtworkProblem(product: Product, art: Placed): string | null {
+  const name = garmentName(product).toLowerCase();
+  if (art.yCm + art.widthCm * art.height / art.width > bottomsArtworkFrame(product).length + 1e-9) return `Artwork on ${name} must end above the hem.`;
+  const { mesh, x, y } = bottomsTarget(product, art);
+  if (over(mesh, x, y)) return null;
+  const near = nearestOver(mesh, x, y), across = near === null ? 0 : Math.round((art.part === 'front' ? near : -near) * 10) / 10;
+  const where = near !== null ? ` At ${Math.round(art.yCm * 10) / 10} cm below the waist, the nearest place is ${across === 0 ? 'the centre' : `${Math.abs(across)} cm ${across > 0 ? 'right' : 'left'} of centre`}.`
+    // Behind jeans, the yoke across the top is a part of its own.
+    : art.part === 'back' && optionsOf(product).yoke ? ` Place it below the back yoke, which reaches ${Math.round(trouserYoke(product).back * 10) / 10} cm below the waist at the centre back.` : '';
+  return `Artwork on ${name} must be centred on the ${partName(product, art.part).toLowerCase()}, as seen from outside.${where}`;
+}
+/** Artwork on bottoms that a change of measurements or size leaves off the garment is moved back onto it, as tops'
+ * artwork is: up to end above the hem, then across to the nearest place on its side's part. */
+export function keepBottomsArtworkInside(product: Product): void {
+  if (!isBottoms(product) || !product.artwork.length) return;
+  const { length } = bottomsArtworkFrame(product);
+  for (const art of product.artwork) {
+    art.yCm = Math.max(0, Math.min(art.yCm, Math.floor((length - art.widthCm * art.height / art.width) * 10) / 10));
+    const { mesh, x, y } = bottomsTarget(product, art);
+    if (over(mesh, x, y)) continue;
+    const near = nearestOver(mesh, x, y);
+    if (near !== null) art.xCm = Math.round((art.part === 'front' ? near : -near) * 10) / 10;
+  }
+}
+/** Where new artwork goes on a side: centred 10 cm below the shoulder on tops (12 behind); on trousers and shorts on the
+ * wearer's left hip at the front and the right hip behind, halfway from the centre seam to the side as seen from that
+ * side; centred below a skirt's waist. */
+export function artworkDefaults(product: Product, side: Artwork['part']): { xCm: number; yCm: number; widthCm: number } {
+  if (product.base === 'skirt') return { xCm: 0, yCm: 12, widthCm: Math.min(16, Math.round(skirtDraft(product).waist / 6)) };
+  if (isBottoms(product)) {
+    const hip = legMeasurements(product).hip, yCm = side === 'front' ? 12 : 8, widthCm = side === 'front' ? Math.min(10, Math.round(hip / 10)) : Math.min(8, Math.round(hip / 12));
+    // The side of the hips, seen from that side, at the height of a print half as tall as it is wide.
+    const { mesh, y } = bottomsTarget(product, { part: side, xCm: 0, yCm, widthCm, width: 2, height: 1 });
+    let edge = 0;
+    while (edge < 80 && over(mesh, side === 'front' ? edge + 0.5 : -(edge + 0.5), y)) edge += 0.5;
+    return { xCm: Math.round(edge / 2), yCm, widthCm };
+  }
+  return { xCm: 0, yCm: side === 'front' ? 10 : 12, widthCm: Math.min(24, topMeasurements(product).chest / 4) };
+}
+
+function validateArtwork(value: unknown, measurements: Measurements | null): Artwork {
   const rotated = !!value && typeof value === 'object' && Object.hasOwn(value, 'rotation');
   const a = plain(value, ['part', 'dataUrl', 'width', 'height', 'name', 'xCm', 'yCm', 'widthCm', ...(rotated ? ['rotation'] : [])], 'Artwork');
   if (a.part !== 'front' && a.part !== 'back') fail('Artwork goes on the front or back.');
@@ -454,10 +540,11 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Artwork pixel size must be whole numbers.');
   validateRasterHeader({dataUrl:a.dataUrl as string,width,height}, LIMITS.artworkBytes, 4096);
   if (typeof a.name !== 'string' || a.name.length > 120) fail('Artwork name must be at most 120 characters.');
-  const panel = panelSize(measurements);
+  // Bottoms' bounds are checked once the garment is whole (see bottomsArtworkFrame).
+  const panel = measurements ? panelSize(measurements) : { width: 400, length: 200 };
   const widthCm = finite(a.widthCm, LIMITS.artworkWidthCm, 'Artwork width (cm)');
   return { part: a.part as Artwork['part'], dataUrl: a.dataUrl as string, width, height, name: a.name as string, xCm: finite(a.xCm, [-panel.width / 2, panel.width / 2], 'Artwork horizontal position (cm)'),
-    yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm,
+    yCm: finite(a.yCm, [0, panel.length], measurements ? 'Artwork distance below the neck (cm)' : 'Artwork distance below the waist (cm)'), widthCm,
     ...(rotated ? { rotation: finite(a.rotation, [-180, 180], 'Artwork rotation (degrees)') } : {}) };
 }
 
@@ -597,8 +684,7 @@ export function validateProduct(value: unknown): Product {
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
-  if (isBottoms({base}) && (p.artwork as unknown[]).length) fail('Artwork placement is available on tops.');
-  const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements as Measurements));
+  const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, isBottoms({ base }) ? null : measurements as Measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
   let spec: Spec | undefined;
   if (p.spec !== undefined) {
@@ -612,9 +698,11 @@ export function validateProduct(value: unknown): Product {
     palette = (p.palette as unknown[]).map(colour => hex(colour, 'Photo colour'));
     if (new Set(palette).size !== palette.length) fail('Photo colours must differ.');
   }
-  return { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
+  const product: Product = { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
     ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, ids) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
     ...(motifs ? { motifs } : {}), ...(palette ? { palette } : {}), ...(options ? { options } : {}), ...(fit && Object.keys(fit).length ? { fit } : {}) };
+  if (isBottoms(product)) for (const art of artwork) { const problem = bottomsArtworkProblem(product, art); if (problem) fail(problem); }
+  return product;
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });

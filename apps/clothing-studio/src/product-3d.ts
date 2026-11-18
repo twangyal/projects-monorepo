@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, backPocketOf, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { OPEN_ZIP_GAP, backPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -99,7 +99,10 @@ class ProductModel {
     const restParts = teeMesh(product, Delaunator);
     for (const part of restParts) {
       const draped = drape?.parts.find(item => item.part === part.part);
-      const mesh = this.partMesh(product, part, draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, part.part === selected);
+      const shaped = !!draped && draped.positions.length === part.positions.length;
+      const mesh = this.partMesh(product, part, shaped ? draped.positions : part.positions, part.part === selected);
+      // A draped part keeps its unshaped surface, where artwork is placed from (see pickArtworkPoint).
+      if (shaped) mesh.userData.rest = part.positions;
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true); this.worn.updateMatrixWorld(true);
@@ -293,7 +296,8 @@ class ProductModel {
       image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
-    const top = topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET; // the shoulder line, where artwork positions are measured from
+    // Positions are measured from the shoulder line on tops, and from the waist seam on bottoms.
+    const top = isBottoms(product) ? bottomsArtworkFrame(product).top : topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET;
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
     const name = `${front ? 'Front' : 'Back'} artwork`;
     this.addDecal(texture, { front, x: front ? art.xCm : -art.xCm, y: top - art.yCm - heightCm / 2, width: art.widthCm, height: heightCm, rotation: art.rotation ?? 0 }, rest, target, holder,
@@ -411,7 +415,17 @@ export class ProductScene extends ProductModel {
     const hit=ray.intersectObjects([...this.parts.values(),...this.body.children])[0];
     if (!hit?.uv || hit.object.userData.part!==side) return null;
     const scale=hit.object.userData.tileCm as number;
-    return {part:side,x:hit.uv.x*scale,y:hit.uv.y*scale};
+    // On bottoms, whose pattern coordinates run from each leg's side seam, the point in 3D places artwork instead: on a
+    // draped part, the same spot of its triangle on the unshaped surface, which artwork is projected onto.
+    let at=hit.point.clone();
+    const rest=hit.object.userData.rest as ArrayLike<number>|undefined, shown=(hit.object as THREE.Mesh).geometry.getAttribute('position');
+    if (rest && hit.face) {
+      const corner=(source:ArrayLike<number>,i:number)=>new THREE.Vector3(source[i*3],source[i*3+1],source[i*3+2]);
+      const {a,b,c}=hit.face, weights=new THREE.Vector3();
+      THREE.Triangle.getBarycoord(hit.object.worldToLocal(hit.point.clone()),new THREE.Vector3().fromBufferAttribute(shown,a),new THREE.Vector3().fromBufferAttribute(shown,b),new THREE.Vector3().fromBufferAttribute(shown,c),weights);
+      at=corner(rest,a).multiplyScalar(weights.x).add(corner(rest,b).multiplyScalar(weights.y)).add(corner(rest,c).multiplyScalar(weights.z));
+    }
+    return {part:side,x:hit.uv.x*scale,y:hit.uv.y*scale,at:{x:at.x,y:at.y}};
   }
 
   async png(view: View): Promise<Blob> {

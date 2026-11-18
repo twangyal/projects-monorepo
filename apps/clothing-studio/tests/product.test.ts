@@ -246,7 +246,6 @@ test('shorts and trousers: leg measurements, two-leg 3D, paired leg panels, wais
   assert.throws(() => validateProduct({ ...trousers, measurements: { ...legMeasurements(trousers), waist: 110, hip: 100 } }), /pull on over the hips/);
   assert.throws(() => validateProduct({ ...trousers, measurements: { ...legMeasurements(trousers), legOpening: 85 } }), /Leg opening/);
   assert.throws(() => validateProduct({ ...trousers, neckline: 'v' }), /no neckline/);
-  assert.throws(() => validateProduct({ ...trousers, artwork: template('ringer').artwork.concat([{ part: 'front', dataUrl: 'data:image/png;base64,AA==', width: 1, height: 1, name: 'a', xCm: 0, yCm: 5, widthCm: 5 }]) }), /tops/);
   assert.throws(() => withOptions(trousers, { hem: 'straight', chestPocket: true }), /top/);
   assert.throws(() => withOptions(trousers, { hem: 'curved', chestPocket: false }), /hem/);
 
