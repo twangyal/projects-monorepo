@@ -69,7 +69,10 @@ export function createFrameCamera({ document, window, mount, store = {}, onGaze,
         if (current === session && state === 'ready' && Number.isFinite(message.sampledAt)) {
           const time = message.sampledAt - window.performance.timeOrigin;
           // The two contexts can round their clocks differently; allow a millisecond for this.
-          if (time >= 0 && time <= window.performance.now() + 1) onGaze(message.x, message.y, time);
+          if (time < 0 || time > window.performance.now() + 1) return;
+          // A head moved away from where it was calibrated comes with its gaze points (camera-gaze.js).
+          if (message.moved === true) onGaze(message.x, message.y, time, { moved: true });
+          else onGaze(message.x, message.y, time);
         }
         return;
       }

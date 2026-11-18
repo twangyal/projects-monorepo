@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createIrisModel, irisFeatures, MAX_IRIS_SAMPLES, MIN_IRIS_SAMPLES } from '../src/web/iris-gaze.js';
+import { createIrisModel, irisFeatures, MAX_IRIS_SAMPLES, MIN_IRIS_SAMPLES, MOVED_SPREAD } from '../src/web/iris-gaze.js';
+import { MOVED_MS } from '../src/web/camera-gaze.js';
 import { decodeCalibration, encodeCalibration } from '../src/web/calibration-store.js';
 import { createLocalCamera } from '../src/web/camera-source.js';
 
@@ -115,4 +116,36 @@ test('the camera asks for the irises, follows WebGazer until calibrated, then th
   assert.equal((await camera.restoreCalibration({ width: 1280, height: 720, now: 6 })).ok, true);
   frame({ gx: 0.4, gy: -0.4 }, { x: 3, y: 4 });
   assert.ok(Math.hypot(gaze.at(-1)[0] - want.x, gaze.at(-1)[1] - want.y) < 25);
+});
+
+test('a head well away from where it was calibrated is noticed, and reported with the gaze after a moment', async () => {
+  const model = createIrisModel();
+  for (const gy of [-0.8, 0, 0.8]) for (const gx of [-0.8, 0, 0.8]) { const { x, y } = screen({ gx, gy }); model.add(irisFeatures(face({ gx, gy })), x, y); }
+  assert.ok(model.offset(irisFeatures(face({ gx: 0.3 }))) < 1, 'looking around in place is not moving');
+  // The eyes 100 px across a 640 px picture: about four of a still calibration's spreads (a twenty-fifth of the
+  // picture each); 40 px is not yet a move.
+  assert.ok(model.offset(irisFeatures(face({ cx: 420 }))) > MOVED_SPREAD);
+  assert.ok(model.offset(irisFeatures(face({ cx: 360 }))) < MOVED_SPREAD);
+  assert.equal(createIrisModel().offset(irisFeatures(face())), 0, 'nothing before calibration');
+
+  let listener = null, positions = face(), now = 0, data = [];
+  const eye = () => ({ width: 1, height: 1, patch: { data: new Uint8ClampedArray(4) } });
+  const api = { params: {}, saveDataAcrossSessions() {}, showPredictionPoints() {}, setGazeListener(callback) { listener = callback; }, begin: async () => {}, removeMouseEventListeners() {},
+    getRegression: () => [{ init() { data = []; }, getData: () => data, setData(samples) { data.push(...samples); } }],
+    recordScreenPosition(x, y, type) { data.push({ eyes: { left: eye(), right: eye() }, screenPos: [x, y], type }); },
+    getTracker: () => ({ getPositions: () => positions }) };
+  const gaze = [];
+  const camera = createLocalCamera({ document: { getElementById: () => null }, window: { performance: { now: () => now } }, load: async () => api,
+    onGaze: (x, y, time, extra) => gaze.push(extra ?? null), onLost() {} });
+  await camera.start();
+  const frame = pose => { now += 100; positions = face(pose); listener(null); };
+  for (const gy of [-0.8, 0, 0.8]) for (const gx of [-0.8, 0, 0.8]) { frame({ gx, gy }); const { x, y } = screen({ gx, gy }); camera.recordSample(x, y); }
+  frame({ gx: 0.2 });
+  assert.equal(gaze.at(-1), null);
+  // Leaning well to one side: only after MOVED_MS does each gaze point say so, and coming back clears it.
+  for (let t = 0; t < MOVED_MS; t += 100) { frame({ gx: 0.2, cx: 420 }); assert.equal(gaze.at(-1), null, `${t} ms`); }
+  frame({ gx: 0.2, cx: 420 });
+  assert.deepEqual(gaze.at(-1), { moved: true });
+  frame({ gx: 0.2 });
+  assert.equal(gaze.at(-1), null);
 });

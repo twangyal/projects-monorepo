@@ -309,9 +309,18 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const filter = createGazeFilter();
   const camera = createCamera({
     document, window, load: loadCamera, store, mount: shadow,
-    onGaze: (x, y, time) => track(x, y, time),
+    onGaze: (x, y, time, extra) => { noteMoved(extra?.moved === true); track(x, y, time); },
     onLost: reason => loseCameraContext(true, reason),
   });
+  // Camera gaze from a head well away from where it was calibrated is likely off: say so once each time it moves
+  // away, and again only after it has come back.
+  let movedNoticed = false;
+  function noteMoved(moved) {
+    if (!moved) { movedNoticed = false; return; }
+    if (movedNoticed || stopped || closing || calibration || !cameraCalibrated || settings.source !== 'camera') return;
+    movedNoticed = true;
+    feedback({ message: 'You have moved since calibrating, so the circle may be off. Move back to where you sat, or say recalibrate.', tone: 'info' });
+  }
   // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
   let point = null;

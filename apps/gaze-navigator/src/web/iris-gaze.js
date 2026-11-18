@@ -14,6 +14,11 @@ export const MIN_IRIS_SAMPLES = 9, MAX_IRIS_SAMPLES = 200;
 // Ridge penalties per sample, on features in standard deviations; the one that best predicts each sample from the
 // others is used, so a few samples are fitted cautiously and many closely.
 const PENALTIES = [0.001, 0.01, 0.1, 1];
+// The head is taken to have moved away from where it was calibrated when its turn, tilt or place is more than
+// MOVED_SPREAD times the calibration's own spread from the calibration's average; a still calibration counts as
+// having spread at least HEAD_FLOOR (eye widths for turn and tilt, the picture's size for place).
+export const MOVED_SPREAD = 3;
+const HEAD = [6, 7, 8, 9], HEAD_FLOOR = [0.08, 0.08, 0.04, 0.04];
 
 /**
  * The eyes' pose in one frame from FaceMesh landmarks with irises (`positions`, [x, y, z] in video pixels, at least
@@ -70,7 +75,8 @@ export function createIrisModel() {
     if (samples.length < MIN_IRIS_SAMPLES) return;
     const count = samples.length, size = samples[0].features.length;
     const mean = Array.from({ length: size }, (_, k) => samples.reduce((sum, s) => sum + s.features[k], 0) / count);
-    const scale = Array.from({ length: size }, (_, k) => Math.sqrt(samples.reduce((sum, s) => sum + (s.features[k] - mean[k]) ** 2, 0) / count) || 1);
+    const spread = Array.from({ length: size }, (_, k) => Math.sqrt(samples.reduce((sum, s) => sum + (s.features[k] - mean[k]) ** 2, 0) / count));
+    const scale = spread.map(value => value || 1);
     const rows = samples.map(s => [...s.features.map((value, k) => (value - mean[k]) / scale[k]), 1]);
     const width = size + 1, gram = Array.from({ length: width }, () => new Array(width).fill(0));
     for (const row of rows) for (let i = 0; i < width; i++) for (let j = 0; j < width; j++) gram[i][j] += row[i] * row[j];
@@ -90,7 +96,7 @@ export function createIrisModel() {
       const score = median(errors);
       if (Number.isFinite(score) && (!best || score < best.score)) best = { score, weights };
     }
-    if (best) fitted = { mean, scale, weights: best.weights };
+    if (best) fitted = { mean, scale, spread, weights: best.weights };
   }
 
   const valid = features => Array.isArray(features) && features.length === 10 && features.every(Number.isFinite);
@@ -109,6 +115,11 @@ export function createIrisModel() {
       const row = [...features.map((value, k) => (value - fitted.mean[k]) / fitted.scale[k]), 1];
       const [x, y] = fitted.weights.map(w => row.reduce((sum, value, i) => sum + value * w[i], 0));
       return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+    },
+    /** How far a pose's head is from where it was in calibration, in spreads (see MOVED_SPREAD); 0 before calibration. */
+    offset(features) {
+      if (!fitted || !valid(features)) return 0;
+      return Math.max(...HEAD.map((k, i) => Math.abs(features[k] - fitted.mean[k]) / Math.max(fitted.spread[k], HEAD_FLOOR[i])));
     },
     clear() { samples = []; fitted = null; },
     get size() { return samples.length; },

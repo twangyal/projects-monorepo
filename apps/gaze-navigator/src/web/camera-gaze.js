@@ -5,7 +5,7 @@ import { resetCameraCalibration } from '../camera-calibration.js';
 import { releaseCamera } from '../camera-cleanup.js';
 import { identifyCamera, retireCamera, retireCameraModel } from '../camera-retirement.js';
 import { createHeadModel, headFeatures } from './head-pointer.js';
-import { createIrisModel, irisFeatures } from './iris-gaze.js';
+import { createIrisModel, irisFeatures, MOVED_SPREAD } from './iris-gaze.js';
 
 // A live camera's picture always changes a little (sensor noise). One that stays exactly the same for FROZEN_MS has
 // frozen (a stalled driver, a virtual camera showing a still), and the estimates WebGazer keeps making from it would
@@ -15,6 +15,8 @@ export const FROZEN_MS = 3000;
 const SAMPLE_MS = 500, SAMPLE_SIZE = [64, 48];
 // A head pose older than this is not paired with a calibration point: the face was lost since.
 const POSE_MS = 500;
+// A head away from where it was calibrated for this long is reported with each gaze point (see iris-gaze.js).
+export const MOVED_MS = 1500;
 
 export function createCameraGaze({ document, window, load = createCameraLoader(document, window), onGaze, onLost }) {
   let session = 0;
@@ -28,7 +30,7 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
   // irises; 'head': where the head points (head-pointer.js). All come from the same face landmarks.
   let mode = 'eyes';
   const head = createHeadModel(), iris = createIrisModel();
-  let pose = null, poseAt = -Infinity, eyes = null, eyesAt = -Infinity, lastPositions = null;
+  let pose = null, poseAt = -Infinity, eyes = null, eyesAt = -Infinity, lastPositions = null, awaySince = null;
 
   // The face model replaces its landmark list whenever it finds a face, so the same list means no face this frame.
   function readFace() {
@@ -109,7 +111,12 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
           return;
         }
         const point = face?.eyes ? iris.predict(face.eyes) : null;
-        if (point) onGaze(point.x, point.y, now);
+        if (point) {
+          // Placed from a head well away from where it was calibrated, the gaze is likely off: say so with it.
+          awaySince = iris.offset(face.eyes) > MOVED_SPREAD ? awaySince ?? now : null;
+          if (awaySince !== null && now - awaySince >= MOVED_MS) onGaze(point.x, point.y, now, { moved: true });
+          else onGaze(point.x, point.y, now);
+        }
         else if (data && Number.isFinite(data.x) && Number.isFinite(data.y)) onGaze(data.x, data.y, now);
         else onLost();
       });
@@ -167,7 +174,7 @@ export function createCameraGaze({ document, window, load = createCameraLoader(d
     get mode() { return mode; },
     /** Switches between following the eyes and following the head; each needs its own calibration. */
     setMode(next) { if (next === 'eyes' || next === 'head') mode = next; },
-    resetCalibration() { if (api) resetCameraCalibration(api); head.clear(); iris.clear(); },
+    resetCalibration() { if (api) resetCameraCalibration(api); head.clear(); iris.clear(); awaySince = null; },
     /** Pairs the latest head pose with a screen point; false without a recent pose. */
     recordHeadSample(x, y) { return state === 'ready' && pose !== null && window.performance.now() - poseAt <= POSE_MS && head.add(pose, x, y); },
     get headSamples() { return head.samples; },
