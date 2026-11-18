@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -200,22 +200,31 @@ function samplePack(product: Product, date: string): TechPack {
 }
 
 /** Where a print sits: below the shoulder line on tops, below the waist seam on bottoms, and on trousers which leg it
- * is on (the front's right of centre, seen from outside, is the wearer's left leg; the back's is the wearer's right). */
+ * is on (the front's right of centre, seen from outside, is the wearer's left leg; the back's is the wearer's right). On
+ * a sleeve it sits below the shoulder point, across from the sleeve's centre line: seen from outside, right of the line
+ * is toward the back on the left sleeve and toward the front on the right sleeve. */
 function artworkPlace(product: Product, art: Product['artwork'][number]): string {
+  if (isSleeveArtwork(art.part)) {
+    const toward = (art.part === 'sleeveLeft') === (art.xCm > 0) ? 'back' : 'front';
+    return `top ${cm(art.yCm)} below the shoulder point, ${art.xCm === 0 ? 'on the sleeve’s centre line' : `${cm(Math.abs(art.xCm))} toward the ${toward} of the sleeve’s centre line`}`;
+  }
   const below = `${cm(art.yCm)} ${isBottoms(product) ? 'below the waist seam' : 'below shoulder'}`;
   const across = art.xCm === 0 ? 'centred' : `${cm(Math.abs(art.xCm))} ${art.xCm > 0 ? 'right' : 'left'} of centre when viewed from outside`;
   const leg = product.base !== 'trousers' ? '' : Math.abs(art.xCm) < art.widthCm / 2 ? ', across the centre seam'
     : `, on the wearer’s ${(art.part === 'front') === (art.xCm > 0) ? 'left' : 'right'} leg`;
   return `${below}, ${across}${leg}`;
 }
+const sideName = (art: Product['artwork'][number]) => ARTWORK_PART_NAMES[art.part][0]!.toUpperCase() + ARTWORK_PART_NAMES[art.part].slice(1);
 function artworkBom(product: Product): BomRow[] {
-  return product.artwork.map(art => ({ item: `A${art.part === 'front' ? 1 : 2} Artwork`, description: `${art.name || 'Artwork'} — screen print or DTG`, color: 'Per artwork file',
-    placement: `${art.part === 'front' ? 'Front' : 'Back'}: ${artworkPlace(product, art)}${art.rotation ? `, ${Math.abs(art.rotation)}° ${art.rotation > 0 ? 'clockwise' : 'counterclockwise'} about its centre` : ''}`,
+  return [...product.artwork].sort((a, b) => ARTWORK_PARTS.indexOf(a.part) - ARTWORK_PARTS.indexOf(b.part)).map(art => ({ item: `A${ARTWORK_PARTS.indexOf(art.part) + 1} Artwork`, description: `${art.name || 'Artwork'} — screen print or DTG`, color: 'Per artwork file',
+    placement: `${sideName(art)}: ${artworkPlace(product, art)}${art.rotation ? `, ${Math.abs(art.rotation)}° ${art.rotation > 0 ? 'clockwise' : 'counterclockwise'} about its centre` : ''}`,
     quantity: `${cm(art.widthCm)} × ${cm(art.widthCm * art.height / art.width)}` }));
 }
 function artworkConstruction(product: Product): ConstructionRow[] {
-  return product.artwork.map(art => ({ area: `${art.part === 'front' ? 'Front' : 'Back'} artwork`, operation: 'Screen print or DTG after sewing',
-    detail: `${cm(art.widthCm)} wide, ${isBottoms(product) ? artworkPlace(product, art) : `${cm(art.yCm)} below shoulder`}` }));
+  // A sleeve is printed flat, as cut, before it is sewn into a tube.
+  return [...product.artwork].sort((a, b) => ARTWORK_PARTS.indexOf(a.part) - ARTWORK_PARTS.indexOf(b.part)).map(art => ({ area: `${sideName(art)} artwork`,
+    operation: isSleeveArtwork(art.part) ? 'Screen print or DTG on the cut sleeve, before sewing' : 'Screen print or DTG after sewing',
+    detail: `${cm(art.widthCm)} wide, ${isBottoms(product) || isSleeveArtwork(art.part) ? artworkPlace(product, art) : `${cm(art.yCm)} below shoulder`}${art.rotation ? `, turned ${Math.abs(art.rotation)}° ${art.rotation > 0 ? 'clockwise' : 'counterclockwise'}` : ''}` }));
 }
 
 /** Chest POM endpoints from the actual sewing side seams, including taper/flare and curved hems. */

@@ -14,7 +14,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   WAISTBAND_CM, LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS, withSleeveLength,
-  artworkDefaults, chestPocketAllowed, collarAllowed, buttonsAllowed, cuffsAllowed, CUFFED_SLEEVE, coatAllowed, COAT_LENGTH, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, SLEEVE_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
+  artworkDefaults, ARTWORK_PART_NAMES, isSleeveArtwork, keepArtworkInside, sleeveless, chestPocketAllowed, collarAllowed, buttonsAllowed, cuffsAllowed, CUFFED_SLEEVE, coatAllowed, COAT_LENGTH, zipAllowed, hemAllowed, optionsOf, withOptions, withSkirtWaistband, withLegCuffs, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, WAIST_FIT_KEYS, DRESS_GATHER, SLEEVE_GATHER, FIT_NAMES, flare, teeDimensions, seamHalfAt, waistShapeable, waistSeamAllowed, DRESS_LENGTH, bodiceShift, type FitKey, isBottoms, canWearTogether, layerOrder, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, fitValues, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -115,13 +115,13 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
       <div id="artwork-controls" class="artwork-controls">
-      <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option></select></label>
+      <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option><option value="sleeveLeft">Left sleeve</option><option value="sleeveRight">Right sleeve</option></select></label>
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
       <div class="measure-grid"><label class="field">Text to print<input id="artwork-text" maxlength="${MAX_TEXT}" autocomplete="off"></label><label class="field">Text font<select id="artwork-font">${Object.entries(TEXT_FONTS).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></label></div>
-      <div class="inline-actions"><label class="color-row">Text colour<input id="artwork-text-colour" type="color" value="#1b1c1b"></label><button id="add-text-artwork" class="quiet">Print this text</button></div><p class="fine-print">Text replaces the artwork on the chosen side, as an image you can resize and move like uploaded artwork. Long text wraps at about 20 characters a line.</p>
+      <div class="inline-actions"><label class="color-row">Text colour<input id="artwork-text-colour" type="color" value="#1b1c1b"></label><button id="add-text-artwork" class="quiet">Print this text</button></div><p class="fine-print">Text replaces the artwork on the chosen side or sleeve, as an image you can resize and move like uploaded artwork. Long text wraps at about 20 characters a line.</p>
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
-        <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
-        <label class="field"><span id="artwork-y-label">Below shoulder (cm)</span><input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
+        <label class="field"><span id="artwork-x-label">From centre (cm)</span><input id="artwork-x" type="number" step="0.5"></label>
+        <label class="field"><span id="artwork-y-label">Below shoulder (cm)</span><input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p><p id="sleeve-artwork-help" class="fine-print" hidden>Sleeve artwork is placed on the sleeve pattern piece and printed before the sleeve is sewn, so it wraps round the arm and must stay clear of the seams. It is measured from the sleeve’s centre line (positive is to the right as seen from outside, with the shoulder up) and from the shoulder point to its top. Turn it 90° to run text down the sleeve.</p>
       <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button><button id="pick-artwork" class="quiet" aria-pressed="false" disabled>Pick artwork centre in 3D</button></div><p id="artwork-placement-status" class="fine-print" role="status">Pick a centre on the visible garment, then Apply placement. Numeric fields are the keyboard alternative; Escape cancels picking.</p></div>
     </aside>
   </div>
@@ -688,8 +688,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if(!scene||!design||!art){finishPicking('Upload artwork and wait for the 3D view before picking.');return;}
     if(!Number.isFinite(width)||width<LIMITS.artworkWidthCm[0]||width>LIMITS.artworkWidthCm[1]){finishPicking('Artwork width must be from 3 to 40 cm before picking.');return;}
     pickOwner={design,side};$('pick-artwork').setAttribute('aria-pressed','true');canvas.style.cursor='crosshair';
-    $('artwork-placement-status').textContent=`Click the visible ${side} body panel at the artwork centre. Drag to orbit; Escape cancels.`;
-    scene.setView(side);canvas.scrollIntoView({block:'center'});canvas.focus({preventScroll:true});
+    $('artwork-placement-status').textContent=`Click the visible ${isSleeveArtwork(side)?ARTWORK_PART_NAMES[side]:`${side} body panel`} at the artwork centre. Drag to orbit; Escape cancels.`;
+    scene.setView(side==='sleeveLeft'?'left':side==='sleeveRight'?'right':side);canvas.scrollIntoView({block:'center'});canvas.focus({preventScroll:true});
   });
   window.addEventListener('keydown',event=>{
     if(pickOwner&&event.key==='Escape'){event.preventDefault();event.stopPropagation();finishPicking('Picking cancelled. Placement drafts are kept.');$('pick-artwork').focus({preventScroll:true});}
@@ -707,7 +707,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if(design!==owner.design||side!==owner.side){finishPicking('The design or artwork side changed. Pick again.');return;}
       try{
         const point=scene?.pickArtworkPoint(event.clientX,event.clientY,owner.side),art=design.artwork.find(item=>item.part===owner.side);
-        if(!point||!art)throw new Error(`Choose a point on the visible ${owner.side} body panel.`);
+        if(!point||!art)throw new Error(`Choose a point on the visible ${isSleeveArtwork(owner.side)?ARTWORK_PART_NAMES[owner.side]:`${owner.side} body panel`}.`);
         const placement=placementFromSurface(design,art,point,($('artwork-width') as HTMLInputElement).valueAsNumber);
         for(const [id,value]of [['artwork-x',placement.xCm],['artwork-y',placement.yCm]] as const){const field=$(id) as HTMLInputElement;field.value=String(value);field.dispatchEvent(new Event('input',{bubbles:true}));}
         finishPicking('Point chosen. Review the coordinates, then Apply placement; Discard restores your previous placement.');
@@ -856,8 +856,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     draft.measurements = m;
     withSleeveLength(draft, value('product-sleeve'));
     draft.neckline = ($('product-neckline') as HTMLSelectElement).value as Product['neckline'];
-    // Artwork that no longer fits the panel is pulled back inside rather than rejected.
-    for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
+    // Artwork that no longer fits the panel or sleeve is pulled back inside rather than rejected.
+    for (const art of draft.artwork.filter(item => !isSleeveArtwork(item.part))) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
+    keepArtworkInside(draft);
   }, 'Measurements applied to the 3D garment and its pattern pieces.', 'measurements'));
   // Fit: a point of measure is stored only when it differs from its proportional value.
   $('apply-fit').addEventListener('click', () => update(draft => {
@@ -884,8 +885,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (Math.abs(value - pocketDefaults[key]) > 0.06) fit[key] = value;
     }
     if (Object.keys(fit).length) draft.fit = fit; else delete draft.fit;
+    keepArtworkInside(draft);
   }, 'Fit applied: the pattern pieces, 3D garment and tech pack follow it.', 'fit'));
-  $('reset-fit').addEventListener('click', () => update(draft => { delete draft.fit; }, 'Fit is proportional to the chest again. You can undo this.', 'fit'));
+  $('reset-fit').addEventListener('click', () => update(draft => { delete draft.fit; keepArtworkInside(draft); }, 'Fit is proportional to the chest again. You can undo this.', 'fit'));
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-leg-preset]')) button.addEventListener('click', () => update(draft => {
     legMeasurements(draft).inseam = Number(button.dataset.legPreset);
   }, `${button.getAttribute('aria-label')}: the legs, pattern and tech pack follow it.`));
@@ -899,7 +901,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const request = { text, side, color: ($('artwork-text-colour') as HTMLInputElement).value, font: ($('artwork-font') as HTMLSelectElement).value as TextFont };
       draft.artwork = draft.artwork.filter(art => art.part !== side);
       draft.artwork.push(textArtwork(request, renderText(request), draft));
-    }, `“${text}” printed on the ${side}. Adjust its width and position below.`);
+    }, `“${text}” printed on the ${ARTWORK_PART_NAMES[side]}. Adjust its width and position below.`);
   });
   $('artwork-file').addEventListener('change', async () => {
     const input = $('artwork-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
@@ -921,20 +923,20 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       }
       update(draft => {
         draft.artwork = draft.artwork.filter(art => art.part !== side);
-        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), ...artworkDefaults(draft, side) });
-      }, `Artwork placed on the ${side}. Adjust its width and position below.`);
+        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), ...artworkDefaults(draft, side, { width, height }) });
+      }, `Artwork placed on the ${ARTWORK_PART_NAMES[side]}. Adjust its width and position below.`);
     } catch (error) { if (owned()) options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
     finally { bitmap?.close(); }
   });
   $('apply-artwork').addEventListener('click', () => update(draft => {
     const side = ($('artwork-side') as HTMLSelectElement).value, art = draft.artwork.find(item => item.part === side);
-    if (!art) throw new Error(`Upload artwork for the ${side} first.`);
+    if (!art) throw new Error(`Upload artwork for the ${ARTWORK_PART_NAMES[side as Artwork['part']]} first.`);
     art.widthCm = Number(($('artwork-width') as HTMLInputElement).value); art.xCm = Number(($('artwork-x') as HTMLInputElement).value); art.yCm = Number(($('artwork-y') as HTMLInputElement).value);
     art.rotation = ($('artwork-rotation') as HTMLInputElement).valueAsNumber;
   }, 'Artwork placement applied.', 'artwork'));
   $('remove-artwork').addEventListener('click', () => update(draft => {
     const side = ($('artwork-side') as HTMLSelectElement).value;
-    if (!draft.artwork.some(art => art.part === side)) throw new Error(`There is no artwork on the ${side}.`);
+    if (!draft.artwork.some(art => art.part === side)) throw new Error(`There is no artwork on the ${ARTWORK_PART_NAMES[side as Artwork['part']]}.`);
     draft.artwork = draft.artwork.filter(art => art.part !== side);
   }, 'Artwork removed.'));
   let artworkSide = ($('artwork-side') as HTMLSelectElement).value;
@@ -1057,10 +1059,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (on) selected = 'chestPocket';
     setModules(current => ({ ...current, chestPocket: on }), on ? 'Chest pocket added in the front body’s style. Style it like any other part.' : 'Chest pocket removed. You can undo this.');
   });
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset]')) button.addEventListener('click', () => update(draft => {
-    if (Number(button.dataset.sleevePreset) === 0 && draft.base !== 'tee') throw new Error('Only a T-shirt can be made sleeveless.');
-    withSleeveLength(draft, Number(button.dataset.sleevePreset));
-  }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.`));
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset]')) button.addEventListener('click', () => {
+    // Made sleeveless, a top loses its sleeves' artwork with them, and says so.
+    const dropped = Number(button.dataset.sleevePreset) === 0 && !!product()?.artwork.some(art => isSleeveArtwork(art.part));
+    update(draft => {
+      if (Number(button.dataset.sleevePreset) === 0 && draft.base !== 'tee') throw new Error('Only a T-shirt can be made sleeveless.');
+      withSleeveLength(draft, Number(button.dataset.sleevePreset));
+    }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.${dropped ? ' The artwork on the sleeves went with them; you can undo this.' : ''}`);
+  });
 
   function captureDrape(design: Product): GarmentDrapeResult | null {
     const result = currentDrape(design);
@@ -1386,8 +1392,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     try { compared = comparisonBody(design); } catch { compared = null; }
     fabricComparison.sync(project.product??null,compared);
     if (!partsOf(design).includes(selected)) selected = 'front';
-    const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
-    $('artwork-y-label').textContent = isBottoms(design) ? 'Below waist (cm)' : 'Below shoulder (cm)';
+    // Sleeve artwork needs sleeves; a garment without them shows its front or back.
+    const sides = $('artwork-side') as HTMLSelectElement, sleeves = !isBottoms(design) && !sleeveless(design);
+    for (const option of sides.options) if (isSleeveArtwork(option.value as Artwork['part'])) option.disabled = !sleeves;
+    if (!sleeves && isSleeveArtwork(sides.value as Artwork['part'])) { sides.value = 'front'; artworkSide = 'front'; }
+    const style = design.parts[selected], side = sides.value, art = design.artwork.find(item => item.part === side), onSleeve = isSleeveArtwork(side as Artwork['part']);
+    $('artwork-y-label').textContent = onSleeve ? 'Below shoulder point (cm)' : isBottoms(design) ? 'Below waist (cm)' : 'Below shoulder (cm)';
+    $('artwork-x-label').textContent = onSleeve ? 'From sleeve centre line (cm)' : 'From centre (cm)';
+    $('sleeve-artwork-help').hidden = !onSleeve;
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
     $('pick-artwork').toggleAttribute('disabled', !art);

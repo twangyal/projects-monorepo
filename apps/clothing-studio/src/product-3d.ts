@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { ARTWORK_PART_NAMES, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -39,6 +39,8 @@ class ProductModel {
   protected parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
   private provisional: THREE.Texture[] = [];
+  /** Artwork images still being drawn into their textures (see sleeveTexture). */
+  private drawing: Promise<void>[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
   protected disposed = false;
   protected height = 72;
@@ -351,6 +353,11 @@ class ProductModel {
       image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
+    if (isSleeveArtwork(art.part)) {
+      const name = `${ARTWORK_PART_NAMES[art.part][0]!.toUpperCase()}${ARTWORK_PART_NAMES[art.part].slice(1)} artwork`;
+      this.addSleeveArtwork(product, art, target, holder, holder === this.worn ? `${product.name}: ${name}` : name);
+      return;
+    }
     // Positions are measured from the shoulder line on tops, and from the waist seam on bottoms.
     const top = isBottoms(product) ? bottomsArtworkFrame(product).top : topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET;
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
@@ -377,9 +384,54 @@ class ProductModel {
     holder.add(decal);
   }
 
+  /**
+   * Artwork on a sleeve is printed on the sleeve's own surface, which carries its pattern piece's flat coordinates, so
+   * it wraps round the arm and follows the drape as the cut piece does. It is drawn over the sleeve's triangles that
+   * reach it, with an image that has a clear margin, so the triangles' parts beyond the artwork show nothing.
+   */
+  private addSleeveArtwork(product: Product, art: Product['artwork'][number], target: THREE.Mesh, holder: THREE.Object3D, name: string) {
+    const { texture, inner } = this.sleeveTexture(art), toArt = sleeveArtworkUv(sleeveArtworkFrame(product), art), tileCm = target.userData.tileCm as number;
+    const flat = target.geometry.getAttribute('uv'), index = target.geometry.index!, uvs = new Float32Array(flat.count * 2), faces: number[] = [];
+    for (let v = 0; v < flat.count; v++) {
+      const [u, w] = toArt(flat.getX(v) * tileCm, flat.getY(v) * tileCm);
+      uvs[v * 2] = inner.left + u * inner.width; uvs[v * 2 + 1] = inner.bottom + w * inner.height;
+    }
+    const square = (i: number) => (uvs[i * 2]! - inner.left) / inner.width, height = (i: number) => (uvs[i * 2 + 1]! - inner.bottom) / inner.height;
+    for (let f = 0; f < index.count; f += 3) {
+      const corners = [index.getX(f), index.getX(f + 1), index.getX(f + 2)];
+      if (Math.max(...corners.map(square)) < 0 || Math.min(...corners.map(square)) > 1 || Math.max(...corners.map(height)) < 0 || Math.min(...corners.map(height)) > 1) continue;
+      faces.push(...corners);
+    }
+    if (!faces.length) return;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', target.geometry.getAttribute('position').clone());
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2)); geometry.setIndex(faces); geometry.computeVertexNormals();
+    // Printed on the outside only; sleeves are wound with their faces outward.
+    const print = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
+    print.name = name; print.userData.part = art.part;
+    holder.add(print);
+  }
+
+  /** The artwork's image inside a clear margin, and where the image lies in the texture (0 to 1 each way). */
+  private sleeveTexture(art: Product['artwork'][number]): { texture: THREE.Texture; inner: { left: number; bottom: number; width: number; height: number } } {
+    const pad = Math.max(2, Math.round(Math.max(art.width, art.height) / 64)), wide = art.width + pad * 2, tall = art.height + pad * 2;
+    const inner = { left: pad / wide, bottom: pad / tall, width: art.width / wide, height: art.height / tall }, key = `sleeve:${art.dataUrl}`, cached = this.artworkTextures.get(key);
+    if (cached) return { texture: cached, inner };
+    const canvas = document.createElement('canvas'); canvas.width = wide; canvas.height = tall;
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+    const image = new Image(); image.src = art.dataUrl;
+    this.drawing.push(image.decode().then(() => {
+      canvas.getContext('2d')?.drawImage(image, pad, pad, art.width, art.height);
+      texture.needsUpdate = true; if (!this.disposed) this.requestRender();
+    }).catch(() => undefined));
+    this.artworkTextures.set(key, texture);
+    return { texture, inner };
+  }
+
   async prepareArtwork() {
-    // Uploaded artwork decodes from its file; drawn textures (a zip) are ready already.
+    // Uploaded artwork decodes from its file; drawn textures (a zip) are ready already, and sleeve prints once drawn.
     await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image instanceof HTMLImageElement ? texture.image.decode() : undefined)));
+    await Promise.all(this.drawing);
     for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
   }
 
@@ -398,7 +450,7 @@ class ProductModel {
       for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
     }
     for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
-    this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+    this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear(); this.drawing = [];
   }
 }
 
@@ -463,7 +515,7 @@ export class ProductScene extends ProductModel {
   }
 
   /** Visible surface to original fabric cm, including when the mesh is draped. */
-  pickArtworkPoint(clientX:number, clientY:number, side:'front'|'back') {
+  pickArtworkPoint(clientX:number, clientY:number, side:Product['artwork'][number]['part']) {
     const box=this.canvas.getBoundingClientRect();
     const pointer=new THREE.Vector2(((clientX-box.left)/box.width)*2-1,-((clientY-box.top)/box.height)*2+1);
     const ray=new THREE.Raycaster(); ray.setFromCamera(pointer,this.camera);

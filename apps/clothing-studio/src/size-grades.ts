@@ -4,7 +4,7 @@
 // measures each size from the graded design, so the 3D garment, its patterns and the size chart agree.
 import { DEFAULT_GRADING } from './grading.ts';
 import { pleatDepthLimit, skirtDraft, skirtPleats, type SkirtMeasures } from './product-skirt.ts';
-import { LIMITS, SIZES, fitValues, isBottoms, keepBottomsArtworkInside, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
+import { LIMITS, SIZES, fitValues, isBottoms, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, topMeasurements, validateProduct, type FitKey, type Product, type Size } from './product.ts';
 
 /** Fit increments per size step for tops; points not listed stay the same in every size. */
 export const FIT_GRADES: Partial<Record<FitKey, number>> = {
@@ -63,12 +63,12 @@ export function gradedProduct(product: Product, size: Size): Product {
       if (value >= low && value <= high) fit[key] = value;
     }
     if (Object.keys(fit).length) graded.fit = fit; else delete graded.fit;
-    // Artwork stays where it was, pulled back inside a smaller panel.
+    // Artwork stays where it was, pulled back inside a smaller panel (and on sleeves, a smaller sleeve: see below).
     const half = graded.measurements.chest / 4 + 1;
-    for (const art of graded.artwork) { art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, graded.measurements.length); }
+    for (const art of graded.artwork.filter(item => !isSleeveArtwork(item.part))) { art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, graded.measurements.length); }
   }
-  // So does artwork on bottoms.
-  keepBottomsArtworkInside(graded);
+  // So does artwork on bottoms and sleeves.
+  keepArtworkInside(graded);
   try { return validateProduct(graded); }
   catch (error) { throw new Error(`Size ${size} would be outside the supported measurements: ${error instanceof Error ? error.message : 'invalid'}`); }
 }

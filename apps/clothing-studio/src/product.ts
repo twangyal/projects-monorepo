@@ -156,6 +156,8 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
     }
   };
   fix(product.parts); for (const colourway of product.colorways ?? []) fix(colourway.parts);
+  // Artwork follows the sleeves: moved to stay on a shorter one, removed with them.
+  if ('artwork' in product && Array.isArray(product.artwork)) keepArtworkInside(product as unknown as Product);
   return product;
 }
 
@@ -174,7 +176,7 @@ export function withLegCuffs(product: Product, height: number): Product {
   };
   update(draft.parts); for (const colourway of draft.colorways ?? []) update(colourway.parts);
   // Cuffs shorten the legs, so artwork near the hem moves up.
-  keepBottomsArtworkInside(draft);
+  keepArtworkInside(draft);
   return validateProduct(draft);
 }
 
@@ -190,7 +192,7 @@ export function withSkirtWaistband(product: Product, height: number): Product {
   };
   update(draft.parts);for(const colourway of draft.colorways ?? [])update(colourway.parts);
   // Measurements applied with the band may have shortened the skirt under its artwork.
-  keepBottomsArtworkInside(draft);
+  keepArtworkInside(draft);
   return validateProduct(draft);
 }
 
@@ -384,7 +386,14 @@ export interface Print { motif: PrintMotif; color: string; scaleCm: number; layo
 /** A designer's own motif image, repeated like library motifs (drawn as uploaded; print color does not tint it). */
 export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
 export interface PartStyle { material: string; color: string; print: Print | null }
-export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
+/** Where artwork goes: the front or back body, projected straight on as seen from that side, or on a top with sleeves
+ * either sleeve, placed on the sleeve's pattern piece so that it wraps round the arm (see sleeveArtworkFrame). */
+export const ARTWORK_PARTS = ['front', 'back', 'sleeveLeft', 'sleeveRight'] as const;
+export type ArtworkPart = typeof ARTWORK_PARTS[number];
+/** Each place for artwork as it is named in a sentence ("Upload artwork for the left sleeve first"). */
+export const ARTWORK_PART_NAMES: Record<ArtworkPart, string> = { front: 'front', back: 'back', sleeveLeft: 'left sleeve', sleeveRight: 'right sleeve' };
+export const isSleeveArtwork = (part: ArtworkPart): part is 'sleeveLeft' | 'sleeveRight' => part === 'sleeveLeft' || part === 'sleeveRight';
+export interface Artwork { part: ArtworkPart; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
 export interface Measurements { chest: number; length: number; sleeve: number;
   /** A dress cut at the waist: its skirt's waist edge is cut this many times longer than the seam and gathered into it
    * (DRESS_GATHER); absent for a smooth skirt. */ gather?: number;
@@ -533,10 +542,21 @@ export function bottomsArtworkProblem(product: Product, art: Placed): string | n
     : art.part === 'back' && optionsOf(product).yoke ? ` Place it below the back yoke, which reaches ${Math.round(trouserYoke(product).back * 10) / 10} cm below the waist at the centre back.` : '';
   return `Artwork on ${name} must be centred on the ${partName(product, art.part).toLowerCase()}, as seen from outside.${where}`;
 }
-/** Artwork on bottoms that a change of measurements or size leaves off the garment is moved back onto it, as tops'
- * artwork is: up to end above the hem, then across to the nearest place on its side's part. */
-export function keepBottomsArtworkInside(product: Product): void {
-  if (!isBottoms(product) || !product.artwork.length) return;
+/**
+ * Artwork that a change of measurements, size or sleeves leaves off the garment is moved back onto it, as tops' front
+ * and back artwork is: on bottoms up to end above the hem, then across to the nearest place on its side's part; on a
+ * sleeve up or down it, then onto its centre line, then made smaller. A top without sleeves loses their artwork.
+ */
+export function keepArtworkInside(product: Product): void {
+  if (!isBottoms(product)) {
+    if (sleeveless(product)) product.artwork = product.artwork.filter(art => !isSleeveArtwork(art.part));
+    if (!product.artwork.some(art => isSleeveArtwork(art.part))) return;
+    const frame = sleeveArtworkFrame(product);
+    for (const art of product.artwork) if (isSleeveArtwork(art.part)) fitOnSleeve(frame, art);
+    return;
+  }
+  product.artwork = product.artwork.filter(art => !isSleeveArtwork(art.part));
+  if (!product.artwork.length) return;
   const { length } = bottomsArtworkFrame(product);
   for (const art of product.artwork) {
     art.yCm = Math.max(0, Math.min(art.yCm, Math.floor((length - art.widthCm * art.height / art.width) * 10) / 10));
@@ -546,10 +566,86 @@ export function keepBottomsArtworkInside(product: Product): void {
     if (near !== null) art.xCm = Math.round((art.part === 'front' ? near : -near) * 10) / 10;
   }
 }
+/**
+ * Artwork on a sleeve is placed on the sleeve's pattern piece, as a placement print is, so it wraps round the arm and
+ * follows the drape: across from the piece's centre line (which runs from the shoulder point to the middle of the
+ * opening), positive to the right as seen from outside with the shoulder up, and its top below the shoulder point. Seen
+ * so, the right is toward the back on the left sleeve and toward the front on the right sleeve, which is its mirror image
+ * (`mirror` maps across to the piece's own x). `outline` is the piece as cut, in the 3D sleeve's flat coordinates.
+ */
+export function sleeveArtworkFrame(product: Product): { centre: number; length: number; outline: Pt[]; mirror: (part: ArtworkPart) => 1 | -1 } {
+  const s = sleeveOutline(product);
+  return { centre: (s.opening[0].x + s.opening[1].x) / 2, length: s.opening[0].y, outline: [...s.cap, s.opening[1], s.opening[0]], mirror: part => (part === 'sleeveRight' ? -1 : 1) };
+}
+type SleevePlaced = Pick<Artwork, 'part' | 'xCm' | 'yCm' | 'widthCm' | 'width' | 'height' | 'rotation'>;
+/** The flat points of the sleeve piece under the artwork's corners, turned clockwise (as seen from outside) about its
+ * centre by its rotation. */
+function sleeveArtworkCorners(frame: ReturnType<typeof sleeveArtworkFrame>, art: SleevePlaced): Pt[] {
+  const height = art.widthCm * art.height / art.width, angle = (art.rotation ?? 0) * Math.PI / 180, cos = Math.cos(angle), sin = Math.sin(angle), mirror = frame.mirror(art.part);
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => {
+    const x = i! * art.widthCm / 2, y = j! * height / 2;
+    return { x: frame.centre + mirror * (art.xCm + x * cos - y * sin), y: art.yCm + height / 2 + x * sin + y * cos };
+  });
+}
+/** Where a flat point of the sleeve piece falls on the artwork's image, (0, 0) at its bottom left and (1, 1) at its top
+ * right: the point is printed only inside that square. */
+export function sleeveArtworkUv(frame: ReturnType<typeof sleeveArtworkFrame>, art: SleevePlaced): (x: number, y: number) => [number, number] {
+  const height = art.widthCm * art.height / art.width, angle = (art.rotation ?? 0) * Math.PI / 180, cos = Math.cos(angle), sin = Math.sin(angle), mirror = frame.mirror(art.part);
+  return (x, y) => {
+    const across = mirror * (x - frame.centre) - art.xCm, down = y - art.yCm - height / 2;
+    return [(across * cos + down * sin) / art.widthCm + 0.5, 0.5 - (down * cos - across * sin) / height];
+  };
+}
+const onSleeve = (frame: ReturnType<typeof sleeveArtworkFrame>, art: SleevePlaced) => sleeveArtworkCorners(frame, art).every(p => inside(p, frame.outline));
+/** The heights (cm below the shoulder point, every half centimetre) at which the artwork's top lies with all of it on
+ * the sleeve, as placed across; the piece is convex, so they run without a gap. */
+function sleeveArtworkTops(frame: ReturnType<typeof sleeveArtworkFrame>, art: SleevePlaced): number[] {
+  const tops: number[] = [];
+  for (let y = 0; y <= frame.length; y += 0.5) if (onSleeve(frame, { ...art, yCm: y })) tops.push(y);
+  return tops;
+}
+const nearestOf = (values: number[], to: number) => values.reduce((best, value) => (Math.abs(value - to) < Math.abs(best - to) ? value : best));
+/** Why artwork would not print on a sleeve, or null when it would: it is printed on the cut sleeve before sewing, so
+ * all of it must lie on the piece, clear of the seams. */
+export function sleeveArtworkProblem(product: Product, art: SleevePlaced): string | null {
+  const name = ARTWORK_PART_NAMES[art.part];
+  if (isBottoms(product)) return `Artwork goes on the front or back of ${garmentName(product).toLowerCase()}, which have no sleeves.`;
+  if (sleeveless(product)) return `A sleeveless top has no ${name} for artwork.`;
+  const frame = sleeveArtworkFrame(product);
+  if (onSleeve(frame, art)) return null;
+  const tops = sleeveArtworkTops(frame, art), cm = (value: number) => `${Math.round(value * 10) / 10} cm`;
+  return `Artwork on the ${name} must lie within the sleeve, clear of its seams: ${tops.length
+    ? `as wide and as far across as this, its top can be from ${cm(tops[0]!)} to ${cm(tops.at(-1)!)} below the shoulder point.`
+    : `${cm(art.widthCm)} wide${art.xCm ? ` and ${cm(Math.abs(art.xCm))} from the centre line` : ''}, it does not fit. Make it smaller${art.xCm ? ' or move it toward the centre line' : ''}.`}`;
+}
+/** Artwork moved back onto its sleeve: to the nearest height where it fits, else onto the centre line, else smaller. */
+function fitOnSleeve(frame: ReturnType<typeof sleeveArtworkFrame>, art: Artwork): void {
+  if (onSleeve(frame, art)) return;
+  for (const xCm of [art.xCm, 0]) {
+    const tops = sleeveArtworkTops(frame, { ...art, xCm });
+    if (tops.length) { art.xCm = xCm; art.yCm = nearestOf(tops, art.yCm); return; }
+  }
+  for (let widthCm = Math.floor(art.widthCm * 2) / 2 - 0.5; widthCm >= LIMITS.artworkWidthCm[0]; widthCm -= 0.5) {
+    const tops = sleeveArtworkTops(frame, { ...art, xCm: 0, widthCm });
+    if (tops.length) { Object.assign(art, { xCm: 0, widthCm, yCm: nearestOf(tops, art.yCm) }); return; }
+  }
+}
+
 /** Where new artwork goes on a side: centred 10 cm below the shoulder on tops (12 behind); on trousers and shorts on the
  * wearer's left hip at the front and the right hip behind, halfway from the centre seam to the side as seen from that
  * side; centred below a skirt's waist. */
-export function artworkDefaults(product: Product, side: Artwork['part']): { xCm: number; yCm: number; widthCm: number } {
+export function artworkDefaults(product: Product, side: Artwork['part'], image: { width: number; height: number; rotation?: number } = { width: 1, height: 1 }): { xCm: number; yCm: number; widthCm: number } {
+  if (isSleeveArtwork(side)) {
+    // On the upper arm: on the centre line with its top 5 cm below the shoulder point, or as near that as it fits, up
+    // to 8 cm wide (smaller on a narrow sleeve). Turned to run down the sleeve, it is up to 24 cm long instead.
+    const frame = sleeveArtworkFrame(product), placed = { part: side, xCm: 0, yCm: 5, widthCm: 8, ...image };
+    const along = Math.abs((Math.abs(image.rotation ?? 0) % 180) - 90) < 45;
+    for (let widthCm = along ? Math.min(24, Math.floor(frame.length - 6)) : 8; widthCm >= LIMITS.artworkWidthCm[0]; widthCm -= 0.5) {
+      const tops = sleeveArtworkTops(frame, { ...placed, widthCm });
+      if (tops.length) return { xCm: 0, yCm: nearestOf(tops, 5), widthCm };
+    }
+    return { xCm: 0, yCm: 5, widthCm: LIMITS.artworkWidthCm[0] };
+  }
   if (product.base === 'skirt') return { xCm: 0, yCm: 12, widthCm: Math.min(16, Math.round(skirtDraft(product).waist / 6)) };
   if (isBottoms(product)) {
     const hip = legMeasurements(product).hip, yCm = side === 'front' ? 12 : 8, widthCm = side === 'front' ? Math.min(10, Math.round(hip / 10)) : Math.min(8, Math.round(hip / 12));
@@ -565,14 +661,14 @@ export function artworkDefaults(product: Product, side: Artwork['part']): { xCm:
 function validateArtwork(value: unknown, measurements: Measurements | null): Artwork {
   const rotated = !!value && typeof value === 'object' && Object.hasOwn(value, 'rotation');
   const a = plain(value, ['part', 'dataUrl', 'width', 'height', 'name', 'xCm', 'yCm', 'widthCm', ...(rotated ? ['rotation'] : [])], 'Artwork');
-  if (a.part !== 'front' && a.part !== 'back') fail('Artwork goes on the front or back.');
+  if (!ARTWORK_PARTS.includes(a.part as ArtworkPart)) fail('Artwork goes on the front, the back or a sleeve.');
   if (typeof a.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(a.dataUrl) || a.dataUrl.length > LIMITS.artworkBytes * 1.4) fail('Artwork must be a PNG, JPEG or WebP image of at most 1.5 MB.');
   const width = finite(a.width, [1, 4096], 'Artwork pixel width'), height = finite(a.height, [1, 4096], 'Artwork pixel height');
   if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Artwork pixel size must be whole numbers.');
   validateRasterHeader({dataUrl:a.dataUrl as string,width,height}, LIMITS.artworkBytes, 4096);
   if (typeof a.name !== 'string' || a.name.length > 120) fail('Artwork name must be at most 120 characters.');
-  // Bottoms' bounds are checked once the garment is whole (see bottomsArtworkFrame).
-  const panel = measurements ? panelSize(measurements) : { width: 400, length: 200 };
+  // Bottoms' and sleeves' bounds are checked once the garment is whole (see bottomsArtworkFrame and sleeveArtworkFrame).
+  const panel = measurements && !isSleeveArtwork(a.part as ArtworkPart) ? panelSize(measurements) : { width: 400, length: 200 };
   const widthCm = finite(a.widthCm, LIMITS.artworkWidthCm, 'Artwork width (cm)');
   return { part: a.part as Artwork['part'], dataUrl: a.dataUrl as string, width, height, name: a.name as string, xCm: finite(a.xCm, [-panel.width / 2, panel.width / 2], 'Artwork horizontal position (cm)'),
     yCm: finite(a.yCm, [0, panel.length], measurements ? 'Artwork distance below the neck (cm)' : 'Artwork distance below the waist (cm)'), widthCm,
@@ -720,9 +816,9 @@ export function validateProduct(value: unknown): Product {
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
-  if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
+  if (!Array.isArray(p.artwork) || p.artwork.length > ARTWORK_PARTS.length) fail('Place at most one artwork on each of the front, the back and the sleeves.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, isBottoms({ base }) ? null : measurements as Measurements));
-  if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
+  if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork on each side and sleeve.');
   let spec: Spec | undefined;
   if (p.spec !== undefined) {
     const raw = plain(p.spec, ['styleNumber', 'season', 'sampleSize'], 'Tech pack details');
@@ -738,7 +834,10 @@ export function validateProduct(value: unknown): Product {
   const product: Product = { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
     ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, ids) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
     ...(motifs ? { motifs } : {}), ...(palette ? { palette } : {}), ...(options ? { options } : {}), ...(fit && Object.keys(fit).length ? { fit } : {}) };
-  if (isBottoms(product)) for (const art of artwork) { const problem = bottomsArtworkProblem(product, art); if (problem) fail(problem); }
+  for (const art of artwork) {
+    const problem = isSleeveArtwork(art.part) ? sleeveArtworkProblem(product, art) : isBottoms(product) ? bottomsArtworkProblem(product, art) : null;
+    if (problem) fail(problem);
+  }
   return product;
 }
 

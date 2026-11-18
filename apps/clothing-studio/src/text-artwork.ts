@@ -2,17 +2,17 @@
 // back in white letters") or typed in the Artwork section, then drawn into an image the garment carries like any
 // uploaded artwork, so the 3D view, tech pack and exports need nothing new.
 import { readStylePrompt } from './style-prompt.ts';
-import { artworkDefaults, type Artwork, type PartStyle, type Product } from './product.ts';
+import { ARTWORK_PART_NAMES, artworkDefaults, type Artwork, type PartStyle, type Product } from './product.ts';
 
 export const TEXT_FONTS = { sans: 'Sans serif', serif: 'Serif', mono: 'Monospace' } as const;
 export type TextFont = keyof typeof TEXT_FONTS;
-export interface TextRequest { text: string; side: Artwork['part']; color: string; font: TextFont }
+export interface TextRequest { text: string; side: Artwork['part']; color: string; font: TextFont; /** Clockwise as seen from outside: 90 runs it down a sleeve. */ rotation?: number }
 /** Text read from a description, before its default colour is chosen against the garment's. */
 export type SloganRequest = Omit<TextRequest, 'color'> & { color: string | null };
 export const MAX_TEXT = 40;
 
 const QUOTED = /["“”„«»]([^"“”„«»]+)["“”„«»]/;
-const SIDE = /\b(?:on|across)\s+(?:the\s+)?(back|front|chest)\b/i;
+const SIDE = /\b(on|across|down|along)\s+(?:the\s+)?(?:(left|right)\s+)?(back|front|chest|sleeve)\b/i;
 const LETTERS = /\b(?:in\s+)?([a-z][a-z -]{1,30}?)\s+(?:letters|lettering|text|type|writing|print|ink)\b/i;
 const COLOURED = /\bin\s+([a-z][a-z -]{1,30}?)(?=\s*(?:[,.;]|$|\bon\b|\bacross\b))/i;
 
@@ -52,7 +52,9 @@ export function readSlogan(prompt: string): { request: SloganRequest; rest: stri
   };
   const placed = near(SIDE);
   if (placed) blank(placed.at, placed.match[0].length);
-  const side: Artwork['part'] = placed?.match[1]?.toLowerCase() === 'back' ? 'back' : 'front';
+  // On a sleeve: the left one unless the right is named, across the arm, or running down it for "down" or "along".
+  const where = placed?.match[3]?.toLowerCase(), along = where === 'sleeve' && /^(?:down|along)$/i.test(placed!.match[1]!);
+  const side: Artwork['part'] = where === 'back' ? 'back' : where === 'sleeve' ? (placed!.match[2]?.toLowerCase() === 'right' ? 'sleeveRight' : 'sleeveLeft') : 'front';
   let color: string | null = null;
   for (const pattern of [LETTERS, COLOURED]) {
     const found = near(pattern), named = found && colourOf(found.match[1]!);
@@ -60,7 +62,7 @@ export function readSlogan(prompt: string): { request: SloganRequest; rest: stri
   }
   // "With", "saying" or "printed" left before the quote ("with the words …") go with it.
   for (let pass = 0; pass < 3; pass++) rest = rest.replace(/\b(?:with|saying|that says|reading|printed(?: with)?|the words?|slogan|text)(?=\s{2,}|\s*$)/gi, '  ');
-  return { request: { text, side, color, font: 'sans' }, rest };
+  return { request: { text, side, color, font: 'sans', ...(along ? { rotation: 90 } : {}) }, rest };
 }
 
 const CSS_FONTS: Record<TextFont, string> = { sans: '700 160px sans-serif', serif: '700 160px serif', mono: '700 150px monospace' };
@@ -90,7 +92,13 @@ export function renderText(request: TextRequest, doc: Document = document): { da
 }
 
 /** The artwork for drawn text, placed like uploaded artwork (see artworkDefaults): on a top, centred 10 cm below the
- * shoulder at the front. */
+ * shoulder at the front; on a sleeve, on its upper arm, or running down it when turned. */
 export function textArtwork(request: TextRequest, image: { dataUrl: string; width: number; height: number }, product: Product): Artwork {
-  return { part: request.side, ...image, name: `Text: ${request.text}`.slice(0, 120), ...artworkDefaults(product, request.side) };
+  const turned = request.rotation ? { rotation: request.rotation } : {};
+  return { part: request.side, ...image, name: `Text: ${request.text}`.slice(0, 120), ...artworkDefaults(product, request.side, { ...image, ...turned }), ...turned };
+}
+
+/** Where text goes, in words: "the front", "the left sleeve, running down it". */
+export function textPlace(request: Pick<TextRequest, 'side' | 'rotation'>): string {
+  return `the ${ARTWORK_PART_NAMES[request.side]}${request.rotation ? ', running down it' : ''}`;
 }

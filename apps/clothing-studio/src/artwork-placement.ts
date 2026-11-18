@@ -1,13 +1,21 @@
-import {bottomsArtworkFrame, bottomsArtworkProblem, isBottoms, LIMITS, panelSize, topMeasurements, type Artwork, type Product} from './product.ts';
+import {ARTWORK_PART_NAMES, bottomsArtworkFrame, bottomsArtworkProblem, isBottoms, isSleeveArtwork, LIMITS, panelSize, sleeveArtworkFrame, sleeveArtworkProblem, topMeasurements, type Artwork, type Product} from './product.ts';
 
 export const ARTWORK_SHOULDER_OFFSET = 4;
 /** Flat fabric x faces outward on both sides; fabric y measures downward from the top. On bottoms, whose pattern
  * coordinates run from each leg's side seam, the picked point in 3D (`at`, cm, y up) is used: x across from the centre
- * as seen from that side, y below the waist seam. */
+ * as seen from that side, y below the waist seam. On a sleeve the flat point is on the sleeve's pattern piece, placed
+ * from its centre line and shoulder point (see sleeveArtworkFrame). */
 export function placementFromSurface(product:Product, artwork:Artwork, point:{part:Artwork['part'];x:number;y:number;at?:{x:number;y:number}}, widthCm:number) {
-  if (point.part !== artwork.part) throw new Error(`Choose the visible ${artwork.part} body panel.`);
+  if (point.part !== artwork.part) throw new Error(`Choose the visible ${isSleeveArtwork(artwork.part) ? ARTWORK_PART_NAMES[artwork.part] : `${artwork.part} body panel`}.`);
   if (!Number.isFinite(widthCm) || widthCm < LIMITS.artworkWidthCm[0] || widthCm > LIMITS.artworkWidthCm[1]) throw new Error('Artwork width must be from 3 to 40 cm before picking.');
   if (![point.x,point.y].every(Number.isFinite)) throw new Error('Choose a point on the garment.');
+  if (isSleeveArtwork(artwork.part)) {
+    const frame=sleeveArtworkFrame(product), height=widthCm*artwork.height/artwork.width;
+    const xCm=Math.round(frame.mirror(artwork.part)*(point.x-frame.centre)*100)/100, yCm=Math.round((point.y-height/2)*100)/100;
+    const problem=sleeveArtworkProblem(product,{...artwork,xCm,yCm,widthCm});
+    if (problem) throw new Error(problem);
+    return {xCm,yCm};
+  }
   if (isBottoms(product)) {
     if (!point.at || ![point.at.x,point.at.y].every(Number.isFinite)) throw new Error('Choose a point on the garment.');
     const frame=bottomsArtworkFrame(product), height=widthCm*artwork.height/artwork.width;
