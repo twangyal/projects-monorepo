@@ -24,6 +24,7 @@ import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyRevi
 import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
+import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
@@ -92,8 +93,8 @@ app.innerHTML = `
           <p id="playback-speed-help" class="fine">Slow down listening and practice without retiming lyrics or exports. Browser pitch preservation is requested; sound quality varies. Changing speed stops practice and staged timing capture. Choose 1× before timing lines.</p>
         </section>
         <section id="tool-export" class="tool-panel export-panel" role="tabpanel" aria-labelledby="tab-export"><h3 class="tool-heading">Export</h3>
-          <div class="export-row"><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><label class="guide-vocal">Video size <select id="video-size"><option value="720p">HD 1280×720</option><option value="1080p">Full HD 1920×1080</option><option value="vertical">Vertical 1080×1920 (phones)</option></select></label><label class="guide-vocal">Pronunciation <select id="lyric-pronunciation" aria-describedby="lyric-pronunciation-note"><option value="show">Show for other scripts</option><option value="hide">Hide</option></select></label></div>
-          <p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p><p id="lyric-pronunciation-note" class="fine">Lines in Korean, Cyrillic or an Indian script, and Chinese or Japanese lines in a song recognized as Mandarin, Cantonese or Japanese, show how they are said in Latin letters under them, lighting up with the words: romanized Korean, romanized Indian scripts, pinyin with tone marks, Jyutping with tone numbers, romaji (with the Japanese reading dictionary installed) and Russian transliteration.</p><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="video-background-note" class="fine">With a song file that carries cover art, or a picture you choose, the video shows it softly behind the lyrics; choose Plain colour for the lyric style's own background. <label class="text-button file-button">Choose picture<input id="video-picture" type="file" accept="image/png,image/jpeg,image/webp" disabled></label> <button id="video-picture-remove" class="text-button" disabled>Remove picture</button></p>
+          <div class="export-row"><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><label class="guide-vocal">Video size <select id="video-size"><option value="720p">HD 1280×720</option><option value="1080p">Full HD 1920×1080</option><option value="vertical">Vertical 1080×1920 (phones)</option></select></label><label class="guide-vocal">Pronunciation <select id="lyric-pronunciation" aria-describedby="lyric-pronunciation-note"><option value="show">Show for other scripts</option><option value="hide">Hide</option></select></label><label class="guide-vocal">Melody <select id="melody-guide" aria-describedby="melody-guide-note"><option value="hide">Hidden</option><option value="show">Pitch bars</option></select></label></div>
+          <p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p><p id="lyric-pronunciation-note" class="fine">Lines in Korean, Cyrillic or an Indian script, and Chinese or Japanese lines in a song recognized as Mandarin, Cantonese or Japanese, show how they are said in Latin letters under them, lighting up with the words: romanized Korean, romanized Indian scripts, pinyin with tone marks, Jyutping with tone numbers, romaji (with the Japanese reading dictionary installed) and Russian transliteration.</p><p id="melody-guide-note" class="fine">Pitch bars show the notes the studio finds in the separated vocals, scrolling past the playhead as they are sung, in the preview and the video. They are found automatically, so a note can be a semitone off and quiet or breathy notes can be missing. <span id="melody-guide-status" role="status"></span></p><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="video-background-note" class="fine">With a song file that carries cover art, or a picture you choose, the video shows it softly behind the lyrics; choose Plain colour for the lyric style's own background. <label class="text-button file-button">Choose picture<input id="video-picture" type="file" accept="image/png,image/jpeg,image/webp" disabled></label> <button id="video-picture-remove" class="text-button" disabled>Remove picture</button></p>
           <div class="export-actions"><button id="export-video" class="primary" disabled>Export karaoke MP4</button><button id="video-download" class="text-button" hidden>Download MP4 again</button></div>
           <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="ass-download" class="text-button" disabled>Export karaoke subtitles (ASS)</button><button id="backing-download" class="text-button">Download backing WAV</button><span>HD, Full HD or vertical · 24 fps · estimated backing</span></div>
         </section>
@@ -492,6 +493,47 @@ function auditionPreview(): { cues: Cue[]; indices: number[]; source: string; er
   try { return {...reviewedPreview(rows, working.duration, reviewAuditionRange.firstIndex, reviewAuditionRange.lastIndex),source,error:''}; }
   catch (error) { return {cues:[],indices:[],source,error:error instanceof Error ? error.message : 'Check reviewed words and times.'}; }
 }
+// The melody guide's notes for the open clip, which the studio finds in its separated vocals when first shown.
+let melodyGuide: { id: string; notes: Note[] | null; problem: string } | null = null;
+const melodyShown = () => element<HTMLSelectElement>('melody-guide').value === 'show';
+async function loadMelody(): Promise<void> {
+  if (!working || !melodyShown() || melodyGuide?.id === working.id) return;
+  const id = working.id;
+  melodyGuide = { id, notes: null, problem: '' };
+  element('melody-guide-status').textContent = 'Finding the melody in the separated vocals…';
+  let found: { id: string; notes: Note[]; problem: string };
+  try {
+    const notes = parseNotes((await request<{ notes: unknown }>(`/api/projects/${id}/melody`)).notes);
+    found = notes ? { id, notes, problem: '' } : { id, notes: [], problem: 'The studio sent a melody this preview cannot read.' };
+  } catch (error) {
+    found = { id, notes: [], problem: error instanceof Error ? error.message : 'The melody could not be found.' };
+  }
+  if (melodyGuide?.id !== id) return;
+  melodyGuide = found;
+  element('melody-guide-status').textContent = found.problem || (found.notes.length ? `${found.notes.length} notes found.` : 'No sung notes were found.');
+  draw();
+}
+// The lane between the title and the line being sung, as the video draws it: a faint band, the playhead, and the notes
+// near the playhead, in the colour of sung words left of it.
+function drawMelody(time: number, look: { main: string; muted: string; accent: string }): void {
+  const lane = guideLane(cardPlace), notes = working && melodyGuide?.id === working.id ? melodyGuide.notes : null;
+  context.save();
+  context.globalAlpha = 46 / 255; context.fillStyle = look.muted;
+  context.beginPath(); context.roundRect(lane.left, lane.top, lane.width, lane.height, 10); context.fill();
+  const bars = notes ? visibleBars(notes, time, cardPlace) : [];
+  context.beginPath(); context.rect(lane.left, lane.top, lane.width, lane.height); context.clip();
+  context.globalAlpha = 235 / 255;
+  for (const [colour, from, to] of [[look.main, lane.playhead, lane.left + lane.width], [look.accent, lane.left, lane.playhead]] as const) {
+    context.save(); context.beginPath(); context.rect(from, lane.top, to - from, lane.height); context.clip(); context.fillStyle = colour;
+    for (const bar of bars) { context.beginPath(); context.roundRect(bar.x0, bar.top, Math.max(bar.thick, bar.x1 - bar.x0), bar.thick, bar.thick / 2); context.fill(); }
+    context.restore();
+  }
+  context.globalAlpha = 150 / 255; context.fillStyle = look.main; context.fillRect(lane.playhead - 1.5, lane.top + 4, 3, lane.height - 8);
+  context.restore();
+  stage.dataset.melody = notes ? String(notes.length) : 'loading';
+  stage.dataset.melodyNow = bars.filter(bar => bar.x0 <= lane.playhead && bar.x1 >= lane.playhead).map(bar => bar.pitch).join(',');
+}
+
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
   const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
@@ -532,12 +574,15 @@ function draw() {
   }
   drawBlock((review ? 'Reviewing timed lyrics' : working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), cardPlace.title, 32, 22, 100, look.main, undefined, look.accent);
   const time = audio.currentTime || 0, index = activeCue(cues, time);
+  // With the melody guide, its lane lies under the title and the line being sung moves down beside it.
+  const place = melodyShown() ? withGuide(cardPlace) : cardPlace;
+  if (melodyShown()) { void loadMelody(); drawMelody(time, look); } else delete stage.dataset.melody;
   const current = index >= 0 ? cues[index].text : 'Instrumental break';
   const upcoming = cues.find(cue => cue.start > time);
   const fetched = working && !review ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
   // How a line in another script is said, in Latin letters, under it; the line moves up to leave it room.
   const pieces = timing && element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide' && !textLayout(current).wholeLine ? timing.said[index] : null;
-  const [middle, room] = pieces ? [cardPlace.saidMiddle, cardPlace.saidRoom] : [cardPlace.middle, cardPlace.room];
+  const [middle, room] = pieces ? [place.saidMiddle, place.saidRoom] : [place.middle, place.room];
   if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, look.main, sungCharacters(timing.lines[index], time), look.accent);
   else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? look.accent : look.main, undefined, look.accent);
   if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), look.accent);
@@ -2391,7 +2436,7 @@ element('export-video').addEventListener('click', async () => {
   const chosen = element<HTMLSelectElement>('video-size').value, size = chosen !== '720p' && isVideoSize(chosen) ? chosen : null;
   const pronunciation = element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide';
   const options = { ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}), ...(background ? { background } : {}), ...(size ? { size } : {}),
-    ...(pronunciation ? {} : { pronunciation: false }) };
+    ...(pronunciation ? {} : { pronunciation: false }), ...(melodyShown() ? { melody: true } : {}) };
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', options)); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
@@ -2413,6 +2458,12 @@ element('video-size').addEventListener('change', () => {
   draw();
 });
 element('lyric-pronunciation').addEventListener('change', () => draw());
+element('melody-guide').addEventListener('change', () => {
+  // Shown again after a problem (the clip still separating, say), the melody is looked for again.
+  if (melodyGuide?.problem) melodyGuide = null;
+  if (!melodyShown()) element('melody-guide-status').textContent = '';
+  draw();
+});
 // A picture of the person's own to lie behind the lyrics: shrunk to a small JPEG here, so the studio keeps no more
 // than it needs, and saved with the clip.
 async function pictureCover(file: File): Promise<string> {

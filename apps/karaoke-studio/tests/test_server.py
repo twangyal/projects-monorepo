@@ -7,6 +7,8 @@ import errno
 from types import SimpleNamespace
 import io
 import json
+import math
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -409,6 +411,43 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(calls[-1].get("guide"), guide)
             if guide:
                 self.assertEqual(Path(calls[-1]["vocals"]).name, "vocals.wav")
+
+    def test_melody_guide_is_found_in_the_vocals_and_drawn_in_the_video(self):
+        calls = []
+
+        def recording_export(project, backing, output, work_dir, font_path, cancel, **options):
+            calls.append(options)
+            output.write_bytes(b"test-only MP4")
+        self.server.export = recording_export
+        project_id = self.upload()["projectId"]
+        endpoint = f"/api/projects/{project_id}"
+        status, _, reply = self.request("GET", endpoint + "/melody")
+        self.assertEqual((status, reply), (200, {"notes": []}))
+        # Sung vocals: one note an A above middle C for a second, found and kept for this vocals file.
+        vocals = self.server.projects_dir / project_id / "vocals.wav"
+        t = [i / 44100 for i in range(44100 * 2)]
+        frames = b"".join(int(6000 * math.sin(2 * math.pi * 440 * s) * (0.5 <= s < 1.5)).to_bytes(2, "little", signed=True) * 2 for s in t)
+        replaced = vocals.with_name("vocals.new")
+        with wave.open(str(replaced), "wb") as audio:
+            audio.setparams((2, 2, 44100, 0, "NONE", "not compressed"))
+            audio.writeframes(frames)
+        os.replace(replaced, vocals)
+        status, _, reply = self.request("GET", endpoint + "/melody")
+        self.assertEqual(status, 200)
+        self.assertEqual([note[2] for note in reply["notes"]], [69])
+        self.assertAlmostEqual(reply["notes"][0][0], 0.5, delta=0.06)
+        changes = {"title": "Melody", "revision": 0, "cues": [{"start": 0.0, "end": 1.0, "text": "La la"}]}
+        self.assertEqual(self.request("PUT", endpoint, changes)[0], 200)
+        for body in ({"melody": "yes"}, {"melody": 1}):
+            self.assertEqual(self.request("POST", endpoint + "/export", body)[0], 400, body)
+        self.assertEqual(self.request("POST", endpoint + "/key-preview", {"start": 0, "melody": True})[0], 400)
+        for body, melody in (({}, None), ({"melody": True}, reply["notes"])):
+            status, _, response = self.request("POST", endpoint + "/export", body)
+            self.assertEqual(status, 202, response)
+            self.assertEqual(self.wait_job(response["job"]["id"])["status"], "complete")
+            self.assertEqual(calls[-1].get("melody"), melody)
+        vocals.unlink()
+        self.assertEqual(self.request("GET", endpoint + "/melody")[0], 404)
 
     def test_key_change_export_option_and_preview(self):
         calls = []

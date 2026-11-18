@@ -364,6 +364,45 @@ class VideoTests(unittest.TestCase):
             fields = {re.sub('[A-Z]', lambda m: '_' + m.group().lower(), key): int(value) for key, value in re.findall(r'(\w+): (\d+)', body)}
             self.assertEqual(fields, place, name)
 
+    def test_the_preview_lays_the_melody_guide_out_as_the_video_does(self):
+        source = (Path(__file__).resolve().parents[1] / 'src' / 'melody-guide.ts').read_text()
+        for name, place in video.GUIDES.items():
+            body = re.search(name + r': \{([^}]*)\}', source).group(1)
+            fields = {re.sub('[A-Z]', lambda m: '_' + m.group().lower(), key): int(value) for key, value in re.findall(r'(\w+): (\d+)', body)}
+            self.assertEqual(fields, place, name)
+            layout = {**video.LAYOUTS[name], **place}
+            # The lane lies under the title, and the line being sung (with or without its pronunciation) under the lane.
+            self.assertLess(layout['title'] + 40, layout['lane_top'])
+            self.assertLess(layout['lane_bottom'], layout['middle'] - layout['room'] / 2 + 1)
+            self.assertLess(layout['lane_bottom'], layout['said_middle'] - layout['said_room'] / 2 + 1)
+            self.assertLess(layout['said_middle'] + layout['said_room'] / 2, layout['said'])
+        self.assertIn(f'GUIDE_SECONDS = {video.GUIDE_SECONDS:g}, GUIDE_PAST = {video.GUIDE_PAST:g}', source)
+
+    def test_melody_guide_notes_scroll_past_the_playhead_turning_the_sung_colour(self):
+        notes = [[0.4, 1.4, 60], [1.6, 2.6, 67]]
+        output = self.root / 'melody.mp4'
+        video.export_video(self.project, self.backing, output, self.root / 'work', FONT, threading.Event(), melody=notes)
+        lane, (low, high) = video.guide_lane('720p'), video.pitch_range(notes)
+
+        def frame(seconds):
+            png = subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(seconds), '-i', str(output), '-frames:v', '1', '-f', 'image2pipe',
+                                  '-vcodec', 'png', '-'], capture_output=True, check=True).stdout
+            return Image.open(io.BytesIO(png)).convert('RGB')
+
+        def near(colour, hex_colour):
+            return max(abs(a - b) for a, b in zip(colour, video._rgb(hex_colour))) < 50
+        x = lane['left'] + lane['playhead']
+        for seconds, pitch in ((0.9, 60), (2.1, 67)):
+            image = frame(seconds)
+            top, thick = video.bar_box(pitch, low, high, lane['height'])
+            y = lane['top'] + round(top + thick / 2)
+            # Left of the playhead the note is sung, right of it still to come.
+            self.assertTrue(near(image.getpixel((x - 12, y)), video.ACCENT), image.getpixel((x - 12, y)))
+            self.assertTrue(near(image.getpixel((x + 12, y)), video.MAIN), image.getpixel((x + 12, y)))
+        self.assertLess(video.bar_box(67, low, high, lane['height'])[0], video.bar_box(60, low, high, lane['height'])[0], 'higher notes higher')
+        with self.assertRaises(ValidationError):
+            video.export_video(self.project, self.backing, self.root / 'bad.mp4', self.root / 'work', FONT, threading.Event(), melody=[[1, 0.5, 60]])
+
     def test_cancellation_and_validation_preserve_existing_export(self):
         output = self.root / 'video.mp4'
         output.write_bytes(b'previous successful export')

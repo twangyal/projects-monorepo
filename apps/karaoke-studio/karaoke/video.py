@@ -23,6 +23,7 @@ from .model import ValidationError, validate_project
 from .media_io import media_handles
 from .lyrics_auto import sung_count, word_timings
 from .pronunciation import pronunciation as line_pronunciation, said_line
+from .melody import validate_notes
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
 # Video sizes: cards are laid out at 1280x720 (or 720x1280 upright, for phones) and every position and size is scaled to
@@ -43,6 +44,53 @@ def layout_of(size: str) -> dict:
     """The card layout for a video size: upright for a frame taller than it is wide."""
     width, height = VIDEO_SIZES[size]
     return LAYOUTS['portrait' if height > width else 'landscape']
+
+
+# With the melody guide, its lane of pitch bars lies between the title and the line being sung, which moves down and may
+# grow less tall (the browser preview draws the same, see src/card-layout.ts). The lane shows GUIDE_SECONDS of notes,
+# GUIDE_PAST of them already sung, left of the playhead.
+GUIDES = {
+    'landscape': dict(lane_top=132, lane_bottom=236, middle=345, room=210, said_middle=320, said_room=150),
+    'portrait': dict(lane_top=200, lane_bottom=366, middle=560, room=320, said_middle=530, said_room=220),
+}
+GUIDE_SECONDS, GUIDE_PAST = 5.0, 1.0
+
+
+def guide_of(size: str) -> dict:
+    """The card layout for a video size with the melody guide's lane."""
+    width, height = VIDEO_SIZES[size]
+    return {**layout_of(size), **GUIDES['portrait' if height > width else 'landscape']}
+
+
+def guide_lane(size: str) -> dict:
+    """The melody guide's lane in a frame of ``size``, in whole pixels: left, top, width, height and the playhead's
+    distance from its left edge, and how many pixels a second of notes takes (``pps``)."""
+    place, (width, height) = guide_of(size), VIDEO_SIZES[size]
+    k = height / place['height']
+    lane = round(place['wrap'] * k)
+    return dict(left=(width - lane) // 2, top=round(place['lane_top'] * k), width=lane, height=round((place['lane_bottom'] - place['lane_top']) * k),
+                playhead=round(lane * GUIDE_PAST / GUIDE_SECONDS), pps=lane / GUIDE_SECONDS)
+
+
+def pitch_range(notes: list) -> tuple[int, int]:
+    """The semitones the lane spans: most of the song's notes (from its 5th to 95th percentile note) and two either
+    side, at least an octave; the browser preview uses the same (see src/melody-guide.ts)."""
+    pitches = sorted(note[2] for note in notes) or [60]
+    low, high = pitches[math.floor(0.05 * (len(pitches) - 1))] - 2, pitches[math.ceil(0.95 * (len(pitches) - 1))] + 2
+    if high - low < 12:
+        extra = 12 - (high - low)
+        low, high = low - extra // 2, high + extra - extra // 2
+    return low, high
+
+
+def bar_box(pitch: int, low: int, high: int, height: float) -> tuple[float, float]:
+    """A note's bar in a lane ``height`` tall: its top and its thickness, higher notes higher."""
+    pad = height * 0.08
+    step = (height - 2 * pad) / (high - low + 1)
+    # Bars thicker than a semitone's step stay readable; a sung melody's notes rarely sound at once.
+    thick = max(height * 0.075, step * 0.8)
+    centre = pad + (high - min(max(pitch, low), high) + 0.5) * step
+    return centre - thick / 2, thick
 
 
 BACKGROUND = '#14232f'
@@ -378,16 +426,19 @@ def _cover_backdrop(cover: str, colour: str, width: int = WIDTH, height: int = H
 
 def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
                 sung: list[str] | None = None, count: int | None = None, style: str = 'classic',
-                background: str = 'cover', layer: bool = False, size: str = '720p', said: list[str] | None = None) -> None:
+                background: str = 'cover', layer: bool = False, size: str = '720p', said: list[str] | None = None,
+                guide: bool = False) -> None:
     """One video card. ``sung`` lists the active line's words already sung; without it the whole
     active line is highlighted. ``said`` is the active line's pronunciation in Latin letters, a piece for each of its
     words (see ``pronunciation``), drawn under it and highlighted with it. During a break, ``count`` dots count singers in to the next line. ``style`` names
     one of STYLES; with the ``cover`` background, a clip's cover picture lies behind the lyrics. A ``layer`` is the
     card's words alone on a transparent ground, to lie over a backdrop drawn once. ``size`` names one of VIDEO_SIZES:
-    the card is laid out at 1280x720, or 720x1280 for an upright frame (see ``LAYOUTS``), and scaled to it."""
+    the card is laid out at 1280x720, or 720x1280 for an upright frame (see ``LAYOUTS``), and scaled to it. With the
+    melody ``guide``, the card leaves its lane (see ``GUIDES``), drawn as a faint band with the playhead; the notes
+    scroll over it."""
     project = validate_project(project)
     width, height = VIDEO_SIZES[validate_size(size)]
-    place = layout_of(size)
+    place = guide_of(size) if guide else layout_of(size)
     k = height / place['height']
     look = STYLES[validate_style(style)]
     fill, muted, main, accent, scale = look['background'], look['muted'], look['main'], look['accent'], look['scale']
@@ -398,6 +449,17 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     image = (Image.new('RGBA', (width, height), (0, 0, 0, 0)) if layer
              else _cover_backdrop(cover, fill, width, height).copy() if cover else Image.new('RGB', (width, height), fill))
     draw = ImageDraw.Draw(image)
+    if guide:
+        lane = guide_lane(size)
+        # A faint band, and the playhead a little brighter: lighter than the background on a dark style, darker on a light one.
+        band = Image.new('RGBA', image.size, (0, 0, 0, 0))
+        marks = ImageDraw.Draw(band)
+        tint = _rgb(look['muted'])
+        marks.rounded_rectangle((lane['left'], lane['top'], lane['left'] + lane['width'], lane['top'] + lane['height']), radius=round(10 * k), fill=(*tint, 46))
+        x = lane['left'] + lane['playhead']
+        marks.rectangle((x - max(1, round(k)), lane['top'] + round(4 * k), x + max(1, round(k)), lane['top'] + lane['height'] - round(4 * k)), fill=(*_rgb(look['main']), 150))
+        image.alpha_composite(band) if image.mode == 'RGBA' else image.paste(band, (0, 0), band)
+        draw = ImageDraw.Draw(image)
     text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=place['wrap'] * k)
     text(' '.join(project['title'].split()), place['title'] * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
@@ -589,18 +651,44 @@ def _sized_wav(data: bytes) -> bytes:
     return b'RIFF' + (len(data) - 8).to_bytes(4, 'little') + data[8:at + 4] + body.to_bytes(4, 'little') + data[at + 8:]
 
 
+def _rgb(colour: str) -> tuple[int, int, int]:
+    return int(colour[1:3], 16), int(colour[3:5], 16), int(colour[5:7], 16)
+
+
+def melody_strips(notes: list, duration: float, size: str, style: str, directory: Path) -> tuple[Path, Path]:
+    """The melody guide's notes for the whole clip, drawn once as two strips the lane's height (see ``guide_lane``):
+    one in the colour of words still to be sung, one in the colour of sung words. A note sung at time t lies
+    (t + GUIDE_PAST) * pps from a strip's left edge, so the lane at time t shows a strip from t * pps."""
+    lane, look = guide_lane(size), STYLES[validate_style(style)]
+    low, high = pitch_range(notes)
+    width = math.ceil((duration + GUIDE_SECONDS) * lane['pps']) + 2
+    paths = []
+    for name, colour in (('unsung', look['main']), ('sung', look['accent'])):
+        strip = Image.new('RGBA', (width, lane['height']), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(strip)
+        for start, end, pitch in notes:
+            top, thick = bar_box(pitch, low, high, lane['height'])
+            left, right = (start + GUIDE_PAST) * lane['pps'], (end + GUIDE_PAST) * lane['pps']
+            draw.rounded_rectangle((left, top, max(left + thick, right - 1), top + thick), radius=thick / 2, fill=(*_rgb(colour), 235))
+        path = directory / f'melody-{name}.png'
+        strip.save(path, format='PNG', compress_level=1)
+        paths.append(path)
+    return paths[0], paths[1]
+
+
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event, words: list | None = None,
                  vocals: Path | None = None, guide: float = 0, semitones: int = 0, style: str = 'classic',
                  background: str = 'cover', letters=None, size: str = '720p', language: str | None = None,
-                 pronunciation: bool = True) -> None:
+                 pronunciation: bool = True, melody: list | None = None) -> None:
     """Render the karaoke video at ``size`` (one of VIDEO_SIZES); ``words`` are recognized words that, with
     ``letters`` measured in the vocals when there are any (and the song's recognized ``language``), time the word
     highlighting. With ``pronunciation``, a line in Korean, Cyrillic, or Chinese or Japanese read in the song's
     language, shows how it is said in Latin letters under it.
 
     With ``guide`` above zero, the separated ``vocals`` are mixed under the backing at that share (a guide vocal).
-    ``semitones`` moves the audio's key up or down without changing its tempo.
+    ``semitones`` moves the audio's key up or down without changing its tempo. With ``melody`` notes (see
+    ``karaoke.melody``), the melody guide's pitch bars scroll past a playhead between the title and the lyrics.
     """
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
@@ -613,6 +701,11 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
     if guide:
         vocals = Path(vocals).absolute()
         _validate_backing(vocals, project['duration'], cancel, deadline, label='Vocal')
+    if melody is not None:
+        try:
+            melody = validate_notes(melody, project['duration'])
+        except ValueError as error:
+            raise ValidationError(str(error)) from None
     frame_count = math.ceil(project['duration'] * FPS)
     if frame_count > MAX_VIDEO_FRAMES:
         raise ValidationError('Video exceeds its frame limit.')
@@ -633,6 +726,8 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             whole_lines = [text_layout(cue['text'])[1] for cue in cues]
             said = [line_pronunciation(cue['text'], language) if pronunciation and not whole else None
                     for cue, whole in zip(cues, whole_lines, strict=True)]
+            # Cards leave the melody guide's lane only when there is one.
+            guided = {'guide': True} if melody is not None else {}
             for frame in range(frame_count):
                 _remaining(cancel, deadline)
                 position = frame / FPS
@@ -648,11 +743,11 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                     card = directory / f'card{len(states):04}.png'
                     if active is None:
                         render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path, count=count, style=style,
-                                    background=background, layer=backdrop is not None, size=size)
+                                    background=background, layer=backdrop is not None, size=size, **guided)
                     else:
                         render_card(project, active, card, font_path,
                                     sung=[word['text'] for word in timings[active][:sung]], style=style, background=background,
-                                    layer=backdrop is not None, size=size, said=said[active])
+                                    layer=backdrop is not None, size=size, said=said[active], **guided)
                     _remaining(cancel, deadline)
                     card_bytes += card.stat().st_size
                     if card_bytes > MAX_CARD_BYTES:
@@ -672,10 +767,26 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                 arguments += ['-protocol_whitelist', 'file', '-f', 'wav', '-i', str(vocals)]
             program = _audio_program(guide, semitones)
             video = None
+            inputs = 3 if guide else 2
             if backdrop is not None:
-                # The backdrop is the last input, so the audio program's input numbers stay as they are.
+                # The backdrop comes after the audio, so the audio program's input numbers stay as they are.
                 arguments += ['-protocol_whitelist', 'file', '-loop', '1', '-framerate', str(FPS), '-i', str(backdrop)]
-                video = f'[{3 if guide else 2}:v][0:v]overlay=shortest=1:format=auto[video]'
+                video = f'[{inputs}:v][0:v]overlay=shortest=1:format=auto[video]'
+                inputs += 1
+            if melody is not None:
+                # The notes are drawn once, as strips; each frame shows the stretch of them its time has reached (the
+                # crop moves pps pixels a second), the sung strip only left of the playhead. Every value is a number.
+                lane = guide_lane(size)
+                unsung, sung_strip = melody_strips(melody, project['duration'], size, style, directory)
+                arguments += ['-protocol_whitelist', 'file', '-i', str(unsung), '-protocol_whitelist', 'file', '-i', str(sung_strip)]
+                base = '[base]' if video else '[0:v]'
+                parts = [video.replace('[video]', '[base]')] if video else []
+                for index, name, wide in ((inputs, 'unsung', lane['width']), (inputs + 1, 'sung', lane['playhead'])):
+                    parts.append(f'[{index}:v]loop=loop=-1:size=1:start=0,setpts=N/{FPS}/TB,'
+                                 f'crop=w={wide}:h={lane["height"]}:x=t*{lane["pps"]:.6f}:y=0[{name}]')
+                parts.append(f'{base}[unsung]overlay=x={lane["left"]}:y={lane["top"]}:shortest=1:format=auto[laned]')
+                parts.append(f'[laned][sung]overlay=x={lane["left"]}:y={lane["top"]}:shortest=1:format=auto[video]')
+                video = ';'.join(parts)
             programs = ';'.join(part for part in (program, video) if part)
             arguments += (['-filter_complex', programs] if programs else []) + ['-map', '[video]' if video else '0:v:0', '-map', '[mix]' if program else '1:a:0']
             arguments += ['-c:v', 'libx264', '-threads', '2',

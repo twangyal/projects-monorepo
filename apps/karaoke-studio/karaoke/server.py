@@ -26,11 +26,14 @@ import threading
 import time
 from urllib.parse import unquote, urlsplit
 import uuid
+import wave
+from collections import OrderedDict
 
 from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager, JobPublication
+from .melody import melody as find_melody
 from .alignment import ALIGNMENT_FILE, alignable, max_bytes, place_lines, read_emissions
 from .lyrics_auto import word_timings, words_to_cues
 from .pronunciation import pronunciation as line_pronunciation
@@ -49,7 +52,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover|melody))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -188,6 +191,9 @@ class KaraokeServer(ThreadingHTTPServer):
         self.token = secrets.token_urlsafe(32)
         self.lock = threading.RLock()
         self._preview_slot = threading.Lock()
+        # Melody guides found for the last few clips' vocals (see melody); finding one takes a few seconds.
+        self._melody_lock = threading.Lock()
+        self._melodies: OrderedDict = OrderedDict()
         self.jobs = JobManager(self.lock)
         self.uploading = False
         self._closing = False
@@ -845,8 +851,26 @@ class KaraokeServer(ThreadingHTTPServer):
             for source in sources:
                 source.close()
 
+    def melody(self, project_id: str, source) -> list:
+        """The melody guide's notes for a clip's separated vocals (an open file): found once per vocals file, and kept
+        for the last few clips. Raises ValueError when the vocals cannot be read."""
+        info = os.fstat(source.fileno())
+        key = (project_id, info.st_ino, info.st_size, info.st_mtime_ns)
+        with self._melody_lock:
+            if key in self._melodies:
+                self._melodies.move_to_end(key)
+                return self._melodies[key]
+            try:
+                notes = find_melody(source)
+            except (EOFError, OSError, wave.Error) as error:
+                raise ValueError('The separated vocals could not be read for a melody guide.') from error
+            self._melodies[key] = notes
+            while len(self._melodies) > 8:
+                self._melodies.popitem(last=False)
+            return notes
+
     def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
-                     background: str = "cover", size: str = "720p", pronunciation: bool = True):
+                     background: str = "cover", size: str = "720p", pronunciation: bool = True, melody: bool = False):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
@@ -880,6 +904,14 @@ class KaraokeServer(ThreadingHTTPServer):
                     key.update({"background": background} if background != "cover" else {})
                     key.update({"size": size} if size != "720p" else {})
                     key.update({"pronunciation": False} if not pronunciation else {})
+                    if melody:
+                        stage("Finding the melody in the separated vocals")
+                        try:
+                            with open(owned_project / "vocals.wav", "rb") as source:
+                                key["melody"] = self.melody(project["id"], source)
+                        except (OSError, ValueError) as error:
+                            raise RuntimeError("The melody guide could not be found in the separated vocals.") from error
+                        stage("Rendering lyric video")
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
                                     owned_work, self.font_path, cancel, **timing, **guide, **key)
@@ -1218,6 +1250,7 @@ class Handler(BaseHTTPRequestHandler):
             # client must not stop polling, cancellation or completed playback.
             value = None
             letters = None
+            melody_source = None
             if self.command == "PUT" and resource is None:
                 value = self._read_json()
             elif self.command == "PUT" and resource == "cover":
@@ -1233,8 +1266,8 @@ class Handler(BaseHTTPRequestHandler):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
                 style, background, size = value.get("style", "classic"), value.get("background", "cover"), value.get("size", "720p")
-                pronounce = value.get("pronunciation", True)
-                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background", "size", "pronunciation"})
+                pronounce, melody_shown = value.get("pronunciation", True), value.get("melody", False)
+                allowed = {"guideVocal", "semitones"} | ({"start"} if resource == "key-preview" else {"style", "background", "size", "pronunciation", "melody"})
                 if set(value) - allowed or type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
                     raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
                 if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
@@ -1247,6 +1280,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise RequestError(400, "Choose a video size: 720p (1280x720), 1080p (1920x1080) or vertical (1080x1920).")
                 if type(pronounce) is not bool:
                     raise RequestError(400, "Choose whether the video shows how lyrics in other scripts are pronounced.")
+                if type(melody_shown) is not bool:
+                    raise RequestError(400, "Choose whether the video shows the melody guide.")
                 if resource == "key-preview" and (type(start) not in (int, float) or not 0 <= start <= MAX_DURATION):
                     raise RequestError(400, "Choose where in the clip to preview the key.")
             elif self.command == "POST" and resource == "transcribe":
@@ -1343,7 +1378,7 @@ class Handler(BaseHTTPRequestHandler):
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style,
-                                              background=background, size=size, pronunciation=pronounce)
+                                              background=background, size=size, pronunciation=pronounce, melody=melody_shown)
                 if self.command == "POST" and resource == "key-preview":
                     if start >= project["duration"]:
                         raise RequestError(400, "Choose where in the clip to preview the key.")
@@ -1383,6 +1418,11 @@ class Handler(BaseHTTPRequestHandler):
                     timed = validate_project({**project, "cues": value["cues"]})
                     transcript = server.optional_transcript(project)
                     letters = server.read_alignment(project) if transcript else None
+                if read and resource == "melody":
+                    try:
+                        melody_source = server.project_file(project_id, "vocals.wav")
+                    except FileNotFoundError:
+                        raise RequestError(404, "Separate this clip before showing its melody guide.") from None
                 if read and resource == "video":
                     marker = directory / "video-revision.json"
                     if not (directory / "video.mp4").is_file() or not marker.is_file():
@@ -1424,6 +1464,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if read and resource == "transcript":
                 self._json(server.transcript_reply(transcript, project))
+                return
+            if read and resource == "melody":
+                # Found outside the shared lock: it takes a few seconds the first time.
+                try:
+                    notes = server.melody(project_id, melody_source)
+                except ValueError as error:
+                    raise RequestError(422, str(error)) from None
+                finally:
+                    melody_source.close()
+                self._json({"notes": notes})
                 return
             if self.command == "POST" and resource == "word-timings":
                 words = transcript["words"] if transcript else []
