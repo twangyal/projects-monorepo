@@ -12,9 +12,11 @@ export const lyricsLookupMarkup=`<details id="lyrics-lookup"><summary>Look up ex
 interface Context {key:string;projectId:string;duration:number;busy:boolean;pastedDirty:boolean;alignmentState:'loading'|'ready'|'error'}
 interface Options {context:()=>Context|null;useLyrics:(text:string)=>void;useTimedLyrics:(cues:LyricsCue[])=>void;reviewTimedLyrics:(cues:LyricsCue[])=>void;suggest:()=>{title:string;artist:string;fromName?:boolean}|null;
   /** Brings the lookup into view where the studio shows one tool at a time. */
-  reveal?:()=>void}
+  reveal?:()=>void;
+  /** Refresh controls that wait for this request or reviewed result. */
+  stateChanged?:()=>void}
 /** Lookup owns only its metadata/result; it never writes cues or audio itself. */
-export function mountLyricsLookup(options:Options):{sync:()=>void} {
+export function mountLyricsLookup(options:Options):{sync:()=>void;active:()=>boolean} {
   const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
   const title=el<HTMLInputElement>('lookup-title'),artist=el<HTMLInputElement>('lookup-artist'),find=el<HTMLButtonElement>('lookup-find'),use=el<HTMLButtonElement>('lookup-use'),useTimed=el<HTMLButtonElement>('lookup-use-timed');
   const reviewTimed=el<HTMLButtonElement>('lookup-review-timed');
@@ -54,7 +56,8 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
     // Published timings need no alignment, so they do not wait for recognition information.
     reviewTimed.hidden=useTimed.hidden=el('lookup-timed-note').hidden=el('lookup-timing-review').hidden=!result?.cues;
     reviewTimed.disabled=useTimed.disabled=!result?.cues||!context||context.key!==owner||context.busy||context.pastedDirty;
-    el('lookup-readiness').textContent=context?.alignmentState==='loading'?'Waiting for this clip’s local recognition information before alignment.':context?.alignmentState==='error'?'Recognized words could not be read. Refresh projects for local alignment. Published timings, when offered, can still be used.':'';cancel.hidden=!request;
+    el('lookup-readiness').textContent=context?.alignmentState==='loading'?'Waiting for this clip’s local recognition information before alignment.':context?.alignmentState==='error'?'Recognized words could not be read. Refresh projects for local alignment. Published timings, when offered, can still be used.':'';cancel.hidden=!request&&!result;cancel.textContent=request?'Cancel lyrics lookup':'Dismiss found lyrics';
+    options.stateChanged?.();
   }
   for(const input of [title,artist])input.addEventListener('input',()=>{tagged=false;fromName=false;clear('Metadata changed. Look up lyrics when ready.');sync();});
   cancel.addEventListener('click',()=>{clear('Lyrics lookup cancelled. Your lyrics are unchanged.');sync();});
@@ -99,5 +102,5 @@ export function mountLyricsLookup(options:Options):{sync:()=>void} {
     const text=result.text;clear('Found words sent to the local alignment workflow. Review timing before saving.');options.useLyrics(text);sync();
   });
   window.addEventListener('pagehide',()=>clear());
-  sync();return {sync};
+  sync();return {sync,active:()=>!!request||!!result};
 }

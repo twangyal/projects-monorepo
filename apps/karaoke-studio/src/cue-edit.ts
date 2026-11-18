@@ -1,4 +1,4 @@
-import { validateCues, type Cue } from './lyrics.ts';
+import { validateCues, MAX_CUES, SINGERS, type Cue, type Singer } from './lyrics.ts';
 import { cueWords } from './word-timing.ts';
 
 /** The line moved in time by `move`, its hand-set word starts with it. */
@@ -63,6 +63,24 @@ export function keepSingers(replaced: readonly Cue[], cues: readonly Cue[]): Cue
 }
 
 export interface CuePassage { firstIndex: number; lastIndex: number }
+
+/** Assign roles without normalizing in-progress word/timing drafts. Saving still validates the complete lyrics. */
+export function assignSingers(cues: Cue[], singer: unknown, passage?: CuePassage): { cues: Cue[]; changed: number } {
+  if (singer !== undefined && !SINGERS.includes(singer as Singer)) throw new Error('Choose Anyone, Singer 1, Singer 2 or Both.');
+  if (!Array.isArray(cues) || !cues.length || cues.length > MAX_CUES || Array.from(cues).some(cue => !cue || typeof cue !== 'object')) throw new Error('Choose existing lyric lines.');
+  const first = passage === undefined ? 0 : passage.firstIndex, last = passage === undefined ? cues.length - 1 : passage.lastIndex;
+  validIndex(cues, first); validIndex(cues, last);
+  if (last < first) throw new Error('Choose an ordered passage of existing lyric lines.');
+  let changed = 0;
+  const next = cues.map((cue, index) => {
+    if (index < first || index > last || cue.singer === singer) return cue;
+    changed++;
+    const copy = { ...cue };
+    if (singer === undefined) delete copy.singer; else copy.singer = singer as Singer;
+    return copy;
+  });
+  return { cues: changed ? next : cues, changed };
+}
 
 /** Remove literal lines, including invalid drafts, without normalizing survivors. */
 export function removeCues(cues: Cue[], passage: CuePassage): Cue[] {

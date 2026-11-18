@@ -17,7 +17,7 @@ import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 import { findCueIndices, nextCueMatch } from './find-cues.ts';
 import { fitCues } from './cue-fit.ts';
-import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, keepSingers, type CuePassage } from './cue-edit.ts';
+import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, keepSingers, assignSingers, type CuePassage } from './cue-edit.ts';
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode, type PracticeRange } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, reviewedPreview, type ReviewedCue } from './automatic-review.ts';
@@ -78,7 +78,7 @@ app.innerHTML = `
         <section id="tool-lyrics" class="tool-panel lyrics-panel" role="tabpanel" aria-labelledby="tab-lyrics"><h3 class="tool-heading" id="lyrics-heading">Lyrics</h3>
           <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><section id="unheard-singing" class="unheard-singing" aria-labelledby="unheard-heading" hidden><h5 id="unheard-heading">Singing with no words</h5><p id="unheard-status" class="fine" role="status"></p><ol id="unheard-list"></ol></section><p id="lookup-offer" class="fine" hidden><span id="lookup-offer-text"></span> <button id="lookup-offer-find" class="quiet">Look up published lyrics</button></p><p id="lookup-found" class="fine" hidden><span id="lookup-found-text"></span> <button id="lookup-found-review" class="quiet">Review published lyrics</button></p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled>${recognitionOptions}</select></div><p class="fine">If the language choice sounds wrong, select a model or the song's language: Chinese, Cantonese, Japanese, Korean, or one of the languages Whisper is told (Hindi, Bengali, Arabic and others). An explicit language is forced for the selected audio instead of guessed; mixed-language passages may fare worse. The selected model must be installed locally. Retrying keeps your lyric edits. If a valid automatic reference already exists, compare and listen to the retry candidate before keeping it as the reference; applying lyric cues is a separate choice.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div><details id="recognition-passage-tools"><summary>Retry a passage</summary><p class="fine">Recognize only 1–60 seconds of the separated vocals with the model selected above. Include the whole phrase and a little context: a short excerpt may recognize worse. Review and apply selected corrections; the full automatic reference stays unchanged.</p><div class="practice-selection"><label class="field">Passage retry start (seconds)<input id="recognition-passage-start" type="text" inputmode="decimal" maxlength="12"></label><label class="field">Passage retry end (seconds)<input id="recognition-passage-end" type="text" inputmode="decimal" maxlength="12"></label></div><button id="recognition-passage-transcribe" class="quiet" disabled>Recognize this passage</button><p id="recognition-passage-range-status" class="fine" role="status"></p></details><section id="recognition-passage-preview" aria-label="Passage recognition retry" hidden><h5>Passage recognition retry</h5><p id="recognition-passage-status" class="fine" role="status"></p><p class="fine">Review and listen, then apply only reviewed lines or a reviewed passage. This pending preview survives reopening this clip and is excluded from saved-clip backups. A later passage retry replaces it. It cannot replace the full automatic reference.</p><div class="timing-actions"><button id="recognition-passage-review" class="quiet">Review passage retry</button><button id="recognition-passage-discard" class="quiet">Discard passage retry</button></div></section><section id="recognition-preview" aria-label="Compare recognition retry" hidden><h5>Compare recognition retry</h5><p id="recognition-preview-status" class="fine" role="status"></p><p class="fine">The pending candidate survives reopening this clip, but is not included in saved-clip backups until kept. A later retry replaces this candidate. Keeping changes only the automatic reference used for word timing, alignment and correction reports; your edited lyric cues stay unchanged.</p><details><summary>Current automatic reference</summary><pre id="recognition-preview-current"></pre></details><details><summary>Retry candidate</summary><pre id="recognition-preview-candidate"></pre></details><div class="timing-actions"><button id="recognition-preview-review" class="quiet">Review retry candidate</button><button id="recognition-preview-keep" class="quiet">Keep retry as automatic reference</button><button id="recognition-preview-discard" class="quiet">Discard retry candidate</button></div></section></section>
           <section class="lyric-review" aria-label="Lyric review"><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><label><input id="automatic-hide-checked" type="checkbox"> Hide checked automatic lines</label><section id="automatic-retry-comparison" hidden aria-label="Original retry comparison"><label><input id="automatic-differences-only" type="checkbox"> Show only original retry differences</label><p id="automatic-retry-summary" class="fine"></p><details id="automatic-retry-missing"><summary>Reference intervals without retry overlap</summary><ol id="automatic-retry-missing-list"></ol></details><p class="fine">This compares the original readings at overlapping times, not your review edits or recognition accuracy. Regrouped intervals need a listen; they are not word-aligned. Filters only hide rows; they do not narrow Apply or a selected passage.</p></section><p id="automatic-review-count" class="fine" role="status" aria-live="polite"></p><p id="automatic-review-keys" class="fine">Keyboard: in a line’s words or times, Alt+↓ and Alt+↑ move to the next or previous line shown, Alt+Enter listens to the line, and Ctrl+Enter (⌘+Enter on a Mac) marks it checked and moves to the next unchecked line.</p><p class="fine">Checked markers track your decisions for this review session, without applying or saving lyrics. Edits clear the line’s marker; leaving or reloading discards the markers. Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Exclude false automatic lines with each line’s checkbox; their words and times remain available for review. Apply replaces cues with the included lines together (excluding every line clears the cues); Cancel discards corrections and exclusions. Apply only reviewed line changes one overlapping current line or inserts into an empty gap, keeping the other current lines and staged review drafts. For several current lines, choose a reviewed passage below; its edges must not cut through a current line. Each application is one unsaved Undo step; Undo closes the review. Save lyrics keeps the remaining automatic review drafts here for this session; only applied lyrics are saved. Reloading or leaving the review discards its drafts. Apply split at caret and playhead turns one reviewed line into two current lines; Apply merged joins the named adjacent reviewed lines, including any gap. Each replaces the complete reviewed window as one unsaved edit, keeps the staged review, and refuses a boundary cutting through an outside current line. Hidden neighbors still count; excluded rows must be included first.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><div id="import-listen-tools" hidden><div id="import-offset-tools"><label class="field"><span id="import-offset-label">Offset from file (seconds)</span><input id="import-offset" type="number" step="0.001" value="0" aria-describedby="import-offset-help"></label><p id="import-offset-help" class="fine">Positive moves cues later; negative moves them earlier. Preview timing to hear and apply the proposed times.</p><div id="import-lrc-end-tools" hidden><label class="field">Last line end in clip (seconds)<input id="import-lrc-end" type="text" inputmode="decimal" maxlength="12" aria-describedby="import-lrc-end-help"></label><p id="import-lrc-end-help" class="fine">Optional, measured from the start of this clip after the offset. Leave blank to use the shifted file end.</p></div><div class="timing-actions"><button id="import-offset-preview" class="quiet">Preview offset</button><button id="import-offset-reset" class="quiet">Reset to file times</button></div><p id="import-offset-status" class="fine" role="status"></p></div><button id="import-listen-stop" class="quiet" disabled>Stop imported line</button><p id="import-listen-status" class="fine" role="status"></p></div><details id="review-passage" class="automatic-passage"><summary>Apply a reviewed passage</summary><p class="fine">Choose the first and last reviewed lines. Included lines define the time window; every current line wholly inside that window is replaced, including lines in its gaps. <span id="automatic-passage-help">Automatic review includes lines hidden by filters; excluded boundary lines do not widen the window.</span> Corrections outside it stay. A boundary cutting through a current line is refused. This is one unsaved Undo step.</p><div class="practice-selection"><label class="field"><span id="review-passage-first-label">First line in passage</span><select id="automatic-passage-first" disabled></select></label><label class="field"><span id="review-passage-last-label">Last line in passage</span><select id="automatic-passage-last" disabled></select></label></div><p id="automatic-passage-status" class="fine" role="status" aria-live="polite"></p><div class="timing-actions"><button id="review-passage-listen" class="quiet" disabled>Listen to reviewed passage</button><button id="review-passage-repeat" class="quiet" disabled>Repeat reviewed passage</button><button id="review-passage-stop" class="quiet" disabled>Stop reviewed audio</button></div><p id="review-passage-audio-status" class="fine" role="status"></p><button id="automatic-passage-apply" class="quiet" aria-describedby="automatic-passage-status" disabled>Apply reviewed passage</button></details><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
-          <div class="line-tools"><details class="lyric-find"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="lyric-replace"><summary>Replace lyric words</summary><p class="fine">Preview literal, case-sensitive replacements in current lyric lines. This is not a regular expression. All cue times and resulting words must be valid. Apply is one unsaved Undo/Redo edit; Save lyrics is separate. Pasted words and automatic recognition are not changed.</p><label class="field">Literal text to replace<input id="words-replace-find" type="text" maxlength="480" disabled></label><label class="field">Replacement lyric text<textarea id="words-replace-with" rows="2" maxlength="480" disabled></textarea></label><p class="fine">Leave replacement empty to remove a fragment. A whole line cannot become empty. Matching keeps exact case and spacing.</p><p id="words-replace-summary" class="fine" role="status" aria-live="polite"></p><ol id="words-replace-preview"></ol><button id="words-replace-apply" class="quiet" disabled>Apply lyric word replacements</button><p id="words-replace-status" class="fine" role="status" aria-live="polite"></p></details><details id="line-insert-tools" class="line-insert"><summary>Add lyric line</summary><p class="fine">Supply missed words and an empty time span. Existing lines stay unchanged. Insert makes one unsaved Undo/Redo edit; Save lyrics is separate. These entry fields are session-only and are not part of saved lyrics until inserted.</p><label class="field">New lyric words<textarea id="line-insert-text" rows="2" disabled></textarea></label><label class="field">New line start (seconds)<input id="line-insert-start" type="text" inputmode="decimal" disabled></label><label class="field">New line end (seconds)<input id="line-insert-end" type="text" inputmode="decimal" disabled></label><button id="line-insert-apply" class="quiet" disabled>Insert lyric line</button><p id="line-insert-status" class="fine" role="status" aria-live="polite"></p></details></div>
+          <div class="line-tools"><details class="lyric-find"><summary>Find lyric line</summary><label class="field">Find words in lyrics<input id="lyric-find-query" type="search" maxlength="480" placeholder="Words from a current line" disabled></label><p class="fine">Literal text, ignoring case. Enter goes forward; Shift+Enter goes back. Navigation focuses the line and keeps playback and drafts. Play is a separate action.</p><div class="timing-actions"><button id="lyric-find-prev" class="quiet" disabled>Previous lyric match</button><button id="lyric-find-next" class="quiet" disabled>Next lyric match</button><button id="lyric-find-play" class="quiet" disabled>Play lyric match</button></div><p id="lyric-find-status" class="fine" role="status" aria-live="polite"></p></details><details class="lyric-replace"><summary>Replace lyric words</summary><p class="fine">Preview literal, case-sensitive replacements in current lyric lines. This is not a regular expression. All cue times and resulting words must be valid. Apply is one unsaved Undo/Redo edit; Save lyrics is separate. Pasted words and automatic recognition are not changed.</p><label class="field">Literal text to replace<input id="words-replace-find" type="text" maxlength="480" disabled></label><label class="field">Replacement lyric text<textarea id="words-replace-with" rows="2" maxlength="480" disabled></textarea></label><p class="fine">Leave replacement empty to remove a fragment. A whole line cannot become empty. Matching keeps exact case and spacing.</p><p id="words-replace-summary" class="fine" role="status" aria-live="polite"></p><ol id="words-replace-preview"></ol><button id="words-replace-apply" class="quiet" disabled>Apply lyric word replacements</button><p id="words-replace-status" class="fine" role="status" aria-live="polite"></p></details><details id="singer-assignment-tools"><summary>Assign duet parts</summary><p class="fine">Assign a singer to all current lyric lines or one passage as a single unsaved Undo/Redo edit. Words, timing and unapplied pasted lyrics stay unchanged. Anyone clears the part; Save lyrics is separate. Finish practice, a timing session or a lyric review before assigning parts.</p><label class="field">Singer assignment scope<select id="singer-assignment-scope" disabled><option value="all">All lines</option><option value="passage">Selected passage</option></select></label><div id="singer-assignment-passage" class="practice-selection" hidden><label class="field">First line for singer<select id="singer-assignment-first" disabled></select></label><label class="field">Last line for singer<select id="singer-assignment-last" disabled></select></label></div><p id="singer-assignment-summary" class="fine"></p><label class="field">Assign these lines to<select id="singer-assignment-role" disabled><option value="">Anyone</option><option value="1" selected>Singer 1</option><option value="2">Singer 2</option><option value="both">Both</option></select></label><button id="singer-assignment-apply" class="quiet" disabled>Assign singer to lines</button><p id="singer-assignment-status" class="fine" role="status" aria-live="polite"></p></details><details id="line-insert-tools" class="line-insert"><summary>Add lyric line</summary><p class="fine">Supply missed words and an empty time span. Existing lines stay unchanged. Insert makes one unsaved Undo/Redo edit; Save lyrics is separate. These entry fields are session-only and are not part of saved lyrics until inserted.</p><label class="field">New lyric words<textarea id="line-insert-text" rows="2" disabled></textarea></label><label class="field">New line start (seconds)<input id="line-insert-start" type="text" inputmode="decimal" disabled></label><label class="field">New line end (seconds)<input id="line-insert-end" type="text" inputmode="decimal" disabled></label><button id="line-insert-apply" class="quiet" disabled>Insert lyric line</button><p id="line-insert-status" class="fine" role="status" aria-live="polite"></p></details></div>
           <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
         </section>
         <section id="tool-get" class="tool-panel" role="tabpanel" aria-labelledby="tab-get"><h3 class="tool-heading">Get lyrics</h3>
@@ -122,6 +122,8 @@ let savedLyrics: Project['cues'] = [];
 let lyricHistory: LyricHistory | null = null;
 let shiftIdentities: Project['cues'] = [];
 let shiftLabels = '';
+let singerIdentities: Project['cues'] = [];
+let singerLabels = '';
 let findSelected: Project['cues'][number] | null = null;
 let dirty = false;
 let draftDirty = false;
@@ -201,6 +203,7 @@ function rememberSongTags(projectId: string, song: { title?: string; artist?: st
   try { localStorage.setItem(SONG_TAGS_KEY, JSON.stringify({ ...songTags(), [projectId]: { title: clean(song.title), artist: clean(song.artist) } })); } catch { /* storage unavailable */ }
 }
 const lyricsLookup=mountLyricsLookup({
+  stateChanged:()=>{if(working)singerAssignmentControls();},
   reveal:()=>workspace.reveal(element('lyrics-lookup')),
   // Tags name the song; without them, a file name such as "Artist - Title" may.
   suggest:()=>{
@@ -344,9 +347,10 @@ function controls() {
   element<HTMLInputElement>('timing-shift-seconds').disabled = !working || busy || saving || aligning;
   element<HTMLButtonElement>('timing-shift-apply').disabled = !working?.cues.length || busy || saving || aligning;
   timingShiftControls(busy || saving || aligning);
+  singerAssignmentControls();
   for (const id of ['line-insert-text', 'line-insert-start', 'line-insert-end', 'line-insert-apply']) element<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>(id).disabled = !working || busy || saving || aligning;
   element('discard-draft').hidden = !draftDirty;
-  for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>('input,textarea,button')) control.disabled = busy || saving;
+  for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement | HTMLSelectElement>('input,textarea,button,select')) control.disabled = busy || saving;
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
@@ -363,6 +367,7 @@ function changed(group: string | null = null, keepReview: SrtOwner | null = null
   stopWordTapping('The lyric editor changed, so word timing stopped. Nothing was changed by it.');
   retirePractice('The lyric editor changed. Practice stopped.');
   if (!working) return;
+  element('singer-assignment-status').textContent = '';
   const keeping = keepReview && srtReview?.owner === keepReview && srtCurrent(keepReview);
   if (!keeping) retireSrt('The lyric editor changed. Open a new review to continue.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -372,6 +377,7 @@ function changed(group: string | null = null, keepReview: SrtOwner | null = null
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
 }
 function restoreDraft(direction: 'undo' | 'redo') {
+  stopWordTapping('Undo or Redo cancelled word timing. Staged word times were not applied.');
   retirePractice('Undo or Redo stopped practice.');
   if (!working || !lyricHistory || currentJob || loading || requestingJob || saving || archiveChecking) return;
   retireSrt('Undo or Redo cancelled the lyric import review.');
@@ -380,11 +386,24 @@ function restoreDraft(direction: 'undo' | 'redo') {
   const rawTimings = captureTimingDrafts();
   const draft = lyricHistory[direction]();
   if (!draft) return;
-  working.title = draft.title; working.cues = draft.cues;
+  // A native number field can display an incomplete value (such as 1e) while exposing value="".
+  // Role-only history must keep those live inputs, not reconstruct them from their lossy DOM values.
+  const roleOnly = draft.title === working.title && draft.pastedText === element<HTMLTextAreaElement>('lyric-draft').value && draft.pastedDirty === draftDirty
+    && draft.cues.length === working.cues.length && draft.cues.some((cue, i) => cue.singer !== working!.cues[i].singer)
+    && draft.cues.every((cue, i) => {
+      const current = working!.cues[i], raw = draft.rawTimings?.[i];
+      const spelling = (boundary: 'start' | 'end') => raw && Object.is(raw[boundary], cue[boundary]) ? raw[`${boundary}Text`] : Number.isFinite(cue[boundary]) ? String(cue[boundary]) : '';
+      return cue.text === current.text && Object.is(cue.start, current.start) && Object.is(cue.end, current.end)
+        && JSON.stringify(cue.wordStarts) === JSON.stringify(current.wordStarts)
+        && spelling('start') === rawTimings[i]?.startText && spelling('end') === rawTimings[i]?.endText;
+    });
+  working.title = draft.title;
+  if (roleOnly) applyCueSingers(draft.cues); else working.cues = draft.cues;
+  singerIdentities = []; element('singer-assignment-status').textContent = '';
   element<HTMLInputElement>('title').value = draft.title;
   element<HTMLTextAreaElement>('lyric-draft').value = draft.pastedText;
   draftDirty = draft.pastedDirty; dirty = lyricHistory.dirty; videoUrl = null;
-  renderCues(draft.rawTimings ?? rawTimings); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
+  if (!roleOnly) renderCues(draft.rawTimings ?? rawTimings); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
 }
 element('undo-lyrics').addEventListener('click', () => restoreDraft('undo'));
 element('redo-lyrics').addEventListener('click', () => restoreDraft('redo'));
@@ -799,6 +818,7 @@ function practiceMediaReady(checkEdits = true): boolean {
     && Math.abs(audio.duration - working.duration) <= 1 / 44100 && isRehearsalSpeed(audio.playbackRate) && !audio.loop;
 }
 function practiceControls(): void {
+  singerAssignmentControls();
   const first = element<HTMLSelectElement>('practice-first'), last = element<HTMLSelectElement>('practice-last');
   const count = working?.cues.length ?? 0, newProject = practiceProject !== loadedProjectGeneration;
   if (newProject || practiceCount !== count) {
@@ -879,6 +899,7 @@ function srtCurrent(owner: SrtOwner): boolean {
   return srtOwner === owner && srtEpoch === owner.epoch && working?.id === owner.projectId && loadedProjectGeneration === owner.project && editGeneration === owner.edit;
 }
 function srtControls() {
+  singerAssignmentControls();
   recognitionPreviewControls(); recognitionPassageControls();
   const allowed = srtAllowed();
   for (const id of ['srt-file', 'lrc-file']) element<HTMLInputElement>(id).disabled = !allowed;
@@ -1895,6 +1916,59 @@ element('lyric-find-play').addEventListener('click', () => {
   if (index >= 0) startPractice('once', index);
 });
 
+/** Keep native timing drafts and the input handlers' cue bindings for an edit that only changes roles. */
+function applyCueSingers(cues: readonly Cue[]): void {
+  for (const [i, cue] of working!.cues.entries()) {
+    if (cues[i].singer === undefined) delete cue.singer; else cue.singer = cues[i].singer;
+  }
+  for (const [i, select] of [...element('cue-list').querySelectorAll<HTMLSelectElement>('.cue-singer select')].entries()) select.value = String(working!.cues[i].singer ?? '');
+}
+function singerAssignmentAllowed(): boolean {
+  return srtAllowed() && !srtOwner && !srtReview && !timingOwner && !practice.active && !wordTap && !lyricsLookup.active();
+}
+function selectedSingerPassage(): CuePassage | undefined {
+  if (element<HTMLSelectElement>('singer-assignment-scope').value === 'all') return undefined;
+  const first = element<HTMLSelectElement>('singer-assignment-first').value, last = element<HTMLSelectElement>('singer-assignment-last').value;
+  if (!working || first === '' || last === '' || singerIdentities.length !== working.cues.length || !singerIdentities.every((cue, i) => cue === working!.cues[i])) throw new Error('Choose the first and last line in the current passage.');
+  return { firstIndex: Number(first), lastIndex: Number(last) };
+}
+function singerAssignmentControls(): void {
+  const first = element<HTMLSelectElement>('singer-assignment-first'), last = element<HTMLSelectElement>('singer-assignment-last');
+  const same = !!working && singerIdentities.length === working.cues.length && singerIdentities.every((cue, i) => cue === working!.cues[i]);
+  const labels = JSON.stringify(working?.cues.map(cue => cue.text) ?? []);
+  if (!same || labels !== singerLabels) {
+    const values = same ? [first.value, last.value] : ['', ''];
+    for (const select of [first, last]) {
+      select.replaceChildren(new Option('Choose a line', ''));
+      for (const [index, cue] of (working?.cues ?? []).entries()) select.append(new Option(`${index + 1}. ${Array.from(cue.text).slice(0, 60).join('')}`, String(index)));
+    }
+    first.value = values[0]; last.value = values[1];
+    singerIdentities = [...(working?.cues ?? [])]; singerLabels = labels;
+  }
+  const passage = element<HTMLSelectElement>('singer-assignment-scope').value === 'passage', enabled = singerAssignmentAllowed() && !!working?.cues.length;
+  element('singer-assignment-passage').hidden = !passage;
+  first.disabled = last.disabled = !enabled || !passage;
+  for (const id of ['singer-assignment-scope', 'singer-assignment-role', 'singer-assignment-apply']) element<HTMLSelectElement | HTMLButtonElement>(id).disabled = !enabled;
+  element('singer-assignment-summary').textContent = passage
+    ? 'Choose the first and last current line. Other parts stay unchanged. Choose again after a structural edit or Undo/Redo.'
+    : `All ${working?.cues.length ?? 0} current lyric lines.`;
+}
+for (const id of ['singer-assignment-scope', 'singer-assignment-role', 'singer-assignment-first', 'singer-assignment-last']) element(id).addEventListener('change', () => { element('singer-assignment-status').textContent = ''; singerAssignmentControls(); });
+element('singer-assignment-apply').addEventListener('click', () => {
+  if (!working || !lyricHistory || !singerAssignmentAllowed()) return;
+  try {
+    const value = element<HTMLSelectElement>('singer-assignment-role').value;
+    const singer = value === '' ? undefined : value === 'both' ? 'both' : Number(value);
+    const result = assignSingers(working.cues, singer, selectedSingerPassage());
+    if (!result.changed) { element('singer-assignment-status').textContent = 'These lines already have that singer. No lyric edit was added.'; return; }
+    lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+    applyCueSingers(result.cues); changed();
+    element('singer-assignment-status').textContent = `Updated the singer on ${result.changed} ${result.changed === 1 ? 'line' : 'lines'} as one unsaved edit. Undo restores their parts; use Save lyrics when ready.`;
+  } catch (error) {
+    element('singer-assignment-status').textContent = `${error instanceof Error ? error.message : 'Check the singer and passage.'} Current lyrics and editor values were kept.`;
+  }
+});
+
 function sameShiftLines(): boolean {
   return !!working && shiftIdentities.length === working.cues.length && shiftIdentities.every((cue, index) => cue === working!.cues[index]);
 }
@@ -2100,6 +2174,7 @@ function stopWordTapping(note?: string): void {
   wordTap = null; cancelAnimationFrame(session.frame);
   if (!audio.paused) audio.pause();
   session.host.replaceChildren(); session.host.hidden = true;
+  singerAssignmentControls();
   if (note) message(note);
 }
 function startWordTapping(index: number, host: HTMLElement): void {
@@ -2143,6 +2218,7 @@ function startWordTapping(index: number, host: HTMLElement): void {
     wordTap.frame = requestAnimationFrame(watch);
   };
   wordTap = { tapping, host, frame: requestAnimationFrame(watch) };
+  singerAssignmentControls();
   tap.focus();
 }
 // Adjusting a line's words one at a time: each word with its start (hand-set, or the studio's), moved with the arrow keys.
@@ -2288,7 +2364,7 @@ async function openProject(id: string) {
     element<HTMLInputElement>('recognition-passage-end').value = String(Math.min(15, project.duration));
     element('recognition-passage-range-status').textContent = '';
   }
-  if (working?.id !== project.id) { audio.defaultPlaybackRate = 1; audio.playbackRate = 1; audio.preservesPitch = true; resetWordReplace(); findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-remove-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
+  if (working?.id !== project.id) { audio.defaultPlaybackRate = 1; audio.playbackRate = 1; audio.preservesPitch = true; resetWordReplace(); element<HTMLSelectElement>('singer-assignment-scope').value = 'all'; element<HTMLSelectElement>('singer-assignment-role').value = '1'; element('singer-assignment-status').textContent = ''; singerIdentities = []; findSelected = null; element<HTMLInputElement>('lyric-find-query').value = ''; element<HTMLInputElement>('timing-shift-seconds').value = ''; element<HTMLInputElement>('passage-copy-seconds').value = ''; element<HTMLInputElement>('passage-fit-start').value = ''; element<HTMLInputElement>('passage-fit-end').value = ''; element('passage-fit-status').textContent = ''; element('passage-remove-status').textContent = ''; element('passage-copy-status').textContent = ''; element<HTMLSelectElement>('timing-shift-scope').value = 'all'; element('timing-shift-status').textContent = ''; }
   resetLineInsert();
   working = structuredClone(project); savedLyrics = structuredClone(project.cues); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
@@ -2370,6 +2446,7 @@ element('save').addEventListener('click', async () => {
     const reply = await request<unknown>(`/api/projects/${sent.id}`, json('PUT', { title: sent.title, cues: sent.cues, revision: sent.revision }));
     const saved = validateSaveReply(reply, sent);
     working = saved; savedLyrics = structuredClone(saved.cues);
+    element('singer-assignment-status').textContent = '';
     dirty = false; videoUrl = null;
     renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); autoControls();
     await refreshProjects(); message(reviewOwner && srtCurrent(reviewOwner)
@@ -2956,6 +3033,7 @@ function retireTiming(text = 'Timing session cancelled. Staged times were not ap
   timingText('timing-line', ''); timingText('timing-status', text); controls();
 }
 function timingControls(): void {
+  singerAssignmentControls();
   const owner = timingOwner, state = owner?.capture.state, busy = timingBusy();
   element<HTMLButtonElement>('timing-begin').disabled = !working || !lyricHistory || busy || !!owner;
   element<HTMLButtonElement>('timing-cancel').disabled = !owner; element('timing-cancel').hidden = !owner;
