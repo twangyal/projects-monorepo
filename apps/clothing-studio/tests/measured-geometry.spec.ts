@@ -34,7 +34,8 @@ test('measured geometry: edited neckline changes downloaded rib and tech pack; f
   await expect(page.locator('#message')).toContainText('Fit applied');
   const row = editor.locator('#techpack-preview tr').filter({ has: page.locator('td:first-child:text-is("A")') });
   await expect(row.locator('td').nth(6)).toHaveText('80');
-  const svg = editor.locator('#techpack-preview svg'), arrow = svg.locator('line').first();
+  // The chest arrow, not the grain marks drawn on each piece.
+  const svg = editor.locator('#techpack-preview svg'), arrow = svg.locator('line:not([data-grain])').first();
   const y = Number(await arrow.getAttribute('y1'));
   const outline = points((await svg.locator('polygon').first().getAttribute('points'))!);
   const xs = outline.flatMap((a, i) => { const b = outline[(i + 1) % outline.length]; return (a.y <= y && b.y > y) || (b.y <= y && a.y > y) ? [a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y)] : []; });

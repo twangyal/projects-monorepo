@@ -24,7 +24,7 @@ for(const phone of [false,true])test(`a skirt waistband stays linked through dra
   await expect(editor.locator('#techpack-preview')).toContainText('Waistband height');
   // Actual downloaded sewing rectangle is 80 x 12 cm; the cutting outline adds 1 cm on each edge.
   const svg=(await download(page,'#pattern-svg')).toString();
-  const dimensions=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'image/svg+xml'),g=doc.querySelector('[data-piece="waistband"]')!;return [...g.querySelectorAll('polygon')].map(p=>{const pts=p.getAttribute('points')!.split(' ').map(pair=>pair.split(',').map(Number));return [Math.max(...pts.map(p=>p[0]))-Math.min(...pts.map(p=>p[0])),Math.max(...pts.map(p=>p[1]))-Math.min(...pts.map(p=>p[1]))];});},svg);
+  const dimensions=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'image/svg+xml'),g=doc.querySelector('[data-piece="waistband"]')!;return [...g.querySelectorAll(':scope > polygon')].map(p=>{const pts=p.getAttribute('points')!.split(' ').map(pair=>pair.split(',').map(Number));return [Math.max(...pts.map(p=>p[0]))-Math.min(...pts.map(p=>p[0])),Math.max(...pts.map(p=>p[1]))-Math.min(...pts.map(p=>p[1]))];});},svg);
   expect(dimensions).toEqual([[82,14],[80,12]]);
   expect((await download(page,'#pattern-dxf')).toString()).toContain('Waistband');
   const glb=await download(page,'#product-glb');expect(glb.subarray(0,4).toString()).toBe('glTF');
