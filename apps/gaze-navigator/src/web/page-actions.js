@@ -379,6 +379,8 @@ export function setRangeValue(element, value, options = {}) {
 const ARIA_RANGE_PRESSES = 400;
 const LIST_OPEN_MS = 1500;
 const LIST_SEARCH_MS = 2500;
+// Looking through a list that shows only the choices in view stops after this long.
+const LIST_SCROLL_MS = 8000;
 
 function ariaNumber(element, attribute) {
   const value = Number(element.getAttribute(attribute));
@@ -469,14 +471,70 @@ function listOptions(element) {
   return [...new Set(options)].filter(shown);
 }
 
-function pickOption(options, query) {
-  const wanted = comparable(query), named = options.map(option => ({ option, name: comparable(accessibleName(option)) }));
+// The one name that matches `query` exactly, else the one starting with it, else the one containing it.
+function pickName(names, query) {
+  const wanted = comparable(query), compared = names.map(comparable);
   for (const test of [name => name === wanted, name => name.startsWith(wanted), name => name.includes(wanted)]) {
-    const found = named.filter(entry => wanted && test(entry.name));
-    if (found.length === 1) return { option: found[0].option };
-    if (found.length > 1) return { ambiguous: found.map(entry => accessibleName(entry.option)) };
+    const found = names.filter((_, i) => wanted && test(compared[i]));
+    if (found.length === 1) return { name: found[0] };
+    if (found.length > 1) return { ambiguous: found };
   }
-  return { none: options.map(option => accessibleName(option)) };
+  return { none: names };
+}
+
+function pickOption(options, query) {
+  const names = options.map(option => accessibleName(option)), choice = pickName(names, query);
+  return choice.name !== undefined ? { option: options[names.indexOf(choice.name)] } : choice;
+}
+
+/**
+ * Where a list that shows only the choices in view (a virtualized list) scrolls: the nearest scrolling box round its
+ * options whose content they do not fill, since the rest are not on the page until scrolled to. Null when every
+ * choice is on the page already, scrolled out of view or not.
+ */
+function partialScroller(element) {
+  const options = listOptions(element), document = element.ownerDocument, view = document.defaultView;
+  const page = new Set([document.scrollingElement, document.documentElement, document.body]);
+  for (let node = options[0]?.parentElement; node && !page.has(node); node = node.parentElement) {
+    if (!/(auto|scroll)/.test(view.getComputedStyle(node).overflowY) || node.scrollHeight <= node.clientHeight + 1) continue;
+    const box = node.getBoundingClientRect(), rects = options.map(option => option.getBoundingClientRect());
+    const span = Math.max(...rects.map(rect => rect.bottom)) - Math.min(...rects.map(rect => rect.top)), tallest = Math.max(...rects.map(rect => rect.height));
+    // A list with every choice on the page spans its content (less a little padding).
+    return box.height && span < node.scrollHeight - 2 * tallest ? node : null;
+  }
+  return null;
+}
+
+/**
+ * Look through a list that shows only the choices in view for the one named: from the top, a screenful at a time,
+ * stopping at a choice with exactly that name; otherwise the one choice seen anywhere that starts with or contains
+ * it, scrolled back to. Returns as pickOption does, with `looked` the number of choices seen and `whole` whether
+ * they were all of them (the end of the list was reached in time).
+ */
+async function searchList(element, scroller, optionName, { isCurrent, until }) {
+  const view = element.ownerDocument.defaultView, started = view.performance.now(), seen = new Map();
+  let whole = false;
+  const shownNames = () => listOptions(element).map(option => accessibleName(option)).join('\n');
+  const scrollTo = async top => {
+    const before = shownNames();
+    scroller.scrollTop = top;
+    await until(150, () => shownNames() !== before);
+  };
+  await scrollTo(0);
+  for (;;) {
+    for (const option of listOptions(element)) if (!seen.has(accessibleName(option))) seen.set(accessibleName(option), scroller.scrollTop);
+    const here = pickOption(listOptions(element), optionName);
+    if (here.option && comparable(accessibleName(here.option)) === comparable(optionName)) return { ...here, looked: seen.size, whole };
+    whole = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    if (whole || !isCurrent() || view.performance.now() - started > LIST_SCROLL_MS) break;
+    await scrollTo(scroller.scrollTop + Math.max(1, Math.floor(scroller.clientHeight * 0.9)));
+  }
+  const choice = pickName([...seen.keys()], optionName);
+  if (choice.name === undefined || !isCurrent()) return { ...choice, looked: seen.size, whole };
+  await scrollTo(seen.get(choice.name));
+  const back = () => listOptions(element).filter(option => accessibleName(option) === choice.name);
+  await until(LIST_OPEN_MS, () => back().length);
+  return { ...pickOption(back(), choice.name), looked: seen.size, whole };
 }
 
 function pressOption(option) {
@@ -520,11 +578,17 @@ export function chooseListOption(element, optionName, { isCurrent = () => true }
       await until(LIST_SEARCH_MS, () => pickOption(listOptions(element), optionName).option);
       choice = pickOption(listOptions(element), optionName);
     }
+    // A list that shows only the choices in view may hold the exact name further down, out of the page.
+    const scroller = isCurrent() && available() ? partialScroller(element) : null;
+    if (scroller && !(choice.option && comparable(accessibleName(choice.option)) === comparable(optionName))) {
+      choice = await searchList(element, scroller, optionName, { isCurrent, until });
+    }
     if (!isCurrent()) return { ok: false, message: `Stopped before choosing in ${label}.` };
     if (!available()) return { ok: false, message: `The website removed or locked ${label}. Check it before continuing.` };
     if (choice.ambiguous) return { ok: false, message: `Several choices match “${optionName}”: ${listing(choice.ambiguous)}. Say “click” and the one you mean.` };
     if (!choice.option) {
-      return { ok: false, message: choice.none.length ? `No choice called “${optionName}” in ${label}. Shown: ${listing(choice.none)}.` : `${label} did not show any choices.` };
+      if (choice.looked) return { ok: false, message: choice.whole ? `No choice called “${optionName}” in ${label}, after looking through all ${choice.looked} of them.` : `No choice called “${optionName}” among the first ${choice.looked} in ${label}. Scroll the list to it, then say “click” and its name.` };
+      return { ok: false, message: choice.none?.length ? `No choice called “${optionName}” in ${label}. Shown: ${listing(choice.none)}.` : `${label} did not show any choices.` };
     }
     const option = choice.option, name = accessibleName(option);
     if (option.getAttribute('aria-disabled') === 'true') return { ok: false, message: `${name} is unavailable in ${label}.` };
