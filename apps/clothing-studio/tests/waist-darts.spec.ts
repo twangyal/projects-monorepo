@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 async function backup(page: Page) { const wait = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export project backup', exact: true }).click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }
 const editor = (page: Page) => page.locator('#product-editor');
 
-test('waist darts are set for a dress bodice, drawn on its front and back, sewn in the tech pack and go with the waist seam', async ({ page }) => {
+test('waist darts are set for a dress bodice, drawn on its front and back, sewn in the tech pack, and run through the waist without the seam', async ({ page }) => {
   test.setTimeout(120000);
   page.on('dialog', dialog => dialog.accept());
   await page.goto('/');
@@ -20,15 +20,20 @@ test('waist darts are set for a dress bodice, drawn on its front and back, sewn 
   for (const part of ['front', 'back']) await expect(page.locator(`[data-piece="${part}"]`).first().locator('.dart-line')).toHaveCount(2);
   await expect(editor(page).locator('#techpack-preview')).toContainText('Sew each dart from the bodice’s waist edge to its point'.replace('’', "'"));
 
-  // Without the waist seam there is no bodice: the field and the darts go, until Undo.
+  // Without the waist seam the darts stay, each pointed at both ends through the waist (a V above it and one below),
+  // until Undo cuts the dress at the waist again.
   const seam = page.getByRole('checkbox', { name: 'Waist seam (a dress cut into bodice and skirt)', exact: true });
   await seam.uncheck();
-  await expect(intake).toBeHidden();
-  expect((await backup(page)).product.measurements.waistDart).toBeUndefined();
+  await expect(intake).toHaveValue('2');
+  for (const part of ['front', 'back']) await expect(page.locator(`[data-piece="${part}"]`).first().locator('.dart-line')).toHaveCount(4);
+  await expect(editor(page).locator('#techpack-preview')).toContainText('Sew each dart from its upper point through the waist to its lower point');
+  expect((await backup(page)).product.measurements.waistDart).toBe(2);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(seam).toBeChecked();
-  await expect(intake).toHaveValue('2');
-  // A T-shirt has no field for them.
+  for (const part of ['front', 'back']) await expect(page.locator(`[data-piece="${part}"]`).first().locator('.dart-line')).toHaveCount(2);
+  // A T-shirt reaching below its waist can have them; a crop top, ending above it, has no field for them.
   await editor(page).getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  await expect(intake).toBeVisible();
+  await editor(page).getByRole('button', { name: /^Use the Crop top template/ }).click();
   await expect(intake).toBeHidden();
 });

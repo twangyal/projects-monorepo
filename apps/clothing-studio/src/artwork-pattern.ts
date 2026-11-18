@@ -159,7 +159,7 @@ function sleeveOrigin(product: Product): { at: Pt; top: number } { return { at: 
 
 /**
  * A body piece with darts is cut other than it is sewn: a front with bust darts longer below them (see dartFlat), a
- * bodice with waist darts wider beside them (see waistShift). How a point of the piece (centred, as sewn) lands on the cut
+ * body with waist darts wider beside them (see waistShift). How a point of the piece (centred, as sewn) lands on the cut
  * piece, back again, and how it moves there: not at all ('still'), lowered as a whole below the bust darts ('lowered'),
  * or by an amount that changes from point to point ('varying').
  */
@@ -176,7 +176,7 @@ function pieceDarts(product: Product, part: 'front' | 'back'): PieceDarts | null
     return q;
   };
   const zone = (p: Pt) => {
-    if (waist && Math.abs(p.x) >= waist.x && p.y > waist.apex) return 'varying' as const;
+    if (waist && Math.abs(p.x) >= waist.x && p.y > waist.apex && (waist.end === undefined || p.y < waist.end)) return 'varying' as const;
     const depth = p.y - line(p.x);
     return depth <= 0 ? 'still' as const : bust && depth >= bust.spread ? 'lowered' as const : 'varying' as const;
   };

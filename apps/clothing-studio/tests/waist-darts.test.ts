@@ -21,14 +21,15 @@ const piece = (product: Product, part: string) => patternPieces(product).find(it
 const near = (actual: number, expected: number, why: string, within = 1e-6) => assert.ok(Math.abs(actual - expected) <= within, `${why}: ${actual} vs ${expected}`);
 const atWaist = (outline: Pt[], y: number) => outline.filter(p => Math.abs(p.y - y) < 1e-6).map(p => p.x);
 
-test('waist darts go in a dress bodice, within their range, and come off with the waist seam', () => {
+test('waist darts go in a dress bodice, within their range, and run through the waist when the waist seam comes off', () => {
   const product = darted(dress());
   assert.equal(topMeasurements(product).waistDart, 2);
-  assert.throws(() => darted(template('tee-dress') as Product), /Waist darts go in a dress's bodice: add the waist seam first/);
+  assert.equal(waistDartsOf(product)!.front.end, undefined);
   assert.throws(() => darted(dress(), { waistDart: 5 }), /Waist dart intake/);
-  // Taking the waist seam off takes the darts with it.
+  // Taking the waist seam off keeps the darts, now pointed at both ends.
   const unseamed = validateProduct(withOptions(product, { ...optionsOf(product), waistSeam: false }));
-  assert.equal(topMeasurements(unseamed).waistDart, undefined);
+  assert.equal(topMeasurements(unseamed).waistDart, 2);
+  assert.ok(waistDartsOf(unseamed)!.front.end! > waistDartsOf(unseamed)!.front.waist);
 });
 
 test('each bodice is cut wider beside its two darts, which open on the waist edge and rise to a point', () => {
@@ -89,11 +90,11 @@ test('the tech pack sews the waist darts before the waist seam; descriptions and
   assert.ok(sewn >= 0 && sewn < pack.construction.findIndex(row => row.area === 'Waist seam'));
   assert.match(pack.construction[sewn]!.detail, /2\.0 cm taken in by each of four darts/);
   assert.ok(pack.poms.some(pom => pom.code === 'WD'));
-  // "Waist darts" cuts a long enough dress at the waist for them; a T-shirt has no bodice.
+  // "Waist darts" leaves a dress in one piece, with darts through its waist; a crop top has no room below its waist.
   const described = readDesignPrompt('a dress with waist darts', template('tee-dress') as Product);
-  assert.equal(optionsOf(described.product).waistSeam, true);
+  assert.equal(optionsOf(described.product).waistSeam ?? false, false);
   assert.equal(topMeasurements(described.product).waistDart, 2);
-  assert.ok(readDesignPrompt('a tee with waist darts', template('blank') as Product).ignored.some(line => /^waist darts \(they go in the bodice/.test(line)));
+  assert.throws(() => readDesignPrompt('a top with waist darts', template('crop-top') as Product), /waist darts \(they need the top to reach at least 8 cm below its waist\)/);
   assert.equal(topMeasurements(readDesignPrompt('no waist darts', product).product).waistDart, undefined);
   const project = (top: Product) => ({ ...createProject(), title: 'Dress', product: top });
   assert.ok(designDifferences(project(dress()), project(product)).includes('Waist dart intake: none → 2 cm'));

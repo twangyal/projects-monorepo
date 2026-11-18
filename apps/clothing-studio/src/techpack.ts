@@ -129,7 +129,7 @@ function samplePack(product: Product, date: string): TechPack {
     ] : []),
     pom('U', 'Shoulder drop', 'High point shoulder line vertically down to the shoulder point at the armhole', dims.shoulderDrop, 0, 0.5),
     ...(dart ? [pom('BD', 'Bust dart intake', 'Taken in at each side seam by its bust dart, measured along the seam', dart.intake, 0, 0.25)] : []),
-    ...(waistDarts ? [pom('WD', 'Waist dart intake', 'Taken out of the bodice\'s waist edge by each waist dart', waistDarts.front.intake, 0, 0.25)] : []),
+    ...(waistDarts ? [pom('WD', 'Waist dart intake', waistDarts.front.end === undefined ? 'Taken out of the bodice\'s waist edge by each waist dart' : 'Taken out at the waist by each waist dart, pointed at both ends', waistDarts.front.intake, 0, 0.25)] : []),
     ...(modules.chestPocket ? [
       pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
       pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
@@ -174,8 +174,11 @@ function samplePack(product: Product, date: string): TechPack {
       : (gather => (gather ? { area: 'Sleeves', operation: 'Run two gathering rows over each sleeve cap, draw it up to the armhole, then 4-thread overlock (set in flat)',
         detail: `Puff sleeves: each cap is cut ${gather}× its armhole (${cm(sleeveCap(product).cut)} against ${cm(sleeveCap(product).armhole)}), spread most at the top; gather evenly and match the sleeve head to the shoulder seam` }
         : { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' }))(topMeasurements(product).sleeveGather),
-    ...(waistDarts ? [{ area: 'Waist darts', operation: 'Sew each dart from the bodice\'s waist edge to its point, tie off at the point, and press it toward the centre',
+    ...(waistDarts && waistDarts.front.end === undefined ? [{ area: 'Waist darts', operation: 'Sew each dart from the bodice\'s waist edge to its point, tie off at the point, and press it toward the centre',
       detail: `${cm(waistDarts.front.intake)} taken in by each of four darts: two in the front bodice, ${cm(waistDarts.front.x)} each side of the centre front and ${cm(waistDarts.front.waist - waistDarts.front.apex)} long, toward the bust; two in the back, ${cm(waistDarts.back.x)} each side of the centre back and ${cm(waistDarts.back.waist - waistDarts.back.apex)} long; sew before the waist seam` }] : []),
+    // Darts pointed at both ends run through the waist of a top in one piece.
+    ...(waistDarts && waistDarts.front.end !== undefined ? [{ area: 'Waist darts', operation: 'Sew each dart from its upper point through the waist to its lower point, tie off at both points, clip the fold at the waist, and press it toward the centre',
+      detail: `${cm(waistDarts.front.intake)} taken in at the waist by each of four darts pointed at both ends: two in the front, ${cm(waistDarts.front.x)} each side of the centre front, from ${cm(waistDarts.front.waist - waistDarts.front.apex)} above the waist toward the bust to ${cm(waistDarts.front.end - waistDarts.front.waist)} below it; two in the back, ${cm(waistDarts.back.x)} each side of the centre back, from ${cm(waistDarts.back.waist - waistDarts.back.apex)} above the waist to ${cm(waistDarts.back.end! - waistDarts.back.waist)} below it; sew before the side seams` }] : []),
     ...(product.base === 'tee' && modules.waistSeam ? [(gather => ({ area: 'Waist seam',
       operation: gather > 1 ? 'Run two gathering rows along each skirt’s waist edge, draw it up to the bodice’s, then 4-thread overlock and press the seam up' : '4-thread overlock each skirt to its bodice, then press the seam up',
       detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; `
