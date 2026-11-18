@@ -61,6 +61,7 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 #product-pieces { overflow-x: auto; padding: 8px; background: #fff; border: 1px solid #e3d9ca; border-radius: 10px; }
 #product-pieces svg { max-width: none; height: auto; }
 .pattern-piece { cursor: pointer; }
+.pattern-piece [data-artwork-drag] { cursor: move; touch-action: none; }
 .pattern-piece.is-selected polygon { stroke: #a5482a; stroke-width: 0.9; }
 .pattern-piece:focus-visible polygon { stroke: #1f6f8b; stroke-width: 1; }
 .fit-handles circle { fill: #fffdf9; stroke: #a5482a; stroke-width: 0.5; cursor: grab; touch-action: none; }

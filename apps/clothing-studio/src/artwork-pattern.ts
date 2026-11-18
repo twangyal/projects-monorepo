@@ -188,6 +188,19 @@ function flatMarks(art: Artwork, index: number, label: string, piece: PatternPie
   return marks;
 }
 
+/**
+ * Where a print laid flat (on a top's body or a sleeve) goes when its image is put down with its centre at `centre` on
+ * its piece, as drawn right side up (pattern cm): the placement the artwork fields give, to the millimetre. It is the
+ * inverse of how `flatMarks` draws the image.
+ */
+export function placementOnPattern(product: Product, index: number, centre: Pt): { xCm: number; yCm: number } {
+  const art = product.artwork[index];
+  if (!art || isBottoms(product)) throw new Error('Only a print laid flat on a top or a sleeve can be moved on the pattern.');
+  const height = art.widthCm * art.height / art.width, origin = isSleeveArtwork(art.part) ? sleeveOrigin(product) : topOrigin(product, art);
+  const round = (value: number) => Math.round(value * 10) / 10;
+  return { xCm: round(centre.x - origin.at.x), yCm: round(centre.y - origin.at.y - origin.top - height / 2) };
+}
+
 /** How far the decal reaches in front of and behind its centre, as in 3D (see Product3D.addDecal). */
 const DECAL_DEPTH = 30;
 /**

@@ -21,7 +21,7 @@ import {
 import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { validatePatternAllowance, patternDxf, patternSvg } from './pattern-export.ts';
-import { artworkMarks } from './artwork-pattern.ts';
+import { artworkMarks, placementOnPattern } from './artwork-pattern.ts';
 import { tiledProductPatternHtml } from './product-print-pattern.ts';
 import { readStylePrompt } from './style-prompt.ts';
 import { paletteColorway, photoColours } from './photo-colours.ts';
@@ -1338,7 +1338,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const artwork = (piece: typeof pieces[number]) => marks.filter(mark => mark.part === piece.part).map((mark, k) => {
       const image = mark.image, art = design.artwork[mark.index]!, clip = `pattern-art-${piece.part}-${k}`;
       return `<g class="artwork-mark" data-artwork-mark="${mark.index}"${mark.turned ? ' data-turned=""' : ''}><title>${escapeHtml(mark.label)}</title>` +
-        (image ? `<clipPath id="${clip}"><polygon points="${at(image.region)}"/></clipPath><g clip-path="url(#${clip})"><image href="${escapeHtml(art.dataUrl)}" x="${(-image.width / 2).toFixed(2)}" y="${(-image.height / 2).toFixed(2)}"` +
+        // A print laid flat can be dragged to a new place on its piece.
+        (image ? `<clipPath id="${clip}"><polygon points="${at(image.region)}"/></clipPath><g clip-path="url(#${clip})"><image data-artwork-drag="${mark.index}" data-cx="${image.centre.x.toFixed(2)}" data-cy="${image.centre.y.toFixed(2)}" href="${escapeHtml(art.dataUrl)}" x="${(-image.width / 2).toFixed(2)}" y="${(-image.height / 2).toFixed(2)}"` +
           ` width="${image.width.toFixed(2)}" height="${image.height.toFixed(2)}" preserveAspectRatio="none" transform="translate(${image.centre.x.toFixed(2)} ${image.centre.y.toFixed(2)}) rotate(${image.rotation})"/></g>` : '') +
         mark.lines.map(line => `<polyline points="${at(line)}" fill="none" stroke="#7b3fa0" stroke-width="0.3" stroke-dasharray="1 0.6"/>`).join('') + '</g>';
     }).join('');
@@ -1356,8 +1357,20 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     shown = ''; render(options.current());
   }
   let drag: { handle: Handle; circle: SVGCircleElement; layer: SVGGElement; value: number; moved: boolean } | null = null;
+  // A print laid flat on a piece, being dragged to a new place there (see placementOnPattern).
+  let printDrag: { index: number; mark: SVGGElement; layer: SVGGElement; start: DOMPoint; centre: { x: number; y: number }; shift: { x: number; y: number } } | null = null;
   const toLayer = (layer: SVGGElement, event: PointerEvent) => new DOMPoint(event.clientX, event.clientY).matrixTransform(layer.getScreenCTM()!.inverse());
   $('product-pieces').addEventListener('pointerdown', event => {
+    const image = (event.target as Element).closest<SVGImageElement>('[data-artwork-drag]');
+    if (image && event.button === 0) {
+      if (hasDrafts('artwork')) { options.notice('Apply or discard pending artwork edits before moving a print on the pattern. Your drafts are kept.', true); return; }
+      event.preventDefault();
+      const layer = image.closest<SVGGElement>('[data-piece]')!;
+      image.setPointerCapture(event.pointerId);
+      printDrag = { index: Number(image.dataset.artworkDrag), mark: image.closest<SVGGElement>('.artwork-mark')!, layer, start: toLayer(layer, event),
+        centre: { x: Number(image.dataset.cx), y: Number(image.dataset.cy) }, shift: { x: 0, y: 0 } };
+      return;
+    }
     const circle = (event.target as Element).closest<SVGCircleElement>('[data-fit-handle]');
     const handle = circle && handlesShown.find(item => item.key === circle.dataset.fitHandle);
     if (!circle || !handle) return;
@@ -1367,6 +1380,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     drag = { handle, circle, layer: circle.parentNode as SVGGElement, value: fitValue(product() ?? template('blank'), handle.key), moved: false };
   });
   $('product-pieces').addEventListener('pointermove', event => {
+    if (printDrag) {
+      const point = toLayer(printDrag.layer, event);
+      printDrag.shift = { x: point.x - printDrag.start.x, y: point.y - printDrag.start.y };
+      printDrag.mark.setAttribute('transform', `translate(${printDrag.shift.x.toFixed(2)} ${printDrag.shift.y.toFixed(2)})`);
+      return;
+    }
     if (!drag) return;
     const point = toLayer(drag.layer, event), [low, high] = LIMITS.fit[drag.handle.key];
     drag.value = Math.min(high, Math.max(low, drag.handle.value(point.x - (drag.handle.offset ?? 0), point.y))); drag.moved = true;
@@ -1375,9 +1394,29 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     readout.setAttribute('x', drag.circle.getAttribute('cx')!); readout.setAttribute('y', String(Number(drag.circle.getAttribute('cy')) - 3));
     readout.textContent = `${FIT_NAMES[drag.handle.key]} ${(Math.round(drag.value * 2) / 2).toFixed(1)} cm`;
   });
-  const endDrag = () => { if (!drag) return; const { handle, value, moved } = drag; drag = null; if (moved) commitFit(handle.key, value); };
+  const endDrag = () => {
+    if (printDrag) {
+      const { index, centre, shift, mark } = printDrag; printDrag = null;
+      const design = product(), art = design?.artwork[index];
+      // A press without a real move leaves the print where it was.
+      if (Math.hypot(shift.x, shift.y) < 0.2 || !design || !art) { mark.removeAttribute('transform'); return; }
+      const name = `${ARTWORK_PART_NAMES[art.part][0]!.toUpperCase()}${ARTWORK_PART_NAMES[art.part].slice(1)} artwork`;
+      let placed: { xCm: number; yCm: number } | null = null;
+      const moved = update(draft => {
+        placed = placementOnPattern(draft, index, { x: centre.x + shift.x, y: centre.y + shift.y });
+        Object.assign(draft.artwork[index]!, placed);
+      }, `${name} moved on the pattern.`);
+      if (moved && placed) {
+        const at = placed as { xCm: number; yCm: number }, sleeve = isSleeveArtwork(art.part);
+        const line = sleeve ? 'the sleeve’s centre line' : 'centre', across = at.xCm === 0 ? `centred on ${line}` : `${Math.abs(at.xCm)} cm ${at.xCm > 0 ? 'right' : 'left'} of ${line}`;
+        options.notice(`${name} moved on the pattern: ${across}, its top ${at.yCm} cm below the ${sleeve ? 'shoulder point' : 'shoulder'}. Undo puts it back.`);
+      } else { shown = ''; render(options.current()); }
+      return;
+    }
+    if (!drag) return; const { handle, value, moved } = drag; drag = null; if (moved) commitFit(handle.key, value);
+  };
   $('product-pieces').addEventListener('pointerup', endDrag);
-  $('product-pieces').addEventListener('pointercancel', () => { drag = null; shown = ''; render(options.current()); });
+  $('product-pieces').addEventListener('pointercancel', () => { drag = null; printDrag = null; shown = ''; render(options.current()); });
   $('product-pieces').addEventListener('click', event => {
     if ((event.target as Element).closest('[data-fit-handle]')) return;
     const piece = (event.target as Element).closest<SVGGElement>('[data-piece]'); if (!piece) return;

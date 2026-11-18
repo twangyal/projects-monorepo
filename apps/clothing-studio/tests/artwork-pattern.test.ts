@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { pngUrl } from './helpers/raster.ts';
 import { ARTWORK_SHOULDER_OFFSET } from '../src/artwork-placement.ts';
-import { artworkMarks, type ArtworkMark } from '../src/artwork-pattern.ts';
+import { artworkMarks, placementOnPattern, type ArtworkMark } from '../src/artwork-pattern.ts';
 import { patternDxf, patternSvg } from '../src/pattern-export.ts';
 import {
   artworkDefaults, bottomsArtworkFrame, panelSize, patternPieces, sleeveArtworkFrame, sleeveArtworkUv, teeMesh, template, topMeasurements, validateProduct,
@@ -236,4 +236,15 @@ test('traced edges match the decal three.js builds in 3D, turned or not, in fron
     assert.ok(checked > 20, `${id} ${part}: ${checked} edge points checked`);
     geometry.dispose(); decal.dispose();
   }
+});
+
+test('a flat print put down elsewhere on its piece moves by as much, front, back, sleeve and half front alike', () => {
+  for (const [id, part, placed] of [['blank', 'front', { xCm: 2, yCm: 10, widthCm: 20 }], ['blank', 'back', { xCm: -4, yCm: 14, widthCm: 16, rotation: 30 }],
+    ['blank', 'sleeveRight', { xCm: 1, yCm: 5, widthCm: 6 }], ['shirt', 'front', { xCm: -9, yCm: 12, widthCm: 8 }], ['shirt', 'back', { xCm: 0, yCm: 12, widthCm: 10 }]] as const) {
+    const product = wearing(id, [[part, placed]]), [mark] = artworkMarks(product);
+    assert.ok(mark?.image, `${id} ${part} is laid flat`);
+    assert.deepEqual(placementOnPattern(product, 0, mark.image.centre), { xCm: placed.xCm, yCm: placed.yCm }, `${id} ${part} where it is`);
+    assert.deepEqual(placementOnPattern(product, 0, { x: mark.image.centre.x + 3, y: mark.image.centre.y - 2 }), { xCm: placed.xCm + 3, yCm: placed.yCm - 2 }, `${id} ${part} moved`);
+  }
+  assert.throws(() => placementOnPattern(wearing('trousers', [['front', {}]]), 0, { x: 10, y: 10 }), /Only a print laid flat/);
 });

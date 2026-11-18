@@ -62,3 +62,32 @@ test('a print on the wearer’s left of a buttoned front is marked for the patte
   await expect(leg.locator('image')).toHaveCount(0);
   await expect(leg.locator('title')).toHaveText(/, wearer’s (left|right) leg/);
 });
+
+test('a print is dragged to a new place on its pattern piece, and one dragged off the piece stays put', async ({ page }) => {
+  test.setTimeout(120000);
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Blank tee template/ }).click();
+  await upload(page, 'front', 'Artwork placed on the front.');
+  const x = editor(page).locator('#artwork-x'), y = editor(page).locator('#artwork-y');
+  const [startX, startY, width] = [Number(await x.inputValue()), Number(await y.inputValue()), Number(await editor(page).locator('#artwork-width').inputValue())];
+  const image = pieces(page).locator('[data-piece="front"] [data-artwork-drag]');
+  await image.scrollIntoViewIfNeeded();
+  const box = (await image.boundingBox())!, perCm = box.width / width;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 3 * perCm, box.y + box.height / 2 + 2 * perCm, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('#message')).toContainText('Front artwork moved on the pattern:');
+  await expect.poll(async () => Math.abs(Number(await x.inputValue()) - (startX + 3))).toBeLessThan(0.3);
+  expect(Math.abs(Number(await y.inputValue()) - (startY + 2))).toBeLessThan(0.3);
+  // Off the body panel, the placement is refused and the print goes back.
+  const moved = [await x.inputValue(), await y.inputValue()], again = (await image.boundingBox())!;
+  await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(again.x + again.width / 2 + 60 * perCm, again.y + again.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator('#message')).toContainText('Artwork horizontal position');
+  expect([await x.inputValue(), await y.inputValue()]).toEqual(moved);
+  await expect(pieces(page).locator('[data-piece="front"] .artwork-mark')).not.toHaveAttribute('transform', /./);
+});
