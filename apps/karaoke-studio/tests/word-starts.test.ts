@@ -4,7 +4,7 @@ import { copyCues, mergeCue, replaceCueWords, shiftCues, splitCue } from '../src
 import { fitCues } from '../src/cue-fit.ts';
 import { LyricHistory } from '../src/draft-history.ts';
 import { validateCues, type Cue } from '../src/lyrics.ts';
-import { TAP_GRACE, WordTapping } from '../src/word-tapping.ts';
+import { NUDGE, TAP_GRACE, WordTapping, nudgeWord } from '../src/word-tapping.ts';
 
 const lines = (): Cue[] => [{ start: 1, end: 4, text: 'hello there world', wordStarts: [1.2, 2.25, 3.5] },
   { start: 5, end: 7, text: 'no hand times' }, { start: 8, end: 9, text: 'last line', wordStarts: [8, 8.5] }];
@@ -70,4 +70,13 @@ test('tapping a line’s words marks each start in order, inside the line', () =
   assert.deepEqual([short.overdue(9 + TAP_GRACE - 0.01), short.overdue(9 + TAP_GRACE + 0.01)], [false, true]);
   assert.throws(() => short.tap(Number.NaN), /no playback time/);
   assert.throws(() => new WordTapping({ start: 0, end: 1, text: ' ' }), /no words to time/);
+});
+
+test('a word nudged moves its start alone, never past its neighbours or out of its line', () => {
+  const line = lines()[0]!, starts = line.wordStarts!;
+  assert.deepEqual(nudgeWord(starts, 1, NUDGE, line), [1.2, 2.3, 3.5]);
+  assert.deepEqual(nudgeWord(starts, 1, -2, line), [1.2, 1.2, 3.5]);
+  assert.deepEqual(nudgeWord(starts, 2, 5, line), [1.2, 2.25, 4]);
+  assert.deepEqual(nudgeWord(starts, 0, -1, line), [1, 2.25, 3.5]);
+  assert.throws(() => nudgeWord(starts, 3, NUDGE, line), /Choose a word/);
 });

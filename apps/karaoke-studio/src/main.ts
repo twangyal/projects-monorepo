@@ -29,7 +29,7 @@ import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { MAX_PASSAGES, passageLabel, retrySpan, unheardSinging, type Span } from './unheard-singing.ts';
 import { cueWords, parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
-import { TAP_LEAD, WordTapping } from './word-tapping.ts';
+import { NUDGE, NUDGE_FAR, TAP_LEAD, WordTapping, nudgeWord } from './word-tapping.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
@@ -507,7 +507,7 @@ function currentWordTiming(project: Project): WordTiming | null {
         && JSON.stringify(working.cues.map(timed)) === JSON.stringify(cues);
       try {
         const value = parseWordTiming(await request<unknown>(`/api/projects/${project.id}/word-timings`, json('POST', { cues })), cues);
-        if (isCurrent()) { wordTiming = { key, value }; draw(); }
+        if (isCurrent()) { wordTiming = { key, value }; draw(); wordTimesArrived(); }
       } catch (error) {
         if (!isCurrent()) return;
         const status = element('word-timing-status');
@@ -2145,6 +2145,44 @@ function startWordTapping(index: number, host: HTMLElement): void {
   wordTap = { tapping, host, frame: requestAnimationFrame(watch) };
   tap.focus();
 }
+// Adjusting a line's words one at a time: each word with its start (hand-set, or the studio's), moved with the arrow keys.
+// Opened before the studio has timed the words, the panel waits for them and fills in when they arrive.
+function wordTimesArrived(): void {
+  if (adjustingLine !== null && nudgeHost?.isConnected && !nudgeHost.hidden && !nudgeHost.querySelector('.word-nudge')) showWordNudges(adjustingLine, nudgeHost, 0);
+}
+let adjustingLine: number | null = null, nudgeHost: HTMLElement | null = null;
+function showWordNudges(index: number, host: HTMLElement, focus?: number): void {
+  const cue = working?.cues[index], words = cue ? cueWords(cue.text) : [];
+  nudgeHost = host;
+  if (!cue || !words.length) { host.hidden = true; return; }
+  const studio = currentWordTiming(working!)?.lines[index]?.map(word => word.start);
+  const starts = keptWordStarts(cue) ?? (studio?.length === words.length ? studio : null);
+  host.replaceChildren(); host.hidden = false;
+  const note = document.createElement('p'); note.className = 'fine';
+  if (!starts) { note.textContent = 'The studio is timing these words; they appear here when it is done.'; host.append(note); return; }
+  note.textContent = `${keptWordStarts(cue) ? 'Hand-set' : 'The studio’s'} word starts. Focus a word, then press ← or → to move it ${NUDGE} s (with Shift ${NUDGE_FAR} s), or Space to play from it.`;
+  host.append(note);
+  words.forEach((word, at) => {
+    const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'word-nudge'; chip.dataset.word = String(at);
+    chip.textContent = `${word} ${starts[at]!.toFixed(2)}`;
+    chip.setAttribute('aria-label', `${word}, starts at ${starts[at]!.toFixed(2)} seconds`);
+    chip.addEventListener('keydown', event => {
+      const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+      if (step) {
+        event.preventDefault();
+        if (!working || working.cues[index] !== cue) return;
+        cue.wordStarts = nudgeWord(starts, at, step * (event.shiftKey ? NUDGE_FAR : NUDGE), cue);
+        // Moves of one line's words in a row are one Undo step.
+        adjustingLine = index; renderCues(); changed(`words-${index}`);
+        element('cue-list').querySelector<HTMLButtonElement>(`[data-cue="${index}"] .word-nudge[data-word="${at}"]`)?.focus();
+        message(`"${word}" in line ${index + 1} now starts at ${cue.wordStarts[at]!.toFixed(2)} s, as an unsaved edit. Undo puts it back.`);
+      } else if (event.key === 'Escape') { event.preventDefault(); adjustingLine = null; host.hidden = true; }
+    });
+    chip.addEventListener('click', () => { retirePractice('Playing from a word stopped practice.'); audio.currentTime = starts[at]!; void audio.play(); });
+    host.append(chip);
+  });
+  if (focus !== undefined) host.querySelector<HTMLButtonElement>(`.word-nudge[data-word="${focus}"]`)?.focus();
+}
 function renderCues(rawTimings: RawTiming[] = []) {
   stopWordTapping('The lyric lines were redrawn, so word timing stopped. Nothing was changed by it.');
   const list = element('cue-list'); list.replaceChildren();
@@ -2181,6 +2219,9 @@ function renderCues(rawTimings: RawTiming[] = []) {
     }
     const tapping = document.createElement('div'); tapping.className = 'word-tapping'; tapping.hidden = true;
     tapping.setAttribute('role', 'group'); tapping.setAttribute('aria-label', `Time the words of line ${index + 1}`);
+    const adjusting = document.createElement('div'); adjusting.className = 'word-nudges'; adjusting.hidden = true;
+    adjusting.setAttribute('role', 'group'); adjusting.setAttribute('aria-label', `Adjust the words of line ${index + 1}`);
+    if (adjustingLine === index) showWordNudges(index, adjusting);
     const actions = document.createElement('div'); actions.className = 'cue-actions';
     for (const [label, action] of [
       ['Select timing', () => { workspace.reveal(element('timing-workbench')); timeline.selectCue(index); }],
@@ -2188,6 +2229,7 @@ function renderCues(rawTimings: RawTiming[] = []) {
       ['Mark end', () => { cue.end = Math.min(working!.duration, Math.round(audio.currentTime * 1000) / 1000); renderCues(); changed(); }],
       ['Play line', () => startPractice('once', index)],
       ['Time words', () => startWordTapping(index, tapping)],
+      ['Adjust words', () => { adjustingLine = adjusting.hidden ? index : null; if (adjustingLine === index) showWordNudges(index, adjusting, 0); else adjusting.hidden = true; }],
       ['Remove', () => { working!.cues.splice(index, 1); renderCues(); changed(); }],
     ] as const) {
       const button = document.createElement('button'); button.className = 'text-button'; button.textContent = label;
@@ -2206,7 +2248,7 @@ function renderCues(rawTimings: RawTiming[] = []) {
     const repeats = document.createElement('div'); repeats.className = 'repeat-offer'; repeats.hidden = true;
     repeats.setAttribute('role', 'group'); repeats.setAttribute('aria-label', `Current repeats of line ${index + 1}`);
     text.querySelector('textarea')!.addEventListener('change', () => offerCurrentRepeats(index, repeats));
-    row.append(actions, tapping, repeats); list.append(row);
+    row.append(actions, tapping, adjusting, repeats); list.append(row);
   }
   const hint = document.createElement('p'); hint.className = 'fine';
   hint.textContent = 'Corrected automatic lines offer similar untouched repeats when you leave their words field. Reusing wording is one unsaved Undo/Redo edit; Save lyrics is separate. Split: place a caret between words and seek the playhead inside that line. Merge with next: joins words with a newline and includes any gap. Each action is one unsaved Undo/Redo edit.';

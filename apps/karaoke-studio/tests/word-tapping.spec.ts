@@ -98,3 +98,35 @@ test('a line’s words are timed by tapping while it plays: saved, lit at those 
   await expect(second).toBeHidden();
   await expect(page.locator('[data-cue="1"] .cue-words')).toHaveCount(0);
 }));
+
+test('a single word’s start is moved with the arrow keys, from the studio’s times, and the moves undo as one', async ({ page }) => {
+  // The studio's word times are held back until the panel is open: it waits for them and fills in.
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/word-timings', async route => { await held; await route.continue(); });
+  await withClip(page, async () => {
+  test.setTimeout(120000);
+  await page.getByRole('button', { name: 'Adjust words line 1', exact: true }).click();
+  const group = page.getByRole('group', { name: 'Adjust the words of line 1', exact: true });
+  await expect(group.getByRole('paragraph')).toContainText('The studio is timing these words');
+  release();
+  await expect(group.getByRole('paragraph')).toContainText('The studio’s word starts');
+  const second = group.locator('.word-nudge[data-word="1"]');
+  await expect(second).toBeVisible();
+  const before = Number((await second.textContent())!.split(' ').at(-1));
+  await second.focus();
+  for (const key of ['ArrowRight', 'ArrowRight', 'Shift+ArrowRight']) await page.keyboard.press(key);
+  const moved = group.locator('.word-nudge[data-word="1"]');
+  await expect(moved).toBeFocused();
+  const after = Number((await moved.textContent())!.split(' ').at(-1));
+  // Each move is bounded by the next word's start, so it is at most 0.35 s later and never earlier.
+  expect(after).toBeGreaterThan(before);
+  expect(after - before).toBeLessThanOrEqual(0.35 + 1e-9);
+  await expect(page.locator('[data-cue="0"] .cue-words')).toContainText('Word times set by hand');
+  await expect(page.getByRole('group', { name: 'Adjust the words of line 1', exact: true }).getByRole('paragraph')).toContainText('Hand-set word starts');
+  // The three moves are one Undo step back to the studio's own times.
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(page.locator('[data-cue="0"] .cue-words')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  });
+});

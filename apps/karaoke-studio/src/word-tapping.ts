@@ -41,3 +41,17 @@ export class WordTapping {
     return [...this.#taps];
   }
 }
+
+/** How far an arrow key moves a word's start, in seconds, and with Shift. */
+export const NUDGE = 0.05, NUDGE_FAR = 0.25;
+/**
+ * The line's word starts with word `index` moved by `delta` seconds, to the millisecond, but not past the word before
+ * it (or the line's start) nor the word after it (or the line's end).
+ */
+export function nudgeWord(starts: readonly number[], index: number, delta: number, cue: Readonly<Pick<Cue, 'start' | 'end'>>): number[] {
+  if (!Number.isInteger(index) || index < 0 || index >= starts.length) throw new Error('Choose a word of this line.');
+  const low = index > 0 ? starts[index - 1]! : cue.start, high = index + 1 < starts.length ? starts[index + 1]! : cue.end;
+  const next = [...starts];
+  next[index] = Math.round(Math.min(Math.max(starts[index]! + delta, low), high) * 1000) / 1000;
+  return next;
+}
