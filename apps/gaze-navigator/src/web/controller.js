@@ -407,8 +407,9 @@ export function createController({ window, actions = pageActions, interpret = in
     if (result.ok && (['scroll', 'back', 'forward'].includes(action.type) || (action.type === 'activate' && target && !confirmable(action, target)))) {
       last = { action, context: namedScrollRegion ? { ...context, repeatScrollRegion: namedScrollRegion } : context, at: now() };
     }
-    // A control the user named inside the gaze circle and used: where they were looking, for self-calibration.
-    const aimed = result.ok && POINTING.has(action.type) && context.elements.includes(target) ? target : null;
+    // A control the user named and used, inside the gaze circle or just outside it, where webcam gaze often lands:
+    // where they were looking, for self-calibration. One used after the gaze was far from it, or by its number, is not.
+    const aimed = result.ok && POINTING.has(action.type) && (context.elements.includes(target) || context.nearby?.includes(target)) ? target : null;
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null, aimed });
   }
 

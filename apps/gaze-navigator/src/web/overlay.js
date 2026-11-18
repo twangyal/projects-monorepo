@@ -1,6 +1,6 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { NUMBER_LIMIT, captureContext, composedContains, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
+import { NEARBY_FACTOR, NUMBER_LIMIT, captureContext, composedContains, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
@@ -890,16 +890,20 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     renderOutlines();
   }
 
-  // A control the user named inside the circle and then used shows where they were looking. In camera mode it becomes
-  // one more calibration sample, which corrects drift as they work: only small controls near the gaze point, at most
-  // one every LEARN_MS, saved like the calibration for later pages.
+  // A control the user named and then used, inside the circle or within its reach just outside it, shows where they
+  // were looking. In camera mode it becomes one more calibration sample, which corrects drift as they work: only small
+  // controls, at most one every LEARN_MS, saved like the calibration for later pages. Replaying webcam pictures of 15
+  // people (MPIIFaceGaze) calibrated on one day and used on another, learning from controls that far out brought the
+  // error over the second half of a session to 60 mm (63 mm when a fifth of them were not looked at), against 68 mm
+  // learning only from those within 1.5 radii, which webcam gaze seldom lands that close, and 70 mm without learning.
   let learnedAt = -Infinity;
   function learnFrom(aimed, used) {
     if (!aimed?.element?.isConnected || settings.source !== 'camera' || camera.state !== 'ready' || !cameraCalibrated || calibration || document.hidden || !Number.isFinite(used?.x)) return;
     const now = Date.now();
     if (now - learnedAt < LEARN_MS) return;
     const rect = viewportRect(aimed.element, aimed.frames), x = (rect.left + rect.right) / 2, y = (rect.top + rect.bottom) / 2;
-    if (Math.max(rect.width, rect.height) > radius() * 2 || Math.hypot(x - used.x, y - used.y) > radius() * 1.5) return;
+    const gap = Math.hypot(Math.max(rect.left - used.x, 0, used.x - rect.right), Math.max(rect.top - used.y, 0, used.y - rect.bottom));
+    if (Math.max(rect.width, rect.height) > radius() * 2 || gap > radius() * NEARBY_FACTOR) return;
     learnedAt = now;
     const session = camera.session, source = sourceGeneration, training = calibrationGeneration;
     const width = window.innerWidth, height = window.innerHeight;

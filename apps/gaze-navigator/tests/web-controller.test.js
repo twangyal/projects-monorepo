@@ -409,17 +409,23 @@ test('controls with hard-to-undo or outward effects are consequential', async ()
   for (const name of ['Home', 'Read more', 'Cancel', 'Next', 'Show replies', 'Search']) assert.ok(!isConsequentialName(name), name);
 });
 
-test('a control named inside the circle and used is reported as where the user aimed', () => {
+test('a control named inside the circle or just outside it and used is reported as where the user aimed', () => {
   const page = fakePage();
   const controller = createController({ window: {}, actions: page.actions });
-  const pricing = describe(1, page.node('Pricing'), { role: 'link' });
-  const context = { elements: [pricing], nearby: [describe(101, page.node('Careers'), { role: 'link' })], region: 'page', x: 10, y: 10 };
+  const pricing = describe(1, page.node('Pricing'), { role: 'link' }), careers = describe(101, page.node('Careers'), { role: 'link' });
+  const blog = describe(201, page.node('Blog'), { role: 'link' });
+  const context = { elements: [pricing], nearby: [careers], onScreen: () => [blog], region: 'page', x: 10, y: 10 };
   assert.equal(controller.handle('open pricing', context).aimed, pricing);
-  // Just outside the circle, or not a pointing action, says nothing about where the user looked.
+  // Just outside the circle, where webcam gaze often lands short of what the user looks at, too.
   const outside = controller.handle('open careers', context);
   assert.equal(outside.performed, 'activate');
-  assert.equal(outside.aimed, null);
+  assert.equal(outside.aimed, careers);
+  // Not a pointing action, or a control far from the gaze, used once the user agrees, says nothing about where they looked.
   assert.equal(controller.handle('scroll down', context).aimed, null);
+  assert.ok(!controller.handle('open blog', context).performed, 'offered first');
+  const agreed = controller.handle('yes', context);
+  assert.equal(agreed.performed, 'activate');
+  assert.equal(agreed.aimed, null);
 });
 
 test('unavailable tracking refuses page actions and retires an earlier confirmation',()=>{

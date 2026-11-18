@@ -151,7 +151,7 @@ test('after calibration, an accuracy check sizes the circle to where the gaze la
   await expect(dot(page)).toHaveClass(/hidden/);
 });
 
-test('a control named inside the circle and used becomes one more calibration sample', async ({ page }) => {
+test('a control named inside the circle, or just outside it, and used becomes one more calibration sample', async ({ page }) => {
   await open(page, '/practice-site/catalog.html');
   await startCamera(page);
   await finishCalibration(page);
@@ -177,6 +177,29 @@ test('a control named inside the circle and used becomes one more calibration sa
   await gazeAt(page, add);
   await typeInstruction(page, 'click add to cart');
   await expect.poll(async () => (await learned()).count).toBe(38);
+
+  // Webcam gaze often lands short of what the user looks at. A control named just outside the circle (90 px), within
+  // its reach of three radii, is used and teaches the camera too; the other books' buttons lie beyond that reach.
+  await page.clock.runFor(2100);
+  await add.evaluate(element => window.scrollBy({ top: element.getBoundingClientRect().top - window.innerHeight * 0.55, behavior: 'instant' }));
+  const buttons = await Promise.all([0, 1, 2].map(n => page.getByRole('button', { name: 'Add to cart' }).nth(n).boundingBox()));
+  const view = page.viewportSize(), gap = (box, x, y) => Math.hypot(Math.max(box.x - x, 0, x - box.x - box.width), Math.max(box.y - y, 0, y - box.y - box.height));
+  let spot = null;
+  for (let y = 20; y < view.height - 20 && !spot; y += 10) for (let x = 20; x < view.width - 20 && !spot; x += 10) {
+    if (gap(buttons[0], x, y) > 140 && gap(buttons[0], x, y) < 220 && buttons.slice(1).every(box => gap(box, x, y) > 330)) spot = [x, y];
+  }
+  expect(spot, 'a place just outside the circle from the first button only').not.toBeNull();
+  for (let i = 0; i < 12; i++) {
+    await page.evaluate(([x, y]) => window.webgazer.emit({ x, y }), spot);
+    await page.clock.runFor(33);
+  }
+  await page.clock.runFor(150);
+  await typeInstruction(page, 'click add to cart');
+  await expect(status(page)).toContainText('just outside the gaze circle');
+  await expect.poll(async () => (await learned()).count).toBe(39);
+  const outside = (await learned()).last;
+  expect(Math.abs(outside[0] - (buttons[0].x + buttons[0].width / 2))).toBeLessThan(1);
+  expect(Math.abs(outside[1] - (buttons[0].y + buttons[0].height / 2))).toBeLessThan(1);
 });
 
 test('camera mode continues after navigation with a fresh calibration, and stop camera releases it', async ({ page }) => {
