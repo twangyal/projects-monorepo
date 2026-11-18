@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -225,6 +225,23 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     const back = product.parts.back.color, collar = parts.collar?.color;
     product.parts = { ...product.parts, yoke: { ...product.parts.yoke!, color: collar && collar !== back ? collar : '#1f2a4f' } };
     garment.push('contrast yoke');
+  }
+  // A long-sleeved shirt's cuffs: added by naming them ("white cuffs", "barrel cuffs"), taken off with "no cuffs".
+  const noCuffs = take(/\b(?:no|without) cuffs?\b/), cuffed = /\b(?:barrel |shirt |buttoned |contrast(?:ing)? )?cuffs?\b/.test(text);
+  if (noCuffs && optionsOf(product).cuffs) {
+    product = withOptions(product, { ...optionsOf(product), cuffs: false });
+    garment.push('cuffs removed');
+  } else if (!noCuffs && cuffed && product.base === 'tee' && !optionsOf(product).cuffs) {
+    if (cuffsAllowed(product, optionsOf(product))) {
+      product = withOptions(product, { ...optionsOf(product), cuffs: true });
+      garment.push('buttoned cuffs added');
+    } else notApplied.push(`cuffs (they go on a long-sleeved shirt${optionsOf(product).buttons ? `: make the sleeves at least ${CUFFED_SLEEVE} cm` : ', with a button front'})`);
+  }
+  if (take(/\bcontrast(?:ing)? cuffs?\b/) && optionsOf(product).cuffs && product.base === 'tee') {
+    // Contrast cuffs without a colour named: white, or navy on a white shirt.
+    const contrast = product.parts.sleeveLeft.color.toLowerCase() === '#f7f7f4' ? '#1f2a4f' : '#f7f7f4';
+    product.parts = { ...product.parts, cuffLeft: { ...product.parts.cuffLeft, color: contrast }, cuffRight: { ...product.parts.cuffRight, color: contrast } };
+    garment.push('contrast cuffs');
   }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);
   const pocket = noPocket ? false : /\bchest pockets?\b/.test(text) || (product.base !== 'hoodie' && /\bpockets?\b/.test(text) && top) ? true : null;

@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -164,9 +164,11 @@ function samplePack(product: Product, date: string): TechPack {
       detail: `Front skirt to front bodice and back skirt to back bodice, ${cm(dims.waistY)} below the high point shoulder, before the side seams; `
         + (gather > 1 ? `each skirt’s waist edge is cut ${gather}× the seam (${cm(seamHalfAt(dims, dims.waistY) * 2 * gather)} against ${cm(seamHalfAt(dims, dims.waistY) * 2)}) and gathered into it, falling to a ${cm(dims.hemHalf * 2)} hem`
           : `the skirt flares from ${cm(seamHalfAt(dims, dims.waistY) * 2)} (½) at the seam to ${cm(dims.hemHalf * 2)} at the hem`) }))(topMeasurements(product).gather ?? 1)] : []),
+    ...(product.base === 'tee' && modules.cuffs ? [{ area: 'Cuffs', operation: 'Fuse, sew and turn each cuff; pleat the sleeve end into it (two pleats), set it and topstitch 0.6 cm; one buttonhole and button',
+      detail: `Cuffs cut on the fold, ${cm(SHIRT_CUFF_CM)} finished and ${cm(dims.cuffHalf * 2)} round with a 2 cm overlap; each sleeve is cut 4 cm wider at its end than the cuff and stops ${cm(SHIRT_CUFF_CM)} short of the measured length, ${product.parts.cuffLeft?.material === product.parts.sleeveLeft?.material ? 'in the sleeve fabric' : 'in the chosen cuff fabric'}` }] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
-      ...(armholesOnly ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
+      ...(armholesOnly || modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
     ] : [
       { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.cuffHeight)} finished; cut about 15% shorter than the sleeve opening` },

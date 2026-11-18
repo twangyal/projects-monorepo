@@ -16,7 +16,7 @@ export function colourWord(hex: string): string {
 
 const MEASURE_NAMES: Record<string, string> = { chest: 'Chest', length: 'Body length', sleeve: 'Sleeve length', waist: 'Waist', hip: 'Hip', rise: 'Rise',
   inseam: 'Inseam', legOpening: 'Leg opening', cuffHeight: 'Ankle cuff height', waistbandHeight: 'Waistband height', hem: 'Hem', slant: 'Side slant', gather: 'Gathering', sleeveGather: 'Sleeve cap gathering' };
-const MODULE_NAMES: Record<string, string> = { chestPocket: 'Chest pocket', zip: 'Front zip', zipOpen: 'Worn open', collar: 'Collar', buttons: 'Button front', waistSeam: 'Waist seam', yoke: 'Back yoke' };
+const MODULE_NAMES: Record<string, string> = { chestPocket: 'Chest pocket', zip: 'Front zip', zipOpen: 'Worn open', collar: 'Collar', buttons: 'Button front', waistSeam: 'Waist seam', yoke: 'Back yoke', cuffs: 'Shirt cuffs' };
 const style = (product: Product, part: PartStyle) => `${material(part.material).name}, ${colourWord(part.color)}${part.print ? `, ${printName(part.print, product).toLowerCase()}` : ''}`;
 const sameStyle = (one: PartStyle, two: PartStyle) => one.material === two.material && one.color.toLowerCase() === two.color.toLowerCase()
   && JSON.stringify(one.print) === JSON.stringify(two.print);

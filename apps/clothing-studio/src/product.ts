@@ -113,7 +113,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
   const seamed = product.base === 'tee' && optionsOf(product).waistSeam ? [...collared, 'skirtFront' as const, 'skirtBack' as const] : collared;
   // A shirt's back yoke, across the shoulders above the back body.
   const yoked = product.base === 'tee' && optionsOf(product).yoke ? [...seamed, 'yoke' as const] : seamed;
-  return optionsOf(product).chestPocket ? [...yoked, 'chestPocket'] : yoked;
+  // A long-sleeved shirt's buttoned cuffs.
+  const cuffed = product.base === 'tee' && optionsOf(product).cuffs ? [...yoked, 'cuffLeft' as const, 'cuffRight' as const] : yoked;
+  return optionsOf(product).chestPocket ? [...cuffed, 'chestPocket'] : cuffed;
 }
 
 /**
@@ -122,8 +124,15 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
  */
 export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements' | 'parts' | 'options'> & { colorways?: Product['colorways'] }>(product: T, sleeve: number): T {
   (product.measurements as Measurements).sleeve = sleeve;
-  // A sleeveless top has no sleeves to puff.
+  // A sleeveless top has no sleeves to puff, and short sleeves have no cuffs.
   if (sleeve === 0) delete (product.measurements as Measurements).sleeveGather;
+  if (product.base === 'tee' && product.options?.cuffs && sleeve < CUFFED_SLEEVE) {
+    const options = { ...product.options };
+    delete options.cuffs;
+    product.options = options;
+    const drop = (parts: Product['parts']) => { delete (parts as Partial<Product['parts']>).cuffLeft; delete (parts as Partial<Product['parts']>).cuffRight; };
+    drop(product.parts); for (const colourway of product.colorways ?? []) drop(colourway.parts);
+  }
   const ids = new Set(partsOf(product));
   const fix = (parts: Product['parts']) => {
     for (const id of ['sleeveLeft', 'sleeveRight'] as const) {
@@ -181,7 +190,9 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
   /** A waist seam (T-shirt dresses): the front and back are cut at the waist line into a bodice and a skirt, each styled
    * on its own. */ waistSeam?: boolean;
   /** A back yoke (shirts): the back is cut across YOKE_CM below the neck points into a yoke over the shoulders and the
-   * back body, each styled on its own. */ yoke?: boolean }
+   * back body, each styled on its own. */ yoke?: boolean;
+  /** Buttoned cuffs (long-sleeved shirts): each sleeve ends SHIRT_CUFF_CM above its measured length in a woven cuff,
+   * styled on its own, into which it is pleated. */ cuffs?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -191,6 +202,12 @@ export function collarAllowed(base: Base): boolean { return base === 'tee' || ba
 export function buttonsAllowed(base: Base): boolean { return base === 'tee'; }
 /** How far below the neck points a shirt's back yoke seam runs across the back, cm. */
 export const YOKE_CM = 9;
+/** A shirt cuff's finished height, cm, and the shortest sleeve (cm) that has cuffs. */
+export const SHIRT_CUFF_CM = 6, CUFFED_SLEEVE = 45;
+/** Cuffs go on a long-sleeved shirt: a T-shirt base with a button front and sleeves at least CUFFED_SLEEVE long. */
+export function cuffsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
+  return product.base === 'tee' && !!options.buttons && ((product.measurements as Measurements | undefined)?.sleeve ?? 0) >= CUFFED_SLEEVE;
+}
 /** A waist seam goes on a dress: a T-shirt base at least DRESS_LENGTH long. */
 export function waistSeamAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
   return product.base === 'tee' && ((product.measurements as Measurements | undefined)?.length ?? 0) >= DRESS_LENGTH;
@@ -225,6 +242,7 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.zipOpen && !next.zip && !next.buttons) fail('Only a garment with a front zip or buttons can be worn open.');
   if (next.waistSeam && !waistSeamAllowed(product)) fail(`A waist seam goes on a T-shirt dress: lengthen it to at least ${DRESS_LENGTH} cm first.`);
   if (next.yoke && (product.base !== 'tee' || !next.buttons)) fail('A back yoke goes on a shirt: add the button front first.');
+  if (next.cuffs && !cuffsAllowed(product, next)) fail(`Cuffs go on a long-sleeved shirt: add the button front and make the sleeves at least ${CUFFED_SLEEVE} cm first.`);
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -264,6 +282,15 @@ export function withOptions(product: Product, next: Options): Product {
   };
   setYoke(draft.parts);
   for (const colorway of draft.colorways ?? []) setYoke(colorway.parts);
+  // New cuffs start in their sleeves' styles (woven, unlike a sweatshirt's rib cuffs).
+  const setCuffs = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (product.base !== 'tee') return;
+    if (next.cuffs) { all.cuffLeft ??= structuredClone(parts.sleeveLeft); all.cuffRight ??= structuredClone(parts.sleeveRight); }
+    else { delete all.cuffLeft; delete all.cuffRight; }
+  };
+  setCuffs(draft.parts);
+  for (const colorway of draft.colorways ?? []) setCuffs(colorway.parts);
   draft.options = { ...next };
   return draft;
 }
@@ -489,7 +516,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -506,9 +533,11 @@ export function validateProduct(value: unknown): Product {
     if (o.waistSeam !== undefined && typeof o.waistSeam !== 'boolean') fail('A waist seam must be on or off.');
     if (o.yoke !== undefined && typeof o.yoke !== 'boolean') fail('A back yoke must be on or off.');
     if (o.yoke && (base !== 'tee' || !o.buttons)) fail('A back yoke goes on a shirt with a button front.');
+    if (o.cuffs !== undefined && typeof o.cuffs !== 'boolean') fail('Shirt cuffs must be on or off.');
+    if (o.cuffs && !cuffsAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`Cuffs go on a long-sleeved shirt with a button front and sleeves of at least ${CUFFED_SLEEVE} cm.`);
     if (o.waistSeam && !waistSeamAllowed({ base, measurements: measurements as Product['measurements'] })) fail(`A waist seam goes on a T-shirt dress, at least ${DRESS_LENGTH} cm long: lengthen it or take the waist seam off.`);
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -693,7 +722,7 @@ export function fitValues(product: Product): Record<FitKey, number> {
 export function teeDimensions(product: Product) {
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, fit = product.fit ?? {}, shoulderDrop = fit.shoulderDrop ?? 4;
   const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2, shoulderX = (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2;
-  const cuffHeight = product.base === 'tee' ? 0 : fit.cuffHeight ?? BAND_CM;
+  const cuffHeight = product.base === 'tee' ? (optionsOf(product).cuffs ? SHIRT_CUFF_CM : 0) : fit.cuffHeight ?? BAND_CM;
   // The sleeve is drafted from its armhole: its cap rises capHeight above the underarm line and is as wide as makes it
   // CAP_EASE longer than the front and back armholes it is sewn into together (the cap itself stays symmetrical).
   const capHeight = Math.min(14, m.chest * 0.11, (m.sleeve - cuffHeight) * 0.6);
@@ -1141,6 +1170,8 @@ export function patternPieces(product: Product): PatternPiece[] {
     const neck = [...(collar ? [collarPattern(product)] : [make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1)]),
       ...(collar || buttons ? [make('placket', rect(placket.width * 2, placket.length), 2)] : [])];
     const front = buttons ? leftOf(body(true), panel.width / 2) : body(true), cut = buttons ? 2 : 1;
+    // A shirt's cuffs are cut on the fold, twice their height, and 2 cm longer than the opening for the button's overlap.
+    const cuffs = optionsOf(product).cuffs ? [make('cuffLeft', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 + 2, dims.cuffHeight * 2), 1)] : [];
     // A back yoke is cut double (the outer yoke and its facing) above its seam, and the back body below it, laid out
     // from the seam (its own top) down.
     const backs = (outline: Pt[]) => (optionsOf(product).yoke
@@ -1158,9 +1189,9 @@ export function patternPieces(product: Product): PatternPiece[] {
         return below.map(q => ({ x: q.x - left, y: q.y - waist }));
       };
       return [make('front', bodice(front), cut), ...backs(bodice(body(false))), make('skirtFront', skirt(front), cut), make('skirtBack', skirt(body(false)), 1),
-        ...sleeves, ...neck, ...modules];
+        ...sleeves, ...cuffs, ...neck, ...modules];
     }
-    return [make('front', front, cut), ...backs(body(false)), ...sleeves, ...neck, ...modules];
+    return [make('front', front, cut), ...backs(body(false)), ...sleeves, ...cuffs, ...neck, ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;
@@ -1385,8 +1416,9 @@ function topMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
       return sleeve.spread({ x: a.x + (b.x - a.x) * v, y: a.y + (b.y - a.y) * v });
     });
     if (dims.cuffHeight) {
-      // Rib cuffs are cut about 15% shorter than the sleeve opening they finish.
-      const width = dims.cuffHalf * 2 * 0.85, rib = ring(length + dims.cuffHeight, width / (2 * Math.PI));
+      // Rib cuffs are cut about 15% shorter than the sleeve opening they finish; a shirt's woven cuffs are as long as it,
+      // and the sleeve, cut 4 cm wider there, is pleated into them.
+      const width = dims.cuffHalf * 2 * (product.base === 'tee' ? 1 : 0.85), rib = ring(length + dims.cuffHeight, width / (2 * Math.PI));
       tube(groups.get(cuff)!, Math.max(2, Math.ceil(dims.cuffHeight / MESH_STEP)), columns, k => [end[k], rib[k]], (k, v) => ({ x: width * k / columns, y: dims.cuffHeight * v }));
     }
   }
