@@ -359,6 +359,21 @@ canvas {
   gap:1rem;
   margin:.9rem 1.15rem .65rem
 }
+/* Fix the line being sung: the button, and what it did or how to use it. */
+.fix-line {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:.4rem .9rem;
+  margin:.65rem 1.15rem 1rem
+}
+.fix-line p {
+  margin:0;
+  flex:1 1 16rem
+}
+#stage[data-fixable="true"] {
+  cursor:pointer
+}
 .track-picker {
   display:flex;
   border:1px solid #dce3d6;
@@ -707,6 +722,9 @@ main {
 .transport {
   margin:.75rem .8rem;
   gap:.5rem
+}
+.fix-line {
+  margin:.4rem .8rem .8rem
 }
 .track-picker button {
   font-size:.59rem;

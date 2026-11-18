@@ -28,6 +28,7 @@ import { framed, joinPieces, lineWords, litWords, sungStretches, type WordPlace 
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { MAX_PASSAGES, passageLabel, retrySpan, unheardSinging, type Span } from './unheard-singing.ts';
+import { REACTION, lineMeant, matchedBoxes, playOnFrom, wordAt, wordMeant, wordSpan, type WordBox } from './fix-line.ts';
 import { cueWords, parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 import { NUDGE, NUDGE_FAR, TAP_LEAD, WordTapping, nudgeWord } from './word-tapping.ts';
 
@@ -52,6 +53,7 @@ app.innerHTML = `
         <p id="review-preview-status" class="fine" role="status" hidden></p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p>
+        <div class="fix-line"><button id="fix-line" type="button" class="quiet" aria-describedby="fix-line-status" disabled>Fix this line</button><p id="fix-line-status" class="fine" role="status">Hear a wrong word? Press Fix this line, or click the word in the preview: the song pauses there. Type the fix, then press Enter to play on.</p></div>
       </section>
       <section class="tools-panel panel" aria-label="Studio tools">
         <div class="lyrics-bar"><p id="save-state">Choose a clip to begin.</p><div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button></div><button id="save" class="quiet" disabled>Save lyrics</button></div>
@@ -112,6 +114,14 @@ const stage = element<HTMLCanvasElement>('stage');
 const context = stage.getContext('2d')!;
 // The preview is drawn in the layout of the chosen video size: upright for a vertical video.
 let cardPlace: CardLayout = cardLayout('720p');
+// The line being sung as the preview last drew it (its words' boxes) and the next line's band, for a click that fixes
+// one (see fixLine), and the line being fixed.
+let previewWords: { cue: number; start: number; boxes: WordBox[] } | null = null;
+let previewNext: { cue: number; top: number; bottom: number } | null = null;
+let fixing: { cue: Cue; textarea: HTMLTextAreaElement } | null = null;
+let lastFix: { time: number; cue: Cue; word: number | null } | null = null;
+const FIX_HELP = element('fix-line-status').textContent ?? '';
+let fixReasonShown = '';
 // The preview beside one tool at a time; Show all tools lists every tool.
 const workspace = mountWorkspace();
 let session: Session | null = null;
@@ -429,7 +439,7 @@ function wrap(text: string, size: number, maxWidth = cardPlace.wrap): string[] {
   }
   return lines.length ? lines : [''];
 }
-function drawBlock(text: string, y: number, initialSize: number, minSize: number, maxHeight: number, color: string, sung?: number, sungColor = '#e4b77d') {
+function drawBlock(text: string, y: number, initialSize: number, minSize: number, maxHeight: number, color: string, sung?: number, sungColor = '#e4b77d', boxes?: WordBox[]): { top: number; bottom: number } {
   context.save();
   const layout = textLayout(text);
   context.direction = layout.direction;
@@ -446,6 +456,7 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
   let remaining = sung;
   for (const [index, line] of lines.entries()) {
     const lineY = y + (index - (lines.length - 1) / 2) * lineHeight;
+    if (boxes && !layout.bidi) placeWords(line, lineY, lineHeight, boxes);
     if (remaining === undefined) { context.fillText(line, cardPlace.width / 2, lineY); continue; }
     if (layout.bidi) {
       // Right-to-left text is shaped and ordered as a whole: the sung words take their colour where they lie.
@@ -462,6 +473,19 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
     context.textAlign = 'center';
   }
   context.restore();
+  return { top: y - lines.length * lineHeight / 2, bottom: y + lines.length * lineHeight / 2 };
+}
+/** Where each word of a centred line of left-to-right text lies, in the order the studio splits its words. */
+function placeWords(line: string, y: number, height: number, boxes: WordBox[]) {
+  const left = cardPlace.width / 2 - context.measureText(line).width / 2;
+  let cursor = 0;
+  for (const word of cueWords(line)) {
+    const start = line.indexOf(word, cursor);
+    if (start < 0) return;
+    const x0 = left + context.measureText(line.slice(0, start)).width;
+    boxes.push({ text: word, x0, x1: x0 + context.measureText(word).width, y0: y - height / 2, y1: y + height / 2 });
+    cursor = start + word.length;
+  }
 }
 
 // Where the browser lays out each word of a line with right-to-left text drawn in `font`, as the canvas draws it: a hidden
@@ -671,6 +695,7 @@ function drawMelody(time: number, look: { main: string; muted: string; accent: s
 
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
+  previewWords = null; previewNext = null;
   const look = LYRIC_STYLES[lyricStyle()], scale = look.scale;
   stage.dataset.lyricStyle = lyricStyle();
   const { width: frameWidth, height: frameHeight } = cardPlace;
@@ -720,8 +745,11 @@ function draw() {
   // A duet's line takes its singer's colours (see parts.ts).
   const part = partLook(lyricStyle(), look, index >= 0 ? cues[index].singer : undefined);
   stage.dataset.singer = index >= 0 && cues[index].singer !== undefined ? String(cues[index].singer) : '';
-  if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, part.main, sungCharacters(timing.lines[index], time), part.accent);
-  else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? part.accent : look.main, undefined, part.accent);
+  // Where the line's words lie, so a click on one fixes it (see fixLine).
+  const boxes = index >= 0 && !review ? [] as WordBox[] : undefined;
+  if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, part.main, sungCharacters(timing.lines[index], time), part.accent, boxes);
+  else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? part.accent : look.main, undefined, part.accent, boxes);
+  if (boxes) previewWords = { cue: index, start: cues[index].start, boxes: matchedBoxes(current, boxes) };
   if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), part.accent);
   stage.dataset.said = pieces ? saidLine(pieces) : '';
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
@@ -733,7 +761,15 @@ function draw() {
     context.fillStyle = look.main;
     for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(frameWidth / 2 - (count - 1) * 22 + dot * 44, cardPlace.dots, 12, 0, 2 * Math.PI); context.fill(); }
   }
-  if (upcoming) drawBlock(`${nextLabel(upcoming.singer)}: ${upcoming.text}`, cardPlace.next, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
+  if (upcoming) {
+    const block = drawBlock(`${nextLabel(upcoming.singer)}: ${upcoming.text}`, cardPlace.next, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
+    if (!review) previewNext = { cue: cues.indexOf(upcoming), ...block };
+  }
+  // For checking where a click lands: each word's middle, and the next line's band.
+  const places = previewWords ? previewWords.boxes.map(box => `${box.text}@${Math.round((box.x0 + box.x1) / 2)},${Math.round((box.y0 + box.y1) / 2)}`).join(' ') : '';
+  if (stage.dataset.fixWords !== places) stage.dataset.fixWords = places;
+  const band = previewNext ? `${Math.round(previewNext.top)},${Math.round(previewNext.bottom)}` : '';
+  if (stage.dataset.fixNext !== band) stage.dataset.fixNext = band;
   context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, frameWidth / 2, cardPlace.footer);
   stage.dataset.activeCue = String(review && index >= 0 ? review.indices[index] : index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
@@ -742,6 +778,100 @@ function draw() {
   for (const row of element('srt-review-list').querySelectorAll<HTMLElement>('[data-srt-cue]')) row.classList.toggle('review-active', !!review && index >= 0 && Number(row.dataset.srtCue) === review.indices[index]);
 }
 function animate() { draw(); if (!audio.paused && !audio.ended) animation = requestAnimationFrame(animate); }
+
+// Fixing a line while listening (see fix-line.ts): Fix this line, or a click on the preview, pauses the song and opens
+// the line meant in the Lyrics tool with the word meant selected, so typing replaces it; Enter there plays on.
+function fixUnavailable(): string {
+  if (!working?.cues.length) return 'Fix this line works once the clip has lyric lines.';
+  if (currentJob || loading || requestingJob || archiveChecking || saving || aligning) return 'Lines can be fixed once the studio has finished its work.';
+  if (srtOwner || srtReview) return 'Finish or cancel the open lyric review to fix lines while listening: typing in a line would close it.';
+  if (timingOwner) return 'Finish or cancel the timing session to fix lines while listening.';
+  return validateWorking() ? 'Correct the lyric draft to fix lines while listening.' : '';
+}
+function fixStatus(text: string): void {
+  if (element('fix-line-status').textContent !== text) element('fix-line-status').textContent = text;
+}
+function fixControls(): void {
+  const reason = fixUnavailable();
+  element<HTMLButtonElement>('fix-line').disabled = !!reason;
+  stage.dataset.fixable = String(!reason);
+  // Say why only when something the user opened is in the way.
+  const shown = reason && (srtOwner || srtReview || timingOwner) ? reason : '';
+  if (shown !== fixReasonShown) { fixReasonShown = shown; if (!fixing) fixStatus(shown || FIX_HELP); }
+}
+function endFix(): void {
+  if (fixing) delete fixing.textarea.dataset.fixing;
+  fixing = null;
+}
+function fixLine(choice?: { cue: number; word: number | null }): void {
+  const reason = fixUnavailable();
+  if (reason) { fixStatus(reason); return; }
+  const playing = !audio.paused && !audio.ended, time = audio.currentTime || 0, cues = working!.cues;
+  audio.pause(); stopKeyPreview();
+  retirePractice('Fixing a line stopped practice.');
+  stopWordTapping('Fixing a line stopped word timing. Nothing was changed by it.');
+  // What prompted a press during playback was heard this long before it, in song time.
+  const reaction = playing ? REACTION * (audio.playbackRate || 1) : 0;
+  let index: number | null, word: number | null;
+  if (choice) ({ cue: index, word } = choice);
+  else if (!playing && lastFix && lastFix.time === time && cues.includes(lastFix.cue)) { index = cues.indexOf(lastFix.cue); word = lastFix.word; }
+  else {
+    index = lineMeant(cues, time, reaction);
+    const timing = index === null ? null : currentWordTiming(working!);
+    word = index === null || !timing ? null : wordMeant(timing.lines[index] ?? [], cues[index]!, time, reaction);
+  }
+  if (index === null) return;
+  const cue = cues[index]!, textarea = element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${index}"] textarea`);
+  if (!textarea) return;
+  lastFix = { time, cue, word };
+  endFix();
+  workspace.reveal(textarea); textarea.scrollIntoView({ block: 'center' }); textarea.focus({ preventScroll: true });
+  const span = word === null ? null : wordSpan(textarea.value, word), [from, to] = span ?? [textarea.value.length, textarea.value.length];
+  textarea.setSelectionRange(from, to);
+  fixing = { cue, textarea }; textarea.dataset.fixing = 'true';
+  fixStatus(`Paused on line ${index + 1}${span ? `, with “${textarea.value.slice(from, to)}” selected` : ''}. Type the fix, then press Enter to play on from just before the line (Shift+Enter for a line break, Esc to stay paused).`);
+}
+function playOn(): void {
+  if (!fixing || !working) return;
+  const invalid = validateWorking();
+  if (invalid) { fixStatus(`${invalid} Correct it, then press Enter again.`); return; }
+  const { cue, textarea } = fixing, index = working.cues.indexOf(cue);
+  endFix();
+  if (index < 0) return;
+  audio.currentTime = playOnFrom(cue);
+  // Leaving the words field offers the wording to lines heard like it (offerCurrentRepeats).
+  stage.scrollIntoView({ block: 'nearest' }); element('fix-line').focus({ preventScroll: true });
+  const offered = textarea.closest('[data-cue]')?.querySelector<HTMLElement>('.repeat-offer');
+  fixStatus(`Playing on from just before line ${index + 1}.${offered && !offered.hidden ? ` Lines heard like it can take the same words: the offer is under line ${index + 1}.` : ''} Press Fix this line at the next wrong word.`);
+  void audio.play().catch(() => fixStatus('The player could not start. Press play to go on.'));
+}
+element('fix-line').addEventListener('click', () => fixLine());
+stage.addEventListener('click', event => {
+  const reason = fixUnavailable();
+  if (reason) { fixStatus(reason); return; }
+  const box = stage.getBoundingClientRect();
+  if (!box.width || !box.height) return;
+  const x = (event.clientX - box.left) * stage.width / box.width, y = (event.clientY - box.top) * stage.height / box.height;
+  const playing = !audio.paused && !audio.ended, time = audio.currentTime || 0;
+  // A word of the line being sung, unless that line began too lately to be the one the click meant.
+  if (previewWords && !(playing && time - previewWords.start < REACTION * (audio.playbackRate || 1))) {
+    const word = wordAt(previewWords.boxes, x, y);
+    if (word !== null) { fixLine({ cue: previewWords.cue, word }); return; }
+  }
+  if (previewNext && previewNext.cue >= 0 && y >= previewNext.top && y <= previewNext.bottom) { fixLine({ cue: previewNext.cue, word: null }); return; }
+  fixLine();
+});
+element('cue-list').addEventListener('keydown', event => {
+  if (!fixing || event.target !== fixing.textarea || event.isComposing) return;
+  if (event.key === 'Enter' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) { event.preventDefault(); playOn(); }
+  else if (event.key === 'Escape') {
+    event.preventDefault();
+    const index = working?.cues.indexOf(fixing.cue) ?? -1;
+    endFix(); element('fix-line').focus();
+    fixStatus(`Still paused${index >= 0 ? ` on line ${index + 1}` : ''}. Play on with the player, or press Fix this line at the next wrong word.`);
+  }
+});
+element('cue-list').addEventListener('focusout', event => { if (fixing && event.target === fixing.textarea) endFix(); });
 audio.addEventListener('play', () => { cancelAnimationFrame(animation); animate(); });
 for (const event of ['pause', 'ended', 'seeked', 'timeupdate', 'loadedmetadata']) audio.addEventListener(event, draw);
 audio.addEventListener('error', () => { if (working) message('Could not play this local audio file. Refresh the project or check that the studio service is still running.', true); });
@@ -912,7 +1042,7 @@ function srtControls() {
   element('srt-apply').hidden = automaticReview && automaticReviewSource === 'passage';
   element<HTMLButtonElement>('srt-apply').disabled = (automaticReview && automaticReviewSource === 'passage') || !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
   element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
-  automaticReviewControls(); importReviewControls(); passageControls(); draw();
+  automaticReviewControls(); importReviewControls(); passageControls(); fixControls(); draw();
 }
 function retireSrt(text: string) {
   if (!srtOwner && !srtReview) return;
@@ -2261,6 +2391,7 @@ function showWordNudges(index: number, host: HTMLElement, focus?: number): void 
 }
 function renderCues(rawTimings: RawTiming[] = []) {
   stopWordTapping('The lyric lines were redrawn, so word timing stopped. Nothing was changed by it.');
+  endFix();
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Add a lyric line or paste your words above and create draft timings to begin.'; list.append(empty); return; }
   for (const [index, cue] of working.cues.entries()) {
@@ -3033,7 +3164,7 @@ function retireTiming(text = 'Timing session cancelled. Staged times were not ap
   timingText('timing-line', ''); timingText('timing-status', text); controls();
 }
 function timingControls(): void {
-  singerAssignmentControls();
+  singerAssignmentControls(); fixControls();
   const owner = timingOwner, state = owner?.capture.state, busy = timingBusy();
   element<HTMLButtonElement>('timing-begin').disabled = !working || !lyricHistory || busy || !!owner;
   element<HTMLButtonElement>('timing-cancel').disabled = !owner; element('timing-cancel').hidden = !owner;
