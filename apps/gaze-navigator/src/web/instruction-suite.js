@@ -579,6 +579,132 @@ const HELD_OUT_8 = [
 
 export const HELD_OUT_8_SUITE = HELD_OUT_8.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Held-out set 9, written before unparsed requests were answered with an offer of the control their words point to,
+// and scored first without it.
+const HELD_OUT_9 = [
+  ['activate', 'navigation', 'how much do you charge', act(2)],
+  ['activate', 'navigation', 'I want to speak to someone', act(3)],
+  ['activate', 'navigation', 'I have an account already', act(4)],
+  ['activate', 'navigation', 'bring up the main page', act(1)],
+  ['search', 'navigation', 'search for cheap flights to rome', { type: 'search', targetId: 5, text: 'cheap flights to rome' }],
+  ['activate', 'navigation', 'what are your plans and costs', act(2)],
+  ['activate', 'navigation', 'where do I sign in', act(4)],
+  ['activate', 'navigation', 'can I email you', act(3)],
+  ['select', 'product', 'the hardcover one please', option(1, 1)],
+  ['select', 'product', 'can I listen to it instead', option(1, 3)],
+  ['select', 'product', 'bigger print please', option(1, 2)],
+  ['activate', 'product', "I'll add it to the cart", act(2)],
+  ['activate', 'product', 'show the customer reviews', act(4)],
+  ['activate', 'product', 'any good ratings', act(4)],
+  ['activate', 'product', 'finalise my purchase', act(3)],
+  ['select', 'form', 'I have a problem with my order', option(5, 1)],
+  ['select', 'form', 'I want to suggest a book', option(5, 2)],
+  ['activate', 'form', 'send it off', act(6)],
+  ['activate', 'form', 'copy me in', act(4)],
+  ['edit', 'form', 'clear the message', edit(3, 'clear')],
+  ['dictate', 'form', 'write thanks a lot in the message', edit(3, 'append', { text: 'thanks a lot' })],
+  ['select', 'shop', 'a small one', option(1, 1)],
+  ['select', 'shop', 'in white', option(2, 3)],
+  ['select', 'shop', 'the green one', option(2, 1)],
+  ['select', 'shop', 'four please', option(3, 3)],
+  ['select', 'shop', 'I will pick it up from the store', option(4, 2)],
+  ['select', 'shop', 'send it to Germany', option(5, 4)],
+  ['select', 'shop', 'as fast as possible', option(4, 1)],
+  ['activate', 'shop', 'pop it in my bag', act(6)],
+  ['activate', 'basket', 'get rid of the hat', act(5)],
+  ['activate', 'basket', 'keep the socks for later', act(3)],
+  ['select', 'basket', 'I want two mugs', option(7, 1)],
+  ['activate', 'basket', 'I am ready to pay', act(10)],
+  ['activate', 'addresses', 'change my work address', act(3)],
+  ['activate', 'addresses', 'I have moved, add my new address', act(7)],
+  ['navigate', 'empty', 'go back where I came from', plain('back')],
+  ['navigate', 'empty', 'the page before please', plain('back')],
+  ['control', 'navigation', 'wait a moment', plain('pause')],
+  ['refuse', 'product', 'can you gift wrap this', plain('unknown')],
+  ['refuse', 'shop', 'make it purple', plain('unknown')],
+  ['refuse', 'basket', 'take the gloves out', plain('unknown')],
+  ['refuse', 'navigation', 'show me the blog', plain('unknown')],
+  ['refuse', 'addresses', 'delete the London address', plain('unknown')],
+];
+
+export const HELD_OUT_9_SUITE = HELD_OUT_9.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
+// Held-out set 10, written after set 9 was seen and before offers were scored by the words of a control's name they
+// cover, and scored once.
+const HELD_OUT_10 = [
+  ['activate', 'navigation', 'I would like to get in contact', act(3)],
+  ['activate', 'navigation', 'who do I talk to about my bill', act(3)],
+  ['activate', 'navigation', 'what does it cost', act(2)],
+  ['activate', 'navigation', 'I am already a member', act(4)],
+  ['activate', 'navigation', 'take me to the front page', act(1)],
+  ['activate', 'navigation', 'let me log on', act(4)],
+  ['select', 'product', 'is there an audio version', option(1, 3)],
+  ['activate', 'product', 'what did readers make of it', act(4)],
+  ['select', 'product', 'something with larger text', option(1, 2)],
+  ['select', 'product', 'I would like the hard back', option(1, 1)],
+  ['activate', 'product', 'go on then, order it', act(3)],
+  ['select', 'form', 'my order never arrived', option(5, 1)],
+  ['select', 'form', 'I have a recommendation for you', option(5, 2)],
+  ['activate', 'form', 'please send me a copy as well', act(4)],
+  ['activate', 'form', 'post my message', act(6)],
+  ['select', 'shop', 'the largest size', option(1, 4)],
+  ['select', 'shop', 'something darker, the grey', option(2, 2)],
+  ['select', 'shop', "I'll collect it in person", option(4, 2)],
+  ['select', 'shop', 'deliver it to Ireland', option(5, 2)],
+  ['select', 'shop', 'next day please', option(4, 1)],
+  ['activate', 'shop', 'put it in the bag', act(6)],
+  ['activate', 'basket', 'take the hat off my order', act(5)],
+  ['activate', 'basket', 'move the socks to my saved items', act(3)],
+  ['activate', 'basket', 'let me pay now', act(10)],
+  ['activate', 'addresses', 'update the Leeds address', act(1)],
+  ['activate', 'addresses', 'I need another address', act(7)],
+  ['refuse', 'navigation', 'tell me a joke', plain('unknown')],
+  ['refuse', 'navigation', 'show me the weather', plain('unknown')],
+  ['refuse', 'shop', 'make it red', plain('unknown')],
+  ['refuse', 'navigation', 'delete my account', plain('unknown')],
+  ['refuse', 'basket', 'delete the scarf from my basket', plain('unknown')],
+];
+
+export const HELD_OUT_10_SUITE = HELD_OUT_10.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
+// Held-out set 11, written after offers were scored by how well a request's words point to a control, and scored once.
+const HELD_OUT_11 = [
+  ['activate', 'navigation', "I'd like to drop you a line", act(3)],
+  ['activate', 'navigation', 'how expensive is it', act(2)],
+  ['activate', 'navigation', 'my login please', act(4)],
+  ['activate', 'navigation', 'back to the beginning', act(1)],
+  ['activate', 'navigation', 'is there a phone number', act(3)],
+  ['activate', 'navigation', 'enter my password', act(4)],
+  ['select', 'product', 'do you have it as a hardback', option(1, 1)],
+  ['activate', 'product', 'customer opinions', act(4)],
+  ['select', 'product', 'I want to hear it read aloud', option(1, 3)],
+  ['activate', 'product', 'buy it', act(3)],
+  ['activate', 'product', 'stick it in the basket', act(2)],
+  ['select', 'form', 'my parcel is missing', option(5, 1)],
+  ['select', 'form', 'it is about a missing order', option(5, 1)],
+  ['select', 'form', 'tick the box to get a copy', { type: 'check', targetId: 4, checked: true }],
+  ['activate', 'form', 'send my enquiry', act(6)],
+  ['select', 'shop', 'the smallest one', option(1, 0)],
+  ['select', 'shop', 'the cream colour', option(2, 3)],
+  ['select', 'shop', 'quickest delivery', option(4, 1)],
+  ['select', 'shop', 'can I get it delivered to the States', option(5, 1)],
+  ['select', 'shop', 'five of these', option(3, 4)],
+  ['activate', 'basket', 'bin the mug', act(8)],
+  ['activate', 'basket', 'save the hat for another day', act(6)],
+  ['activate', 'basket', 'proceed to payment', act(10)],
+  ['activate', 'addresses', 'fix the York one', act(3)],
+  ['activate', 'addresses', 'new address please', act(7)],
+  ['navigate', 'empty', 'one page back', plain('back')],
+  ['control', 'navigation', 'hold on a second', plain('pause')],
+  ['refuse', 'navigation', 'I do not want to sign in', plain('unknown')],
+  ['refuse', 'navigation', 'show me my orders', plain('unknown')],
+  ['refuse', 'shop', 'make it in purple', plain('unknown')],
+  ['refuse', 'form', 'remove my phone number', plain('unknown')],
+  ['refuse', 'product', 'open the basket', plain('unknown')],
+];
+
+export const HELD_OUT_11_SUITE = HELD_OUT_11.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'hover', 'double-click', 'context-menu', 'disclosure', 'check', 'select-radio', 'select-tab', 'range', 'select-text', 'delete-selection', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 
@@ -598,15 +724,23 @@ function matches(expected, got) {
 function classify(test, got) {
   let outcome;
   if (matches(test.expected, got)) outcome = 'correct';
-  else if (PAGE_ACTIONS.has(got.type)) outcome = 'unsafe';
+  // A number said on its own only answers a question, so it acts on nothing without one.
+  else if (PAGE_ACTIONS.has(got.type) && !(got.type === 'choose' && got.bare)) outcome = 'unsafe';
   else outcome = 'abstained';
-  return { ...test, got: { ...got, choose: undefined }, outcome };
+  // An abstention can offer a control for a yes ("Did you mean …?"): one more word when it offers the one meant.
+  let offer;
+  if (outcome === 'abstained' && got.type === 'unknown' && got.alike) {
+    const { heardAs: _as, heardName: _name, ...offered } = got.alike;
+    offer = matches(test.expected, offered) ? 'right' : 'wrong';
+  }
+  return { ...test, got: { ...got, choose: undefined }, outcome, ...(offer ? { offer } : {}) };
 }
 
 function summarize(results, name) {
-  const summary = { suite: name, total: results.length, correct: 0, unsafe: 0, abstained: 0, categories: {} };
+  const summary = { suite: name, total: results.length, correct: 0, unsafe: 0, abstained: 0, offered: 0, misoffered: 0, categories: {} };
   for (const result of results) {
     summary[result.outcome]++;
+    if (result.offer) summary[result.offer === 'right' ? 'offered' : 'misoffered']++;
     const category = summary.categories[result.category] ??= { total: 0, correct: 0, unsafe: 0, abstained: 0 };
     category.total++;
     category[result.outcome]++;

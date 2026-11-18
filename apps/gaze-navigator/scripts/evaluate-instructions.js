@@ -11,10 +11,10 @@
 import { readFile } from 'node:fs/promises';
 import { interpret } from '../src/web/interpreter.js';
 import { createAssistedInterpreter } from '../src/web/assisted-interpreter.js';
-import { HELD_OUT_2_SUITE, HELD_OUT_3_SUITE, HELD_OUT_4_SUITE, HELD_OUT_5_SUITE, HELD_OUT_6_SUITE, HELD_OUT_7_SUITE, HELD_OUT_8_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
+import { HELD_OUT_2_SUITE, HELD_OUT_3_SUITE, HELD_OUT_4_SUITE, HELD_OUT_5_SUITE, HELD_OUT_6_SUITE, HELD_OUT_7_SUITE, HELD_OUT_8_SUITE, HELD_OUT_9_SUITE, HELD_OUT_10_SUITE, HELD_OUT_11_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
 
 const runs = [evaluateInterpreter(interpret), evaluateInterpreter(interpret, HELD_OUT_SUITE, `${SUITE_VERSION}-held-out`),
-  evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`), evaluateInterpreter(interpret, HELD_OUT_3_SUITE, `${SUITE_VERSION}-held-out-3`), evaluateInterpreter(interpret, HELD_OUT_4_SUITE, `${SUITE_VERSION}-held-out-4`), evaluateInterpreter(interpret, HELD_OUT_5_SUITE, `${SUITE_VERSION}-held-out-5`), evaluateInterpreter(interpret, HELD_OUT_6_SUITE, `${SUITE_VERSION}-held-out-6`), evaluateInterpreter(interpret, HELD_OUT_7_SUITE, `${SUITE_VERSION}-held-out-7`), evaluateInterpreter(interpret, HELD_OUT_8_SUITE, `${SUITE_VERSION}-held-out-8`)];
+  evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`), evaluateInterpreter(interpret, HELD_OUT_3_SUITE, `${SUITE_VERSION}-held-out-3`), evaluateInterpreter(interpret, HELD_OUT_4_SUITE, `${SUITE_VERSION}-held-out-4`), evaluateInterpreter(interpret, HELD_OUT_5_SUITE, `${SUITE_VERSION}-held-out-5`), evaluateInterpreter(interpret, HELD_OUT_6_SUITE, `${SUITE_VERSION}-held-out-6`), evaluateInterpreter(interpret, HELD_OUT_7_SUITE, `${SUITE_VERSION}-held-out-7`), evaluateInterpreter(interpret, HELD_OUT_8_SUITE, `${SUITE_VERSION}-held-out-8`), evaluateInterpreter(interpret, HELD_OUT_9_SUITE, `${SUITE_VERSION}-held-out-9`), evaluateInterpreter(interpret, HELD_OUT_10_SUITE, `${SUITE_VERSION}-held-out-10`), evaluateInterpreter(interpret, HELD_OUT_11_SUITE, `${SUITE_VERSION}-held-out-11`)];
 // A misheard command word in place of each instruction's own, where one is common.
 const MISHEARINGS = [[/^click\b/, 'quick'], [/^scroll\b/, 'school'], [/^type\b/, 'tight'], [/^press\b/, 'dress'], [/^choose\b/, 'chews'],
   [/^go back$/, 'go bag'], [/^close\b/, 'clothes'], [/^uncheck\b/, 'and check']];
@@ -57,12 +57,13 @@ if (process.argv.includes('--json')) {
   const percent = value => `${Math.round((value / summary.total) * 1000) / 10}%`;
   console.log(`${summary.suite}: ${summary.correct}/${summary.total} correct (${percent(summary.correct)}), ` +
     `${summary.unsafe} unsafe, ${summary.abstained} abstained` +
+    (summary.offered || summary.misoffered ? ` (${summary.offered} offering the control meant for a yes, ${summary.misoffered} another)` : '') +
     (summary.modelCalls !== undefined ? `; ${summary.modelCalls} model calls, median ${summary.modelMedianMs} ms` : ''));
   for (const [name, category] of Object.entries(summary.categories)) {
     console.log(`  ${name.padEnd(9)} ${category.correct}/${category.total}  unsafe ${category.unsafe}  abstained ${category.abstained}`);
   }
   for (const result of results.filter(entry => entry.outcome !== 'correct')) {
-    console.log(`  [${result.outcome}] (${result.context}) "${result.say}" → ${JSON.stringify(result.got).slice(0, 140)}`);
+    console.log(`  [${result.outcome}${result.offer ? `, offers ${result.offer === 'right' ? 'the one meant' : 'another'}` : ''}] (${result.context}) "${result.say}" → ${JSON.stringify(result.got).slice(0, 140)}`);
   }
 }
 process.exitCode = runs.some(run => run.summary.unsafe) ? 1 : 0;

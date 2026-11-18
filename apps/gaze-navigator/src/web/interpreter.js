@@ -1,7 +1,7 @@
 // Interpretation stage: maps one instruction plus a described gaze context to one typed action.
 // Deterministic rules form the baseline; a model interpreter can implement the same contract.
 import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValue, spokenTime, spokenWeek } from './spoken-values.js';
-import { relatedWords } from './topics.js';
+import { relatedWords, stem } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
 import { rowAction } from './rows.js';
 import { choicesMeant, namesIn, nextSize, sentence } from './choices.js';
@@ -171,6 +171,114 @@ function soundsAlike(query, elements) {
     else if (distance === best.distance) tie = true;
   }
   return best && !tie ? best.element : null;
+}
+
+// Words that do not say which control is meant. A request not understood as a command is matched to the controls in
+// the circle on its other words (see `pointedAt`).
+const CHATTER = new Set(['i', 'im', "i'm", "i'll", "i'd", 'me', 'we', 'us', 'our', 'you', 'your', 'it', 'its', 'they', 'them', 'is', 'are',
+  'am', 'was', 'be', 'do', 'does', 'did', 'can', 'could', 'would', 'will', 'should', 'shall', 'may', 'might', 'have', 'has', 'had',
+  'want', 'wanna', 'need', 'like', 'love', 'let', "let's", 'get', 'got', 'go', 'going', 'see', 'show', 'make', 'take', 'give', 'put',
+  'there', 'here', 'way', 'any', 'some', 'something', 'someone', 'somebody', 'anything', 'anyone', 'what', 'where', 'how', 'when',
+  'which', 'who', 'why', 'just', 'now', 'again', 'already', 'instead', 'also', 'too', 'very', 'really', 'about', 'for', 'of', 'in',
+  'at', 'by', 'with', 'from', 'up', 'out', 'into', 'and', 'or', 'but', 'so', 'if', 'then', 'one', 'thing', 'bit', 'lot', 'thank',
+  'thanks', 'okay', 'ok', 'yes', 'yeah', 'oh', 'well', 'good', 'great', 'nice', 'more', 'other', 'that', 'this', 'these', 'those',
+  'all', 'possible', 'able', 'sure', 'know', 'tell', 'find', 'look', 'use', 'try', 'as', 'item', 'items']);
+// Words that say not to: a request with one is never answered with an offer.
+const NEGATED = /\b(?:not|no|never|don't|dont|doesn't|didn't|won't|can't|cannot|without|stop)\b/;
+// Words for what a website's own controls do, beyond the topics in topics.js: a word said points to a control whose
+// name has another word of its group. They are only used to offer a control for a yes.
+const DOING_GROUPS = [
+  ['contact', 'touch', 'speak', 'talk', 'call', 'phone', 'email', 'mail', 'reach', 'chat', 'support', 'enquiry', 'inquiry'],
+  ['sign', 'log', 'login', 'logon', 'account', 'member', 'password', 'register'],
+  ['review', 'rating', 'star', 'opinion', 'feedback', 'think', 'saying', 'reader', 'customer', 'comment'],
+  ['price', 'pricing', 'cost', 'charge', 'plan', 'fee', 'subscription'],
+  ['cart', 'basket', 'bag', 'trolley'],
+  ['checkout', 'pay', 'payment', 'purchase', 'buy', 'order'],
+  ['home', 'homepage', 'start', 'main', 'front', 'beginning'],
+  ['large', 'larger', 'largest', 'big', 'bigger', 'biggest', 'xl'],
+  ['small', 'smaller', 'smallest', 'little', 'tiny', 'xs'],
+  ['audio', 'audiobook', 'listen', 'hear', 'spoken'],
+  ['hardcover', 'hardback', 'hard'],
+  ['paperback', 'softcover', 'soft'],
+  ['express', 'fast', 'faster', 'fastest', 'quick', 'quickly', 'urgent', 'tomorrow', 'next'],
+  ['collect', 'collection', 'pick', 'pickup', 'store', 'person'],
+  ['add', 'another', 'new', 'extra', 'put', 'pop', 'stick'],
+  ['save', 'saved', 'later', 'keep', 'wishlist'],
+  ['remove', 'delete', 'rid', 'off', 'drop', 'discard'],
+  ['edit', 'change', 'update', 'amend', 'correct', 'fix'],
+  ['send', 'submit', 'post'],
+  ['suggestion', 'suggest', 'recommend', 'recommendation', 'idea'],
+  ['problem', 'issue', 'trouble', 'wrong', 'arrived', 'missing', 'broken', 'late', 'complaint'],
+  ['question', 'ask', 'query'],
+  ['copy', 'cc'],
+  ['grey', 'gray', 'charcoal', 'dark', 'darker'],
+  ['white', 'cream', 'ivory', 'light', 'lighter'],
+  ['search', 'find'],
+  ['help', 'faq', 'support'],
+].map(group => group.map(stem));
+const DOING = new Map();
+for (const group of DOING_GROUPS) for (const word of group) DOING.set(word, new Set([...(DOING.get(word) ?? []), ...group.filter(other => other !== word)]));
+// Words in a control's name that say it does something (add, remove, buy…): a loose match to one is offered, not used.
+const NAMED_ACTIONS = new Set(['add', 'save', 'remove', 'delete', 'send', 'submit', 'buy', 'order', 'pay', 'checkout', 'purchase', 'place',
+  'subscribe', 'book', 'cancel', 'apply', 'join', 'donate', 'clear', 'empty', 'reset']);
+// Groups of words that ask for an action: a request saying one is offered only a control whose name does it too.
+const ACTING = new Set(['add', 'save', 'remove', 'edit', 'send'].flatMap(word => DOING_GROUPS.find(group => group.includes(word))));
+/** Whether a word said is a name's word, or related to it (by topic or by what it does), and how much that counts. */
+function fit(said, word) {
+  if (said === word) return 1;
+  return DOING.get(said)?.has(word) || relatedWords(said).has(word) ? RELATED_CREDIT : 0;
+}
+/**
+ * How well the words said point to a control or choice called `name`: the mean of how much of its name they cover and
+ * how much of what was said its name (with `context`, the words of its list or row) accounts for. 0 when an action
+ * said is not one its name does.
+ */
+function pointing(said, name, context = []) {
+  const named = tokens(name).filter(word => !CHATTER.has(word));
+  if (!named.length) return 0;
+  const covered = named.reduce((sum, word) => sum + Math.max(...said.map(other => fit(other, word))), 0) / named.length;
+  const accounted = said.map(word => Math.max(context.includes(word) ? 1 : 0, ...named.map(other => fit(word, other))));
+  if (said.some((word, index) => ACTING.has(word) && !accounted[index])) return 0;
+  return covered ? (covered + accounted.reduce((sum, value) => sum + value, 0) / said.length) / 2 : 0;
+}
+/**
+ * The one control, or dropdown choice, in the circle that a request not understood as a command points to by its
+ * words (see `pointing`), clearly more than to any other. A control repeated on each row must be on the row the words
+ * name, a list's own name counts for its choices ("the largest size"), and text fields are left to typing. It is only
+ * offered for a yes, never used outright; there is none when two are about as likely, when the words say not to, or
+ * when nothing here is named.
+ */
+function pointedAt(utterance, context) {
+  const plain = normalize(utterance);
+  if (NEGATED.test(plain)) return null;
+  const said = tokens(plain).filter(word => !CHATTER.has(word));
+  if (!said.length) return null;
+  const candidates = [];
+  for (const element of context.elements) {
+    if (element.options?.length) {
+      const list = tokens(element.name ?? '');
+      element.options.forEach((name, optionIndex) => {
+        if (name !== element.value) candidates.push({ element, option: { name, optionIndex }, score: pointing(said, name, list) });
+      });
+      continue;
+    }
+    // Text fields are reached by typing into them, not by an offer.
+    if (element.editable) continue;
+    const row = element.row ? tokens(element.row) : null;
+    if (row && !row.some(word => said.includes(word))) continue;
+    candidates.push({ element, score: pointing(said, element.name ?? '', row ?? []) });
+  }
+  const ranked = candidates.filter(candidate => candidate.score >= 0.5).sort((a, b) => b.score - a.score);
+  const [best, next] = ranked;
+  if (!best || (next && next.score >= best.score - MARGIN)) return null;
+  const { element, option } = best;
+  if (option) {
+    return { type: 'select-option', targetId: element.id, optionIndex: option.optionIndex, optionName: option.name, heardAs: option.name,
+      ...(element.selectSnapshot?.multiple === true ? { selected: true } : {}) };
+  }
+  // A box is ticked (one already ticked is not offered); anything else is pressed.
+  if (element.role === 'checkbox' || element.role === 'switch') return element.checked ? null : { type: 'check', targetId: element.id, checked: true, heardAs: element.name };
+  return { type: 'activate', targetId: element.id, heardAs: element.name };
 }
 
 // A unique strong match acts; similarly strong matches become a numbered question.
@@ -551,7 +659,10 @@ export function interpret(utterance, context = { elements: [] }) {
     if (HARMLESS.has(corrected.type) || corrected.type === 'clarify') return corrected;
     return { ...action, alike: { ...corrected, heardAs: said } };
   }
-  return action;
+  // Still not understood as a command: the one control (or choice) in the circle its words point to is offered for a
+  // yes (see `pointedAt`).
+  const pointed = action.unparsed ? pointedAt(heard, context) : null;
+  return pointed ? { ...action, alike: pointed } : action;
 }
 
 function interpretHeard(utterance, context) {
@@ -590,6 +701,16 @@ function interpretHeard(utterance, context) {
       const options = [{ label: there?.name || there?.role || 'The control elsewhere', elementId: far.targetId },
         ...action.candidates.map(candidate => ({ label: candidate.label, elementId: candidate.elementId }))].map((option, index) => ({ ...option, number: index + 1 }));
       return question(options, number => (number === 1 ? chosen : action.choose(action.candidates[number - 2].number)));
+    }
+  }
+  // A loose match to a button or link that would do something the words did not ask for ("open the basket" against
+  // Add to cart) is offered for a yes instead of done, and so is any match when the words only asked to see something
+  // ("open the cart").
+  if ((weak || /^(?:open|show|view|see|visit|go to|take me to|bring up)\b/i.test((utterance ?? '').trim())) && action.type === 'activate') {
+    const target = [...context.elements, ...(context.nearby ?? [])].find(element => element.id === action.targetId);
+    const doing = target && ['button', 'link', 'menuitem'].includes(target.role) && tokens(target.name ?? '').find(word => NAMED_ACTIONS.has(word));
+    if (doing && !tokens(utterance).some(word => word === doing || DOING.get(word)?.has(doing))) {
+      return { type: 'unknown', message: `"${target.name}" does more than was asked.`, alike: { ...action, heardAs: target.name } };
     }
   }
   return action;
@@ -762,6 +883,10 @@ function detailsCommand(command, text) {
   }
   if (/^(?:fill (?:in|out)|complete) (?:the|this) form(?: (?:with|from) my (?:details|information|info))?$/.test(text)) return { type: 'details', change: 'fill', only: null };
   const fill = /^(?:fill (?:in|out)|complete|enter|type|put in|add)(?: in)? my (.+?)(?: (?:here|in this form|into this form|in the form))?$/.exec(text);
+  // A password is never typed from speech, nor are the words "my password" typed for it.
+  if (fill && /^(?:password|passcode|pass code|pin|pin number|pin code)$/.test(fill[1])) {
+    return { type: 'unknown', message: 'Passwords are not typed by voice, so nobody hears them: type yours yourself, or show numbers to reach the field.' };
+  }
   if (fill && /^(?:details|information|info|personal details|contact details)$/.test(fill[1])) return { type: 'details', change: 'fill', only: null };
   const one = fill && detailOf(fill[1]);
   if (one) return { type: 'details', change: 'fill', only: one };

@@ -3,29 +3,37 @@ import assert from 'node:assert/strict';
 import { interpret } from '../src/web/interpreter.js';
 import {
   CONTEXTS, HELD_OUT_2_SUITE, HELD_OUT_3_SUITE, HELD_OUT_4_SUITE, HELD_OUT_5_SUITE, HELD_OUT_6_SUITE, HELD_OUT_7_SUITE, HELD_OUT_8_SUITE,
-  HELD_OUT_SUITE, SUITE, evaluateInterpreter,
+  HELD_OUT_9_SUITE, HELD_OUT_10_SUITE, HELD_OUT_11_SUITE, HELD_OUT_SUITE, SUITE, evaluateInterpreter,
 } from '../src/web/instruction-suite.js';
 
 const el = (id, role, name, extra = {}) => ({ id, role, name, distance: 10 * id, editable: false, ...extra });
 
-test('held-out sets 7 and 8 do not repeat earlier instructions', () => {
+test('held-out sets 7 to 11 do not repeat earlier instructions', () => {
   const earlier = new Set([...SUITE, ...HELD_OUT_SUITE, ...HELD_OUT_2_SUITE, ...HELD_OUT_3_SUITE, ...HELD_OUT_4_SUITE, ...HELD_OUT_5_SUITE, ...HELD_OUT_6_SUITE]
     .map(item => item.say.toLowerCase()));
   assert.equal(HELD_OUT_7_SUITE.length, 42);
   for (const item of HELD_OUT_7_SUITE) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
   for (const item of HELD_OUT_7_SUITE) earlier.add(item.say.toLowerCase());
-  assert.equal(HELD_OUT_8_SUITE.length, 37);
-  for (const item of HELD_OUT_8_SUITE) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
+  for (const [suite, length] of [[HELD_OUT_8_SUITE, 37], [HELD_OUT_9_SUITE, 43], [HELD_OUT_10_SUITE, 31], [HELD_OUT_11_SUITE, 32]]) {
+    assert.equal(suite.length, length);
+    for (const item of suite) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
+    for (const item of suite) earlier.add(item.say.toLowerCase());
+  }
 });
 
 test('every held-out set keeps its score, and none is acted on wrongly', () => {
-  // Scores recorded 2026-11-18. Set 8 was scored once, after the rules for set 7, with no rule written for it.
-  const floors = [[HELD_OUT_SUITE, 49], [HELD_OUT_2_SUITE, 50], [HELD_OUT_3_SUITE, 54], [HELD_OUT_4_SUITE, 35], [HELD_OUT_5_SUITE, 32],
-    [HELD_OUT_6_SUITE, 26], [HELD_OUT_7_SUITE, 41], [HELD_OUT_8_SUITE, 25]];
-  for (const [suite, floor] of floors) {
+  // Scores recorded 2026-11-18, with how many more requests offer the control meant for a yes. Set 8 was scored once,
+  // after the rules for set 7; set 11 once, after offers were scored by how well a request's words point to a control.
+  const floors = [[HELD_OUT_SUITE, 49, 0], [HELD_OUT_2_SUITE, 50, 0], [HELD_OUT_3_SUITE, 54, 0], [HELD_OUT_4_SUITE, 35, 1], [HELD_OUT_5_SUITE, 32, 0],
+    [HELD_OUT_6_SUITE, 26, 0], [HELD_OUT_7_SUITE, 41, 0], [HELD_OUT_8_SUITE, 25, 5], [HELD_OUT_9_SUITE, 28, 12], [HELD_OUT_10_SUITE, 16, 12],
+    [HELD_OUT_11_SUITE, 12, 10]];
+  for (const [suite, floor, offered] of floors) {
     const { summary, results } = evaluateInterpreter(interpret, suite);
     assert.equal(summary.unsafe, 0, JSON.stringify(results.filter(result => result.outcome === 'unsafe')));
     assert.ok(summary.correct >= floor, `${summary.correct} of ${suite.length}, below ${floor}`);
+    assert.ok(summary.offered >= offered, `${summary.offered} offers of the control meant, below ${offered}`);
+    // An offer is never of something else.
+    assert.equal(summary.misoffered, 0, JSON.stringify(results.filter(result => result.offer === 'wrong')));
   }
 });
 
