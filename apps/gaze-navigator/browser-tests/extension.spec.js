@@ -1,6 +1,6 @@
 import { test as base, expect, chromium } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -780,4 +780,47 @@ test('browser commands zoom, open websites and tabs, switch, reload and close ta
   const closed = page.waitForEvent('close');
   await typeInstruction(page, 'confirm');
   await closed;
+});
+
+test('the session log is turned on, downloaded and cleared in the popup, and pages only add to it', async ({ context, worker, control }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await control.reload();
+  await expect(control.locator('#logState')).toHaveText('Logging is off.');
+  await expect(control.getByRole('button', { name: 'Download log' })).toBeDisabled();
+  await control.getByLabel('Keep a log of instructions on this computer').check();
+  await expect(control.locator('#logState')).toHaveText('Logging is on. No instructions logged yet.');
+
+  // The page's panel has no log controls of its own; it says the log is on.
+  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+  await expect(panel(page).locator('.log-row')).toBeHidden();
+  await expect(panel(page).locator('.log-note')).toBeVisible();
+  await look(page, page.getByRole('link', { name: 'About us' }));
+  await typeInstruction(page, 'open about us');
+  await page.waitForURL('http://shop.example/about');
+  await expect(status(page)).toContainText('Now on "About Example Shop"');
+  // What was said is kept from when that is asked for.
+  await control.getByLabel('Include what was said and the replies').check();
+  await expect(control.locator('#logState')).toHaveText('1 instruction logged on 1 website.');
+  await typeInstruction(page, 'flibbertigibbet wobble');
+  await expect(status(page)).toContainText('not understood');
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length]), 'nothing is written to the website storage').toEqual([0, 0]);
+
+  await control.reload();
+  await expect(control.locator('#logState')).toHaveText('2 instructions logged on 1 website.');
+  const [file] = await Promise.all([control.waitForEvent('download'), control.getByRole('button', { name: 'Download log' }).click()]);
+  const log = JSON.parse(readFileSync(await file.path(), 'utf8'));
+  expect(log.instructions).toBe(2);
+  expect(log.entries.map(entry => [entry.site, entry.via, entry.outcome])).toEqual([['shop.example', 'typed', 'acted'], ['shop.example', 'typed', expect.any(String)]]);
+  expect(log.entries[0]).not.toHaveProperty('said');
+  expect(log.entries[1]).toMatchObject({ said: 'flibbertigibbet wobble', reply: expect.stringContaining('not understood') });
+
+  await control.getByRole('button', { name: 'Clear log' }).click();
+  await expect(control.locator('#logState')).toHaveText('Press Clear log again to delete 2 logged instructions.');
+  await control.getByRole('button', { name: 'Clear log' }).click();
+  await expect(control.locator('#logState')).toHaveText('The log is cleared.');
+  const kept = await worker.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).filter(key => key.startsWith('gaze-navigator-log:')));
+  expect(kept).toEqual([]);
 });

@@ -3,11 +3,16 @@ import { startWebNavigator } from './overlay.js';
 import { createFrameCamera } from './frame-camera.js';
 import { createFrameSpeech } from './frame-speech.js';
 import { createEmbeddedFrames } from './embedded-frames.js';
+import { LOG_SETTINGS, logKey, storedLog } from './session-log.js';
 
 const KEY = 'gaze-web-navigator';
 
 const CALIBRATION = 'gaze-calibration';
 const DETAILS = 'gaze-my-details';
+
+// Whether to keep a session log is chosen in the toolbar popup, which websites cannot reach; pages follow its changes.
+let logging = {};
+chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && LOG_SETTINGS in changes) logging = changes[LOG_SETTINGS].newValue ?? {}; });
 
 // Smarter matching asks the extension's shared on-device model; only roles and names leave the page.
 async function loadAssistant(progress) {
@@ -24,8 +29,16 @@ async function loadAssistant(progress) {
 
 // Explicit factory: the imported module is cached, but each owned start needs a fresh runtime.
 export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
-  const stored = (await chrome.storage.session.get(KEY))[KEY] ?? {};
+  const [stored, logSettings] = await Promise.all([
+    chrome.storage.session.get(KEY).then(items => items[KEY] ?? {}),
+    chrome.storage.local.get(LOG_SETTINGS).then(items => items[LOG_SETTINGS] ?? {}, () => ({})),
+  ]);
+  logging = logSettings;
   if (!isCurrent()) return null;
+  // While logging is on, each page start keeps the log within its limit, so it never crowds out saved details.
+  if (logging.on === true) {
+    chrome.storage.local.get(null).then(items => { const { dropped } = storedLog(items); return dropped.length ? chrome.storage.local.remove(dropped) : null; }).catch(() => {});
+  }
   // Extension session storage is in memory only and unreachable from websites.
   const store = {
     load: () => stored,
@@ -36,6 +49,11 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     // Saved details stay on this device, in the extension's own storage, which websites cannot read.
     loadDetails: async () => (await chrome.storage.local.get(DETAILS))[DETAILS] ?? null,
     saveDetails: details => { (Object.keys(details).length ? chrome.storage.local.set({ [DETAILS]: details }) : chrome.storage.local.remove(DETAILS)).catch(() => {}); },
+    // A session log, when turned on, stays on this computer in the extension's own storage until it is cleared; only
+    // the popup reads, downloads or clears it. Each entry is written at once under its own key, so a page that
+    // navigates away straight after an instruction, or another tab logging at the same time, loses nothing.
+    logging: () => ({ on: logging.on === true, words: logging.words === true }),
+    addLog: entry => { chrome.storage.local.set({ [logKey(entry)]: entry }).catch(() => {}); },
   };
   // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
   const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });

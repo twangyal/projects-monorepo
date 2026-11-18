@@ -18,9 +18,18 @@
     <label><input type="checkbox" id="autoStart" /> Start automatically on every website</label>
     <p id="access" class="note"></p>
   </fieldset>
+  <fieldset id="log" disabled>
+    <legend>Session log</legend>
+    <label><input type="checkbox" id="logOn" /> Keep a log of instructions on this computer</label>
+    <label><input type="checkbox" id="logWords" /> Include what was said and the replies</label>
+    <p id="logState" class="note" role="status"></p>
+    <div class="buttons"><button id="logDownload" disabled>Download log</button><button id="logClear" disabled>Clear log</button></div>
+    <p class="note">For trying Gaze Navigator with others: when each instruction was given, on which website, how, and what happened. It stays on this computer: nothing leaves it unless you download the log and share the file.</p>
+  </fieldset>
   <p id="shortcut" class="note" role="status">Checking the page on/off shortcut…</p>
   <p class="note">Look at part of the page, then say or type what to do. Say "use camera" for webcam gaze.</p>
-  <p class="note">Speech uses the browser's recognition service. Camera access belongs to Gaze Navigator, and video stays on this computer. Small eye images from calibration are kept in browser memory until you stop the camera or close the browser. No audio, transcripts or page content are stored.</p>
+  <p class="note">Speech uses the browser's recognition service. Camera access belongs to Gaze Navigator, and video stays on this computer. Small eye images from calibration are kept in browser memory until you stop the camera or close the browser. No audio or page content is stored, and what you say is kept only in a session log you turn on with what was said.</p>
   <script type="module" src="popup.js"></script>
+  <script type="module" src="popup-log.js"></script>
 </body>
 </html>

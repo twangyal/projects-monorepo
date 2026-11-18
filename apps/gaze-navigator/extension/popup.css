@@ -7,3 +7,5 @@ label { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
 .note { color: #a9c2b8; font-size: 13px; }
 kbd { padding: 0 4px; border: 1px solid #456b5c; border-radius: 4px; }
 :focus-visible { outline: 3px solid #f5c76b; outline-offset: 1px; }
+.buttons { display: flex; gap: 8px; }
+.buttons button { margin: 4px 0; }

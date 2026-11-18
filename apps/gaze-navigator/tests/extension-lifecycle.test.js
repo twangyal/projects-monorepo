@@ -10,15 +10,16 @@ import vm from 'node:vm';
 
 // Execute the shipped entry/content modules with only the DOM runtime replaced.
 // Real ESM caching is essential: replacing import with a fresh function misses this regression.
-async function contentHarness(run){
+async function contentHarness(run,{local={get:async()=>({}),set:async()=>{}}}={}){
  const directory=await mkdtemp(join(tmpdir(),'gaze-entry-'));
  const saved=Object.fromEntries(['window','chrome','__gazeNavigatorRunning','__gazeNavigatorStop','__gazeNavigatorOwner','__gazeNavigatorReady','__gazeNavigatorError','__gazeNavigatorStart'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));
  let starts=0,stops=0,hold=null;
  globalThis.window={start:()=>{starts++;return{stop(){stops++;}}}};
- globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}}}};
+ globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}},local,onChanged:{addListener(){}}}};
  await writeFile(join(directory,'entry.mjs'),await readFile('src/web/extension-boot.js','utf8'));
+ await writeFile(join(directory,'session-log.js'),await readFile('src/web/session-log.js','utf8'));
  await writeFile(join(directory,'frame-speech.js'),'export const createFrameSpeech = () => ({});');
- await writeFile(join(directory,'frame-camera.js'),'export const createFrameCamera = () => ({});');await writeFile(join(directory,'embedded-frames.js'),'export const createEmbeddedFrames = () => ({});');await writeFile(join(directory,'overlay.js'),'export const startWebNavigator = ({window}) => window.start();');
+ await writeFile(join(directory,'frame-camera.js'),'export const createFrameCamera = () => ({});');await writeFile(join(directory,'embedded-frames.js'),'export const createEmbeddedFrames = () => ({});');await writeFile(join(directory,'overlay.js'),'export const startWebNavigator = ({window, store}) => { window.store = store; return window.start(); };');
  await writeFile(join(directory,'package.json'),'{"type":"module"}');
  const script=new vm.Script(await readFile('extension/content.js','utf8'),{importModuleDynamically:vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER});
  const tick=()=>new Promise(r=>setTimeout(r,10));
@@ -31,6 +32,23 @@ test('same-page content restart starts the real cached entry afresh without dupl
  await contentHarness(async h=>{
   h.start();await h.until(()=>h.starts===1);h.start();await h.tick();assert.equal(h.starts,1);
   h.stop();assert.equal(h.stops,1);h.start();await h.until(()=>h.starts===2);h.stop();assert.equal(h.stops,2);
+ });
+});
+
+test('pages add session-log entries under their own keys only while the popup has logging on, and trim the oldest',async()=>{
+ const {LOG_PREFIX,LOG_SETTINGS,MAX_LOG_ENTRIES}=await import('../src/web/session-log.js');
+ const items={[LOG_SETTINGS]:{on:true,words:false}},removed=[],written=[];
+ for(let n=0;n<MAX_LOG_ENTRIES+2;n++)items[`${LOG_PREFIX}${new Date(Date.UTC(2026,0,1,0,0,n)).toISOString()}:k${n}`]={at:new Date(Date.UTC(2026,0,1,0,0,n)).toISOString(),site:'a'};
+ const local={get:async key=>key===null?items:key in items?{[key]:items[key]}:{},set:async value=>{written.push(value);},remove:async keys=>{removed.push(...keys);}};
+ await contentHarness(async h=>{
+  h.start();await h.until(()=>h.starts===1);await h.tick();
+  assert.deepEqual(globalThis.window.store.logging(),{on:true,words:false});
+  assert.deepEqual(removed,[`${LOG_PREFIX}2026-01-01T00:00:00.000Z:k0`,`${LOG_PREFIX}2026-01-01T00:00:01.000Z:k1`]);
+  const entry={at:'2026-11-18T09:30:00.000Z',site:'shop.example',outcome:'acted'};globalThis.window.store.addLog(entry);
+  const [key]=Object.keys(written.at(-1));assert.ok(key.startsWith(`${LOG_PREFIX}${entry.at}:`));assert.deepEqual(written.at(-1)[key],entry);
+ },{local});
+ await contentHarness(async h=>{
+  h.start();await h.until(()=>h.starts===1);assert.deepEqual(globalThis.window.store.logging(),{on:false,words:false});
  });
 });
 

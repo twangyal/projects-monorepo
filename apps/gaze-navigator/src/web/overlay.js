@@ -1,5 +1,6 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
+import { appendLog, logEntry, logFileName, logReport, logSummary } from './session-log.js';
 import { NEARBY_FACTOR, NUMBER_LIMIT, captureContext, composedContains, findMedia, findPopups, findText, formDetailFields, frameOffset, numberControls, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
@@ -84,6 +85,7 @@ summary { cursor: pointer; }
 
 // Default settings store: the tab's session storage. The extension supplies its own store so
 // nothing is written into a website's storage.
+const LOG_KEY = 'gaze-navigator-log';
 export function sessionStore(window) {
   return {
     load() {
@@ -101,6 +103,10 @@ export function sessionStore(window) {
     // On the practice website, saved details last only as long as the page: the website's own storage is not used.
     loadDetails: async () => null,
     saveDetails: () => {},
+    // A session log lasts as long as the tab.
+    loadLog: () => { try { const entries = JSON.parse(window.sessionStorage.getItem(LOG_KEY)); return Array.isArray(entries) ? entries : []; } catch { return []; } },
+    addLog(entry) { try { window.sessionStorage.setItem(LOG_KEY, JSON.stringify(appendLog(this.loadLog(), entry))); } catch { /* Storage is full or blocked: the entry is skipped. */ } },
+    clearLog: () => { try { window.sessionStorage.removeItem(LOG_KEY); } catch { /* Nothing was kept. */ } },
   };
 }
 
@@ -152,7 +158,10 @@ export function pageBrowser(window) {
 }
 
 export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window), createCamera = createLocalCamera, createSpeech = createSpeechInput, embeddedFrames = null, onResult = null, browser = pageBrowser(window) } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, requireAddress: false, source: 'pointer', cameraMode: 'eyes', assist: false, ...store.load() };
+  const settings = { size: 'medium', listening: false, speak: false, requireAddress: false, source: 'pointer', cameraMode: 'eyes', assist: false, sessionLog: false, logWords: false, ...store.load() };
+  // The extension keeps the session log's switches, download and clearing in its toolbar popup, out of websites' reach,
+  // and is only asked here whether to log; the practice website keeps them in this panel.
+  const popupLog = typeof store.logging === 'function';
   settings.requireAddress = settings.requireAddress === true;
   // The camera follows the eyes (WebGazer's gaze estimate) or the head (head-pointer.js).
   const following = () => (settings.cameraMode === 'head' ? 'head' : 'eyes');
@@ -207,6 +216,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <p class="hint speech-mode" role="status"></p>
           <button class="speech-install" hidden>Use on-device speech</button>
         </div>
+        <div class="log-row">
+          <label><input type="checkbox" class="session-log" /> Keep a log of instructions in this tab</label>
+          <label><input type="checkbox" class="log-words" /> Include what was said and the replies</label>
+          <p class="hint">For trying the navigator with others: when each instruction was given, on which website, how, and what happened. It stays in this tab: nothing leaves it unless you download the log and share the file.</p>
+          <div class="row"><button class="log-download" disabled>Download log</button><button class="log-clear" disabled>Clear log</button></div>
+          <p class="hint log-state" role="status"></p>
+        </div>
+        <p class="hint log-note" hidden>Instructions are being logged on this computer. Download or clear the log from the Gaze Navigator toolbar button.</p>
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
@@ -236,6 +253,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
     recalibrate: $('.recalibrate'), refreshCalibration: $('.refresh-calibration'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
     speechMode: $('.speech-mode'), speechInstall: $('.speech-install'),
+    settings: $('details.settings'), logRow: $('.log-row'), logNote: $('.log-note'), sessionLog: $('.session-log'), logWords: $('.log-words'), logDownload: $('.log-download'), logClear: $('.log-clear'), logState: $('.log-state'),
   };
   // The element list is open by default only where the panel has room to spare.
   if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
@@ -865,9 +883,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       let media = null;
       used.media = () => (media ??= findMedia(document, { x: used.x, y: used.y, exclude: host, scopeCache }));
     }
-    const result = controller.handle(utterance, used, { alternatives });
+    const askedAt = Date.now(), result = controller.handle(utterance, used, { alternatives });
     show(result, used);
-    const report = answer => { try { onResult?.({ utterance, via, source: settings.source, ...outcomeOf(answer) }); } catch { /* A listener's failure is its own. */ } };
+    const report = answer => {
+      const outcome = { utterance, via, source: settings.source, ...outcomeOf(answer) };
+      logInstruction(outcome, Date.now() - askedAt);
+      try { onResult?.(outcome); } catch { /* A listener's failure is its own. */ }
+    };
     if (!result.followUp) report(result);
     // A model-assisted answer follows unless a newer instruction came first.
     result.followUp?.then(later => { if (later && !stopped && !closing) { show(later, used); report(later); } });
@@ -1427,6 +1449,46 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (!settings.speak) feedbackVoice.cancel();
     store.save(settings);
   });
+  // The session log (see session-log.js).
+  const logChoice = () => { try { return popupLog ? store.logging() : { on: settings.sessionLog === true, words: settings.logWords === true }; } catch { return { on: false }; } };
+  let clearArmed = 0;
+  function logControls(note = '') {
+    const { on } = logChoice();
+    ui.logRow.hidden = popupLog; ui.logNote.hidden = !(popupLog && on);
+    if (popupLog) return;
+    const entries = store.loadLog?.() ?? [];
+    ui.sessionLog.checked = on; ui.logWords.checked = settings.logWords === true; ui.logWords.disabled = !on;
+    ui.logDownload.disabled = !entries.length; ui.logClear.disabled = !entries.length;
+    ui.logState.textContent = note || logSummary(entries, on);
+  }
+  function logInstruction(outcome, tookMs) {
+    const { on, words } = logChoice();
+    if (on) {
+      const site = window.location.hostname || window.location.protocol.replace(/:$/, '');
+      // The pointer: the mouse, or the camera following the eyes or the head.
+      const pointer = settings.source === 'camera' ? (settings.cameraMode === 'head' ? 'head' : 'eyes') : 'mouse';
+      try { store.addLog?.(logEntry({ ...outcome, source: pointer }, { at: Date.now(), site, tookMs, words })); } catch { /* The instruction went ahead; only its entry is missing. */ }
+    }
+    logControls();
+  }
+  ui.settings.addEventListener('toggle', () => logControls());
+  ui.sessionLog.addEventListener('change', () => { settings.sessionLog = ui.sessionLog.checked; store.save(settings); logControls(); });
+  ui.logWords.addEventListener('change', () => { settings.logWords = ui.logWords.checked; store.save(settings); logControls(); });
+  ui.logDownload.addEventListener('click', () => {
+    const entries = store.loadLog?.() ?? [];
+    const url = URL.createObjectURL(new window.Blob([JSON.stringify(logReport(entries), null, 2)], { type: 'application/json' }));
+    const link = Object.assign(document.createElement('a'), { href: url, download: logFileName() });
+    ui.logRow.append(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    logControls(`Downloaded ${entries.length} ${entries.length === 1 ? 'instruction' : 'instructions'}.`);
+  });
+  // Clearing deletes what was collected, so it takes a second press.
+  ui.logClear.addEventListener('click', () => {
+    const entries = store.loadLog?.() ?? [];
+    if (Date.now() - clearArmed > 10_000) { clearArmed = Date.now(); logControls(`Press Clear log again to delete ${entries.length} logged ${entries.length === 1 ? 'instruction' : 'instructions'}.`); return; }
+    clearArmed = 0; store.clearLog?.(); logControls('The log is cleared.');
+  });
+  logControls();
   // The panel can be hidden to its status line and moved to any corner by voice, since the people it is for may not
   // be able to reach its buttons. Both choices are kept with the other settings.
   function setCollapsed(collapsed) {
