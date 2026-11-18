@@ -43,6 +43,9 @@ const button = name => page => page.getByRole('button', { name, exact: true }).f
 // The visible one: Wikipedia swaps in a new search input on focus and hides the old one.
 const field = name => page => page.getByRole('searchbox', { name, exact: true }).or(page.getByRole('textbox', { name, exact: true })).or(page.getByRole('combobox', { name, exact: true })).filter({ visible: true }).first();
 const url = pattern => async page => pattern.test(decodeURIComponent(page.url()));
+// The choices an MUI Autocomplete that takes several shows as chips are exactly these, in this order.
+const chipsAre = (name, names) => async page => JSON.stringify(await page.getByRole('combobox', { name, exact: true }).first()
+  .evaluate(input => [...input.closest('.MuiAutocomplete-root').querySelectorAll('.MuiChip-label')].map(chip => chip.textContent))) === JSON.stringify(names);
 const select = name => page => page.getByRole('combobox', { name, exact: true }).first();
 const scrolled = selector => page => page.evaluate(css => css ? document.querySelector(css).scrollTop : scrollY, selector);
 // `measure` is read before the step; `done` then receives it.
@@ -190,6 +193,12 @@ export const TASKS = [
   { site: 'MUI', goal: 'Refuse analytics cookies, then pick a film in an autocomplete by saying its name', start: 'https://mui.com/material-ui/react-autocomplete/', steps: [
     { look: button('Essential only'), say: 'click essential only', target: 'Essential only', done: async page => !(await button('Essential only')(page).isVisible()) },
     { look: select('Movie'), say: 'set movie to the godfather', done: async page => (await select('Movie')(page).inputValue()) === 'The Godfather' },
+  ] },
+  { site: 'MUI', goal: 'Add two films to an autocomplete that takes several, then take one off', start: 'https://mui.com/material-ui/react-autocomplete/', steps: [
+    { look: button('Essential only'), say: 'click essential only', target: 'Essential only', done: async page => !(await button('Essential only')(page).isVisible()) },
+    { look: select('Multiple values'), say: 'add the godfather and pulp fiction to multiple values', done: chipsAre('Multiple values', ['Inception', 'The Godfather', 'Pulp Fiction']) },
+    // The demo's other lists hold Inception too, so the list is named, as the navigator would otherwise ask which.
+    { look: select('Multiple values'), say: 'remove inception from multiple values', done: chipsAre('Multiple values', ['The Godfather', 'Pulp Fiction']) },
   ] },  // A shop, a log-in form whose Password label points at the wrong field, a news site and a link aggregator.
   { site: 'Books to Scrape', goal: 'Open a category from the side list', start: 'https://books.toscrape.com/', steps: [
     { look: link('Travel'), say: 'open travel', target: 'Travel', done: url(/category\/books\/travel_2\//) },

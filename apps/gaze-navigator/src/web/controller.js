@@ -69,7 +69,7 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function confirmable(action, element) {
     if (['activate', 'double-click', 'check', 'select-radio', 'select-tab', 'disclosure', 'number', 'date', 'time', 'month', 'week'].includes(action.type)) return element.consequential;
-    if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
+    if (action.type === 'select-option') return element.consequential || (action.optionIndexes ?? [action.optionIndex]).some(index => element.consequentialOptions?.[index]);
     if (action.type === 'choose-option') return element.consequential || isConsequentialName(action.optionName);
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
@@ -109,7 +109,7 @@ export function createController({ window, actions = pageActions, interpret = in
       }
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, activation: activationOf(action, target), expiresAt: now() + confirmMs };
-        const label = action.type === 'choose-option' ? `${action.optionName} in ${target.name || target.role}` : action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
+        const label = action.type === 'choose-option' ? (action.selected === false ? `Remove ${action.optionName} from ${target.name || target.role}` : `${action.optionName} in ${target.name || target.role}`) : action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
         return reply(`"${label}" may have consequences. Say confirm to continue, or cancel.`, 'question');
       }
     }
@@ -205,7 +205,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'delete-selection': result = actions.deleteSelection(element, target.textSelectionSnapshot, { isCurrent: () => turn === executionTurn && !paused, onWrite: before => remember(element, before) }); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
       case 'select-option': result = typeof action.selected === 'boolean'
-        ? actions.setMultipleOption(element, action.optionIndex, action.selected, target.selectSnapshot)
+        ? actions.setMultipleOption(element, action.optionIndexes ?? action.optionIndex, action.selected, target.selectSnapshot)
         : actions.selectOption(element, action.optionIndex, target.selectSnapshot); break;
       case 'search': {
         const intended = activation ?? target.submissionSnapshot ?? captureSubmissionSnapshot(element);
@@ -332,7 +332,8 @@ export function createController({ window, actions = pageActions, interpret = in
         if (result.followUp) result.followUp = Promise.resolve(result.followUp).then(record); else record(result);
         break;
       }
-      case 'choose-option': result = actions.chooseListOption(element, action.optionName, { isCurrent: () => turn === executionTurn && !paused }); break;
+      case 'choose-option': result = actions.chooseListOption(element, action.optionName, { isCurrent: () => turn === executionTurn && !paused,
+        selected: action.selected !== false, names: action.optionNames ?? null }); break;
       case 'scroll': {
         let region = action.scope === 'page' ? null : context.region;
         const axis = ['left', 'right'].includes(action.direction) ? 'horizontal' : 'vertical';

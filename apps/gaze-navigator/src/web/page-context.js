@@ -612,6 +612,59 @@ function rowOf(element, name) {
   return text && text !== clean(name) ? text : null;
 }
 
+// Lists that take several choices. A listbox says so with aria-multiselectable. A combobox that takes several shows
+// each choice made beside its text box as a chip (a "tag" or "token") with a control that removes it: a button
+// ("Remove Red"), or an icon a pointer clicks (MUI's delete icon, a close mark).
+const FIELDS = 'input:not([type=hidden]), select, textarea, [role=combobox], [role=textbox], [role=searchbox], [contenteditable=""], [contenteditable="true"]';
+const REMOVES = /delete|remove|clear|close|dismiss/i;
+const FIELD_DEPTH = 4, CHIP_TEXT = 80;
+
+/** The box a combobox's text field sits in with its chips: the widest of its next few ancestors holding no other field. */
+export function fieldBox(element) {
+  let box = element;
+  for (let node = element.parentElement, depth = 0; node && depth < FIELD_DEPTH && node !== node.ownerDocument.body; node = node.parentElement, depth++) {
+    if ([...node.querySelectorAll(FIELDS)].some(field => field !== element && !field.contains(element) && !element.contains(field))) break;
+    box = node;
+  }
+  return box;
+}
+
+function removerIn(chip) {
+  const removers = [...chip.querySelectorAll('*')].filter(node => node.matches('button, [role=button]') ||
+    REMOVES.test(`${node.getAttribute('class') ?? ''} ${node.getAttribute('aria-label') ?? ''} ${node.getAttribute('title') ?? ''}`));
+  const outermost = removers.filter(node => !removers.some(other => other !== node && other.contains(node)));
+  return outermost.length === 1 ? outermost[0] : null;
+}
+
+// A chip's name is its visible text without its remove control's ("Red", not "Red Remove item").
+function chipName(chip, remover) {
+  const text = node => node === remover ? '' : node.nodeType === 1 && node.childNodes.length ? [...node.childNodes].map(text).join('') : visibleText(node);
+  return clean(text(chip));
+}
+
+/**
+ * The choices a combobox that takes several shows as chips in its field box, in page order: each a shown element with
+ * a short name and exactly one remove control in it (or, as MUI's chips, a button that Backspace or Delete removes).
+ * The field itself, its label and any open list are not chips; a box of several chips is not one either.
+ */
+export function chipsOf(element) {
+  const box = fieldBox(element);
+  if (box === element && !element.children?.length) return [];
+  const labels = [...(element.labels ?? []), ...(element.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean)
+    .map(id => element.ownerDocument.getElementById(id)).filter(Boolean)];
+  const chips = [];
+  for (const node of box.querySelectorAll('*')) {
+    if (node === element || node.contains(element) || node.matches(FIELDS) || chips.some(chip => chip.chip.contains(node))) continue;
+    if (node.closest('label, legend, [role=listbox], [role=option]') || labels.some(label => label.contains(node)) || !node.getClientRects().length) continue;
+    const remover = removerIn(node);
+    const keyed = !remover && node.matches('[role=button]') && /backspace|delete|remove/i.test(`${node.getAttribute('aria-description') ?? ''} ${node.getAttribute('title') ?? ''}`);
+    if (!remover && !keyed) continue;
+    const name = chipName(node, remover);
+    if (name && name.length <= CHIP_TEXT && !node.querySelector(FIELDS)) chips.push({ chip: node, name, remover });
+  }
+  return chips;
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -656,6 +709,16 @@ function describe(element) {
   if ((role === 'combobox' && element.tagName !== 'SELECT') || element.getAttribute('aria-haspopup') === 'listbox') {
     description.customList = true;
     if (!description.editable) description.value = clean(visibleText(element));
+    // A combobox that takes several choices shows those made as chips, which "remove Red" takes off.
+    const chosen = chipsOf(element).map(chip => chip.name);
+    if (chosen.length) description.chosenNames = chosen;
+  }
+  // An option of a list that takes several choices is added or taken off by name, never clicked off by "choose".
+  const listbox = role === 'option' ? element.closest('[role=listbox]') : null;
+  if (listbox?.getAttribute('aria-multiselectable') === 'true') {
+    description.multiChoice = true;
+    description.chosen = element.getAttribute('aria-selected') === 'true' || element.getAttribute('aria-checked') === 'true';
+    description.listName = accessibleName(listbox);
   }
   if (element.tagName === 'INPUT' && element.type === 'number') {
     description.nativeNumber = true; description.numberSnapshot = captureNumberSnapshot(element);
@@ -811,7 +874,10 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   const consider = (element, frames) => {
     const rect = viewportRect(element, frames);
     if (!(rect.width > 0 && rect.height > 0)) return;
-    const distance = distanceToRect(x, y, rect);
+    // A combobox showing its choices as chips is looked at when its chips are: they are part of the field, and push its
+    // text box along as they are added.
+    const chipped = element.matches('[role=combobox]:not(select), [aria-haspopup=listbox]') ? chipsOf(element) : [];
+    const distance = Math.min(distanceToRect(x, y, rect), ...chipped.map(({ chip }) => distanceToRect(x, y, viewportRect(chip, frames))));
     if (distance > reach || exclude?.contains(element)) return;
     if (distance > radius) {
       if (usable(element, exclude) && unobscured(document, element, rect, x, y, exclude)) outside.push({ element, rect, distance, frames });
@@ -836,8 +902,11 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
     }
     if (scopeCache) scopeCache.rects = { time: now, scopes, items: measured };
   }
+  // A combobox's chips can push its text box beyond reach while they are looked at.
+  const chipsNear = (element, frames) => element.matches('[role=combobox]:not(select), [aria-haspopup=listbox]') &&
+    chipsOf(element).some(({ chip }) => distanceToRect(x, y, viewportRect(chip, frames)) <= reach + RECT_MARGIN);
   for (const { element, frames, rect } of measured) {
-    if (distanceToRect(x, y, rect) <= reach + RECT_MARGIN) consider(element, frames);
+    if (distanceToRect(x, y, rect) <= reach + RECT_MARGIN || chipsNear(element, frames)) consider(element, frames);
   }
   for (const element of inferredClickables(document, x, y, radius, exclude, new Set(candidates.map(candidate => candidate.element)))) {
     inferred.add(element);

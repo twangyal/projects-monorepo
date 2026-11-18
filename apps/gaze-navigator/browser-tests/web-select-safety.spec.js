@@ -14,10 +14,11 @@ test('captured disabled select fieldset optgroup locks and multi-select refuse w
   await setup(page);expect(await page.evaluate(async change=>{const context=window.ctx(),e=document.querySelector('#a');Function('e',change)(e);const r=window.c.handle('choose Hardcover from Format',context);return r.followUp?await r.followUp:r;},change)).toMatchObject({tone:'error'});expect(await page.evaluate(()=>window.events),change).toEqual([]);
  }
 });
-test('multi-select keeps all preexisting selections and refuses even a selected option',async({page})=>{
+test('multi-select keeps all preexisting selections: choosing adds, and a selected option is left as it is',async({page})=>{
  await setup(page,'<label>Format<select id="a" multiple><option selected>Paperback</option><option selected>Hardcover</option><option>Large print</option></select></label>');
- expect((await command(page,'choose Large print from Format')).tone).toBe('error');expect((await command(page)).tone).toBe('error');
- expect(await page.locator('#a').evaluate(e=>[...e.options].map(o=>o.selected))).toEqual([true,true,false]);expect(await page.evaluate(()=>window.events)).toEqual([]);
+ expect(await command(page)).toMatchObject({tone:'success',message:'Hardcover is already selected.'});expect(await page.evaluate(()=>window.events)).toEqual([]);
+ expect((await command(page,'choose Large print from Format')).tone).toBe('success');
+ expect(await page.locator('#a').evaluate(e=>[...e.options].map(o=>o.selected))).toEqual([true,true,true]);expect((await page.evaluate(()=>window.events)).length).toBe(2);
 });
 test('captured option identity labels values ordering and selection cannot drift before execution',async({page})=>{
  for(const change of ['e.options[1].textContent="Different"','e.options[1].label="Different label"','e.options[1].value="other"','e.options[1].replaceWith(e.options[1].cloneNode(true))','e.prepend(e.options[1])','e.append(new Option("Extra","extra"))','e.selectedIndex=1']){

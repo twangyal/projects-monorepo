@@ -4,7 +4,7 @@ import { spokenDate, spokenDuration, spokenMonth, spokenNumber, spokenSliderValu
 import { relatedWords } from './topics.js';
 import { LINK_NOUNS, choiceSaid, countedSaid, everydayCommand } from './everyday.js';
 import { rowAction } from './rows.js';
-import { choicesMeant, nextSize } from './choices.js';
+import { choicesMeant, namesIn, nextSize, sentence } from './choices.js';
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
@@ -354,10 +354,14 @@ function namedOption(query, selects) {
 
 // A value from a dropdown in the circle: unique strong option names act, close ones ask. Without a strong name, what
 // the choice means is tried ("a medium" for M, "the UK", "in green" for Forest green) before weaker names are asked about.
+// A list that takes several choices is added to by choosing ("choose jazz" keeps Rock chosen too), and "rock and jazz",
+// with no option of that whole name, changes both.
 function selectOption(optionQuery, selects, selected) {
   const options = selects.flatMap(element => element.options.map((name, optionIndex) => ({ ...element, name, optionIndex, selectId: element.id })));
   const ranked = rank(optionQuery, options);
-  const pick = option => ({ type: 'select-option', targetId: option.selectId, optionIndex: option.optionIndex, optionName: option.name, ...(typeof selected === 'boolean' ? { selected } : {}) });
+  const several = id => selects.find(element => element.id === id)?.selectSnapshot?.multiple === true;
+  const pick = option => ({ type: 'select-option', targetId: option.selectId, optionIndex: option.optionIndex, optionName: option.name,
+    ...(typeof selected === 'boolean' ? { selected } : several(option.selectId) ? { selected: true } : {}) });
   const ask = close => question(close.map((option, index) => ({ number: index + 1, label: option.name, elementId: option.selectId })),
     number => pick(close[number - 1]));
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN).map(entry => entry.element);
@@ -370,9 +374,29 @@ function selectOption(optionQuery, selects, selected) {
     const distinct = all.filter((option, index) => all.findIndex(other => other.selectId === option.selectId && other.optionIndex === option.optionIndex) === index);
     return distinct.length === 1 ? pick(distinct[0]) : ask(distinct);
   }
+  const together = severalOptions(optionQuery, selects.filter(element => several(element.id)), selected);
+  if (together) return together;
   const meant = found(exact.length ? exact : containing);
   if (meant.length) return meant.length === 1 ? pick(meant[0]) : ask(meant);
   return close.length > 1 ? ask(close) : null;
+}
+
+// "Rock and jazz" in a list that takes several: every name one option of the same list, strongly and alone.
+function severalOptions(optionQuery, lists, selected) {
+  const parts = namesIn(unquote(optionQuery));
+  if (!parts) return null;
+  for (const list of lists) {
+    const options = list.options.map((name, optionIndex) => ({ name, optionIndex, distance: 0 }));
+    const indexes = parts.map(part => {
+      const ranked = rank(part, options);
+      return ranked.length && ranked[0].score >= 0.9 && !(ranked[1]?.score >= ranked[0].score - MARGIN) ? ranked[0].element.optionIndex : null;
+    });
+    if (indexes.every(index => index !== null) && new Set(indexes).size === indexes.length) {
+      return { type: 'select-option', targetId: list.id, optionIndex: indexes[0], optionIndexes: indexes,
+        optionName: sentence(indexes.map(index => list.options[index])), selected: selected ?? true };
+    }
+  }
+  return null;
 }
 
 const edit = (kind, extra = {}) => element => ({ type: 'edit', targetId: element.id, edit: { kind, ...extra } });
@@ -776,6 +800,76 @@ function namedControl(text, context) {
   return null;
 }
 
+// Lists that take several choices: a native multiple-selection list, a listbox marked as one (its options here are
+// `multiChoice`) and a combobox showing the choices made as chips (`chosenNames`). "Choose red" and "add red and blue
+// to Colours" add, leaving a choice made already alone; "remove red", "deselect red" and "take red off" take one off.
+// Null when no such list here has the choice, so the words are read as any other command ("remove the socks").
+const ADD_CHOICE = /^(?:also\s+)?(add|choose|select|pick|tick)\s+(.+?)(?:\s+(?:to|in|into|from|for)\s+(?:the\s+)?(.+?))?(?:\s+(?:too|as well|also))?[.!?]*$/i;
+const DROP_CHOICE = /^(?:remove|deselect|de-select|unselect|un-select|untick|uncheck|unpick)\s+(.+?)(?:\s+from\s+(?:the\s+)?(.+?))?[.!?]*$/i;
+const TAKE_OFF = /^take\s+(.+?)\s+(?:off|out)(?:\s+(?:of\s+)?(?:the\s+)?(.+?))?[.!?]*$/i;
+const NOT_A_CHOICE = /^(?:all|everything|nothing|none|it|this|that|here|there|text|the text|all text|all the text|words?|this one|that one)$/;
+
+function listChoice(command, context) {
+  const said = command.trim();
+  if (/^(?:add|remove) option\b/i.test(said)) return null;
+  const drop = DROP_CHOICE.exec(said) ?? TAKE_OFF.exec(said), add = !drop && ADD_CHOICE.exec(said);
+  if (!drop && !add) return null;
+  const [choice, listName] = (drop ? [drop[1], drop[2]] : [add[2], add[3]]).map(part => part && unquote(part));
+  if (!choice || NOT_A_CHOICE.test(normalize(choice))) return null;
+  const elements = context.elements ?? [], selected = !drop;
+  const named = name => !listName || matchScore(listName, name ?? '') >= 0.5;
+  const lists = elements.filter(element => element.customList && named(element.name));
+  // Chips are buttons named by their choice, and their remove controls "Remove Red": they are the list's, not other
+  // controls of those names.
+  const chips = new Set(elements.filter(element => element.customList).flatMap(list => list.chosenNames ?? []).map(normalize));
+  const owned = name => chips.has(normalize(name ?? '')) || chips.has(normalize(name ?? '').replace(/^(?:remove|delete|clear|deselect)\s+/, ''));
+  const other = element => !element.customList && !element.multiChoice && !owned(element.name);
+  // A control named by everything said ("Add to basket"), and a checkbox of that name, are not choices in a list.
+  if (elements.some(element => other(element) && matchScore(said, element.name ?? '') >= 0.9)) return null;
+  if (elements.some(element => ['checkbox', 'switch'].includes(element.role) && matchScore(choice, element.name ?? '') >= 0.9)) return null;
+  const parts = namesIn(choice);
+  const act = (target, optionName, optionNames) => ({ type: 'choose-option', targetId: target.id, optionName,
+    ...(optionNames ? { optionNames } : {}), ...(selected ? {} : { selected: false }) });
+  const strongest = (name, pool) => {
+    const ranked = rank(name, pool);
+    return ranked.length && ranked[0].score >= 0.9 && !(ranked[1]?.score >= ranked[0].score - MARGIN) ? ranked[0].element : null;
+  };
+
+  // Options here of a listbox that takes several, by name or several said together.
+  const options = elements.filter(element => element.multiChoice && named(element.listName));
+  const ranked = rank(choice, options);
+  if (ranked.length && ranked[0].score >= 0.9) {
+    const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN).map(entry => entry.element);
+    return close.length === 1 ? act(close[0], close[0].name) : clarify(close, element => act(element, element.name));
+  }
+  const each = parts?.map(part => strongest(part, options));
+  if (each?.every(Boolean)) return act(each[0], sentence(each.map(element => element.name)), each.map(element => element.name));
+
+  // A native list that takes several.
+  const natives = elements.filter(element => element.options?.length && element.selectSnapshot?.multiple === true && named(element.name));
+  const native = natives.length ? selectOption(choice, natives, selected) : null;
+  if (native) return native;
+
+  // A combobox showing its choices as chips: one made is taken off by name. One is added when the list shows chips, or
+  // with "add" when it is the list named or the only one here.
+  // Several such lists here are asked about, as any controls equally named are: with webcam gaze, the one nearest the
+  // gaze point is often not the one looked at. A list added to without being named is, outside the circle, only
+  // offered (as a control found by its topic is), since only the choice was said.
+  const unnamed = selected && !listName ? { related: true } : {};
+  const which = candidates => candidates.length === 1 ? { ...act(candidates[0], choice), ...unnamed } : clarify(candidates, list => act(list, choice));
+  if (drop) {
+    const holds = (list, name) => (list.chosenNames ?? []).some(chosen => matchScore(name, chosen) >= 0.9);
+    const holding = lists.filter(list => holds(list, choice) || parts?.every(part => holds(list, part)));
+    if (holding.length) return which(holding);
+    return listName && lists.length === 1 && lists[0].chosenNames ? act(lists[0], choice) : null;
+  }
+  // Something else here of that name is meant instead ("choose Inception" on a link of that name).
+  if (!listName && elements.some(element => other(element) && matchScore(choice, element.name ?? '') >= 0.9)) return null;
+  const chipped = lists.filter(list => list.chosenNames?.length);
+  const into = add[1].toLowerCase() === 'add' ? (chipped.length && !listName ? chipped : lists) : chipped;
+  return into.length ? which(into) : null;
+}
+
 // Editor toolbars (mail, comments, posts): things a toolbar inserts, and the formats it applies, as people say them.
 const INSERTED = [
   [/^(?:hyper)?links?$/, /\b(?:hyper)?link\b/i], [/^(?:images?|pictures?|photos?|pics?)$/, /\b(?:image|picture|photo|img)\b/i],
@@ -834,6 +928,9 @@ function interpretInCircle(utterance, context) {
   // Editor toolbars: "insert a link", "add a picture", "make it bold", "bullet points".
   const toolbar = toolbarCommand(text, context);
   if (toolbar) return toolbar;
+  // Lists that take several choices: "choose red and blue", "remove red".
+  const listed = listChoice(command, context);
+  if (listed) return listed;
   // Controls repeated on every row, named by what their row is about: "remove the socks", "make the mug two".
   const row = rowAction(text, context, clarify);
   if (row) return row;

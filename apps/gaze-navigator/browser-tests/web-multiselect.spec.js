@@ -20,7 +20,22 @@ test('explicit native add/remove preserves other choices and no-op emits no even
   await run(page); expect((await page.evaluate(() => window.events)).length).toBe(2);
   expect(await run(page, 'remove option Rock from Genres')).toMatchObject({ tone: 'success' }); expect(await state(page)).toEqual([false, true, true]);
   await run(page, 'remove option Rock from Genres'); expect((await page.evaluate(() => window.events)).length).toBe(4);
-  expect(await run(page, 'choose Jazz from Genres')).toMatchObject({ tone: 'error' }); expect(await state(page)).toEqual([false, true, true]);
+  // Choosing in a list that takes several adds to it, and what is chosen already stays so, without events.
+  expect(await run(page, 'choose Jazz from Genres')).toMatchObject({ tone: 'success', message: 'Jazz is already selected.' }); expect(await state(page)).toEqual([false, true, true]);
+  expect((await page.evaluate(() => window.events)).length).toBe(4);
+});
+test('everyday words add and take off several native choices at once, in one change', async ({ page }) => {
+  await setup(page);
+  expect(await run(page, 'deselect rock and classical')).toMatchObject({ tone: 'success', message: 'Rock and Classical removed from the selection.' });
+  expect(await state(page)).toEqual([false, false, false]);
+  expect(await run(page, 'choose rock and jazz')).toMatchObject({ tone: 'success', message: 'Rock and Jazz added to the selection.' });
+  expect(await state(page)).toEqual([true, true, false]);
+  expect(await run(page, 'select jazz and classical too')).toMatchObject({ tone: 'success', message: 'Classical added to the selection. Jazz was already selected.' });
+  expect(await state(page)).toEqual([true, true, true]);
+  // One input and one change for each command that changed the list.
+  expect((await page.evaluate(() => window.events)).map(event => event[1])).toEqual(['input', 'change', 'input', 'change', 'input', 'change']);
+  expect(await run(page, 'take jazz off')).toMatchObject({ tone: 'success', message: 'Jazz removed from the selection.' });
+  expect(await state(page)).toEqual([true, false, true]);
 });
 test('stale captured option or selection graph refuses before events', async ({ page }) => {
   for (const change of ['e.options[0].selected=false', 'e.options[1].replaceWith(e.options[1].cloneNode(true))', 'e.options[1].label="Different"', 'e.prepend(e.options[2])', 'e.multiple=false', 'e.disabled=true', 'e.parentElement.inert=true', 'e.parentElement.setAttribute("aria-readonly","true")', 'e.options[1].disabled=true']) {

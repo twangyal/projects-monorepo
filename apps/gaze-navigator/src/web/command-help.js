@@ -18,6 +18,7 @@ export function commandHelp({ context, pending, paused, dictation }) {
   else if (elements.some(element => element.editable && !element.sensitive)) hints.push('For a text field, say “type hello”, “start dictation”, or “undo typing”.');
   else if (elements.some(element => element.editable && element.sensitive)) hints.push('For a protected field, say “type” followed by the value; its contents stay hidden in feedback. Continuous dictation is unavailable.');
   if (elements.some(element => ['checkbox', 'switch'].includes(element.role))) hints.push('For a checkbox or switch, say “turn on” or “turn off” followed by its name.');
+  else if (elements.some(element => element.chosenNames?.length || element.multiChoice || element.selectSnapshot?.multiple)) hints.push('For a list that takes several choices, say “add” and their names, or “remove” and one.');
   else if (elements.some(element => element.role === 'combobox')) hints.push('For a dropdown, say “choose” followed by the option name.');
   else if (elements.some(element => element.role === 'slider')) hints.push('For a slider, say “set slider to forty percent”.');
   else if (elements.some(element => element.role === 'radio')) hints.push('For a radio choice, say “select” followed by its name and “radio button”.');

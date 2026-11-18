@@ -23,6 +23,20 @@ test('custom comboboxes are chosen from by name, before their text is rewritten'
   assert.deepEqual(twice.choose(second.number), { type: 'choose-option', targetId: 4, optionName: 'small' });
 });
 
+test('taking a choice off a list is passed on, and confirmed first when its name is consequential', () => {
+  const calls = [];
+  const element = { isConnected: true };
+  const actions = { chooseListOption: (target, name, options) => { calls.push([name, options.selected, options.names]); return { ok: true, message: `${name} taken off Tags.` }; } };
+  const controller = createController({ window: {}, actions });
+  const context = { elements: [{ id: 5, name: 'Tags', role: 'combobox', customList: true, editable: true, distance: 0, chosenNames: ['Urgent', 'Delete account'], element }] };
+  assert.equal(controller.handle('remove urgent', context).tone, 'success');
+  const asked = controller.handle('remove delete account', context);
+  assert.equal(asked.tone, 'question');
+  assert.match(asked.message, /"Remove delete account from Tags" may have consequences/);
+  assert.equal(controller.handle('confirm', context).tone, 'success');
+  assert.deepEqual(calls, [['urgent', false, null], ['delete account', false, null]]);
+});
+
 test('a consequential custom option is confirmed before the list is touched', async () => {
   const calls = [];
   const element = { isConnected: true };

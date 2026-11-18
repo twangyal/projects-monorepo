@@ -26,6 +26,15 @@ const FILLER = new Set(('a an the it its them this that these those one ones in 
 const normalize = text => (text ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const words = text => normalize(text).split(' ').filter(Boolean).map(word => word === 'gray' ? 'grey' : word);
 
+/** The names in "red, green and blue" (or "red & blue", "red plus blue"); null for one name. */
+export function namesIn(said) {
+  const names = (said ?? '').split(/\s*,\s*|\s+(?:and|&|plus)\s+/i).map(name => name.replace(/^(?:and|&)\s+/i, '').trim()).filter(Boolean);
+  return names.length > 1 ? names : null;
+}
+
+/** Names as said in a sentence: "Red", "Red and Blue", "Red, Green and Blue". */
+export const sentence = names => names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+
 /** Other names for an option: a size's name, a country's short names, a number's word, what a delivery choice does. */
 export function optionMeanings(option) {
   const name = normalize(option), found = [];

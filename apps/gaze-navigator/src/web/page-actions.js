@@ -1,7 +1,8 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { captureActivationSnapshot, captureSubmissionSnapshot, submissionBinding, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName } from './page-context.js';
+import { captureActivationSnapshot, captureSubmissionSnapshot, submissionBinding, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName, chipsOf } from './page-context.js';
+import { namesIn, sentence } from './choices.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -456,18 +457,25 @@ function shown(node) {
   return node.ownerDocument.defaultView.getComputedStyle(node).visibility !== 'hidden';
 }
 
-// The options a custom combobox offers now: in the list it controls or owns, else in the one open listbox.
-function listOptions(element) {
+// The lists a custom combobox has open now: the one it controls or owns, else the one open listbox, unless the
+// combobox says its own is closed (a listbox shown in the page, such as one taking several choices, is not its list).
+// An option of a listbox shown on the page (not popped up by a combobox) belongs to that listbox.
+function openLists(element) {
+  const own = element.matches('[role=option]') ? element.closest('[role=listbox]') : null;
+  if (own) return shown(own) ? [own] : [];
   const root = element.getRootNode(), document = element.ownerDocument;
   const ids = [element, ...element.querySelectorAll('[aria-controls], [aria-owns]')]
     .flatMap(node => `${node.getAttribute('aria-controls') ?? ''} ${node.getAttribute('aria-owns') ?? ''}`.split(/\s+/)).filter(Boolean);
   const controlled = ids.map(id => root.getElementById?.(id) ?? document.getElementById(id)).filter(Boolean).filter(shown);
-  let lists = controlled;
-  if (!lists.length) {
-    const open = [...document.querySelectorAll('[role=listbox]')].filter(shown);
-    lists = open.length === 1 ? open : [];
-  }
-  const options = lists.flatMap(list => list.matches('[role=option]') ? [list] : [...list.querySelectorAll('[role=option]')]);
+  if (controlled.length) return controlled;
+  if (element.getAttribute('aria-expanded') === 'false') return [];
+  const open = [...document.querySelectorAll('[role=listbox]')].filter(shown);
+  return open.length === 1 ? open : [];
+}
+
+// The options a custom combobox offers now, in the lists it has open.
+function listOptions(element) {
+  const options = openLists(element).flatMap(list => list.matches('[role=option]') ? [list] : [...list.querySelectorAll('[role=option]')]);
   return [...new Set(options)].filter(shown);
 }
 
@@ -537,13 +545,25 @@ async function searchList(element, scroller, optionName, { isCurrent, until }) {
   return { ...pickOption(back(), choice.name), looked: seen.size, whole };
 }
 
-function pressOption(option) {
-  const view = option.ownerDocument.defaultView, init = { bubbles: true, cancelable: true, composed: true, view, button: 0 };
-  option.dispatchEvent(new view.PointerEvent('pointerdown', { ...init, pointerType: 'mouse', isPrimary: true }));
-  option.dispatchEvent(new view.MouseEvent('mousedown', init));
-  option.dispatchEvent(new view.PointerEvent('pointerup', { ...init, pointerType: 'mouse', isPrimary: true }));
-  option.dispatchEvent(new view.MouseEvent('mouseup', init));
-  option.click();
+// A pointer press as a mouse makes it. An icon (an SVG element) has no click() of its own, so its click is sent.
+function pointerPress(node) {
+  const view = node.ownerDocument.defaultView, init = { bubbles: true, cancelable: true, composed: true, view, button: 0 };
+  node.dispatchEvent(new view.PointerEvent('pointerdown', { ...init, pointerType: 'mouse', isPrimary: true }));
+  node.dispatchEvent(new view.MouseEvent('mousedown', init));
+  node.dispatchEvent(new view.PointerEvent('pointerup', { ...init, pointerType: 'mouse', isPrimary: true }));
+  node.dispatchEvent(new view.MouseEvent('mouseup', init));
+  if (typeof node.click === 'function') node.click(); else node.dispatchEvent(new view.MouseEvent('click', { ...init, detail: 1 }));
+}
+
+// Take a chip off its list: its remove control pressed, or, as MUI's chips ask, Backspace (then Delete) on the chip.
+async function removeChip({ chip, remover }, view) {
+  if (remover) { pointerPress(remover); return; }
+  chip.focus?.({ preventScroll: true });
+  for (const key of ['Backspace', 'Delete']) {
+    pressKey(chip, key);
+    await pause(view, 50);
+    if (!chip.isConnected) return;
+  }
 }
 
 const listing = names => names.slice(0, 8).join(', ') + (names.length > 8 ? `, and ${names.length - 8} more` : '');
@@ -552,13 +572,30 @@ const listing = names => names.slice(0, 8).join(', ') + (names.length > 8 ? `, a
  * Choose the option named `optionName` in a custom combobox: open its list (typing the name first into an
  * editable combobox when the shown choices do not include it), press the one matching option, then check
  * that the combobox shows it. Several or no matches leave the list open and name the choices.
+ *
+ * A list that takes several choices (aria-multiselectable, or showing those made as chips) is only ever added to: a
+ * choice made already is left alone, since pressing it again would take it off, and a new one is checked by its chip
+ * or its option's state, as the text box stays empty. "Red and blue" chooses each, when no one choice has that whole
+ * name (`names` gives them already apart). With `selected` false the choices are taken off instead: each chip's remove
+ * control pressed (or Backspace on the chip), or, in a list without chips, its chosen option pressed. `element` may be
+ * an option of a listbox shown on the page, which needs no opening.
  */
-export function chooseListOption(element, optionName, { isCurrent = () => true } = {}) {
-  const label = accessibleName(element) || 'The list';
-  const available = () => element.isConnected && unlocked(element);
+export function chooseListOption(element, optionName, { isCurrent = () => true, selected = true, names = null } = {}) {
+  // An option of a list a combobox popped up is chosen through that combobox, which shows the choices made.
+  const popup = element.matches('[role=option]') ? element.closest('[role=listbox]') : null;
+  const escape = element.ownerDocument.defaultView.CSS.escape;
+  const owner = popup?.id ? element.ownerDocument.querySelector(`[aria-controls~="${escape(popup.id)}"], [aria-owns~="${escape(popup.id)}"]`) : null;
+  if (owner && !popup.contains(owner)) element = owner;
+  const shownList = element.matches('[role=option]') ? element.closest('[role=listbox]') : null;
+  const field = shownList ?? element, label = accessibleName(field) || 'The list';
+  const available = () => element.isConnected && field.isConnected && unlocked(field);
   if (!available()) return { ok: false, message: `${label} is not available.` };
-  const view = element.ownerDocument.defaultView, editable = isEditable(element);
-  const shows = name => comparable(editable ? element.value : element.textContent).includes(comparable(name));
+  const view = element.ownerDocument.defaultView, editable = !shownList && isEditable(element);
+  const shows = name => !shownList && comparable(editable ? element.value : element.textContent).includes(comparable(name));
+  const chips = () => shownList ? [] : chipsOf(element);
+  const chipsNamed = name => chips().filter(chip => comparable(chip.name) === comparable(name)).length;
+  const several = () => openLists(element).some(list => list.getAttribute('aria-multiselectable') === 'true') || chips().length > 0;
+  const isChosen = option => option.getAttribute('aria-selected') === 'true' || option.getAttribute('aria-checked') === 'true';
   const until = async (ms, test) => {
     for (let waited = 0; ; waited += 50) {
       const found = test();
@@ -566,38 +603,102 @@ export function chooseListOption(element, optionName, { isCurrent = () => true }
       await pause(view, 50);
     }
   };
-  return { message: `Opening ${label}…`, followUp: (async () => {
-    if (!listOptions(element).length) {
-      element.focus({ preventScroll: true });
-      if (editable) pressKey(element, 'ArrowDown'); else element.click();
-      await until(LIST_OPEN_MS, () => listOptions(element).length);
-    }
-    let choice = pickOption(listOptions(element), optionName);
+  const open = async () => {
+    if (shownList || listOptions(element).length) return;
+    element.focus({ preventScroll: true });
+    if (editable) pressKey(element, 'ArrowDown'); else element.click();
+    await until(LIST_OPEN_MS, () => listOptions(element).length);
+  };
+  // The option named `name`: among those shown, typed for in an editable combobox, or scrolled to in a long list.
+  const find = async name => {
+    await open();
+    let choice = pickOption(listOptions(element), name);
     if (!choice.option && editable && isCurrent() && available()) {
-      writeValue(element, optionName);
-      await until(LIST_SEARCH_MS, () => pickOption(listOptions(element), optionName).option);
-      choice = pickOption(listOptions(element), optionName);
+      writeValue(element, name);
+      await until(LIST_SEARCH_MS, () => pickOption(listOptions(element), name).option);
+      choice = pickOption(listOptions(element), name);
     }
     // A list that shows only the choices in view may hold the exact name further down, out of the page.
     const scroller = isCurrent() && available() ? partialScroller(element) : null;
-    if (scroller && !(choice.option && comparable(accessibleName(choice.option)) === comparable(optionName))) {
-      choice = await searchList(element, scroller, optionName, { isCurrent, until });
+    if (scroller && !(choice.option && comparable(accessibleName(choice.option)) === comparable(name))) {
+      choice = await searchList(element, scroller, name, { isCurrent, until });
     }
-    if (!isCurrent()) return { ok: false, message: `Stopped before choosing in ${label}.` };
-    if (!available()) return { ok: false, message: `The website removed or locked ${label}. Check it before continuing.` };
-    if (choice.ambiguous) return { ok: false, message: `Several choices match “${optionName}”: ${listing(choice.ambiguous)}. Say “click” and the one you mean.` };
-    if (!choice.option) {
-      if (choice.looked) return { ok: false, message: choice.whole ? `No choice called “${optionName}” in ${label}, after looking through all ${choice.looked} of them.` : `No choice called “${optionName}” among the first ${choice.looked} in ${label}. Scroll the list to it, then say “click” and its name.` };
-      return { ok: false, message: choice.none?.length ? `No choice called “${optionName}” in ${label}. Shown: ${listing(choice.none)}.` : `${label} did not show any choices.` };
-    }
-    const option = choice.option, name = accessibleName(option);
-    if (option.getAttribute('aria-disabled') === 'true') return { ok: false, message: `${name} is unavailable in ${label}.` };
-    if (shows(name) && option.getAttribute('aria-selected') === 'true') return { ok: true, message: `${name} is already chosen in ${label}.` };
+    return choice;
+  };
+  const halted = () => !isCurrent() ? { ok: false, halt: true, message: `Stopped before changing ${label}.` }
+    : !available() ? { ok: false, halt: true, message: `The website removed or locked ${label}. Check it before continuing.` } : null;
+  const unfound = (choice, name) => {
+    if (choice.ambiguous) return { ok: false, message: `Several choices match “${name}”: ${listing(choice.ambiguous)}. Say “click” and the one you mean.` };
+    if (choice.looked) return { ok: false, missing: true, message: choice.whole ? `No choice called “${name}” in ${label}, after looking through all ${choice.looked} of them.` : `No choice called “${name}” among the first ${choice.looked} in ${label}. Scroll the list to it, then say “click” and its name.` };
+    return { ok: false, missing: true, message: choice.none?.length ? `No choice called “${name}” in ${label}. Shown: ${listing(choice.none)}.` : `${label} did not show any choices.` };
+  };
+
+  const add = async name => {
+    const made = chips().find(chip => comparable(chip.name) === comparable(name));
+    if (made) return { ok: true, already: true, name: made.name };
+    const choice = await find(name);
+    const stop = halted();
+    if (stop) return stop;
+    if (!choice.option) return unfound(choice, name);
+    const option = choice.option, found = accessibleName(option);
+    if (option.getAttribute('aria-disabled') === 'true') return { ok: false, message: `${found} is unavailable in ${label}.` };
+    const multiple = several();
+    if (multiple ? isChosen(option) || chipsNamed(found) > 0 : shows(found) && isChosen(option)) return { ok: true, already: true, name: found };
+    const before = chipsNamed(found);
     option.scrollIntoView?.({ block: 'nearest' });
-    pressOption(option);
-    const chosen = await until(300, () => shows(name));
-    return chosen ? { ok: true, message: `${name} chosen in ${label}.` }
-      : { ok: false, message: `The website did not show ${name} as chosen in ${label}. Check it before continuing.` };
+    pointerPress(option);
+    const chosen = await until(300, () => shows(found) || chipsNamed(found) > before || (multiple && option.isConnected && shown(option) && isChosen(option)));
+    return chosen ? { ok: true, name: found } : { ok: false, message: `The website did not show ${found} as chosen in ${label}. Check it before continuing.` };
+  };
+
+  const drop = async name => {
+    const shownChips = chips();
+    if (shownChips.length) {
+      const made = pickName(shownChips.map(chip => chip.name), name);
+      if (made.ambiguous) return { ok: false, message: `Several choices made match “${name}”: ${listing(made.ambiguous)}. Say the one you mean.` };
+      if (made.name === undefined) return { ok: false, missing: true, message: `No choice made in ${label} is called “${name}”. Chosen: ${listing(shownChips.map(chip => chip.name))}.` };
+      const before = chipsNamed(made.name);
+      await removeChip(shownChips.find(chip => chip.name === made.name), view);
+      const gone = await until(300, () => chipsNamed(made.name) < before);
+      return halted() ?? (gone ? { ok: true, name: made.name } : { ok: false, message: `The website did not take ${made.name} off ${label}. Check it before continuing.` });
+    }
+    // A list without chips is changed in the list itself: a chosen option pressed is taken off.
+    const choice = await find(name);
+    const stop = halted();
+    if (stop) return stop;
+    if (!choice.option) return unfound(choice, name);
+    const option = choice.option, found = accessibleName(option);
+    if (!several()) return { ok: false, message: `${label} holds one choice. Choose another in it instead.` };
+    if (!isChosen(option)) return { ok: true, already: true, name: found };
+    pointerPress(option);
+    const off = await until(300, () => option.isConnected && shown(option) ? !isChosen(option) : !shows(found));
+    return off ? { ok: true, name: found } : { ok: false, message: `The website did not take ${found} off ${label}. Check it before continuing.` };
+  };
+
+  return { message: `${selected ? 'Opening' : 'Changing'} ${label}…`, followUp: (async () => {
+    const each = selected ? add : drop;
+    // A field focused shows all its chips (MUI hides some beyond a limit until then). A list is opened to be added to,
+    // or to take a choice off when there are no chips to take it off by.
+    if (!shownList) element.focus({ preventScroll: true });
+    if (selected || !chips().length) await open();
+    // "Red and blue" in a list that takes several is each of them, unless one choice is called that (Salt and pepper).
+    const apart = names ?? (several() && namesIn(optionName) && !pickOption(listOptions(element), optionName).option && !chipsNamed(optionName) ? namesIn(optionName) : null);
+    const results = [];
+    for (const name of apart ?? [optionName]) {
+      const result = await each(name);
+      results.push(result);
+      if (!result.ok) break;
+    }
+    const failed = results.find(result => !result.ok);
+    if (failed?.halt && results.length === 1) return failed;
+    const done = results.filter(result => result.ok && !result.already).map(result => result.name);
+    const already = results.filter(result => result.ok && result.already).map(result => result.name);
+    const state = (count, where) => `${count > 1 ? (selected ? 'were already chosen' : 'were not chosen') : (selected ? 'is already chosen' : 'is not chosen')}${where ? ` in ${label}` : ''}`;
+    const lines = [];
+    if (done.length) lines.push(`${sentence(done)} ${selected ? 'chosen in' : 'taken off'} ${label}.`);
+    if (already.length) lines.push(`${sentence(already)} ${state(already.length, !done.length)}.`);
+    if (failed) lines.push(failed.message);
+    return { ok: !failed, message: lines.join(' ') || `${label} did not change.` };
   })() };
 }
 
@@ -1005,36 +1106,45 @@ export function selectOption(element, optionIndex, snapshot) {
     retained() ? { ok: true, message: `${intended.label.trim()} selected.` } : changed()) };
 }
 
-/** Change exactly one native multi-select choice against the captured selection graph. */
-export function setMultipleOption(element, optionIndex, selected, snapshot) {
+/**
+ * Change native multi-select choices against the captured selection graph: one option (`optionIndexes` a number) or
+ * several said together ("rock and jazz"), all changed in one input and change, as ctrl-clicking them would.
+ */
+export function setMultipleOption(element, optionIndexes, selected, snapshot) {
   const refuse = message => ({ ok: false, message });
+  const indexes = [optionIndexes].flat();
   const available = () => element.tagName === 'SELECT' && element.isConnected && element.multiple && !element.readOnly && unlocked(element);
-  if (!available() || typeof selected !== 'boolean' || !snapshot?.multiple || !Number.isInteger(optionIndex) || optionIndex < 0 || !snapshot.options?.[optionIndex]) {
+  if (!available() || typeof selected !== 'boolean' || !snapshot?.multiple || !indexes.length || new Set(indexes).size !== indexes.length ||
+    !indexes.every(index => Number.isInteger(index) && index >= 0 && snapshot.options?.[index])) {
     return refuse('This command needs an available native multiple-selection list.');
   }
-  const intended = snapshot.options[optionIndex];
+  const intended = indexes.map(index => snapshot.options[index]);
+  const changing = new Set(indexes.filter(index => snapshot.options[index].selected !== selected));
   const matches = (after = false) => {
     if (!available() || !Array.isArray(snapshot.frames) || !snapshot.frames.every(frame => frame.element.isConnected && frame.element.contentDocument === frame.document)) return false;
     const current = captureSelectSnapshot(element);
-    const expectedIndex = after ? snapshot.options.findIndex((option, index) => index === optionIndex ? selected : option.selected) : snapshot.selectedIndex;
+    const expectedIndex = after ? snapshot.options.findIndex((option, index) => changing.has(index) ? selected : option.selected) : snapshot.selectedIndex;
     return current.frames.length === snapshot.frames.length && current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document) &&
       ['document', 'name', 'role', 'multiple'].every(key => current[key] === snapshot[key]) && current.selectedIndex === expectedIndex &&
       current.options.length === snapshot.options.length && current.options.every((option, index) =>
-        Object.keys(option).every(key => option[key] === (after && index === optionIndex && key === 'selected' ? selected : snapshot.options[index][key])));
+        Object.keys(option).every(key => option[key] === (after && changing.has(index) && key === 'selected' ? selected : snapshot.options[index][key])));
   };
-  if (!matches() || intended.disabled || intended.groupDisabled) return refuse('The list, option or selection changed or is unavailable. Look at it and choose again.');
-  if (intended.selected === selected) return { ok: true, message: `${intended.label.trim()} is already ${selected ? 'selected' : 'not selected'}.` };
+  if (!matches() || intended.some(option => option.disabled || option.groupDisabled)) return refuse('The list, option or selection changed or is unavailable. Look at it and choose again.');
+  const names = options => sentence(options.map(option => option.label.trim()));
+  const unchanged = intended.filter((_, i) => !changing.has(indexes[i])), state = `already ${selected ? 'selected' : 'not selected'}`;
+  if (!changing.size) return { ok: true, message: `${names(unchanged)} ${unchanged.length > 1 ? 'are' : 'is'} ${state}.` };
   element.focus({ preventScroll: true });
   if (!ownsFocus(element) || !matches()) return refuse('The list changed while focusing it. Look at it and choose again.');
   const changed = () => refuse('The website did not retain the requested selection and other choices. Check the list before continuing.');
   const view = element.ownerDocument.defaultView;
-  Object.getOwnPropertyDescriptor(view.HTMLOptionElement.prototype, 'selected').set.call(intended.element, selected);
+  for (const index of changing) Object.getOwnPropertyDescriptor(view.HTMLOptionElement.prototype, 'selected').set.call(snapshot.options[index].element, selected);
   if (!matches(true)) return changed();
   element.dispatchEvent(new view.Event('input', { bubbles: true, composed: true }));
   if (!matches(true)) return changed();
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  const done = `${names(intended.filter((_, i) => changing.has(indexes[i])))} ${selected ? 'added to' : 'removed from'} the selection.`;
   return { message: 'Checking the requested list selection…', followUp: new Promise(resolve => globalThis.setTimeout(resolve, 0)).then(() =>
-    matches(true) ? { ok: true, message: `${intended.label.trim()} ${selected ? 'added to' : 'removed from'} the selection.` } : changed()) };
+    matches(true) ? { ok: true, message: unchanged.length ? `${done} ${names(unchanged)} ${unchanged.length > 1 ? 'were' : 'was'} ${state}.` : done } : changed()) };
 }
 
 export function submit(element, { confirmation = null } = {}) {
