@@ -18,8 +18,10 @@ export function splitCue(cues: Cue[], index: number, caret: number, time: number
   const left = cue.text.charCodeAt(offset - 1), right = cue.text.charCodeAt(offset);
   if (left >= 0xd800 && left <= 0xdbff && right >= 0xdc00 && right <= 0xdfff) throw new Error('Place the caret between complete Unicode code points.');
   if (!Number.isFinite(time) || time <= cue.start || time >= cue.end) throw new Error('Seek the audio playhead strictly inside this line’s start and end before splitting.');
-  next.splice(index, 1, { start: cue.start, end: time, text: cue.text.slice(0, offset) },
-    { start: time, end: cue.end, text: cue.text.slice(offset) });
+  // Both halves are sung by the line's singer.
+  const singer = cue.singer !== undefined ? { singer: cue.singer } : {};
+  next.splice(index, 1, { start: cue.start, end: time, text: cue.text.slice(0, offset), ...singer },
+    { start: time, end: cue.end, text: cue.text.slice(offset), ...singer });
   return validateCues(next, duration);
 }
 
@@ -28,8 +30,28 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
   const next = validateCues(cues, duration); validIndex(next, index);
   if (index + 1 === next.length) throw new Error('The last lyric line has no next line to merge.');
   const first = next[index], second = next[index + 1];
-  next.splice(index, 2, { start: first.start, end: second.end, text: `${first.text}\n${second.text}` });
+  // Lines for different singers become one the two sing together.
+  const singer = first.singer !== undefined && second.singer !== undefined && first.singer !== second.singer ? 'both' : first.singer ?? second.singer;
+  next.splice(index, 2, { start: first.start, end: second.end, text: `${first.text}\n${second.text}`, ...(singer !== undefined ? { singer } : {}) });
   return validateCues(next, duration);
+}
+
+/**
+ * Lines that take the place of others keep who sings there, so reviewing a duet's lines again keeps its parts: a line
+ * without a singer takes the singer of the replaced lines it mostly covers (both, when those differ, as merging gives),
+ * or else of the one it overlaps most.
+ */
+export function keepSingers(replaced: readonly Cue[], cues: readonly Cue[]): Cue[] {
+  return cues.map(cue => {
+    if (cue.singer !== undefined) return cue;
+    const overlap = (line: Cue) => Math.min(line.end, cue.end) - Math.max(line.start, cue.start);
+    const touching = replaced.filter(line => overlap(line) > 0);
+    const covered = touching.filter(line => overlap(line) * 2 > line.end - line.start);
+    const from = covered.length ? covered : touching.sort((a, b) => overlap(b) - overlap(a)).slice(0, 1);
+    const singers = [...new Set(from.flatMap(line => line.singer !== undefined ? [line.singer] : []))];
+    const singer = singers.length > 1 ? 'both' : singers[0];
+    return singer !== undefined ? { ...cue, singer } : cue;
+  });
 }
 
 export interface CuePassage { firstIndex: number; lastIndex: number }

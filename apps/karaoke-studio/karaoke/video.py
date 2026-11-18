@@ -108,6 +108,38 @@ STYLES = {
 }
 
 
+# Duets (see src/parts.ts): the lines each singer sings light up in their own colour, singer 1 in the style's accent,
+# and lines both sing in a third; their words still to be sung lean PART_TINT of the way toward it, and the next line
+# says whose it is. Singer 2's colour and both singers' in each style:
+PART_COLOURS = {
+    'classic': ('#8ec5ff', '#c9a7ff'),
+    'contrast': ('#00e5ff', '#ff7ae0'),
+    'large': ('#8ec5ff', '#c9a7ff'),
+    'light': ('#1f5fa8', '#7a3a9a'),
+}
+PART_TINT = 0.3
+
+
+def mix(a: str, b: str, t: float) -> str:
+    """``a`` moved ``t`` of the way to ``b``, both ``#rrggbb``, rounded as the preview rounds (halves up)."""
+    channel = lambda colour, i: int(colour[1 + 2 * i:3 + 2 * i], 16)  # noqa: E731
+    return '#' + ''.join(f'{math.floor(channel(a, i) + (channel(b, i) - channel(a, i)) * t + 0.5):02x}' for i in range(3))
+
+
+def part_look(style: str, singer) -> tuple[str, str]:
+    """A line's colours in ``style`` for its ``singer``: its words still to be sung, and those sung."""
+    look = STYLES[validate_style(style)]
+    if singer is None:
+        return look['main'], look['accent']
+    accent = look['accent'] if singer == 1 else PART_COLOURS[style][0 if singer == 2 else 1]
+    return mix(look['main'], accent, PART_TINT), accent
+
+
+def next_label(singer) -> str:
+    """How the next line is introduced: whose it is, in a duet."""
+    return 'Next' if singer is None else 'Next, both' if singer == 'both' else f'Next, singer {singer}'
+
+
 def validate_size(value) -> str:
     if value not in VIDEO_SIZES:
         raise ValidationError('Choose a video size: 720p (1280x720), 1080p (1920x1080) or vertical (1080x1920).')
@@ -499,16 +531,18 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     # With its pronunciation under it, the line being sung moves up to leave it room.
     said = said if active_index is not None and said else None
     middle, room = (place['said_middle'] * k, place['said_room'] * k) if said else (place['middle'] * k, place['room'] * k)
+    # A duet's line takes its singer's colours.
+    line_main, line_accent = part_look(style, cues[active_index].get('singer')) if active_index is not None else (main, accent)
     if active_index is not None and sung is not None:
-        text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room, fill=main,
-             sung_chars=sum(len(word) for word in sung), sung_fill=accent)
+        text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room, fill=line_main,
+             sung_chars=sum(len(word) for word in sung), sung_fill=line_accent)
     else:
         text(active, middle, size=44 * scale * k, minimum=24 * scale * k, max_height=room,
-             fill=accent if active_index is not None else main)
+             fill=line_accent if active_index is not None else main)
     if said:
         spoken = said_line(said[:len(sung)]) if sung is not None else said_line(said)
         text(said_line(said), place['said'] * k, size=28 * scale * k, minimum=18 * scale * k, max_height=90 * k, fill=muted,
-             sung_chars=sum(not ch.isspace() for ch in spoken), sung_fill=accent)
+             sung_chars=sum(not ch.isspace() for ch in spoken), sung_fill=line_accent)
     if active_index is None and count:
         # Dots in a row under the break, one fewer each second, in the colour of words not yet sung.
         radius, gap = 12 * k, 44 * k
@@ -518,7 +552,7 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
             draw.ellipse((x - radius, place['dots'] * k - radius, x + radius, place['dots'] * k + radius), fill=main)
     next_index = active_index + 1 if active_index is not None else 0
     if next_index < len(cues):
-        text('Next: ' + cues[next_index]['text'], place['next'] * k, size=26 * scale * k, minimum=18 * scale * k, max_height=80 * min(scale, 1.2) * k, fill=muted)
+        text(f"{next_label(cues[next_index].get('singer'))}: {cues[next_index]['text']}", place['next'] * k, size=26 * scale * k, minimum=18 * scale * k, max_height=80 * min(scale, 1.2) * k, fill=muted)
     text('Karaoke Studio · Backing track', place['footer'] * k, size=20 * k, minimum=20 * k, max_height=40 * k, fill=muted)
     image.save(output, format='PNG')
 

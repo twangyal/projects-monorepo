@@ -1,5 +1,5 @@
 import { MAX_CUES, validateCues, type Cue } from './lyrics.ts';
-import { splitCue, mergeCue } from './cue-edit.ts';
+import { keepSingers, splitCue, mergeCue } from './cue-edit.ts';
 import { createPracticeRange, type PracticeRange } from './practice.ts';
 
 export interface ReviewedCue { start: string; end: string; text: string; excluded?: boolean }
@@ -77,7 +77,8 @@ export function applySingleReviewedCue(current: Cue[], selected: Cue, duration: 
   if (target < 0) target = cues.length;
   const old = cues[target];
   const changed = !replaced || old.start !== selected.start || old.end !== selected.end || old.text !== selected.text;
-  cues.splice(target, replaced ? 1 : 0, selected);
+  // A line it replaces keeps its singer.
+  cues.splice(target, replaced ? 1 : 0, ...keepSingers(replaced ? [old] : [], [selected]));
   return {cues:validateCues(cues, duration),index:target,replaced,changed};
 }
 
@@ -102,6 +103,8 @@ export function applyReviewedPassage(current: Cue[], rows: readonly ReviewedCue[
   let index = overlaps.length ? overlaps[0] : cues.findIndex(cue => cue.start >= end);
   if (index < 0) index = cues.length;
   const removed = overlaps.length;
+  // The lines it replaces keep their singers.
+  selected = keepSingers(overlaps.map(at => cues[at]), selected);
   const changed = removed !== selected.length || selected.some((cue, offset) => {
     const old = cues[index + offset];
     return !old || old.start !== cue.start || old.end !== cue.end || old.text !== cue.text;

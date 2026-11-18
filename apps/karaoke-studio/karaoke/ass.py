@@ -4,7 +4,8 @@ Aegisub) read.
 Each saved line is one Dialogue event in the Classic lyric colours: words start in the main colour and fill with the
 accent colour as they are sung, through ``\\kf`` tags. Each word starts filling when the preview and the exported video
 highlight it and fills until the next word starts, the last until the line ends; the wait before the first word is an
-empty ``\\k`` tag.
+empty ``\\k`` tag. In a duet, each singer's lines and those both sing have a style of their own in their part's
+colours (see ``video.part_look``), and name the part in the event's Name field, where subtitle editors keep the actor.
 """
 from __future__ import annotations
 
@@ -12,8 +13,10 @@ import re
 
 from .lyrics_auto import needs_space, word_timings
 from .model import validate_project
-from .video import ACCENT, BACKGROUND, MAIN
+from .video import ACCENT, BACKGROUND, MAIN, part_look
 
+# The style (and actor name) of a line sung by anyone, by either singer, or by both.
+PART_STYLES = {None: 'Karaoke', 1: 'Singer 1', 2: 'Singer 2', 'both': 'Both'}
 # Override blocks start with "{" and escapes with "\": lyrics must not open either.
 _OVERRIDE_CHARACTERS = str.maketrans({'{': '(', '}': ')', '\\': '/'})
 
@@ -42,14 +45,17 @@ def render_ass(project: dict, words: list | None = None, letters=None, language:
     project = validate_project(project)
     cues = project['cues']
     timings = word_timings(cues, words or [], project['duration'], letters, language)
-    style = ','.join(['Karaoke', 'Arial', '54', _colour(ACCENT), _colour(MAIN), _colour(BACKGROUND), _colour(BACKGROUND, 0x80),
-                      '-1', '0', '0', '0', '100', '100', '0', '0', '1', '3', '0', '2', '60', '60', '60', '1'])
+    def style(name: str, main: str, accent: str) -> str:
+        return ','.join([name, 'Arial', '54', _colour(accent), _colour(main), _colour(BACKGROUND), _colour(BACKGROUND, 0x80),
+                         '-1', '0', '0', '0', '100', '100', '0', '0', '1', '3', '0', '2', '60', '60', '60', '1'])
+    styles = [style('Karaoke', MAIN, ACCENT)] + [style(PART_STYLES[singer], *part_look('classic', singer))
+                                                 for singer in (1, 2, 'both') if any(cue.get('singer') == singer for cue in cues)]
     lines = ['[Script Info]', f'Title: {_plain(project["title"])}', 'ScriptType: v4.00+', 'PlayResX: 1280', 'PlayResY: 720',
              'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
              '[V4+ Styles]',
              'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, '
              'StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-             f'Style: {style}', '',
+             *(f'Style: {line}' for line in styles), '',
              '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text']
     for index, cue in enumerate(cues):
         sung, previous, at = '', '', round(cue['start'] * 100)
@@ -61,5 +67,6 @@ def render_ass(project: dict, words: list | None = None, letters=None, language:
             until = sung_words[number + 1][1] if number + 1 < len(sung_words) else round(cue['end'] * 100)
             sung += f'{" " if previous and needs_space(previous, text) else ""}{{\\kf{max(1, until - at)}}}{text}'
             at, previous = max(until, at + 1), text
-        lines.append(f'Dialogue: 0,{_time(cue["start"])},{_time(cue["end"])},Karaoke,,0,0,0,,{sung}')
+        part = PART_STYLES[cue.get('singer')]
+        lines.append(f'Dialogue: 0,{_time(cue["start"])},{_time(cue["end"])},{part},{part if cue.get("singer") is not None else ""},0,0,0,,{sung}')
     return '\n'.join(lines) + '\n'

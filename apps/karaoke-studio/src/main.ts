@@ -17,12 +17,13 @@ import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 import { findCueIndices, nextCueMatch } from './find-cues.ts';
 import { fitCues } from './cue-fit.ts';
-import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, type CuePassage } from './cue-edit.ts';
+import { splitCue, mergeCue, shiftCues, copyCues, removeCues, insertCue, replaceCueWords, keepSingers, type CuePassage } from './cue-edit.ts';
 import { isRehearsalSpeed, createPracticeRange, type PracticeMode, type PracticeRange } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, reviewedPreview, type ReviewedCue } from './automatic-review.ts';
 import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
+import { nextLabel, partLook } from './parts.ts';
 import { framed, joinPieces, lineWords, litWords, sungStretches, type WordPlace } from './bidi-highlight.ts';
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
@@ -693,9 +694,12 @@ function draw() {
   // How a line in another script is said, in Latin letters, under it; the line moves up to leave it room.
   const pieces = timing && element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide' && !textLayout(current).bidi ? timing.said[index] : null;
   const [middle, room] = pieces ? [place.saidMiddle, place.saidRoom] : [place.middle, place.room];
-  if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, look.main, sungCharacters(timing.lines[index], time), look.accent);
-  else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? look.accent : look.main, undefined, look.accent);
-  if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), look.accent);
+  // A duet's line takes its singer's colours (see parts.ts).
+  const part = partLook(lyricStyle(), look, index >= 0 ? cues[index].singer : undefined);
+  stage.dataset.singer = index >= 0 && cues[index].singer !== undefined ? String(cues[index].singer) : '';
+  if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, part.main, sungCharacters(timing.lines[index], time), part.accent);
+  else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? part.accent : look.main, undefined, part.accent);
+  if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), part.accent);
   stage.dataset.said = pieces ? saidLine(pieces) : '';
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
   stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
@@ -706,7 +710,7 @@ function draw() {
     context.fillStyle = look.main;
     for (let dot = 0; dot < count; dot++) { context.beginPath(); context.arc(frameWidth / 2 - (count - 1) * 22 + dot * 44, cardPlace.dots, 12, 0, 2 * Math.PI); context.fill(); }
   }
-  if (upcoming) drawBlock(`Next: ${upcoming.text}`, cardPlace.next, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
+  if (upcoming) drawBlock(`${nextLabel(upcoming.singer)}: ${upcoming.text}`, cardPlace.next, Math.floor(26 * scale), Math.floor(18 * scale), Math.floor(80 * Math.min(scale, 1.2)), look.muted, undefined, look.accent);
   context.font = '20px KaraokeSans'; context.fillStyle = look.muted; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, frameWidth / 2, cardPlace.footer);
   stage.dataset.activeCue = String(review && index >= 0 ? review.indices[index] : index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
@@ -1763,7 +1767,8 @@ element('srt-apply').addEventListener('click', () => {
   const review = srtReview;
   if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory || (automaticReview && automaticReviewSource === 'passage')) return;
   let cues: Project['cues'];
-  try { cues = automaticReview ? reviewedAutomaticCues() : structuredClone(review.cues); }
+  // The new lines keep the singers of the lines they replace.
+  try { cues = keepSingers(working.cues, automaticReview ? reviewedAutomaticCues() : structuredClone(review.cues)); }
   catch (error) {
     element('automatic-review-error').textContent = error instanceof Error ? error.message : 'Check every reviewed lyric line.'; return;
   }
@@ -2091,6 +2096,17 @@ function renderCues(rawTimings: RawTiming[] = []) {
     const text = cueInput(`Lyric line ${index + 1}`, cue.text, 'text', value => { cue.text = value; }); text.className = 'cue-text'; row.append(text);
     const start = cueInput(`Start line ${index + 1}`, rawTimings[index] && Object.is(rawTimings[index].start, cue.start) ? rawTimings[index].startText : Number.isFinite(cue.start) ? String(cue.start) : '', 'number', value => { cue.start = value === '' ? NaN : Number(value); }); start.querySelector('input')!.dataset.boundary = 'start'; row.append(start);
     const end = cueInput(`End line ${index + 1}`, rawTimings[index] && Object.is(rawTimings[index].end, cue.end) ? rawTimings[index].endText : Number.isFinite(cue.end) ? String(cue.end) : '', 'number', value => { cue.end = value === '' ? NaN : Number(value); }); end.querySelector('input')!.dataset.boundary = 'end'; row.append(end);
+    // Who sings it, in a duet: one unsaved Undo/Redo edit, like any other.
+    const singer = document.createElement('label'); singer.className = 'cue-singer'; singer.textContent = `Singer line ${index + 1}`;
+    const choice = document.createElement('select');
+    for (const [value, label] of [['', 'Anyone'], ['1', 'Singer 1'], ['2', 'Singer 2'], ['both', 'Both']] as const) choice.add(new Option(label, value));
+    choice.value = cue.singer === undefined ? '' : String(cue.singer);
+    choice.addEventListener('change', () => {
+      const value = choice.value;
+      if (value === '') delete cue.singer; else cue.singer = value === 'both' ? 'both' : (Number(value) as 1 | 2);
+      changed(); draw();
+    });
+    singer.append(choice); row.append(singer);
     const actions = document.createElement('div'); actions.className = 'cue-actions';
     for (const [label, action] of [
       ['Select timing', () => { workspace.reveal(element('timing-workbench')); timeline.selectCue(index); }],
@@ -2931,7 +2947,12 @@ window.addEventListener('blur', blockTimingKeys);
 element('timing-apply').addEventListener('click', () => {
   const owner = timingOwner; if (!owner || owner.capture.state.phase !== 'review' || timingBusy() || !working || !lyricHistory) return;
   try {
-    const cues = owner.capture.review(); validateCues(cues, owner.duration);
+    // The same lines, newly timed, keep who sings them.
+    const cues = owner.capture.review().map((cue, index) => {
+      const before = working!.cues[index];
+      return before?.text === cue.text && before.singer !== undefined ? { ...cue, singer: before.singer } : cue;
+    });
+    validateCues(cues, owner.duration);
     if (session && (owner.duration > session.maxDuration || cues.length > session.maxCues || cues.reduce((sum, cue) => sum + Array.from(cue.text).length, 0) > session.maxLyricChars)) throw Error('The captured lyrics exceed the connected studio’s limits.');
     const same = cues.length === working.cues.length && cues.every((cue, index) => cue.text === working!.cues[index].text && Object.is(cue.start, working!.cues[index].start) && Object.is(cue.end, working!.cues[index].end));
     const before = draftSnapshot();

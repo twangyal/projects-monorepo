@@ -1,0 +1,80 @@
+{
+ "classic": {
+  "anyone": {
+   "main": "#f7f5ed",
+   "accent": "#e4b77d"
+  },
+  "1": {
+   "main": "#f1e2cb",
+   "accent": "#e4b77d"
+  },
+  "2": {
+   "main": "#d8e7f2",
+   "accent": "#8ec5ff"
+  },
+  "both": {
+   "main": "#e9def2",
+   "accent": "#c9a7ff"
+  }
+ },
+ "contrast": {
+  "anyone": {
+   "main": "#ffffff",
+   "accent": "#ffd400"
+  },
+  "1": {
+   "main": "#fff2b3",
+   "accent": "#ffd400"
+  },
+  "2": {
+   "main": "#b3f7ff",
+   "accent": "#00e5ff"
+  },
+  "both": {
+   "main": "#ffd7f6",
+   "accent": "#ff7ae0"
+  }
+ },
+ "large": {
+  "anyone": {
+   "main": "#f7f5ed",
+   "accent": "#e4b77d"
+  },
+  "1": {
+   "main": "#f1e2cb",
+   "accent": "#e4b77d"
+  },
+  "2": {
+   "main": "#d8e7f2",
+   "accent": "#8ec5ff"
+  },
+  "both": {
+   "main": "#e9def2",
+   "accent": "#c9a7ff"
+  }
+ },
+ "light": {
+  "anyone": {
+   "main": "#17242d",
+   "accent": "#9a4a12"
+  },
+  "1": {
+   "main": "#3e2f25",
+   "accent": "#9a4a12"
+  },
+  "2": {
+   "main": "#193652",
+   "accent": "#1f5fa8"
+  },
+  "both": {
+   "main": "#352b4e",
+   "accent": "#7a3a9a"
+  }
+ },
+ "next": {
+  "anyone": "Next",
+  "1": "Next, singer 1",
+  "2": "Next, singer 2",
+  "both": "Next, both"
+ }
+}

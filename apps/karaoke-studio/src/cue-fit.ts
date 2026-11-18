@@ -21,7 +21,7 @@ export function fitCues(cues: Cue[], duration: number, rawStart: string, rawEnd:
   // Normalize first: end/start division could overflow for a tiny valid source span.
   const map = (value: number) => start + ((value - origin) / (finish - origin)) * (end - start);
   const after = validateCues(before.map((cue, index) => index < first || index > last ? cue : {
-    text: cue.text, start: index === first ? start : map(cue.start), end: index === last ? end : map(cue.end),
+    ...cue, start: index === first ? start : map(cue.start), end: index === last ? end : map(cue.end),
   }), duration);
   for (let index = first + 1; index <= last; index++) {
     if (before[index].start > before[index - 1].end && after[index].start <= after[index - 1].end) {

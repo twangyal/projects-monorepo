@@ -516,7 +516,7 @@ audio {
   flex-direction:column;
   gap:.25rem
 }
-.cue input,.cue textarea {
+.cue input,.cue textarea,.cue select {
   width:100%;
   min-width:0;
   background:#fffefa;
@@ -526,8 +526,14 @@ audio {
   font-size:.72rem;
   color:#37504c
 }
+/* Who sings the line sits under its times, beside the line's actions. */
+.cue-singer {
+  grid-column:3 / -1;
+  grid-row:2
+}
 .cue-actions {
-  grid-column:2 / -1;
+  grid-column:2;
+  grid-row:2;
   display:flex;
   gap:1rem;
   flex-wrap:wrap
@@ -718,7 +724,13 @@ main {
 .cue>label:nth-of-type(2) {
   grid-column:2
 }
+.cue-singer {
+  grid-column:2;
+  grid-row:auto
+}
 .cue-actions {
+  grid-column:2 / -1;
+  grid-row:auto;
   gap:.7rem
 }
 .cue-actions button {

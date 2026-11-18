@@ -7,6 +7,9 @@ import re
 
 from .limits import MAX_DURATION, MIN_DURATION, MAX_CUES, MAX_LYRIC_CHARS
 
+# Who sings a line of a duet: singer 1, singer 2, or both together.
+SINGERS = (1, 2, 'both')
+
 
 class ValidationError(ValueError):
     """A project or edit cannot be represented safely."""
@@ -93,7 +96,11 @@ def validate_project(value: object) -> dict:
         characters += len(text)
         if characters > MAX_LYRIC_CHARS:
             raise ValidationError(f'Lyrics must contain at most {MAX_LYRIC_CHARS} characters.')
-        cues.append(dict(start=start, end=end, text=text))
+        # Who sings it in a duet (see SINGERS); a line without one is sung by whoever sings.
+        singer = cue.get('singer')
+        if singer is not None and (type(singer) not in (int, str) or singer not in SINGERS):
+            raise ValidationError(f'Cue {index + 1} singer must be 1, 2 or both.')
+        cues.append(dict(start=start, end=end, text=text, **({'singer': singer} if singer is not None else {})))
         previous_end = end
     cover = validate_cover(value['cover']) if value.get('cover') is not None else None
     return dict(schemaVersion=1, id=project_id, title=title, duration=duration,

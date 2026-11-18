@@ -1,4 +1,7 @@
-export interface Cue { start: number; end: number; text: string }
+/** Who sings a line of a duet: singer 1, singer 2, or both together. A line without one is sung by whoever sings. */
+export type Singer = 1 | 2 | 'both';
+export const SINGERS: readonly Singer[] = [1, 2, 'both'];
+export interface Cue { start: number; end: number; text: string; singer?: Singer }
 export interface Project { schemaVersion: 1; id: string; title: string; duration: number; revision: number; cues: Cue[]; /** The song file's cover picture (JPEG data URL). */ cover?: string }
 
 export const MAX_DURATION = 600;
@@ -38,8 +41,9 @@ export function validateCues(cues: Cue[], duration: number): Cue[] {
     if (!cue || !Number.isFinite(cue.start) || !Number.isFinite(cue.end) || cue.start < previous || cue.end <= cue.start || cue.end > duration) throw new Error(`Line ${index + 1}: choose nonoverlapping start/end times within the clip.`);
     characters += textLength(cue.text, 240, `Line ${index + 1}`);
     if (characters > MAX_LYRIC_CHARS) throw new Error('Use at most 20,000 lyric characters.');
+    if (cue.singer !== undefined && !SINGERS.includes(cue.singer)) throw new Error(`Line ${index + 1}: choose singer 1, singer 2 or both.`);
     previous = cue.end;
-    return { start: cue.start, end: cue.end, text: cue.text };
+    return { start: cue.start, end: cue.end, text: cue.text, ...(cue.singer !== undefined ? { singer: cue.singer } : {}) };
   });
 }
 /** Pasted lyrics as stripped, nonempty lines (Python splitlines() semantics). */
