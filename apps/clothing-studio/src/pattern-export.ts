@@ -1,5 +1,7 @@
 // Pattern export for cutting: each piece's finished outline (the sewing line) plus a cutting line with seam
-// allowance, a grainline and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG (cm).
+// allowance, a grainline, artwork placements and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG
+// (cm).
+import { artworkMarks } from './artwork-pattern.ts';
 import { garmentName, material, partName, patternPieces, type PatternPiece, type Product } from './product.ts';
 
 import { grainAngleOf, grainLine } from './grain.ts';
@@ -47,13 +49,15 @@ export function offsetOutline(points: readonly Pt[], distance: number): Pt[] {
   return out;
 }
 
-export interface LaidOutPiece { piece: PatternPiece; label: string; detail: string; sewing: Pt[]; cutting: Pt[]; grain: [Pt, Pt]; foldLine?: [Pt, Pt]; pleats?: { fold: [Pt, Pt]; placement: [Pt, Pt] }[]; darts?: [Pt, Pt, Pt][]; at: Pt }
+/** A print's placement on a laid-out piece (see ArtworkMark): its edges on the piece, and its label. */
+export interface LaidOutArtwork { label: string; lines: Pt[][]; at: Pt; turned: boolean }
+export interface LaidOutPiece { piece: PatternPiece; label: string; detail: string; sewing: Pt[]; cutting: Pt[]; grain: [Pt, Pt]; foldLine?: [Pt, Pt]; pleats?: { fold: [Pt, Pt]; placement: [Pt, Pt] }[]; darts?: [Pt, Pt, Pt][]; artwork: LaidOutArtwork[]; at: Pt }
 
 /** Pieces with their cutting lines, laid out left to right with a gap, origin at the top-left of the layout. */
 export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): { pieces: LaidOutPiece[]; width: number; height: number } {
   allowance = validatePatternAllowance(allowance);
   let x = allowance;
-  const size = product.spec?.sampleSize ?? 'M', laid: LaidOutPiece[] = [];
+  const size = product.spec?.sampleSize ?? 'M', laid: LaidOutPiece[] = [], marks = artworkMarks(product);
   for (const piece of patternPieces(product)) {
     const sewing = cleanOutline(piece.outline), cutting = offsetOutline(sewing, allowance);
     const minX = Math.min(...cutting.map(p => p.x)), minY = Math.min(...cutting.map(p => p.y));
@@ -64,7 +68,9 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · grain ${angle}° CW from up · ${allowance} cm uniform seam allowance`,
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}),
       ...(piece.pleats ? { pleats: piece.pleats.map(line => ({ fold: line.fold.map(shift) as [Pt, Pt], placement: line.placement.map(shift) as [Pt, Pt] })) } : {}),
-      ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}), at: { x, y: allowance } });
+      ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}),
+      artwork: marks.filter(mark => mark.part === piece.part).map(mark => ({ label: mark.label, lines: mark.lines.map(line => line.map(shift)), at: shift(mark.at), turned: mark.turned })),
+      at: { x, y: allowance } });
     x += Math.max(...cutting.map(p => p.x)) - minX + GAP_CM;
   }
   const height = Math.max(...laid.flatMap(item => item.cutting.map(p => p.y))) + allowance;
@@ -72,7 +78,8 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
 }
 
 // DXF (R12 ASCII). Layers: CUT (cutting line), SEW (finished line), GRAIN, FOLD, PLEAT-FOLD and PLEAT-PLACE (a pleat's
-// fold line and the placement line it is folded to), DART (each dart's two legs), TEXT. Units mm; y points up.
+// fold line and the placement line it is folded to), DART (each dart's two legs), ARTWORK (each print's edges on the
+// piece, open where it runs off it, and its label), TEXT. Units mm; y points up.
 // R12 DXF has no UTF-8: user text loses control codes and backslashes (DXF format codes), and characters
 // outside ASCII become \U+XXXX escapes, which CAD readers decode.
 const plainText = (text: string) => [...text.replace(/[\\{}]/g, ' ')].filter(c => c.charCodeAt(0) >= 32).slice(0, 250)
@@ -81,10 +88,14 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
   const { pieces } = layoutPattern(product, allowance), lines: string[] = [];
   const pair = (code: number, value: string | number) => { lines.push(String(code), typeof value === 'number' ? (Math.round(value * 1000) / 1000).toString() : value); };
   const mm = (p: Pt) => ({ x: p.x * 10, y: -p.y * 10 });
-  const polyline = (layer: string, points: Pt[]) => {
-    pair(0, 'POLYLINE'); pair(8, layer); pair(66, 1); pair(70, 1);
+  const polyline = (layer: string, points: Pt[], closed = true) => {
+    pair(0, 'POLYLINE'); pair(8, layer); pair(66, 1); pair(70, closed ? 1 : 0);
     for (const p of points.map(mm)) { pair(0, 'VERTEX'); pair(8, layer); pair(10, p.x); pair(20, p.y); pair(30, 0); }
     pair(0, 'SEQEND'); pair(8, layer);
+  };
+  const note = (layer: string, at: Pt, height: number, value: string) => {
+    const p = mm(at);
+    pair(0, 'TEXT'); pair(8, layer); pair(10, p.x); pair(20, p.y); pair(30, 0); pair(40, height); pair(1, plainText(value)); pair(72, 1); pair(11, p.x); pair(21, p.y); pair(31, 0);
   };
   pair(0, 'SECTION'); pair(2, 'HEADER'); pair(9, '$ACADVER'); pair(1, 'AC1009'); pair(9, '$INSUNITS'); pair(70, 4); pair(0, 'ENDSEC');
   pair(0, 'SECTION'); pair(2, 'ENTITIES');
@@ -100,6 +111,13 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
     for (const pleat of item.pleats ?? []) for (const [layer, line] of [['PLEAT-FOLD', pleat.fold], ['PLEAT-PLACE', pleat.placement]] as const) {
       const [a, b] = line.map(mm); pair(0, 'LINE'); pair(8, layer); pair(10, a.x); pair(20, a.y); pair(30, 0); pair(11, b.x); pair(21, b.y); pair(31, 0);
     }
+    for (const art of item.artwork) {
+      for (const line of art.lines) {
+        const closed = line.length > 3 && Math.hypot(line[0]!.x - line.at(-1)!.x, line[0]!.y - line.at(-1)!.y) < 1e-6;
+        polyline('ARTWORK', closed ? line.slice(0, -1) : line, closed);
+      }
+      note('ARTWORK', art.at, 6, art.label);
+    }
     const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), label = mm({ x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 });
     for (const [text, dy, height] of [[item.label, 0, 18], [item.detail, -26, 9]] as const) {
       pair(0, 'TEXT'); pair(8, 'TEXT'); pair(10, label.x); pair(20, label.y + dy); pair(30, 0); pair(40, height); pair(1, plainText(text)); pair(72, 1); pair(11, label.x); pair(21, label.y + dy); pair(31, 0);
@@ -111,6 +129,7 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
 
 // Printable SVG at 1:1 (user units are centimetres), with a 10 cm square to check the print scale.
 const xml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const ARTWORK_INK = '#7b3fa0';
 function pieceSvg(item: LaidOutPiece, labels = true): string {
   const points = (list: Pt[]) => list.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
   const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
@@ -123,6 +142,9 @@ function pieceSvg(item: LaidOutPiece, labels = true): string {
     (item.darts ?? []).map(dart => `<polyline data-dart="${item.piece.part}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
     (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${item.piece.part}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +
       `<line data-pleat-placement="${item.piece.part}" x1="${pleat.placement[0].x.toFixed(2)}" y1="${pleat.placement[0].y.toFixed(2)}" x2="${pleat.placement[1].x.toFixed(2)}" y2="${pleat.placement[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05" stroke-dasharray="0.6 0.4"/>`).join('') +
+    // Artwork labels are drawn even on tiles, whose headers name only the piece.
+    item.artwork.map(art => `<g data-artwork="${item.piece.part}"${art.turned ? ' data-turned=""' : ''}>${art.lines.map(line => `<polyline points="${points(line)}" fill="none" stroke="${ARTWORK_INK}" stroke-width="0.05" stroke-dasharray="0.25 0.15"/>`).join('')}` +
+      `<text x="${art.at.x.toFixed(2)}" y="${art.at.y.toFixed(2)}" font-size="0.6" text-anchor="middle" fill="${ARTWORK_INK}" font-family="sans-serif">${xml(art.label)}</text></g>`).join('') +
     (labels ? `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" font-size="1.6" text-anchor="middle" font-family="sans-serif">${xml(item.label)}</text>` +
     `<text x="${cx.toFixed(2)}" y="${(cy + 1.6).toFixed(2)}" font-size="0.7" text-anchor="middle" font-family="sans-serif">${xml(item.detail)}</text>` : '') + '</g>';
 }
@@ -134,7 +156,7 @@ export function patternSvg(product: Product, allowance = SEAM_ALLOWANCE_CM): str
     `<defs><marker id="grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="1.2" markerHeight="1.2" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#111"/></marker></defs>` +
     `<title>${xml(product.name)} pattern</title>${body}` +
     `<g transform="translate(${allowance} ${(height + 2).toFixed(2)})"><rect width="10" height="10" fill="none" stroke="#111" stroke-width="0.05"/>` +
-    `<text x="11" y="5" font-size="0.8" font-family="sans-serif">10 cm square: print at 100% and check it. Solid: cutting line (${allowance} cm seam allowance). Dashed: sewing line. Arrow: grainline.${pieces.some(p=>p.foldLine) ? ' Red dash-dot: fold.' : ''}${pieces.some(p => p.pleats?.length) ? ' Blue solid: pleat fold line, folded over to the blue dashed placement line beside it.' : ''}${pieces.some(p => p.darts?.length) ? ' V from the waist: a dart, sewn leg to leg to its point.' : ''}</text></g></svg>`;
+    `<text x="11" y="5" font-size="0.8" font-family="sans-serif">10 cm square: print at 100% and check it. Solid: cutting line (${allowance} cm seam allowance). Dashed: sewing line. Arrow: grainline.${pieces.some(p=>p.foldLine) ? ' Red dash-dot: fold.' : ''}${pieces.some(p => p.pleats?.length) ? ' Blue solid: pleat fold line, folded over to the blue dashed placement line beside it.' : ''}${pieces.some(p => p.darts?.length) ? ' V from the waist: a dart, sewn leg to leg to its point.' : ''}${pieces.some(p => p.artwork.length) ? ' Purple dotted: where artwork is printed, right side of the fabric up; on a mirrored pair, the piece cut with the pattern turned over is marked so.' : ''}</text></g></svg>`;
 }
 
 /** Each cutting piece in its own positive centimetre viewport; tile headers supply its labels. */
