@@ -9,7 +9,7 @@ export function switchOutfitEditing(project: Project, layer?: OutfitLayer): Proj
   const current = validateProject(project);
   const design = current.product ?? template('blank');
   if (!current.wornWith || !canWearTogether(design, current.wornWith)) {
-    throw new Error('Choose a top and bottoms, or a T-shirt and a sweatshirt, hoodie or button-up shirt, with Wear with before editing the worn garment.');
+    throw new Error('Choose a top and bottoms, or a T-shirt and a sweatshirt, hoodie, button-up shirt or coat, with Wear with before editing the worn garment.');
   }
   if (layer) {
     const pieces = current.wornAlso && threePiece([design, current.wornWith, current.wornAlso]);

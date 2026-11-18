@@ -1171,6 +1171,16 @@ export function outfitBodies(top: Product, bottoms: Product, chest: number, shap
   return { body, lower, shift };
 }
 
+/**
+ * A top's meshes raised to meet another top's shoulders. Tops are meshed up from their hem, and a body is made for one
+ * top's length, so a top worn under one of a different length is raised (or lowered) by the difference: a T-shirt under
+ * a coat 26 cm longer would otherwise start 26 cm below the shoulders and fall through the body.
+ */
+function underTop(meshes: PartMesh[], inner: Product, outer: Product): PartMesh[] {
+  const lift = teeDimensions(outer).length - teeDimensions(inner).length;
+  return lift ? meshes.map(mesh => ({ ...mesh, positions: mesh.positions.map((value, i) => (i % 3 === 1 ? value + lift : value)) })) : meshes;
+}
+
 /** Whether a top can be tucked into bottoms: a dress cannot. */
 export function canTuck(top: Product): boolean { return !isBottoms(top) && topMeasurements(top).length < DRESS_LENGTH; }
 
@@ -1196,13 +1206,13 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
     const { inner, outer } = layers, innerMeshes = inner === design ? designMeshes : companionMeshes, outerMeshes = inner === design ? companionMeshes : designMeshes;
     if (sleeveAngleOf(inner) !== sleeveAngleOf(outer)) throw new Error('The top underneath must be made for the outer top’s arm pose.');
     const body = garmentBody(options.bodyProducts?.top ?? outer, bodyChest, options.bodyShape);
-    const under = simulateGarment(inner, innerMeshes, bodyChest, { ...steps, body, progress: report(0) });
+    const under = simulateGarment(inner, underTop(innerMeshes, inner, outer), bodyChest, { ...steps, body, progress: report(0) });
     const core = body.torso[1]!.y, over = simulateGarment(outer, outerMeshes, bodyChest, { ...steps, body, inner: innerLayer(under.parts, body, core), progress: report(frames) });
     const pressed = { ...under, parts: pressUnder(under.parts, over.parts, body, core) };
     const [own, other] = inner === design ? [pressed, over] : [over, pressed];
     return { ...own, companion: { parts: other.parts, metrics: other.metrics, settings: other.settings } };
   }
-  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt, hoodie or button-up shirt.');
+  if (isBottoms(design) === isBottoms(companion)) throw new Error('An outfit pairs a top with shorts, trousers or a skirt, or a T-shirt under a sweatshirt, hoodie, button-up shirt or coat.');
   const designIsTop = !isBottoms(design), top = designIsTop ? design : companion, bottoms = designIsTop ? companion : design;
   if (options.tucked && !canTuck(top)) throw new Error('A dress cannot be tucked in. Shorten it to a top, or wear it untucked.');
   const topMeshes = designIsTop ? designMeshes : companionMeshes, bottomMeshes = designIsTop ? companionMeshes : designMeshes;
@@ -1238,7 +1248,7 @@ export function simulateOutfit(design: Product, designMeshes: PartMesh[], compan
   return { parts: under.parts, metrics: under.metrics, settings: under.settings, body: own, companion: { parts: back(over.parts), metrics: over.metrics, settings: over.settings } };
 }
 
-/** Whether three designs make an outfit: a top over another (a T-shirt under a sweatshirt, hoodie or button-up shirt), worn
+/** Whether three designs make an outfit: a top over another (a T-shirt under a sweatshirt, hoodie, button-up shirt or coat), worn
  * with bottoms. */
 export function threePiece<T extends Pick<Product, 'base' | 'options'>>(garments: readonly T[]): { inner: T; outer: T; bottoms: T } | null {
   const bottoms = garments.filter(garment => isBottoms(garment)), tops = garments.filter(garment => !isBottoms(garment));
@@ -1256,7 +1266,7 @@ export function threePiece<T extends Pick<Product, 'base' | 'options'>>(garments
 function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[], bodyChest: number,
   options: { bodyShape?: TopBodyShape; bodyProducts?: { top: Product; bottoms?: Product }; tucked?: boolean; frames: number; steps: { frames?: number; substeps?: number }; progress?: (frame: number, frames: number) => boolean | void }): GarmentDrapeResult {
   const pieces = threePiece(garments.map(garment => garment.product));
-  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt, hoodie or button-up shirt, with shorts, trousers or a skirt.');
+  if (!pieces) throw new Error('Three garments make an outfit as a T-shirt under a sweatshirt, hoodie, button-up shirt or coat, with shorts, trousers or a skirt.');
   if (options.tucked) throw new Error('A three-piece outfit is worn untucked.');
   const of = (product: Product) => garments.find(garment => garment.product === product)!;
   const { inner, outer, bottoms } = pieces;
@@ -1267,7 +1277,7 @@ function simulateThreePiece(garments: { product: Product; meshes: PartMesh[] }[]
   const legs = simulateGarment(bottoms, of(bottoms).meshes, bodyChest, { ...steps, body: lower, progress: report(0) });
   const placed = lifted(legs.parts, shift), core = body.torso[1]!.y;
   const below = layerField(placed.map(({ part, positions }) => ({ positions, indices: of(bottoms).meshes.find(mesh => mesh.part === part)!.indices })), core);
-  const tee = simulateGarment(inner, of(inner).meshes, bodyChest, { ...steps, body, under: below, progress: report(frames) });
+  const tee = simulateGarment(inner, underTop(of(inner).meshes, inner, outer), bodyChest, { ...steps, body, under: below, progress: report(frames) });
   const top = simulateGarment(outer, of(outer).meshes, bodyChest, { ...steps, body, under: below, inner: innerLayer(tee.parts, body, core), progress: report(2 * frames) });
   const results = new Map<Product, DrapedPiece>([
     [bottoms, { parts: placed, metrics: legs.metrics, settings: legs.settings }],

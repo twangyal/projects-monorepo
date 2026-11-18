@@ -36,6 +36,8 @@ const GARMENTS: [RegExp, string, Base][] = [
   [/\b(?:t-?shirt|tee) dress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\bdress(?:es)?\b/, 'tee-dress', 'tee'],
   [/\b(hoodies?|hooded (?:sweatshirt|top|jumper))\b/, 'hoodie', 'hoodie'],
+  // Coats (not a waistcoat, which is a vest): a long shirt cut to go over other tops.
+  [/\b(?:rain|over|top)?coats?\b/, 'coat', 'tee'],
   // Jackets start from the bomber, the one jacket so far.
   [/\b(?:bomber|flight|track|zip(?:-? ?up)?) jackets?\b|\bbombers?\b|\btrack tops?\b|\bjackets?\b/, 'bomber', 'sweatshirt'],
   [/\b(sweatshirts?|jumpers?|sweaters?|crew ?neck sweat(?:shirt)?s?)\b/, 'crew-sweat', 'sweatshirt'],
@@ -152,6 +154,15 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       // A tee described as a shirt keeps its styling and gains the button front and collar, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), buttons: true, collar: true });
       garment.push(`garment: ${garmentName(product)}`);
+    } else if (base === product.base && id === 'coat') {
+      // A top described as a coat keeps its styling and becomes one: a button front and collar on a round neck, at
+      // least as long, roomy and long-sleeved as the coat template, and not cut at the waist.
+      const coat = topMeasurements(template('coat')), m = topMeasurements(product);
+      product.measurements = { ...m, chest: Math.max(m.chest, coat.chest), length: Math.max(m.length, coat.length), sleeve: Math.max(m.sleeve, coat.sleeve) };
+      const kept = { ...optionsOf(product) };
+      delete kept.waistSeam;
+      product = withOptions({ ...product, neckline: 'crew' }, { ...kept, buttons: true, collar: true, coat: true });
+      garment.push(`garment: ${garmentName(product)}, ${topMeasurements(product).length} cm long`);
     } else if (base === product.base && id === 'bomber') {
       // A sweatshirt described as a bomber keeps its styling and gains the front zip and rib stand collar, on a round neck.
       product = withOptions({ ...product, neckline: 'crew' }, { ...optionsOf(product), zip: true, collar: true });

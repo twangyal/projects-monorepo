@@ -33,6 +33,8 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
     const named = product.options.zip ? (product.options.collar ? 'Bomber jacket' : 'Zip sweatshirt') : 'Funnel-neck sweatshirt', length = topMeasurements(product).length;
     return length <= CROP_LENGTH ? `Cropped ${named.toLowerCase()}` : length >= DRESS_LENGTH ? `${product.options.zip ? 'Zip' : 'Funnel-neck'} sweatshirt dress` : named;
   }
+  // A shirt cut long and roomy to go over other tops is a coat.
+  if (product.base === 'tee' && product.options?.coat) return 'Coat';
   // A tee with a button front is a shirt: with the collar a button-up shirt, without it a collarless one.
   if (product.base === 'tee' && product.options?.buttons) {
     const { length, sleeve } = topMeasurements(product);
@@ -78,11 +80,13 @@ export function partName(product: Pick<Product, 'base'>, part: PartId): string {
 /** Bottoms use their own measured panels instead of top measurements or the top drape. */
 export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers' || product.base === 'skirt'; }
 /** A top worn over another: one made on the T-shirt base (a tee, tank, crop top, T-shirt dress or shirt) under a
- * sweatshirt or hoodie, or one without a button front under a button-front shirt, worn open or buttoned. Null for any
- * other pair. */
+ * sweatshirt, a hoodie or a coat, or one without a button front under a button-front shirt, worn open or buttoned.
+ * Null for any other pair. */
 export function layerOrder<T extends Pick<Product, 'base' | 'options'>>(a: T, b: T): { inner: T; outer: T } | null {
   const shirt = (product: T) => product.base === 'tee' && !!product.options?.buttons;
-  const over = (outer: T, inner: T) => inner.base === 'tee' && (outer.base === 'sweatshirt' || outer.base === 'hoodie' || (shirt(outer) && !shirt(inner)));
+  const coat = (product: T) => product.base === 'tee' && !!product.options?.coat;
+  const over = (outer: T, inner: T) => inner.base === 'tee' && !coat(inner)
+    && (coat(outer) || outer.base === 'sweatshirt' || outer.base === 'hoodie' || (shirt(outer) && !shirt(inner)));
   if (over(b, a)) return { inner: a, outer: b };
   if (over(a, b)) return { inner: b, outer: a };
   return null;
@@ -126,6 +130,12 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
   (product.measurements as Measurements).sleeve = sleeve;
   // A sleeveless top has no sleeves to puff, and short sleeves have no cuffs.
   if (sleeve === 0) delete (product.measurements as Measurements).sleeveGather;
+  // A coat shortened below COAT_LENGTH, or given short sleeves, is a shirt again.
+  if (product.base === 'tee' && product.options?.coat && !coatAllowed(product, product.options)) {
+    const options = { ...product.options };
+    delete options.coat;
+    product.options = options;
+  }
   if (product.base === 'tee' && product.options?.cuffs && sleeve < CUFFED_SLEEVE) {
     const options = { ...product.options };
     delete options.cuffs;
@@ -192,7 +202,9 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
   /** A back yoke (shirts): the back is cut across YOKE_CM below the neck points into a yoke over the shoulders and the
    * back body, each styled on its own. */ yoke?: boolean;
   /** Buttoned cuffs (long-sleeved shirts): each sleeve ends SHIRT_CUFF_CM above its measured length in a woven cuff,
-   * styled on its own, into which it is pleated. */ cuffs?: boolean }
+   * styled on its own, into which it is pleated. */ cuffs?: boolean;
+  /** A coat (shirts at least COAT_LENGTH long with long sleeves): worn over a T-shirt, shirt, polo or dress, with coat
+   * buttons and hems. */ coat?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -207,6 +219,14 @@ export const SHIRT_CUFF_CM = 6, CUFFED_SLEEVE = 45;
 /** Cuffs go on a long-sleeved shirt: a T-shirt base with a button front and sleeves at least CUFFED_SLEEVE long. */
 export function cuffsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
   return product.base === 'tee' && !!options.buttons && ((product.measurements as Measurements | undefined)?.sleeve ?? 0) >= CUFFED_SLEEVE;
+}
+/** The shortest coat, cm. */
+export const COAT_LENGTH = 70;
+/** A coat is a long shirt: a T-shirt base with a button front and collar, at least COAT_LENGTH long, with sleeves at
+ * least CUFFED_SLEEVE long. */
+export function coatAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
+  const m = product.measurements as Measurements | undefined;
+  return product.base === 'tee' && !!options.buttons && !!options.collar && (m?.length ?? 0) >= COAT_LENGTH && (m?.sleeve ?? 0) >= CUFFED_SLEEVE;
 }
 /** A waist seam goes on a dress: a T-shirt base at least DRESS_LENGTH long. */
 export function waistSeamAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>): boolean {
@@ -243,6 +263,8 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.waistSeam && !waistSeamAllowed(product)) fail(`A waist seam goes on a T-shirt dress: lengthen it to at least ${DRESS_LENGTH} cm first.`);
   if (next.yoke && (product.base !== 'tee' || !next.buttons)) fail('A back yoke goes on a shirt: add the button front first.');
   if (next.cuffs && !cuffsAllowed(product, next)) fail(`Cuffs go on a long-sleeved shirt: add the button front and make the sleeves at least ${CUFFED_SLEEVE} cm first.`);
+  if (next.coat && !coatAllowed(product, next)) fail(`A coat is a long shirt: add the button front and collar, and make it at least ${COAT_LENGTH} cm long with sleeves of at least ${CUFFED_SLEEVE} cm first.`);
+  if (next.coat && next.waistSeam) fail('A coat is not cut at the waist: take the waist seam off first.');
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -516,7 +538,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -536,8 +558,11 @@ export function validateProduct(value: unknown): Product {
     if (o.cuffs !== undefined && typeof o.cuffs !== 'boolean') fail('Shirt cuffs must be on or off.');
     if (o.cuffs && !cuffsAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`Cuffs go on a long-sleeved shirt with a button front and sleeves of at least ${CUFFED_SLEEVE} cm.`);
     if (o.waistSeam && !waistSeamAllowed({ base, measurements: measurements as Product['measurements'] })) fail(`A waist seam goes on a T-shirt dress, at least ${DRESS_LENGTH} cm long: lengthen it or take the waist seam off.`);
+    if (o.coat !== undefined && typeof o.coat !== 'boolean') fail('A coat must be on or off.');
+    if (o.coat && !coatAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`A coat is a shirt at least ${COAT_LENGTH} cm long, with a button front, a collar and sleeves of at least ${CUFFED_SLEEVE} cm.`);
+    if (o.coat && o.waistSeam) fail('A coat is not cut at the waist.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -591,6 +616,12 @@ const shirt = (body: PartStyle) => {
   delete parts.neckband;
   return { ...parts, collar: { ...body }, placket: { ...body }, chestPocket: { ...body } } as Record<PartId, PartStyle>;
 };
+// A coat's parts: all in its own woven fabric, the collar and buttoned placket too.
+const coat = (body: PartStyle) => {
+  const parts: Partial<Record<PartId, PartStyle>> = allParts(body);
+  delete parts.neckband;
+  return { ...parts, collar: { ...body }, placket: { ...body } } as Record<PartId, PartStyle>;
+};
 // A bomber jacket's parts: the shell fabric, and rib cuffs, hem band and stand collar in place of the neck rib.
 const bomber = (shell: PartStyle, rib: PartStyle) => {
   const parts: Partial<Record<PartId, PartStyle>> = allParts(shell, { cuffLeft: rib, cuffRight: rib, hemBand: rib }, 'sweatshirt');
@@ -635,6 +666,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'shirt', name: 'Oxford shirt', description: 'Pale blue cotton poplin with a button front, shirt collar, chest pocket and curved hem.',
     product: { base: 'tee', name: 'Oxford shirt', measurements: { chest: 108, length: 76, sleeve: 62 }, neckline: 'crew',
       options: { hem: 'curved', chestPocket: true, buttons: true, collar: true }, parts: shirt(style('poplin-120', '#c9d8ec')), artwork: [] } },
+  { id: 'coat', name: 'Wool coat', description: 'Knee-length charcoal wool twill with a button front and collar, cut roomy to go over a shirt or tee.',
+    product: { base: 'tee', name: 'Wool coat', measurements: { chest: 118, length: 96, sleeve: 64 }, neckline: 'crew',
+      options: { hem: 'straight', chestPocket: false, buttons: true, collar: true, coat: true }, parts: coat(style('wool-260', '#3f3b38')), artwork: [] } },
   { id: 'crew-sweat', name: 'Crew sweatshirt', description: 'Heather grey French terry with rib neck, cuffs and hem.',
     product: { base: 'sweatshirt', name: 'Crew sweatshirt', measurements: fleece, neckline: 'crew', parts: allParts(style('terry-300', '#b7b4ad'), {}, 'sweatshirt'), artwork: [] } },
   { id: 'sweat-dress', name: 'Sweatshirt dress', description: 'Oatmeal French terry, long sleeves and a rib hem above the knee.',

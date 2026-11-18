@@ -76,7 +76,7 @@ function samplePack(product: Product, date: string): TechPack {
   if (modules.zip) bom.push({ item: 'Z1 Zip', description: 'Open-end #5 coil zip with a locking slider', color: 'Match front body',
     placement: 'Centre front, neck to hem', quantity: `1 × ${cm(zipLength(product))}` });
   const placket = placketOf(product);
-  if (product.base === 'tee' && (modules.collar || modules.buttons)) bom.push({ item: 'B1 Buttons', description: `4-hole 11 mm ${modules.buttons ? 'shirt' : 'polo'} buttons`,
+  if (product.base === 'tee' && (modules.collar || modules.buttons)) bom.push({ item: 'B1 Buttons', description: modules.coat ? '4-hole 22 mm horn-effect coat buttons' : `4-hole 11 mm ${modules.buttons ? 'shirt' : 'polo'} buttons`,
     color: 'Contrast a shade from the placket', placement: 'Centre-front placket', quantity: `${placket.buttons}` });
   for (const art of product.artwork) {
     const height = art.widthCm * art.height / art.width;
@@ -167,7 +167,12 @@ function samplePack(product: Product, date: string): TechPack {
     ...(product.base === 'tee' && modules.cuffs ? [{ area: 'Cuffs', operation: 'Fuse, sew and turn each cuff; pleat the sleeve end into it (two pleats), set it and topstitch 0.6 cm; one buttonhole and button',
       detail: `Cuffs cut on the fold, ${cm(SHIRT_CUFF_CM)} finished and ${cm(dims.cuffHalf * 2)} round with a 2 cm overlap; each sleeve is cut 4 cm wider at its end than the cuff and stops ${cm(SHIRT_CUFF_CM)} short of the measured length, ${product.parts.cuffLeft?.material === product.parts.sleeveLeft?.material ? 'in the sleeve fabric' : 'in the chosen cuff fabric'}` }] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
-    ...(product.base === 'tee' ? [
+    ...(product.base === 'tee' && modules.coat ? [
+      // A coat's woven hems are turned up deeper and blind-stitched, and its unlined seams bound.
+      { area: 'Seams', operation: 'Press open and bind each allowance', detail: 'Unlined: the inside seams are finished with bias binding' },
+      ...(modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: 'Turn up and blind-stitch', detail: '4 cm turn-up' }]),
+      { area: 'Body hem', operation: 'Turn up and blind-stitch', detail: '5 cm turn-up; the placket runs down to the hem' },
+    ] : product.base === 'tee' ? [
       ...(armholesOnly || modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
     ] : [
