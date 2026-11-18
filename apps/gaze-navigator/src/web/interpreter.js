@@ -847,6 +847,10 @@ function interpretInCircle(utterance, context) {
     return { type: 'tracking', source: 'pointer' };
   }
   if (/^(?:re)?calibrate(?: (?:the )?camera)?$/.test(text)) return { type: 'calibrate' };
+  // A refresh keeps the calibration and adds a few dots, for after moving or when the circle drifts.
+  if (/^(?:refresh|top up|touch up|update) (?:the |my )?(?:camera )?calibration$|^(?:quick(?:ly)? (?:re)?calibrate|(?:re)?calibrate (?:quickly|here|from here)|quick (?:re)?calibration)$/.test(text)) {
+    return { type: 'calibrate', refresh: true };
+  }
   const circleSize = /^(?:use|set|switch to) (?:a |the )?(small|medium|large) (?:gaze )?circle$/.exec(text)
     ?? /^(?:set|make) (?:the )?(?:gaze )?circle (?:size )?(?:to )?(small|medium|large)$/.exec(text);
   if (circleSize) return { type: 'circle-size', size: circleSize[1] };

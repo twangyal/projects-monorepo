@@ -10,7 +10,7 @@ import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createLocalCamera } from './camera-source.js';
-import { runCalibration } from './calibration.js';
+import { CALIBRATION_POINTS, REFRESH_MIN_POINTS, REFRESH_POINTS, runCalibration } from './calibration.js';
 import { recommendedSize, runAccuracyCheck } from './accuracy-check.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
@@ -189,6 +189,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <button class="use-camera" aria-pressed="false">Camera</button>
           <button class="use-head" aria-pressed="false">Head</button>
           <button class="recalibrate" disabled>Recalibrate</button>
+          <button class="refresh-calibration" disabled>Refresh calibration</button>
         </div>
         <div class="row">
           <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
@@ -220,7 +221,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <p class="hint">Checkboxes: "check Newsletter" or "uncheck that checkbox" sets the requested state; repeating it keeps that state. Binary ARIA checkboxes and switches use one website click and verify its state. Missing or mixed state is refused. "Click" and "toggle" keep ordinary website activation.</p>
         <p class="hint">Dates, times and numbers: "set departure to November first", "set appointment time to 2:30 pm", "set guests to four", "set volume to forty percent", "set reporting month to next month". Spoken words and digits both work. "Undo departure date field" restores the earlier value. The website's own min, max and step rules still apply.</p>
         <p class="hint">Custom lists and sliders: "set size to large" or "choose Finland from country" opens a website's own list, types to search it when it is a search box, and picks the named choice. Custom sliders move by their arrow keys and stop if they cannot reach the exact value.</p>
-        <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
+        <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "refresh calibration" keeps it and adds five dots, for when you have moved or the circle drifts; "stop camera" or "use pointer" turns the camera off.</p>
         <p class="hint">"Use head pointer" makes the circle follow where your nose points instead of your eyes: the webcam sees how your head is turned. Turning your head is more work but steadier than webcam eye tracking. Its calibration asks you to point your nose at each dot.</p>
         <p class="hint">Say "make the circle bigger" or "make the circle smaller", or "use a small circle", "use a medium circle" or "use a large circle". This changes the visible area without acting on a page control. Give the page instruction again; previous questions are cancelled.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
@@ -233,7 +234,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), speechAddress: $('.speech-address'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
-    recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
+    recalibrate: $('.recalibrate'), refreshCalibration: $('.refresh-calibration'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
     speechMode: $('.speech-mode'), speechInstall: $('.speech-install'),
   };
   // The element list is open by default only where the panel has room to spare.
@@ -319,7 +320,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (!moved) { movedNoticed = false; return; }
     if (movedNoticed || stopped || closing || calibration || !cameraCalibrated || settings.source !== 'camera') return;
     movedNoticed = true;
-    feedback({ message: 'You have moved since calibrating, so the circle may be off. Move back to where you sat, or say recalibrate.', tone: 'info' });
+    feedback({ message: 'You have moved since calibrating, so the circle may be off. Move back to where you sat, or say refresh calibration to add five dots from here.', tone: 'info' });
   }
   // The running calibration, or the accuracy check after it (which takes gaze samples); both block page actions.
   let calibration = null;
@@ -991,7 +992,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.usePointer.setAttribute('aria-pressed', String(settings.source === 'pointer'));
     ui.useCamera.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'eyes'));
     ui.useHead.setAttribute('aria-pressed', String(settings.source === 'camera' && following() === 'head'));
-    ui.recalibrate.disabled = settings.source !== 'camera' || camera.state !== 'ready';
+    ui.recalibrate.disabled = ui.refreshCalibration.disabled = settings.source !== 'camera' || camera.state !== 'ready';
   }
 
   function setSource(source) {
@@ -1016,7 +1017,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const mode = source === 'head' ? 'head' : 'eyes';
     const starting = { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
     if (camera.state !== 'off' && following() === mode) {
-      return camera.state === 'starting' ? starting : { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+      return camera.state === 'starting' ? starting : { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again, or refresh calibration to add five dots.' };
     }
     settings.cameraMode = mode;
     camera.setMode(mode);
@@ -1063,7 +1064,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     return starting;
   }
 
-  // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
+  // Reuses a calibration saved by an earlier page when the window is unchanged: as it is when recent, refreshed with
+  // five dots when older (MAX_AGE_MS), since the person has likely sat down again since.
   async function restoreOrCalibrate(generation) {
     if (document.hidden) return { message: 'Camera ready. Return to this tab and choose Recalibrate before using camera navigation.', tone: 'info' };
     const attempt = ++calibrationGeneration;
@@ -1076,7 +1078,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (restored.ok) {
       cameraCalibrated = true;
       filter.reset();
-      return { ok: true, message: 'Camera on with your earlier calibration. Say recalibrate if the circle drifts.', tone: 'success' };
+      if (!restored.stale) return { ok: true, message: 'Camera on with your earlier calibration. Say refresh calibration if the circle drifts.', tone: 'success' };
+      const result = calibrate({ refresh: true });
+      result.message = `Your earlier calibration is a few hours old. ${result.message}`;
+      return result;
     }
     const decoded = restored;
     const result = calibrate();
@@ -1084,21 +1089,27 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     return result;
   }
 
-  function calibrate() {
+  // A full calibration starts afresh; a refresh keeps the calibration in use and adds REFRESH_POINTS to it (a refresh
+  // asked for with nothing to refresh is a full calibration).
+  function calibrate({ refresh = false } = {}) {
     if (document.hidden) return { ok: false, message: 'Return to this tab to calibrate.' };
     if (camera.state !== 'ready') return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
     const session = camera.session;
+    const topUp = refresh && cameraCalibrated;
     calibrationGeneration++;
-    cameraCalibrated = false;
     loseCameraContext(false);
     calibration?.cancel();
-    camera.resetCalibration();
+    if (!topUp) {
+      cameraCalibrated = false;
+      camera.resetCalibration();
+    }
     filter.reset();
     ui.circle.classList.remove('visible');
     ui.outlines.replaceChildren();
     let instruction = '';
     const run = runCalibration({
       record: (x, y) => camera.session === session && camera.recordSample(x, y), window, dot: ui.dot,
+      points: topUp ? REFRESH_POINTS : CALIBRATION_POINTS, ...(topUp ? { minPoints: REFRESH_MIN_POINTS } : {}),
       onProgress({ point: number, total, phase, attempt }) {
         const head = following() === 'head';
         instruction = phase === 'retry' || attempt > 1
@@ -1108,22 +1119,27 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         ui.status.className = 'status question';
       },
     });
-    calibration = run;
+    calibration = Object.assign(run, { refresh: topUp });
     run.done.then(result => {
       if (calibration !== run) return;
       calibration = null;
-      if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
+      // A refresh that stops short leaves the calibration in use, with any dots it did learn.
+      if (result.cancelled) feedback(topUp
+        ? { message: 'Calibration refresh stopped, so the circle keeps your earlier calibration. Say refresh calibration to try again.', tone: 'info' }
+        : { message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
       else if (result.ok) {
         cameraCalibrated = true;
         if (camera.session === session) camera.saveCalibration({ width: window.innerWidth, height: window.innerHeight, now: Date.now() });
-        checkAccuracy(`Calibrated with ${result.calibrated} of ${result.total} dots.`);
+        checkAccuracy(`${topUp ? 'Refreshed' : 'Calibrated'} with ${result.calibrated} of ${result.total} dots.`);
       }
-      else feedback({ message: `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
+      else feedback({ message: topUp
+        ? `Only ${result.calibrated} of ${result.total} dots could be learned, so the circle keeps your earlier calibration. Check lighting and that your face is visible, then say refresh calibration or recalibrate.`
+        : `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
     }, () => {
       if (calibration === run) calibration = null;
-      feedback({ message: 'Calibration failed. Say recalibrate to try again, or use pointer.', tone: 'error' });
+      feedback({ message: topUp ? 'Calibration refresh failed, so the circle keeps your earlier calibration. Say recalibrate to start again, or use pointer.' : 'Calibration failed. Say recalibrate to try again, or use pointer.', tone: 'error' });
     });
-    return { ok: true, message: `Calibrating without clicks. ${instruction}` };
+    return { ok: true, message: `${topUp ? 'Refreshing the calibration with five dots.' : 'Calibrating without clicks.'} ${instruction}` };
   }
 
   // Four more dots measure where the calibrated gaze lands; the circle is then sized to hold 9 in 10 gaze samples.
@@ -1186,6 +1202,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
   ui.useHead.addEventListener('click', () => run('use head pointer', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
+  ui.refreshCalibration.addEventListener('click', () => run('refresh calibration', { elements: [] }));
   const onVisibilityChange = () => {
     if (stopped || closing) return;
     if (!document.hidden) {
@@ -1210,7 +1227,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       ui.transcript.textContent = '';
       feedback({ message: 'Listening stopped when this tab was hidden. Choose Start listening to continue.' });
     } else if (activeCalibration) {
-      feedback({ message: wasCalibrated
+      feedback({ message: activeCalibration.refresh
+        ? 'Calibration refresh stopped when this tab was hidden, so the circle keeps your earlier calibration.'
+        : wasCalibrated
         ? 'Accuracy check stopped when this tab was hidden. Your completed calibration is kept.'
         : 'Calibration stopped when this tab was hidden. Choose Recalibrate when you return, or use pointer.' });
     } else if (hadPrompt) {

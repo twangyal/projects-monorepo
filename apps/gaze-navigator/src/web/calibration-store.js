@@ -48,18 +48,19 @@ export function encodeHeadCalibration(samples, { width, height, now }) {
 }
 
 // Returns samples in the shape WebGazer's setData() expects, with any iris samples as `iris` (or, for `mode` 'head',
-// head pointer samples), or a reason the calibration cannot be reused. A calibration made for the other mode is not
-// reused.
+// head pointer samples), or a reason the calibration cannot be reused. A calibration made for the other mode or
+// another window size is not reused; one saved more than MAX_AGE_MS ago (or with a clock since turned back) comes
+// back marked `stale`, to be refreshed with a few dots before use.
 export function decodeCalibration(stored, { width, height, now, mode = 'eyes' }) {
   if (!stored || stored.version !== CALIBRATION_VERSION || !Array.isArray(stored.samples) || !stored.samples.length) {
     return { ok: false, reason: 'none' };
   }
   if ((stored.mode ?? 'eyes') !== mode) return { ok: false, reason: 'mode' };
   if (stored.width !== width || stored.height !== height) return { ok: false, reason: 'resized' };
-  if (!(now - stored.savedAt >= 0 && now - stored.savedAt <= MAX_AGE_MS)) return { ok: false, reason: 'expired' };
+  const stale = !(now - stored.savedAt >= 0 && now - stored.savedAt <= MAX_AGE_MS) ? { stale: true } : {};
   if (mode === 'head') {
     const samples = stored.samples.filter(s => Array.isArray(s?.features) && s.features.length === 4 && s.features.every(Number.isFinite) && Number.isFinite(s.x) && Number.isFinite(s.y));
-    return samples.length === stored.samples.length ? { ok: true, samples: samples.map(({ features, x, y }) => ({ features: [...features], x, y })) } : { ok: false, reason: 'invalid' };
+    return samples.length === stored.samples.length ? { ok: true, samples: samples.map(({ features, x, y }) => ({ features: [...features], x, y })), ...stale } : { ok: false, reason: 'invalid' };
   }
   try {
     const samples = stored.samples.map(sample => ({
@@ -72,7 +73,7 @@ export function decodeCalibration(stored, { width, height, now, mode = 'eyes' })
     }));
     const iris = Array.isArray(stored.iris) ? stored.iris : [];
     if (!iris.every(irisSample)) return { ok: false, reason: 'invalid' };
-    return { ok: true, samples, iris: iris.map(({ features, x, y }) => ({ features: [...features], x, y })) };
+    return { ok: true, samples, iris: iris.map(({ features, x, y }) => ({ features: [...features], x, y })), ...stale };
   } catch {
     return { ok: false, reason: 'invalid' };
   }

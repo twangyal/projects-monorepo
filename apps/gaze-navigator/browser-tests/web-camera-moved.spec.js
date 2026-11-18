@@ -151,5 +151,15 @@ test('after calibration, leaning well away from where you sat is noticed and you
   await expect(status(page)).not.toContainText('moved since calibrating');
   await page.evaluate(points => { window.__camera.face = points; }, face(420));
   await frames(page, 2000);
-  await expect(status(page)).toHaveText('You have moved since calibrating, so the circle may be off. Move back to where you sat, or say recalibrate.');
+  await expect(status(page)).toHaveText('You have moved since calibrating, so the circle may be off. Move back to where you sat, or say refresh calibration to add five dots from here.');
+  // Refreshed from where the head is now, the calibration covers both places: neither is called moved.
+  await typeInstruction(page, 'refresh calibration');
+  await frames(page, 5 * 1900 + 100);
+  await expect(status(page)).toHaveText('Refreshed with 5 of 5 dots. Checking accuracy: look at dot 1 of 4.');
+  await frames(page, 4 * 2000);
+  await expect(dot(page)).toHaveClass(/hidden/);
+  await frames(page, 2000);
+  await page.evaluate(points => { window.__camera.face = points; }, face(320));
+  await frames(page, 2000);
+  await expect(status(page)).not.toContainText('moved since calibrating');
 });

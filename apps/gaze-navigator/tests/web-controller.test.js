@@ -154,16 +154,17 @@ test('tracking commands are delegated, work while paused, and clear pending ques
   const calls = [];
   const controller = createController({ window: {}, actions: page.actions, commands: {
     tracking: source => { calls.push(source); return { ok: true, message: `Using ${source}.` }; },
-    calibrate: () => { calls.push('calibrate'); return { ok: false, message: 'Turn the camera on first.' }; },
+    calibrate: ({ refresh }) => { calls.push(refresh ? 'refresh' : 'calibrate'); return { ok: false, message: 'Turn the camera on first.' }; },
   } });
   const context = { elements: [describe(1, page.node('Delete'), { consequential: true })] };
   controller.handle('delete', context);
   controller.handle('pause', context);
   assert.equal(controller.handle('stop camera', context).message, 'Using pointer.');
   assert.equal(controller.handle('recalibrate', context).tone, 'error');
+  assert.equal(controller.handle('refresh calibration', context).tone, 'error');
   controller.handle('resume', context);
   assert.match(controller.handle('confirm', context).message, /nothing waiting/);
-  assert.deepEqual(calls, ['pointer', 'calibrate']);
+  assert.deepEqual(calls, ['pointer', 'calibrate', 'refresh']);
   assert.equal(page.log.length, 0);
   assert.equal(createController({ window: {}, actions: page.actions }).handle('use camera', context).tone, 'error');
 });

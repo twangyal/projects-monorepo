@@ -536,7 +536,7 @@ export function createController({ window, actions = pageActions, interpret = in
       pending = null;
       const handler = action.type === 'circle-size' ? commands.circleSize : action.type === 'tracking' ? commands.tracking : commands.calibrate;
       if (!handler) return reply(action.type === 'circle-size' ? 'Circle size adjustment is not available here.' : 'Camera tracking is not available here.', 'error');
-      const result = handler(action.type === 'circle-size' ? action.size : action.source);
+      const result = handler(action.type === 'circle-size' ? action.size : action.type === 'calibrate' ? { refresh: action.refresh === true } : action.source);
       return reply(result.message, result.ok ? 'success' : 'error');
     }
     // Numbers on every control: shown or hidden like the circle's size, and, while shown, a number said (on its own

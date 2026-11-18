@@ -377,6 +377,56 @@ test('redo retires successful calibration while cancelling only the accuracy che
   await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
 });
 
+test('refresh calibration keeps the calibration and adds five dots, and a stopped refresh still keeps it', async ({ page }) => {
+  test.setTimeout(60000);
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await finishCalibration(page);
+  const learned = await page.evaluate(() => window.webgazer.samples);
+  await typeInstruction(page, 'refresh calibration');
+  await expect(status(page)).toHaveText('Refreshing the calibration with five dots. Look at dot 1 of 5 until it turns green.');
+  await page.clock.runFor(5 * 1900 + 100);
+  await expect(status(page)).toHaveText('Refreshed with 5 of 5 dots. Checking accuracy: look at dot 1 of 4.');
+  // The earlier samples are kept: four more for each of the five dots.
+  expect(await page.evaluate(() => window.webgazer.samples)).toBe(learned + 20);
+  await page.clock.runFor(4 * 2000);
+  await expect(status(page)).toHaveText('Refreshed with 5 of 5 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.');
+  // From the panel too; stopped after a dot, the calibration in use stays, and page actions still work.
+  await openSettings(page);
+  await panel(page).getByRole('button', { name: 'Refresh calibration', exact: true }).click();
+  await expect(status(page)).toContainText('Look at dot 1 of 5');
+  await page.clock.runFor(1900); await typeInstruction(page, 'cancel');
+  await expect(status(page)).toHaveText('Calibration refresh stopped, so the circle keeps your earlier calibration. Say refresh calibration to try again.');
+  await expect(dot(page)).toHaveClass(/hidden/);
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
+test('a refresh with nothing to refresh calibrates afresh with all nine dots', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html'); await startCamera(page); await typeInstruction(page, 'cancel');
+  await typeInstruction(page, 'refresh calibration');
+  await expect(status(page)).toHaveText('Calibrating without clicks. Look at dot 1 of 9 until it turns green.');
+  await finishCalibration(page);
+});
+
+test('a saved calibration a few hours old is refreshed with five dots when the camera starts', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    const { createLocalCamera } = await import('/src/web/camera-source.js');
+    window.gazeNavigator = startWebNavigator({ window, createCamera: options => {
+      const camera = createLocalCamera(options);
+      camera.restoreCalibration = async () => ({ ok: true, stale: true });
+      return camera;
+    } });
+  });
+  await openSettings(page); await panel(page).getByRole('button', { name: 'Camera', exact: true }).click();
+  await expect(status(page)).toHaveText('Your earlier calibration is a few hours old. Refreshing the calibration with five dots. Look at dot 1 of 5 until it turns green.');
+  await page.clock.runFor(5 * 1900 + 100);
+  await expect(status(page)).toHaveText('Refreshed with 5 of 5 dots. Checking accuracy: look at dot 1 of 4.');
+  await page.clock.runFor(4 * 2000);
+  await expect(dot(page)).toHaveClass(/hidden/);
+  const sort = page.getByLabel('Sort by'); await gazeAt(page, sort); await typeInstruction(page, 'choose title'); await expect(sort).toHaveValue('Title');
+});
+
 test('speech begun on unready camera cannot act on a later pointer target', async ({ page }) => {
   await page.addInitScript(() => { window.SpeechRecognition = class { constructor() { window.__readySpeech = this; } start() { this.onstart?.(); } abort() { this.onend?.(); } }; });
   await open(page, '/practice-site/catalog.html'); await startCamera(page); await typeInstruction(page, 'cancel');

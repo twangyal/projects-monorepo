@@ -3,7 +3,8 @@
 //
 // Interface: start() → Promise<{ok, message}>, stop() → wasOn, state ('off' | 'starting' | 'ready'),
 // session (changes on every start), setMode('eyes' | 'head'), resetCalibration(), recordSample(x, y) → boolean or
-// Promise<boolean>, restoreCalibration(size) → Promise<{ok, reason}>, saveCalibration(size), clearCalibration().
+// Promise<boolean>, restoreCalibration(size) → Promise<{ok, stale?, reason?}> (stale: restored, but old enough to need
+// a refresh), saveCalibration(size), clearCalibration().
 import { createCameraGaze } from './camera-gaze.js';
 import { recordCalibrationSample } from '../camera-calibration.js';
 import { decodeCalibration, encodeCalibration, encodeHeadCalibration } from './calibration-store.js';
@@ -43,10 +44,11 @@ export function createLocalCamera({ document, window, load, store = {}, onGaze, 
       if (!api || camera.api !== api) return { ok: false, reason: 'stopped' };
       try {
         camera.resetCalibration();
-        if (camera.mode === 'head') return camera.setHeadSamples(decoded.samples) ? { ok: true } : { ok: false, reason: 'invalid' };
+        const restored = decoded.stale ? { ok: true, stale: true } : { ok: true };
+        if (camera.mode === 'head') return camera.setHeadSamples(decoded.samples) ? restored : { ok: false, reason: 'invalid' };
         api.getRegression()[0].setData(decoded.samples);
         if (decoded.iris?.length) camera.setIrisSamples(decoded.iris);
-        return { ok: true };
+        return restored;
       } catch {
         return { ok: false, reason: 'invalid' };
       }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_AGE_MS, decodeCalibration, encodeCalibration } from '../src/web/calibration-store.js';
+import { MAX_AGE_MS, decodeCalibration, encodeCalibration, encodeHeadCalibration } from '../src/web/calibration-store.js';
 
 const eye = (seed, width = 3, height = 2) => ({
   width, height, imagex: 10, imagey: 20,
@@ -30,11 +30,20 @@ test('malformed samples are dropped instead of corrupting the regression', () =>
   assert.equal(stored.samples.length, 1);
 });
 
-test('calibrations are reused only for the same viewport and while recent', () => {
+test('calibrations are reused only for the same viewport, and older ones come back marked stale', () => {
   const stored = encodeCalibration([sample(1, 1, 1)], viewport);
   assert.deepEqual(decodeCalibration(stored, { ...viewport, width: 1279 }), { ok: false, reason: 'resized' });
-  assert.deepEqual(decodeCalibration(stored, { ...viewport, now: viewport.now + MAX_AGE_MS + 1 }), { ok: false, reason: 'expired' });
-  assert.deepEqual(decodeCalibration(stored, { ...viewport, now: viewport.now - 1 }), { ok: false, reason: 'expired' });
+  assert.equal(decodeCalibration(stored, { ...viewport, now: viewport.now + MAX_AGE_MS }).stale, undefined);
+  // Older than MAX_AGE_MS, or saved by a clock since turned back: its samples, to be refreshed before use.
+  for (const now of [viewport.now + MAX_AGE_MS + 1, viewport.now + 30 * 24 * 3600e3, viewport.now - 1]) {
+    const old = decodeCalibration(stored, { ...viewport, now });
+    assert.equal(old.ok, true);
+    assert.equal(old.stale, true);
+    assert.deepEqual(old.samples[0].screenPos, stored.samples[0].screenPos);
+  }
+  const head = encodeHeadCalibration([{ features: [0.1, 0.2, 0.3, 0.4], x: 5, y: 6 }], viewport);
+  assert.deepEqual(decodeCalibration(head, { ...viewport, now: viewport.now + MAX_AGE_MS + 1, mode: 'head' }),
+    { ok: true, samples: [{ features: [0.1, 0.2, 0.3, 0.4], x: 5, y: 6 }], stale: true });
   assert.deepEqual(decodeCalibration(null, viewport), { ok: false, reason: 'none' });
   assert.deepEqual(decodeCalibration({ ...stored, version: 99 }, viewport), { ok: false, reason: 'none' });
   assert.deepEqual(decodeCalibration({ ...stored, samples: [{ eyes: { left: { patch: '%%%' }, right: { patch: '' } }, screenPos: [1, 1] }] }, viewport),

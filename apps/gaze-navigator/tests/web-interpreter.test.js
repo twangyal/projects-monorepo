@@ -136,6 +136,10 @@ test('tracking and calibration commands are recognized without colliding with ca
   }
   assert.deepEqual(interpret('recalibrate', context()), { type: 'calibrate' });
   assert.deepEqual(interpret('calibrate camera', context()), { type: 'calibrate' });
+  for (const said of ['refresh calibration', 'Refresh the calibration', 'top up my calibration', 'update the camera calibration', 'quick recalibrate', 'calibrate here', 'recalibrate quickly']) {
+    assert.deepEqual(interpret(said, context()), { type: 'calibrate', refresh: true }, said);
+  }
+  assert.deepEqual(interpret('refresh', context()), { type: 'reload' });
   assert.equal(interpret('stop', context()).type, 'cancel');
   assert.equal(interpret('stop listening', context()).type, 'pause');
 });

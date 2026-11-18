@@ -196,7 +196,7 @@ test('a calibration follows navigation in extension memory and is forgotten when
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length]), 'eye data never reaches website storage').toEqual([0, 0]);
 
   await page.goto('http://shop.example/contact');
-  await expect(status(page)).toHaveText('Camera on with your earlier calibration. Say recalibrate if the circle drifts.');
+  await expect(status(page)).toHaveText('Camera on with your earlier calibration. Say refresh calibration if the circle drifts.');
   expect(await captureFrame(page).evaluate(() => globalThis.__fakeCamera.restored)).toBe(36);
   await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/hidden/);
 
@@ -218,6 +218,27 @@ test('a calibration follows navigation in extension memory and is forgotten when
   await typeInstruction(page, 'stop camera');
   await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
   await expect.poll(() => control.evaluate(async () => Object.keys(await chrome.storage.session.get('gaze-calibration')).length)).toBe(0);
+});
+
+test('a calibration saved more than two hours ago is refreshed with five dots on the next page', async ({ context, control }) => {
+  test.setTimeout(90000);
+  await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready');
+  await typeInstruction(page, 'use camera');
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.', { timeout: 45000 });
+  await control.evaluate(async () => {
+    const { 'gaze-calibration': saved } = await chrome.storage.session.get('gaze-calibration');
+    await chrome.storage.session.set({ 'gaze-calibration': { ...saved, savedAt: saved.savedAt - 3 * 60 * 60 * 1000 } });
+  });
+  await page.goto('http://shop.example/contact');
+  await expect(status(page)).toHaveText('Your earlier calibration is a few hours old. Refreshing the calibration with five dots. Look at dot 1 of 5 until it turns green.');
+  expect(await captureFrame(page).evaluate(() => globalThis.__fakeCamera.restored)).toBe(36);
+  await expect(status(page)).toHaveText('Refreshed with 5 of 5 dots. The accuracy check saw too little gaze to measure, so the circle stays medium (90 px). The circle now follows your gaze.', { timeout: 30000 });
+  // Saved again with the five dots' samples beside the earlier ones.
+  const stored = await control.evaluate(async () => (await chrome.storage.session.get('gaze-calibration'))['gaze-calibration']);
+  expect(stored.samples).toHaveLength(56);
 });
 
 test('smarter matching runs in one shared offscreen document and acts on a differently named control', async ({ context, control }) => {
