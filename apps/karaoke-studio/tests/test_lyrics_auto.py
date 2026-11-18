@@ -482,7 +482,8 @@ class RecognizerChoiceTests(unittest.TestCase):
     def test_whisper_reads_songs_in_other_languages_timed_by_the_multilingual_model(self):
         everything = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
         model, result, loads, heard, progress, written = self.run_whisper(everything, 'fr', 'fr')
-        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper:fr', 'multilingual']))
+        # Whisper reads each phrase in the language it hears there, with the model that told the song's language.
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'multilingual']))
         # Whisper writes each phrase once, then the multilingual model hears each once to time its words.
         self.assertEqual(written, [('whisper', phrase) for phrase in range(40)])
         self.assertEqual(heard, [('multilingual', phrase) for phrase in range(40)])
@@ -493,11 +494,11 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual((model, loads), (ENGLISH, ['whisper', 'multilingual', 'english']))
         model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'zh', 'zh')
         self.assertEqual((model, loads), (EAST_ASIAN, ['whisper', 'multilingual', 'east-asian', 'east-asian:zh']))
-        # Chosen, Whisper reads any song; without a language heard it detects one per phrase.
+        # Chosen, Whisper reads any song, each phrase in the language it hears there.
         model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'en', 'en', 'whisper')
-        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper:en', 'multilingual']))
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'multilingual']))
         model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'fr', '', 'whisper')
-        self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper', 'multilingual']))
+        self.assertEqual((model, loads), (WHISPER, ['whisper', 'multilingual']))
 
     def test_whisper_text_keeps_characters_split_across_its_tokens(self):
         # Whisper's tokens are pieces of UTF-8, so इ (three bytes) can be split over two of them; sherpa-onnx would

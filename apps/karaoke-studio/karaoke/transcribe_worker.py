@@ -373,17 +373,19 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
         # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen),
         # in the language it hears, or the one it is told.
         told = WHISPER_CHOICES.get(model_choice)
+        listener = None
         if told:
             language = told
         else:
             listener = load_model(WHISPER)
             language = song_language(phrases, listener)
-            listener = None
-            gc.collect()
         if told or model_choice == 'whisper' or language not in WHISPER_SKIPS:
             # Whisper writes every phrase's words, then the multilingual model times them: the two models together
-            # would exceed the worker's memory limit.
-            reader = load_model(WHISPER, language=language) if language else load_model(WHISPER)
+            # would exceed the worker's memory limit. Told the song's language, Whisper writes it; otherwise it reads
+            # each phrase in the language it hears there, as songs mostly in one language often sing a line or two in
+            # another (English, most often), which a reading held to the song's language turns into nonsense.
+            reader = load_model(WHISPER, language=language) if told else listener
+            listener = None
             report(0, 2 * total)
             texts = []
             for done, (_start, phrase) in enumerate(phrases, 1):
@@ -398,6 +400,8 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
                 report(done, 2 * total)
             words.sort(key=lambda word: (word['start'], word['end']))
             return WHISPER, words[:MAX_WORDS], language or None
+        listener = None
+        gc.collect()
         models = tuple(model for model in models if model is not WHISPER)
     first = MULTILINGUAL if MULTILINGUAL in models else EAST_ASIAN if EAST_ASIAN in models else ENGLISH
     model = models[0] if len(models) == 1 else first
