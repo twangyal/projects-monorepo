@@ -58,11 +58,11 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   }
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket', 'frontPocket'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
   cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket',
-  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets' };
+  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets', frontPocket: 'Front pockets' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -119,8 +119,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
   const yoked = (product.base === 'tee' || product.base === 'trousers') && optionsOf(product).yoke ? [...seamed, 'yoke' as const] : seamed;
   // A long-sleeved shirt's buttoned cuffs.
   const cuffed = product.base === 'tee' && optionsOf(product).cuffs ? [...yoked, 'cuffLeft' as const, 'cuffRight' as const] : yoked;
-  // Trousers' back patch pockets.
-  const pocketed = product.base === 'trousers' && optionsOf(product).backPockets ? [...cuffed, 'backPocket' as const] : cuffed;
+  // Trousers' front scoop pockets and back patch pockets.
+  const fronted = product.base === 'trousers' && optionsOf(product).frontPockets ? [...cuffed, 'frontPocket' as const] : cuffed;
+  const pocketed = product.base === 'trousers' && optionsOf(product).backPockets ? [...fronted, 'backPocket' as const] : fronted;
   return optionsOf(product).chestPocket ? [...pocketed, 'chestPocket'] : pocketed;
 }
 
@@ -210,6 +211,8 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
    * deeper at the centre back seam than at the side (see trouserYoke), as jeans are. */ yoke?: boolean;
   /** Back patch pockets (trousers and shorts), one on each back leg below the waist (and the yoke), styled on their
    * own. */ backPockets?: boolean;
+  /** Front scoop pockets (trousers and shorts): each front leg is cut away in a curve from the waist to the side seam
+   * (see frontPocketOf), showing the pocket facing behind it, styled on its own. */ frontPockets?: boolean;
   /** Buttoned cuffs (long-sleeved shirts): each sleeve ends SHIRT_CUFF_CM above its measured length in a woven cuff,
    * styled on its own, into which it is pleated. */ cuffs?: boolean;
   /** A coat (shirts at least COAT_LENGTH long with long sleeves): worn over a T-shirt, shirt, polo or dress, with coat
@@ -222,6 +225,9 @@ export function zipAllowed(base: Base): boolean { return base === 'hoodie' || ba
 /** A back yoke goes on a shirt with a button front, or on trousers and shorts. */
 export function yokeAllowed(base: Base, options: Pick<Options, 'buttons'>): boolean { return base === 'trousers' || (base === 'tee' && !!options.buttons); }
 export function backPocketsAllowed(base: Base): boolean { return base === 'trousers'; }
+/** How much deeper than its opening a front pocket's facing is cut, so the front's edge lies over it. */
+export const FRONT_POCKET_FACING_CM = 3;
+export function frontPocketsAllowed(base: Base): boolean { return base === 'trousers'; }
 export function collarAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 export function buttonsAllowed(base: Base): boolean { return base === 'tee'; }
 /** How far below the neck points a shirt's back yoke seam runs across the back, cm. */
@@ -275,6 +281,7 @@ export function withOptions(product: Product, next: Options): Product {
   if (next.waistSeam && !waistSeamAllowed(product)) fail(`A waist seam goes on a T-shirt dress: lengthen it to at least ${DRESS_LENGTH} cm first.`);
   if (next.yoke && !yokeAllowed(product.base, next)) fail(product.base === 'tee' ? 'A back yoke goes on a shirt: add the button front first.' : 'A back yoke goes on a shirt or on trousers.');
   if (next.backPockets && !backPocketsAllowed(product.base)) fail('Back pockets go on trousers or shorts.');
+  if (next.frontPockets && !frontPocketsAllowed(product.base)) fail('Front pockets go on trousers or shorts.');
   if (next.cuffs && !cuffsAllowed(product, next)) fail(`Cuffs go on a long-sleeved shirt: add the button front and make the sleeves at least ${CUFFED_SLEEVE} cm first.`);
   if (next.coat && !coatAllowed(product, next)) fail(`A coat is a long shirt: add the button front and collar, and make it at least ${COAT_LENGTH} cm long with sleeves of at least ${CUFFED_SLEEVE} cm first.`);
   if (next.coat && next.waistSeam) fail('A coat is not cut at the waist: take the waist seam off first.');
@@ -324,6 +331,13 @@ export function withOptions(product: Product, next: Options): Product {
   };
   setBackPockets(draft.parts);
   for (const colorway of draft.colorways ?? []) setBackPockets(colorway.parts);
+  // New front pocket facings start in the front legs' style.
+  const setFrontPockets = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (next.frontPockets) all.frontPocket ??= structuredClone(parts.front); else delete all.frontPocket;
+  };
+  setFrontPockets(draft.parts);
+  for (const colorway of draft.colorways ?? []) setFrontPockets(colorway.parts);
   // New cuffs start in their sleeves' styles (woven, unlike a sweatshirt's rib cuffs).
   const setCuffs = (parts: Record<PartId, PartStyle>) => {
     const all = parts as Partial<Record<PartId, PartStyle>>;
@@ -641,7 +655,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'backPockets'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'backPockets', 'frontPockets'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -660,6 +674,8 @@ export function validateProduct(value: unknown): Product {
     if (o.yoke && !yokeAllowed(base, o as Pick<Options, 'buttons'>)) fail('A back yoke goes on a shirt with a button front, or on trousers.');
     if (o.backPockets !== undefined && typeof o.backPockets !== 'boolean') fail('Back pockets must be on or off.');
     if (o.backPockets && !backPocketsAllowed(base)) fail('Back pockets go on trousers or shorts.');
+    if (o.frontPockets !== undefined && typeof o.frontPockets !== 'boolean') fail('Front pockets must be on or off.');
+    if (o.frontPockets && !frontPocketsAllowed(base)) fail('Front pockets go on trousers or shorts.');
     if (o.cuffs !== undefined && typeof o.cuffs !== 'boolean') fail('Shirt cuffs must be on or off.');
     if (o.cuffs && !cuffsAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`Cuffs go on a long-sleeved shirt with a button front and sleeves of at least ${CUFFED_SLEEVE} cm.`);
     if (o.waistSeam && !waistSeamAllowed({ base, measurements: measurements as Product['measurements'] })) fail(`A waist seam goes on a T-shirt dress, at least ${DRESS_LENGTH} cm long: lengthen it or take the waist seam off.`);
@@ -667,7 +683,7 @@ export function validateProduct(value: unknown): Product {
     if (o.coat && !coatAllowed({ base, measurements: measurements as Product['measurements'] }, o as unknown as Options)) fail(`A coat is a shirt at least ${COAT_LENGTH} cm long, with a button front, a collar and sleeves of at least ${CUFFED_SLEEVE} cm.`);
     if (o.coat && o.waistSeam) fail('A coat is not cut at the waist.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.backPockets ? { backPockets: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -801,9 +817,9 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
       parts: { ...allParts(style('terry-300', '#9a9c9a'), {}, 'trousers'), cuffLeft: style('rib-220', '#9a9c9a'), cuffRight: style('rib-220', '#9a9c9a') }, artwork: [] } },
   { id: 'trousers', name: 'Straight trousers', description: 'Indigo denim twill, straight leg, elasticated waist.',
     product: { base: 'trousers', name: 'Straight trousers', measurements: legFit, neckline: 'crew', parts: allParts(style('denim-340', '#2d3f5c'), {}, 'trousers'), artwork: [] } },
-  { id: 'jeans', name: 'Jeans', description: 'Dark indigo denim with a back yoke and back patch pockets, straight leg, elasticated waist.',
-    product: { base: 'trousers', name: 'Jeans', measurements: legFit, neckline: 'crew', options: { hem: 'straight', chestPocket: false, yoke: true, backPockets: true },
-      parts: { ...allParts(style('denim-340', '#26324a'), {}, 'trousers'), yoke: style('denim-340', '#26324a'), backPocket: style('denim-340', '#26324a') }, artwork: [] } },
+  { id: 'jeans', name: 'Jeans', description: 'Dark indigo denim with scoop front pockets, a back yoke and back patch pockets, straight leg, elasticated waist.',
+    product: { base: 'trousers', name: 'Jeans', measurements: legFit, neckline: 'crew', options: { hem: 'straight', chestPocket: false, yoke: true, backPockets: true, frontPockets: true },
+      parts: { ...allParts(style('denim-340', '#26324a'), {}, 'trousers'), yoke: style('denim-340', '#26324a'), backPocket: style('denim-340', '#26324a'), frontPocket: style('denim-340', '#26324a') }, artwork: [] } },
 ];
 export function template(id: string): Product {
   const found = TEMPLATES.find(item => item.id === id) ?? fail('Choose a template from the library.');
@@ -1065,7 +1081,16 @@ function trouserPieces(product: Product): PatternPiece[] {
   // Each back pocket: its finished shape plus the hem folded down at its top.
   const pocket = optionsOf(product).backPockets ? backPocketOf(product) : null;
   const pockets = pocket ? [makePiece('backPocket', backPocketOutline(pocket.width, pocket.height + POCKET_FOLD_CM, pocket.point + POCKET_FOLD_CM, 0, 0), 2)] : [];
-  return [makePiece('front', panel(true), 2), ...backs, makePiece('waistband', band, 1), ...cuffs, ...pockets];
+  // Front scoop pockets: the front panel is cut away along the pocket's edge, from the waist to the side seam, and the
+  // facing behind the opening is cut from the corner it leaves, 3 cm deeper so the panel's edge lies over it.
+  let front = panel(true), facings: PatternPiece[] = [];
+  if (optionsOf(product).frontPockets) {
+    const edge = frontPocketEdge(product), facing = frontPocketEdge(product, FRONT_POCKET_FACING_CM);
+    // From the pocket's corner at the waist round the panel to its side seam, then back up the pocket's edge.
+    front = [edge[0]!, ...front.slice(1), ...edge.slice(1).reverse()];
+    facings = [makePiece('frontPocket', [{ x: 0.5, y: 0 }, ...facing], 2)];
+  }
+  return [makePiece('front', front, 2), ...facings, ...backs, makePiece('waistband', band, 1), ...cuffs, ...pockets];
 }
 
 /** The part of a pattern outline above (`above`) or below the line through `a` and `b` (a left of b), cut along it. */
@@ -1113,6 +1138,23 @@ export function backPocketOf(product: Product): { width: number; height: number;
   const d = trouserDimensions(product), width = Math.min(16, Math.max(11, Math.round(d.hip * 0.28) / 2)), x = d.backHip / 2 + 1 - width / 2;
   const u = (x + width / 2) / d.backHip, yoke = optionsOf(product).yoke ? trouserYoke(product) : null;
   return { width, height: width, point: Math.round(width * 1.12 * 10) / 10, x, y: (1 - u) * d.backRaise + (yoke ? yokeDepthAt(yoke, u) + 1.5 : 6) };
+}
+/** A front scoop pocket: its opening across the waist from the side seam, and how far it reaches down the side seam,
+ * in cm. Its edge curves between the two as a quarter ellipse about the corner of the waist and the side seam. */
+export function frontPocketOf(product: Product): { opening: number; depth: number } {
+  const d = trouserDimensions(product);
+  return { opening: Math.min(11, Math.max(8, Math.round(d.hip * 0.1))), depth: Math.min(8.5, Math.max(6, Math.round(d.rise / 2) / 2)) };
+}
+/** Points along a front pocket's curved edge on the front pattern (x from the side seam, y down from the waist), from
+ * the waist to the side seam; `grow` widens the curve, as the facing behind the opening is. */
+export function frontPocketEdge(product: Product, grow = 0, steps = 10): Pt[] {
+  const d = trouserDimensions(product), { opening, depth } = frontPocketOf(product);
+  // The front's side seam runs from 0.5 cm in at the waist to the side at the hip line.
+  const side = (y: number) => 0.5 * (1 - y / d.hipDepth);
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = Math.PI / 2 * i / steps, y = (depth + grow) * Math.sin(t);
+    return { x: side(y) + (opening + grow) * Math.cos(t), y };
+  });
 }
 /** A back pocket's outline: square-topped, its sides `height` long, coming to a point `point` below its top. */
 function backPocketOutline(width: number, height: number, point: number, x: number, y: number): Pt[] {
@@ -1271,6 +1313,27 @@ function trouserMesh(product: Product): PartMesh[] {
       }
     }
     meshes.set('backPocket', mesh);
+  }
+  if (optionsOf(product).frontPockets) {
+    // Each front pocket's facing shows inside its curved opening, just proud of the front panel: each point at its
+    // place on the panel's pattern, out from the corner of the waist and the side seam to the pocket's edge.
+    const { opening, depth } = frontPocketOf(product), panel = meshes.get('front')!, mesh: PartMesh = { part: 'frontPocket', positions: [], uvs: [], indices: [] };
+    const around = Math.max(4, Math.ceil((opening + depth) * 0.8 / MESH_STEP)), out = Math.max(2, Math.ceil(Math.max(opening, depth) / MESH_STEP));
+    const side = (y: number) => 0.5 * (1 - y / d.hipDepth);
+    for (const leg of [1, -1]) {
+      const base = mesh.positions.length / 3;
+      for (let j = 0; j <= out; j++) for (let i = 0; i <= around; i++) {
+        // Starting just off the corner keeps every triangle open.
+        const t = Math.PI / 2 * i / around, r = 0.04 + 0.96 * j / out, y = depth * r * Math.sin(t), flat = { x: side(y) + opening * r * Math.cos(t), y };
+        const p = onPanel(panel, flat, leg, 0.3);
+        mesh.positions.push(p.x, p.y, p.z); mesh.uvs.push(flat.x, flat.y);
+        if (j < out && i < around) {
+          const a = base + j * (around + 1) + i, b = a + 1, g = a + around + 1, h = g + 1;
+          mesh.indices.push(...(leg > 0 ? [a, b, g, b, h, g] : [a, g, b, b, g, h]));
+        }
+      }
+    }
+    meshes.set('frontPocket', mesh);
   }
   // The waistband rises from the open waist: left front side to centre to right side, then the back right to left.
   const top = (side: number, leg: number, from: number, to: number) => Array.from({ length: Math.abs(to - from) + 1 }, (_, i) => point(0, (from + Math.sign(to - from) * i) / columns, side, leg));

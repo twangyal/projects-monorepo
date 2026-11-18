@@ -83,7 +83,7 @@ export function photoColours(data: Uint8ClampedArray, width: number, height: num
     .filter(({ hex }) => !seen.has(hex) && seen.add(hex)).slice(0, count);
 }
 
-const POCKETS: ReadonlySet<PartId> = new Set(['pocket', 'chestPocket', 'backPocket']), TRIMS: ReadonlySet<PartId> = new Set([...RIB_PARTS, 'waistband']);
+const POCKETS: ReadonlySet<PartId> = new Set(['pocket', 'chestPocket', 'backPocket', 'frontPocket']), TRIMS: ReadonlySet<PartId> = new Set([...RIB_PARTS, 'waistband']);
 /**
  * A colorway from a palette (most-used colour first): the first colour on the garment's main parts, the next clearly
  * different one (ΔE ≥ 20) on its trims (ribs and waistband) and as the colour of its library prints, and a third on pockets. Fabrics,

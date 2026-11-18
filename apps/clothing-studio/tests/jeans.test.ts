@@ -13,7 +13,7 @@ const points = (mesh: PartMesh) => Array.from({ length: mesh.positions.length / 
 
 test('trousers and shorts can have a back yoke and back pockets, each styled on its own; other garments cannot', () => {
   assert.ok(partsOf(jeans).includes('yoke') && partsOf(jeans).includes('backPocket'));
-  assert.deepEqual(validateProduct(jeans).options, { hem: 'straight', chestPocket: false, yoke: true, backPockets: true });
+  assert.deepEqual(validateProduct(jeans).options, { hem: 'straight', chestPocket: false, yoke: true, backPockets: true, frontPockets: true });
   const added = withOptions(shorts, { ...optionsOf(shorts), yoke: true, backPockets: true });
   assert.deepEqual(added.parts.backPocket, shorts.parts.back);
   assert.deepEqual(added.parts.yoke, shorts.parts.back);

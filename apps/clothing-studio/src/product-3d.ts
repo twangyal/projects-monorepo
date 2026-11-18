@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { OPEN_ZIP_GAP, backPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { OPEN_ZIP_GAP, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -148,7 +148,7 @@ class ProductModel {
 
   /**
    * Trousers' topstitching, as jeans show it: a double row round each back pocket's sides and point and across its top,
-   * and along the back yoke's seam, on the yoke. Gold thread on denim, a shade darker than the fabric otherwise. Each is
+   * along each front pocket's opening, and along the back yoke's seam, on the yoke. Gold thread on denim, a shade darker than the fabric otherwise. Each is
    * drawn on a clear layer over its part, placed by the part's pattern coordinates, so it follows the drape.
    */
   private addTopstitching(product: Product, rest: PartMesh[], parts: Map<PartId, THREE.Mesh>, holder: THREE.Object3D) {
@@ -164,6 +164,13 @@ class ProductModel {
           draw([{ x: ring[1]!.x, y: 0 }, ring[2]!, ring[3]!, ring[4]!, { x: ring[0]!.x, y: 0 }], false);
         }
         for (const y of [1.5, 2.05]) draw([{ x: 0, y }, { x: w, y }], false);
+      });
+    }
+    if (optionsOf(product).frontPockets) {
+      // Two rows along each front pocket's curved opening, on the facing inside it.
+      const { opening, depth } = frontPocketOf(product);
+      this.addStitchLayer(product, 'frontPocket', rest, parts, holder, opening + 1.5, depth + 1, thread('frontPocket'), draw => {
+        for (const inset of [0.3, 0.85]) draw(frontPocketEdge(product, -inset, 16), false);
       });
     }
     if (optionsOf(product).yoke) {

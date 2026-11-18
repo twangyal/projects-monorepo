@@ -58,6 +58,7 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\bleft cuffs?\b/, () => ['cuffLeft']],
   [/\bright cuffs?\b/, () => ['cuffRight']],
   [/\bchest pockets?\b/, () => ['chestPocket']],
+  [/\b(?:front|scoop) pockets?\b|\bpocket facings?\b/, parts => (parts.has('frontPocket') ? ['frontPocket'] : [])],
   [/\bback pockets?\b/, parts => (parts.has('backPocket') ? ['backPocket'] : [])],
   [/\b(kangaroo pockets?|pouch|pockets?)\b/, parts => [parts.has('pocket') ? 'pocket' : parts.has('backPocket') ? 'backPocket' : 'chestPocket']],
   [/\b(rib trims?|trims?)\b/, parts => ['neckband', 'collar', 'cuffLeft', 'cuffRight', 'hemBand', 'waistband'].filter(id => parts.has(id as PartId)) as PartId[]],
@@ -150,10 +151,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
         product = withLegCuffs(product, legMeasurements(template('joggers')).cuffHeight!);
         garment.push('ankle cuffs: joggers');
       }
-      // Trousers described as jeans keep their styling and gain the back yoke and back pockets.
-      if (id === 'jeans' && (!optionsOf(product).yoke || !optionsOf(product).backPockets)) {
-        product = withOptions(product, { ...optionsOf(product), yoke: true, backPockets: true });
-        garment.push('jeans: back yoke and back pockets');
+      // Trousers described as jeans keep their styling and gain front pockets, the back yoke and back pockets.
+      if (id === 'jeans' && (!optionsOf(product).yoke || !optionsOf(product).backPockets || !optionsOf(product).frontPockets)) {
+        product = withOptions(product, { ...optionsOf(product), yoke: true, backPockets: true, frontPockets: true });
+        garment.push('jeans: front pockets, back yoke and back pockets');
       }
     } else if (base === product.base && id === 'polo') {
       // A tee described as a polo keeps its styling and gains the collar and placket, on a round neck.
@@ -273,10 +274,22 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       garment.push(pocket ? (had ? 'chest pocket' : 'chest pocket added') : (had ? 'chest pocket removed' : 'no chest pocket'));
     }
   }
+  // Trousers' front scoop pockets: added by naming them ("front pockets", "scoop pockets"), taken off with "no front
+  // pockets" (or "no pockets"). On a top, a front pocket is its chest pocket (above).
+  if (product.base === 'trousers') {
+    const noFrontPockets = !!take(/\b(?:no|without) (?:front|scoop) pockets?\b/) || !!noPocket;
+    if (noFrontPockets && optionsOf(product).frontPockets) {
+      product = withOptions(product, { ...optionsOf(product), frontPockets: false });
+      garment.push('front pockets removed');
+    } else if (!noFrontPockets && /\b(?:front|scoop) pockets?\b/.test(text) && !optionsOf(product).frontPockets) {
+      product = withOptions(product, { ...optionsOf(product), frontPockets: true });
+      garment.push('front pockets added');
+    }
+  }
   // Trousers' back patch pockets: added by naming them ("back pockets", "white pockets"), taken off with "no back pockets"
   // (or "no pockets").
   const noBackPockets = !!take(/\b(?:no|without) back pockets?\b/) || (!!noPocket && product.base === 'trousers');
-  const backPocketed = /\bback pockets?\b/.test(text) || (product.base === 'trousers' && /(?<!chest |kangaroo )\bpockets?\b/.test(text));
+  const backPocketed = /\bback pockets?\b/.test(text) || (product.base === 'trousers' && /(?<!chest |kangaroo |front |scoop )\bpockets?\b/.test(text));
   if (noBackPockets && optionsOf(product).backPockets) {
     product = withOptions(product, { ...optionsOf(product), backPockets: false });
     garment.push('back pockets removed');

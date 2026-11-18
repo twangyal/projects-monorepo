@@ -64,7 +64,7 @@ export function bendingLength(fabric: Material): number {
 /** Parts whose shape is modelled in 3D rather than taken from their flat pattern piece. */
 const MODELLED: ReadonlySet<PartId> = new Set(['neckband']);
 /** Overlays carried on the front body rather than simulated: [part, height above the front]. */
-const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35]]);
+const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35], ['placket', 0.25], ['backPocket', 0.35], ['frontPocket', 0.3]]);
 
 export const BODY_CHEST = [70, 140] as const;
 export const BODY_WAIST = [50, 180] as const;
@@ -435,6 +435,29 @@ function bodyField(body: BodyProxy, core: number, reach: number) {
 }
 
 interface Carried { part: PartId; vertex: number; triangle: [number, number, number]; weights: Vec; lift: number }
+/** The point of triangle abc nearest p, as weights of its corners, and how far it is from p. */
+function nearestOnTriangle(p: Vec, a: Vec, b: Vec, c: Vec): { weights: Vec; distance: number } {
+  const sub = (u: Vec, w: Vec): Vec => [u[0] - w[0], u[1] - w[1], u[2] - w[2]], dot = (u: Vec, w: Vec) => u[0] * w[0] + u[1] * w[1] + u[2] * w[2];
+  const at = (weights: Vec) => {
+    const q: Vec = [0, 1, 2].map(k => a[k]! * weights[0] + b[k]! * weights[1] + c[k]! * weights[2]) as Vec;
+    return { weights, distance: Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) };
+  };
+  // The regions of the triangle's corners, edges and face in turn (Ericson, Real-Time Collision Detection, 5.1.5).
+  const ab = sub(b, a), ac = sub(c, a), ap = sub(p, a), d1 = dot(ab, ap), d2 = dot(ac, ap);
+  if (d1 <= 0 && d2 <= 0) return at([1, 0, 0]);
+  const bp = sub(p, b), d3 = dot(ab, bp), d4 = dot(ac, bp);
+  if (d3 >= 0 && d4 <= d3) return at([0, 1, 0]);
+  const vc = d1 * d4 - d3 * d2;
+  if (vc <= 0 && d1 >= 0 && d3 <= 0) { const v = d1 / (d1 - d3); return at([1 - v, v, 0]); }
+  const cp = sub(p, c), d5 = dot(ab, cp), d6 = dot(ac, cp);
+  if (d6 >= 0 && d5 <= d6) return at([0, 0, 1]);
+  const vb = d5 * d2 - d1 * d6;
+  if (vb <= 0 && d2 >= 0 && d6 <= 0) { const w = d2 / (d2 - d6); return at([1 - w, 0, w]); }
+  const va = d3 * d6 - d5 * d4;
+  if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) { const w = (d4 - d3) / ((d4 - d3) + (d5 - d6)); return at([0, 1 - w, w]); }
+  const scale = 1 / (va + vb + vc), v = vb * scale, w = vc * scale;
+  return at([1 - v - w, v, w]);
+}
 export interface Cloth {
   /** Initial particle positions (the product's 3D shell). */
   positions: Float32Array;
@@ -598,21 +621,30 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
     bendWeights.push(...stencil.weights);
     bendStiffness.push(stencil.stiffness);
   }
-  // Pockets ride on the body they are sewn to (trousers' back pockets on the back legs, the rest on the front): each
+  // Pockets ride on the body they are sewn to (trousers' back pockets on the back legs, their front pockets' facings
+  // on the front legs, the rest on the front): each
   // vertex keeps its place on the triangle under it (flat coordinates).
   const carried: Carried[] = [];
   for (const mesh of meshes) {
     const lift = CARRIED.get(mesh.part), host = mesh.part === 'backPocket' ? 'back' : 'front', facing = host === 'back' ? -1 : 1;
     const front = meshes.find(other => other.part === host), frontIds = vertices.get(host);
     if (lift === undefined || !front || !frontIds) continue;
+    // A front pocket's facing reaches the side seam, where the legs turn away edge-on to the front view: its points take
+    // the nearest point of the front in 3D instead.
+    const spatial = mesh.part === 'frontPocket';
     for (let v = 0; v < mesh.positions.length / 3; v++) {
-      const x = mesh.positions[v * 3]!, y = mesh.positions[v * 3 + 1]!;
+      const x = mesh.positions[v * 3]!, y = mesh.positions[v * 3 + 1]!, z = mesh.positions[v * 3 + 2]!;
       let best: Carried | null = null, bestScore = Infinity;
       for (let t = 0; t < front.indices.length; t += 3) {
         const tri: [number, number, number] = [frontIds[front.indices[t]!]!, frontIds[front.indices[t + 1]!]!, frontIds[front.indices[t + 2]!]!];
         if (facing * (p(tri[0], 2) + p(tri[1], 2) + p(tri[2], 2)) <= 0) continue;
         // Each leg's pocket rides on its own leg.
-        if (host === 'back' && Math.sign(p(tri[0], 0) + p(tri[1], 0) + p(tri[2], 0)) !== Math.sign(x)) continue;
+        if ((host === 'back' || spatial) && Math.sign(p(tri[0], 0) + p(tri[1], 0) + p(tri[2], 0)) !== Math.sign(x)) continue;
+        if (spatial) {
+          const corner = (id: number): Vec => [p(id, 0), p(id, 1), p(id, 2)], near = nearestOnTriangle([x, y, z], corner(tri[0]), corner(tri[1]), corner(tri[2]));
+          if (near.distance < bestScore) { bestScore = near.distance; best = { part: mesh.part, vertex: v, triangle: tri, weights: near.weights, lift }; }
+          continue;
+        }
         const [x0, y0, x1, y1, x2, y2] = [p(tri[0], 0), p(tri[0], 1), p(tri[1], 0), p(tri[1], 1), p(tri[2], 0), p(tri[2], 1)];
         const det = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
         if (Math.abs(det) < 1e-12) continue;

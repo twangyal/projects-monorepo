@@ -3,7 +3,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, backPocketOf, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -68,6 +68,12 @@ function samplePack(product: Product, date: string): TechPack {
     bom.push({ item: 'T2 Waistband elastic', description: 'Knitted elastic, 3 cm wide', color: 'White', placement: 'Waistband channel', quantity: `${cm(legs.elastic)} (relaxed waist less 4 cm)` },
       label('T3', 'Waistband label', 'Woven label, 5 × 2 cm', 'Centre back waistband, inside'),
       { ...label('T4', 'Care and content label', 'Printed satin label', 'Left side seam, 10 cm below the waistband'), color: 'White' });
+    // Front pocket bags: each 6 cm wider than its opening and 18 cm deeper, cut double.
+    if (optionsOf(product).frontPockets) {
+      const scoop = frontPocketOf(product);
+      bom.push({ item: 'P1 Pocketing', description: 'Cotton twill pocketing, 130 gsm', color: 'Natural', placement: 'Front pocket bags',
+        quantity: `4 pcs, ${cm(scoop.opening + 6)} × ${cm(scoop.depth + 18)} each (2 per pocket)` });
+    }
     return { ...trouserPack(product, spec, date), bom: [...bom, ...artworkBom(product)] };
   }
   bom.push(label('T2', 'Neck label', 'Woven label, 5 × 2 cm', 'Centre back neck'),
@@ -244,14 +250,18 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
     pom('J', 'Waistband height', 'Finished', d.waistbandHeight, 0, 0.25),
     ...(d.cuffHeight ? [pom('K', 'Cuff opening (½)', 'Along the cuff edge, relaxed', d.cuffLength / 2, 0.5, 0.5), pom('L', 'Cuff height', 'Finished rib cuff', d.cuffHeight, 0, 0.25)] : []),
   ];
-  // Jeans details: the back yoke's seam and the back pockets, measured on the finished garment.
+  // Jeans details: the front pockets' openings, the back yoke's seam and the back pockets, measured on the finished garment.
   const yoke = optionsOf(product).yoke ? trouserYoke(product) : null, pocket = optionsOf(product).backPockets ? backPocketOf(product) : null;
+  const scoop = optionsOf(product).frontPockets ? frontPocketOf(product) : null;
   const details: [string, string, number][] = [
+    ...(scoop ? [['Front pocket opening', 'Along the waist seam, from the side seam to the pocket’s edge', scoop.opening], ['Front pocket depth', 'Along the side seam, from the waist seam to the pocket’s edge', scoop.depth]] as [string, string, number][] : []),
     ...(yoke ? [['Back yoke at the side seam', 'Waist seam to the yoke seam, along the side seam', yoke.side], ['Back yoke at the centre back', 'Waist seam to the yoke seam, along the centre back seam', yoke.back]] as [string, string, number][] : []),
     ...(pocket ? [['Back pocket width', 'Across the top of the pocket', pocket.width], ['Back pocket height', 'Top of the pocket to its point', pocket.point]] as [string, string, number][] : []),
   ];
   poms.push(...details.map(([name, how, value], i) => pom(String.fromCharCode(65 + poms.length + i), name, how, value, 0, 0.25)));
   const construction: ConstructionRow[] = [
+    ...(scoop ? [{ area: 'Front pockets', operation: 'Stitch each pocket bag to its front leg’s curved opening, turn, understitch and topstitch twice; sew the facing to the back bag, close the bag with a French seam, then baste it to the waist and side seam',
+      detail: `${cm(scoop.opening)} across the waist from the side seam, ${cm(scoop.depth)} down the side seam; the facing is cut ${cm(FRONT_POCKET_FACING_CM)} deeper than the opening; pocket bags in pocketing` }] : []),
     ...(yoke ? [{ area: 'Back yoke', operation: 'Flat-fell each yoke to its back leg and topstitch twice, before the crotch seam',
       detail: `Seam ${cm(yoke.side)} below the waist at the side seam, ${cm(yoke.back)} at the centre back; match the yokes across the centre back seam` }] : []),
     ...(pocket ? [{ area: 'Back pockets', operation: 'Turn the top under twice and topstitch; press the other edges under 1 cm, then topstitch each pocket to its back leg and bar-tack the top corners',
