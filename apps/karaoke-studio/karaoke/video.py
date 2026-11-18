@@ -21,6 +21,7 @@ from .limits import (COUNT_IN, COUNT_IN_BREAK, MAX_CARD_BYTES, MAX_CARDS, MAX_VI
                      SAMPLE_RATE, VIDEO_TIMEOUT)
 from .model import ValidationError, validate_project
 from .media_io import media_handles
+from .bidi import lit_words, sung_stretches, word_places
 from .lyrics_auto import sung_count, word_timings
 from .pronunciation import pronunciation as line_pronunciation, said_line
 from .melody import validate_notes
@@ -192,19 +193,20 @@ def _covers(ranges: tuple[tuple[int, int], ...], codepoint: int) -> bool:
 
 
 def text_layout(text: str) -> tuple[str, bool]:
-    """Base direction from the first RTL character or letter; flag any strong RTL character.
+    """Base direction from the first RTL character or letter, and whether there is any strong RTL character.
 
-    Bidirectional cues use whole-line highlighting so shaping and reading order never depend on the sung prefix.
+    Lines with right-to-left text are shaped and ordered as a whole, so joined letters and reading order never depend on
+    which words are sung; their sung words are coloured where the ordering put them (see ``bidi``).
     """
     direction = None
-    whole_line = False
+    bidi = False
     for char in text:
         if unicodedata.bidirectional(char) in ('R', 'AL'):
-            whole_line = True
+            bidi = True
             direction = direction or 'rtl'
         elif unicodedata.category(char).startswith('L'):
             direction = direction or 'ltr'
-    return direction or 'ltr', whole_line
+    return direction or 'ltr', bidi
 
 
 class _Fonts:
@@ -320,23 +322,54 @@ def _font(font_path: str, index: int, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(font_path, size, index=index)
 
 
-def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
+def _draw_shaped(image: Image.Image, at: tuple[float, float], line: str, font: ImageFont.FreeTypeFont, direction: str,
+                 fill: str, sung_fill: str, lit: list[bool]) -> None:
+    """Draw ``line`` shaped as a whole (one native call keeps joining, bidi ordering, numbers and punctuation intact),
+    anchored at its middle and baseline: the ``lit`` words in ``sung_fill`` wherever the ordering put them, the rest in
+    ``fill``. Where the words' places cannot be found, the whole line takes ``sung_fill`` once a word is lit."""
+    draw = ImageDraw.Draw(image)
+    if not any(lit) or all(lit):
+        draw.text(at, line, font=font, fill=sung_fill if any(lit) else fill, direction=direction, anchor='ms')
+        return
+    advance = font.getlength(line, direction=direction)
+    places = word_places(line, direction == 'rtl', lambda piece, side: font.getlength(piece, direction=side), advance)
+    if places is None or len(places) != len(lit):
+        draw.text(at, line, font=font, fill=sung_fill, direction=direction, anchor='ms')
+        return
+    # The line's glyphs as a mask, laid over a ground in the two colours: every pixel is the line drawn whole in one
+    # colour or the other, exactly as draw.text draws it.
+    x, y = at
+    left, top, right, bottom = font.getbbox(line, direction=direction, anchor='ms')
+    origin = (math.floor(x + left) - 2, math.floor(y + top) - 2)
+    box = (math.ceil(x + right) + 2 - origin[0], math.ceil(y + bottom) + 2 - origin[1])
+    mask = Image.new('L', box, 0)
+    ImageDraw.Draw(mask).text((x - origin[0], y - origin[1]), line, font=font, fill=255, direction=direction, anchor='ms')
+    ground = Image.new(image.mode, box, fill)
+    paint, start = ImageDraw.Draw(ground), x - advance / 2 - origin[0]
+    for low, high in sung_stretches(places, lit):
+        low = 0 if low == -math.inf else max(0, round(start + low))
+        high = box[0] if high == math.inf else min(box[0], round(start + high))
+        if high > low:
+            paint.rectangle((low, 0, high - 1, box[1] - 1), fill=sung_fill)
+    image.paste(ground, origin, mask)
+
+
+def _center_text(image: Image.Image, text: str, y: int, font_path: Path,
                  size: int, minimum: int, max_height: int, fill: str,
                  sung_chars: int | None = None, sung_fill: str = ACCENT, width: int = WIDTH, wrap: int = 1000) -> None:
     """Draw a centred, wrapped text block (lines at most ``wrap`` wide) on a frame ``width`` wide. With ``sung_chars``,
-    that many leading non-space characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting. Sizes
-    may be scaled (fractional)."""
+    that many leading non-space characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting (in a line
+    with right-to-left text, the words they begin, wherever the line shows them). Sizes may be scaled (fractional)."""
     size, minimum, max_height, wrap = int(size), int(minimum), int(max_height), int(wrap)
+    draw = ImageDraw.Draw(image)
     fonts = _fonts(str(font_path))
-    direction, whole_line = text_layout(text)
+    direction, bidi = text_layout(text)
     face = None
-    if whole_line:
+    if bidi:
         if not features.check_feature('raqm'):
             raise ValidationError('Bidirectional lyric export requires Pillow with RAQM shaping. '
                                   'Install the supported Pillow wheel and retry.')
         face = fonts.whole_face(text)
-        if sung_chars is not None:
-            fill, sung_chars = sung_fill, None
     for chosen in range(size, minimum - 1, -1):
         measure = (functools.partial(fonts.font(face, chosen).getlength, direction=direction) if face is not None
                    else functools.partial(fonts.length, size=chosen))
@@ -363,9 +396,9 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
     for index, line in enumerate(lines):
         baseline = y - total / 2 + (index + 0.5) * spacing + (ascent - descent) / 2
         if face is not None:
-            # One native shaping call keeps joining, bidi ordering, numbers and punctuation intact.
-            draw.text((width / 2, baseline), line, font=fonts.font(face, chosen), fill=fill,
-                      direction=direction, anchor='ms')
+            lit = lit_words(line, remaining) if sung_chars is not None else [False] * len(line.split())
+            remaining -= min(remaining, sum(not char.isspace() for char in line))
+            _draw_shaped(image, (width / 2, baseline), line, fonts.font(face, chosen), direction, fill, sung_fill, lit)
             continue
         left = width / 2 - measure(line) / 2
         for run_face, run in fonts.runs(line):
@@ -460,7 +493,7 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
         marks.rectangle((x - max(1, round(k)), lane['top'] + round(4 * k), x + max(1, round(k)), lane['top'] + lane['height'] - round(4 * k)), fill=(*_rgb(look['main']), 150))
         image.alpha_composite(band) if image.mode == 'RGBA' else image.paste(band, (0, 0), band)
         draw = ImageDraw.Draw(image)
-    text = functools.partial(_center_text, draw, font_path=font_path, width=width, wrap=place['wrap'] * k)
+    text = functools.partial(_center_text, image, font_path=font_path, width=width, wrap=place['wrap'] * k)
     text(' '.join(project['title'].split()), place['title'] * k, size=32 * k, minimum=22 * k, max_height=100 * k, fill=main)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
     # With its pronunciation under it, the line being sung moves up to leave it room.
@@ -723,9 +756,9 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                 _cover_backdrop(project['cover'], STYLES[style]['background'], *VIDEO_SIZES[size]).save(backdrop, format='PNG')
             cues = project['cues']
             timings = word_timings(cues, words or [], project['duration'], letters, language)
-            whole_lines = [text_layout(cue['text'])[1] for cue in cues]
-            said = [line_pronunciation(cue['text'], language) if pronunciation and not whole else None
-                    for cue, whole in zip(cues, whole_lines, strict=True)]
+            # Lines with right-to-left text have no pronunciation in Latin letters.
+            said = [line_pronunciation(cue['text'], language) if pronunciation and not text_layout(cue['text'])[1] else None
+                    for cue in cues]
             # Cards leave the melody guide's lane only when there is one.
             guided = {'guide': True} if melody is not None else {}
             for frame in range(frame_count):
@@ -734,7 +767,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                 active = next((index for index, cue in enumerate(cues)
                                if cue['start'] <= position < cue['end']), None)
                 upcoming = next((index for index, cue in enumerate(cues) if cue['start'] > position), len(cues))
-                sung = (len(timings[active]) if whole_lines[active] else sung_count(timings[active], position)) if active is not None else None
+                sung = sung_count(timings[active], position) if active is not None else None
                 count = count_in(cues, position) if active is None else None
                 state = (active, upcoming if active is None else None, sung, count)
                 if state not in states:

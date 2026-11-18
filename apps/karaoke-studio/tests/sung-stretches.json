@@ -1,0 +1,21 @@
+{
+  "comment": "Where the sung colour goes on a line with right-to-left text (src/bidi-highlight.ts and karaoke/bidi.py agree). Each stretch case: each word's pieces (left and right edges from the line's left edge, in logical word order), which words are lit, and the stretches drawn in the sung colour; null is beyond that end of the line. Each lit case: a line, how many leading non-space characters are sung, and which words are lit.",
+  "stretches": [
+    [[[[130.4, 232.1]], [[0, 116.4]]], [false, false], []],
+    [[[[130.4, 232.1]], [[0, 116.4]]], [true, false], [[123.4, null]]],
+    [[[[130.4, 232.1]], [[0, 116.4]]], [true, true], [[null, null]]],
+    [[[[130.4, 232.1]], [[0, 116.4]]], [false, true], [[null, 123.4]]],
+    [[[[327.3, 384.2]], [[217.7, 313.3]], [[0, 80.9]], [[94.8, 203.7]]], [true, true, true, false], [[null, 87.85], [210.7, null]]],
+    [[[[0, 96]], [[208, 309.7]], [[110, 194]], [[323.7, 432.1]]], [true, true, false, false], [[null, 103], [201, 316.7]]],
+    [[[[0, 79.1], [168.3, 267.7]], [[93.1, 168.3]]], [true, false], [[null, 86.1], [168.3, null]]]
+  ],
+  "lit": [
+    ["مرحبا بالعالم", 0, [false, false]],
+    ["مرحبا بالعالم", 1, [true, false]],
+    ["مرحبا بالعالم", 5, [true, false]],
+    ["مرحبا بالعالم", 6, [true, true]],
+    ["  אני  אוהב you\tbaby ", 10, [true, true, true, false]],
+    ["𞤀𞤁 abc", 2, [true, false]],
+    ["", 3, []]
+  ]
+}

@@ -23,6 +23,7 @@ import { PracticeController } from './practice-controller.ts';
 import { applyReviewedPassage, applyReviewedSplit, applyReviewedMerge, applyReviewedLine, applySingleReviewedCue, reviewedCues, reviewedRange, reviewedPassageRange, reviewedPreview, type ReviewedCue } from './automatic-review.ts';
 import { lineList, similarLines, repeatedCueLines } from './repeated-lines.ts';
 import { textLayout } from './text-direction.ts';
+import { framed, joinPieces, lineWords, litWords, sungStretches, type WordPlace } from './bidi-highlight.ts';
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { MAX_PASSAGES, passageLabel, retrySpan, unheardSinging, type Span } from './unheard-singing.ts';
@@ -46,7 +47,7 @@ app.innerHTML = `
     <div class="workspace-grid">
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><h3 id="stage-heading">Listen &amp; preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" data-orientation="landscape" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
-        <p id="review-preview-status" class="fine" role="status" hidden></p><p id="bidi-status" class="fine" role="status" hidden>Lyrics containing right-to-left text use whole-line highlighting in preview and MP4 to preserve reading order and joined letters. Word times remain available in word-timed LRC.</p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
+        <p id="review-preview-status" class="fine" role="status" hidden></p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p>
       </section>
@@ -410,7 +411,6 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
   context.save();
   const layout = textLayout(text);
   context.direction = layout.direction;
-  if (layout.wholeLine && sung !== undefined) { color = sungColor; sung = undefined; }
   let size = initialSize, lines = wrap(text, size);
   while (size > minSize && lines.length * Math.ceil(size * 1.25) > maxHeight) lines = wrap(text, --size);
   const lineHeight = Math.ceil(size * 1.25);
@@ -425,6 +425,12 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
   for (const [index, line] of lines.entries()) {
     const lineY = y + (index - (lines.length - 1) / 2) * lineHeight;
     if (remaining === undefined) { context.fillText(line, cardPlace.width / 2, lineY); continue; }
+    if (layout.bidi) {
+      // Right-to-left text is shaped and ordered as a whole: the sung words take their colour where they lie.
+      drawShaped(line, lineY, lineHeight, color, sungColor, litWords(line, remaining));
+      remaining -= Math.min(remaining, [...line].filter(character => !/\s/.test(character)).length);
+      continue;
+    }
     // Word-by-word highlight: the sung words, then the rest of the line, placed as one centred line.
     const [done, rest] = splitSung(line, remaining), left = cardPlace.width / 2 - context.measureText(line).width / 2;
     remaining -= [...done].filter(character => !/\s/.test(character)).length;
@@ -434,6 +440,48 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
     context.textAlign = 'center';
   }
   context.restore();
+}
+
+// Where the browser lays out each word of a line with right-to-left text drawn in `font`, as the canvas draws it: a hidden
+// copy of the line, measured once until the fonts change.
+let measurer: HTMLDivElement | null = null;
+const laidOut = new Map<string, { width: number; places: WordPlace[] }>();
+document.fonts?.addEventListener('loadingdone', () => laidOut.clear());
+function wordPlaces(line: string, font: string, direction: 'ltr' | 'rtl'): { width: number; places: WordPlace[] } {
+  const key = `${direction} ${font} ${line}`, known = laidOut.get(key);
+  if (known) return known;
+  if (!measurer) {
+    measurer = document.createElement('div');
+    measurer.setAttribute('aria-hidden', 'true');
+    measurer.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;white-space:pre;width:max-content;letter-spacing:normal;word-spacing:normal';
+    document.body.append(measurer);
+  }
+  measurer.style.font = font; measurer.style.direction = direction; measurer.textContent = line;
+  const box = measurer.getBoundingClientRect(), text = measurer.firstChild, range = document.createRange();
+  const places = lineWords(line).map(({ start, end }) => {
+    if (!text) return [];
+    range.setStart(text, start); range.setEnd(text, end);
+    return joinPieces([...range.getClientRects()].filter(piece => piece.width > 0).map(piece => [piece.left - box.left, piece.right - box.left] as const));
+  });
+  if (laidOut.size >= 64) laidOut.clear();
+  const result = { width: box.width, places };
+  laidOut.set(key, result);
+  return result;
+}
+
+/** Draw a line shaped as a whole at the centre of the frame: the `lit` words in `sungColor` wherever the bidirectional
+ * algorithm placed them, the rest in `color`, every pixel from one of two whole drawings of the line. */
+function drawShaped(line: string, y: number, height: number, color: string, sungColor: string, lit: readonly boolean[]) {
+  const middle = cardPlace.width / 2;
+  if (!lit.some(Boolean) || lit.every(Boolean)) { context.fillStyle = lit.some(Boolean) ? sungColor : color; context.fillText(line, middle, y); return; }
+  const width = context.measureText(line).width, laid = wordPlaces(line, context.font, context.direction === 'rtl' ? 'rtl' : 'ltr');
+  const scale = laid.width ? width / laid.width : 1;
+  const { sung, rest } = framed(sungStretches(laid.places.map(place => place.map(([left, right]) => [left * scale, right * scale] as const)), lit), middle - width / 2, cardPlace.width);
+  for (const [stretches, fill] of [[sung, sungColor], [rest, color]] as const) {
+    context.save(); context.beginPath();
+    for (const [left, right] of stretches) context.rect(left, y - height, right - left, 2 * height);
+    context.clip(); context.fillStyle = fill; context.fillText(line, middle, y); context.restore();
+  }
 }
 
 // Word timing for the lines being previewed, from the studio (recognized words, or estimates). The video
@@ -619,7 +667,6 @@ function draw() {
   if (element('review-preview-status').textContent !== reviewNotice) element('review-preview-status').textContent = reviewNotice;
   element('word-timing-status').toggleAttribute('data-review-hidden', !!review);
   const invalid = review ? review.error : validateWorking();
-  element('bidi-status').hidden = !!invalid || !cues.some(cue => textLayout(cue.text).wholeLine);
   if (invalid) {
     // Keep the complete invalid draft in its editor/history, but never send
     // unbounded input to native canvas layout, including during playback.
@@ -644,7 +691,7 @@ function draw() {
   const upcoming = cues.find(cue => cue.start > time);
   const fetched = working && !review ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
   // How a line in another script is said, in Latin letters, under it; the line moves up to leave it room.
-  const pieces = timing && element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide' && !textLayout(current).wholeLine ? timing.said[index] : null;
+  const pieces = timing && element<HTMLSelectElement>('lyric-pronunciation').value !== 'hide' && !textLayout(current).bidi ? timing.said[index] : null;
   const [middle, room] = pieces ? [place.saidMiddle, place.saidRoom] : [place.middle, place.room];
   if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, look.main, sungCharacters(timing.lines[index], time), look.accent);
   else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? look.accent : look.main, undefined, look.accent);

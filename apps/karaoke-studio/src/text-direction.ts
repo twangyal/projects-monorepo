@@ -31,14 +31,15 @@ const RTL = [
 
 const STRONG_RTL = new RegExp(`[${RTL.map(([low, high]) => `\\u{${low.toString(16)}}-\\u{${high.toString(16)}}`).join('')}]`, 'u');
 
-/** Whole cues containing strong RTL text use whole-line highlighting; never split a shaped/bidi string.
- * Base direction follows its first strong RTL character or letter. Digits and punctuation do not decide it.
+/** A line's base direction, from its first strong RTL character or letter (digits and punctuation do not decide it),
+ * and whether it has any strong RTL text. Such a line is shaped and ordered as a whole, never split at the sung words;
+ * they are coloured where the ordering put them (see bidi-highlight.ts).
  */
-export function textLayout(text: string): { direction: 'ltr' | 'rtl'; wholeLine: boolean } {
+export function textLayout(text: string): { direction: 'ltr' | 'rtl'; bidi: boolean } {
   let direction: 'ltr' | 'rtl' = 'ltr';
   for (const character of text) {
     if (STRONG_RTL.test(character)) { direction = 'rtl'; break; }
     if (/\p{Letter}/u.test(character)) break;
   }
-  return { direction, wholeLine: STRONG_RTL.test(text) };
+  return { direction, bidi: STRONG_RTL.test(text) };
 }
