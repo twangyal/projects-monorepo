@@ -515,6 +515,23 @@ class RecognizerChoiceTests(unittest.TestCase):
             # Without the re-encoding, each piece read alone loses the split letter.
             self.assertEqual(''.join(piece.decode('utf-8', errors='ignore') for piece in pieces), ' ता')
 
+    def test_whisper_told_the_language_writes_it_without_guessing(self):
+        everything = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
+
+        def guess(phrases, recognizer):
+            raise AssertionError('a told language is not guessed')
+
+        with mock.patch.object(transcribe_worker, 'song_language', guess):
+            model, _result, loads, heard, _progress, written = self.run_whisper(everything, 'fr', 'gu', 'bengali')
+        self.assertEqual((model, loads, self.language), (WHISPER, ['whisper:bn', 'multilingual'], 'bn'))
+        self.assertEqual(written, [('whisper', phrase) for phrase in range(40)])
+        self.assertEqual(heard, [('multilingual', phrase) for phrase in range(40)])
+        # Whisper is told even a language it would otherwise leave to another model.
+        self.assertEqual(transcription.selected_models(everything, 'hindi'), (WHISPER, MULTILINGUAL))
+        with self.assertRaisesRegex(RuntimeError, 'only whisper and --only multilingual'):
+            transcription.selected_models((ENGLISH, WHISPER), 'tamil')
+        self.assertIn('bengali', transcription.CHOICES)
+
     def test_whisper_needs_the_multilingual_model_to_time_its_words(self):
         model, _result, loads, _heard, _progress, _written = self.run_whisper((ENGLISH, WHISPER), 'fr', 'fr')
         self.assertEqual((model, loads), (ENGLISH, ['english']))

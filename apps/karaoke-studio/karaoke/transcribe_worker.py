@@ -24,8 +24,8 @@ from karaoke.limits import (  # noqa: E402
 )
 from karaoke.lyrics_auto import _token, lyric_words  # noqa: E402
 from karaoke.transcription import (  # noqa: E402
-    CHOICES, DETECTION_WORDS, EAST_ASIAN, EAST_ASIAN_CHOICES, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, AsrModel,
-    installed_models, selected_models, sounds_east_asian, sounds_english,
+    CHOICES, DETECTION_WORDS, EAST_ASIAN, EAST_ASIAN_CHOICES, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, WHISPER_CHOICES,
+    AsrModel, installed_models, selected_models, sounds_east_asian, sounds_english,
 )
 from karaoke.word_alignment import align  # noqa: E402
 
@@ -370,12 +370,17 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
         words.sort(key=lambda word: (word['start'], word['end']))
         return EAST_ASIAN, words[:MAX_WORDS], EAST_ASIAN_CHOICES[model_choice]
     if WHISPER in models:
-        # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen).
-        listener = load_model(WHISPER)
-        language = song_language(phrases, listener)
-        listener = None
-        gc.collect()
-        if model_choice == 'whisper' or language not in WHISPER_SKIPS:
+        # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen),
+        # in the language it hears, or the one it is told.
+        told = WHISPER_CHOICES.get(model_choice)
+        if told:
+            language = told
+        else:
+            listener = load_model(WHISPER)
+            language = song_language(phrases, listener)
+            listener = None
+            gc.collect()
+        if told or model_choice == 'whisper' or language not in WHISPER_SKIPS:
             # Whisper writes every phrase's words, then the multilingual model times them: the two models together
             # would exceed the worker's memory limit.
             reader = load_model(WHISPER, language=language) if language else load_model(WHISPER)

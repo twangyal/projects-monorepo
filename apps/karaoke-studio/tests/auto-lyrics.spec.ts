@@ -240,6 +240,9 @@ test('an explicit Japanese retry keeps corrections until reviewed and exposes al
     await page.setViewportSize({width:390,height:844});await importClip(page,16);
     const choice=page.getByLabel('Recognition for this retry',{exact:true});
     for(const value of ['chinese','cantonese','japanese','korean'])await expect(choice.locator(`option[value="${value}"]`)).toHaveCount(1);
+    // Languages Whisper is told outright, grouped apart from the models.
+    await expect(choice.locator('optgroup[label="Whisper, told the language"] option')).toHaveCount(22);
+    await expect(choice.locator('option[value="bengali"]')).toHaveText('Bengali');
     await page.getByLabel('Lyric line 2',{exact:true}).fill('私の修正した歌詞');
     await choice.selectOption('japanese');
     const sent=page.waitForRequest(r=>r.url().endsWith('/transcribe')&&r.method()==='POST');

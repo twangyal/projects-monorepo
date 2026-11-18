@@ -93,7 +93,15 @@ WHISPER = AsrModel(
     })
 ASR_MODELS = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
 EAST_ASIAN_CHOICES = {'chinese': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko'}
-CHOICES = ('auto', *(model.key for model in ASR_MODELS), *EAST_ASIAN_CHOICES)
+# Languages Whisper can be told outright, where telling it the song's language beats its own guess: it took read
+# Bengali for Gujarati or Hindi, and Hindi and Urdu share their sounds.
+WHISPER_CHOICES = {
+    'hindi': 'hi', 'urdu': 'ur', 'bengali': 'bn', 'punjabi': 'pa', 'gujarati': 'gu', 'marathi': 'mr', 'nepali': 'ne',
+    'tamil': 'ta', 'telugu': 'te', 'kannada': 'kn', 'malayalam': 'ml', 'arabic': 'ar', 'persian': 'fa', 'turkish': 'tr',
+    'hebrew': 'he', 'greek': 'el', 'thai': 'th', 'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms', 'tagalog': 'tl',
+    'swahili': 'sw',
+}
+CHOICES = ('auto', *(model.key for model in ASR_MODELS), *EAST_ASIAN_CHOICES, *WHISPER_CHOICES)
 KNOWN_MODELS = frozenset(model.name for model in ASR_MODELS)
 
 # Language choice from the multilingual model's first words: function words that are English and
@@ -148,14 +156,14 @@ def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
 def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple[AsrModel, ...]:
     """A deliberate retry choice never silently falls back to another installed model."""
     if not isinstance(choice, str) or choice not in CHOICES:
-        raise ValueError('Choose a recognition model, or an explicit Chinese, Cantonese, Japanese or Korean retry.')
+        raise ValueError('Choose a recognition model, or the song\'s language for an explicit retry.')
     # Whisper's words are timed by the multilingual model; without it, Whisper is not used.
     usable = tuple(model for model in models if model is not WHISPER or MULTILINGUAL in models)
-    model_choice = 'east-asian' if choice in EAST_ASIAN_CHOICES else choice
-    selected = usable if choice == 'auto' else (WHISPER, MULTILINGUAL) if choice == 'whisper' and WHISPER in usable \
+    model_choice = 'east-asian' if choice in EAST_ASIAN_CHOICES else 'whisper' if choice in WHISPER_CHOICES else choice
+    selected = usable if choice == 'auto' else (WHISPER, MULTILINGUAL) if model_choice == 'whisper' and WHISPER in usable \
         else tuple(model for model in usable if model.key == model_choice and model is not WHISPER)
     if not selected:
-        option = '' if choice == 'auto' else ' --only whisper and --only multilingual' if choice == 'whisper' else f' --only {model_choice}'
+        option = '' if choice == 'auto' else ' --only whisper and --only multilingual' if model_choice == 'whisper' else f' --only {model_choice}'
         raise RuntimeError(f'The requested lyric recognition model is unavailable. Run scripts/setup_lyrics_model.py{option} with this studio’s model directory, then retry.')
     return selected
 
