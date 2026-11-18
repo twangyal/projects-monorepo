@@ -166,6 +166,17 @@ class ForcedAlignmentTests(unittest.TestCase):
             self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
             self.assertGreater(cue['matched'], 0.9)
 
+    def test_hindi_lines_in_devanagari_start_where_their_letters_are_sung(self):
+        sung_at = [('तुम ही हो, अब तुम ही हो', 1.5), ('ज़िंदगी अब तुम ही हो', 9.0), ('चैन भी, मेरा दर्द भी', 15.0)]
+        # Long vowels are one letter for the aligner ("hi"), though shown doubled ("hee").
+        self.assertEqual(word_letters(sung_at[0][0]), ['TUM', 'HI', 'HO', 'AB', 'TUM', 'HI', 'HO'])
+        self.assertTrue(alignable([text for text, _ in sung_at]))
+        cues = force_align([text for text, _ in sung_at], sung(sung_at, 24), 24)
+        self.assertEqual([cue['text'] for cue in cues], [text for text, _ in sung_at])
+        for cue, (_, start) in zip(cues, sung_at, strict=True):
+            self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
+            self.assertGreater(cue['matched'], 0.9)
+
     def test_korean_lines_start_where_their_romanized_letters_are_sung(self):
         sung_at = [('보고 싶어 너를', 1.5), ('oh baby 사랑해', 8.0), ('다시 만나', 15.0)]
         cues = force_align([text for text, _ in sung_at], sung(sung_at, 25), 25)

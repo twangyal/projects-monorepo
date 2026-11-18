@@ -24,6 +24,10 @@ class PronunciationTest(unittest.TestCase):
         self.assertEqual(pronunciation('Я тебя люблю'), ['Ya', 'tebya', 'lyublyu'])
         self.assertEqual(said_line(pronunciation('Я тебя люблю')), 'Ya tebya lyublyu')
 
+    def test_hindi_in_devanagari_is_read_in_latin_letters(self):
+        self.assertEqual(pronunciation('तुम ही हो'), ['tum', 'hee', 'ho'])
+        self.assertEqual(said_line(pronunciation('पहली नज़र में, I love you')), 'pahlee nazar men, I love you')
+
     def test_chinese_is_read_in_pinyin_with_tone_marks_or_jyutping_with_tone_numbers_by_the_song_s_language(self):
         self.assertEqual(pronunciation('我爱你', 'zh'), ['wǒ', 'ài', 'nǐ'])
         # A character with several readings takes its phrase's: 长 in 长大 is zhǎng.

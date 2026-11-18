@@ -9,7 +9,8 @@ lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syll
 (transliterated letter by letter, with Russian readings). Chinese characters
 are read in pinyin when the song was recognized as Mandarin and in Jyutping when it was recognized as Cantonese: the
 characters alone do not say which is sung, and their readings differ. Japanese lyrics in a song recognized as Japanese
-are read in romaji when the optional reading dictionary is installed (see ``japanese``).
+are read in romaji when the optional reading dictionary is installed (see ``japanese``), and Hindi lyrics in Devanagari
+in Latin letters as Hindi says them (see ``devanagari``).
 
 On the first two minutes of five JamendoLyrics songs in each of English, French, Spanish and German (431 lines), 93%
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
@@ -29,6 +30,7 @@ import re
 import struct
 import unicodedata
 
+from .devanagari import readings as devanagari_readings
 from .japanese import CONTINUED, JAPANESE, is_kana, is_kanji, japanese_readings
 
 ALIGNER_REVISION = 'a19f851b3d42865797e410752b4c570c871e4825'
@@ -80,6 +82,8 @@ _CYRILLIC = dict(zip('абвгдеёжзийклмнопрстуфхцчшщъы
 # Runs of Chinese characters (the unified ideographs and their extensions), read in pinyin together so that a character
 # with several readings takes the one its phrase gives it.
 _HAN = re.compile('[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0003134f]+')
+# Runs of Devanagari (a word, between spaces and punctuation), read together: a letter's vowel depends on the next.
+_DEVANAGARI = re.compile('[\u0900-\u0963\u0966-\u097f\ua8e0-\ua8ff]+')
 MANDARIN, CANTONESE = 'zh', 'yue'
 # Languages whose lines are placed on the letters but whose words keep the recognized words' timing (see japanese).
 LINES_ONLY = frozenset({JAPANESE})
@@ -162,6 +166,8 @@ def readings(text: str, language: str | None = None) -> list[str]:
     ('ja') each kana and kanji word in romaji (``japanese.CONTINUED`` for a character read with the one before it).
     Without the reading package or the Japanese reading dictionary they stay unread."""
     spelled = [_spelled(ch) for ch in text]
+    for run in _DEVANAGARI.finditer(text):
+        spelled[run.start():run.end()] = devanagari_readings(run.group(), long_vowels=False)
     if language == JAPANESE and any(is_kana(ch) or is_kanji(ch) for ch in text):
         read = japanese_readings(text)
         return spelled if read is None else [_spelled(ch) if reading is None else reading for ch, reading in zip(text, read, strict=True)]
@@ -187,7 +193,7 @@ def word_letters(line: str, language: str | None = None) -> list[str]:
 
 def alignable(lines: list[str], language: str | None = None) -> bool:
     """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean,
-    Cyrillic, or Chinese and Japanese in a song recognized as Mandarin, Cantonese or Japanese."""
+    Cyrillic, Devanagari, or Chinese and Japanese in a song recognized as Mandarin, Cantonese or Japanese."""
     known = total = 0
     for line in lines:
         spelled = readings(line, language)
