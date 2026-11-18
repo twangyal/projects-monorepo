@@ -823,8 +823,8 @@ class ServerLyricsTests(unittest.TestCase):
         base = f'/api/projects/{project["id"]}'
         for route, body in (('/align', {'lines': ['changed words']}),
                             ('/word-timings', {'cues': project['cues']})):
-            function = 'align_lines' if route == '/align' else 'word_timings'
-            with mock.patch('karaoke.server.' + function, side_effect=AlignmentLimitError('Lyrics differ too much; retry.')):
+            function = 'lyrics_auto.align_lines' if route == '/align' else 'server.word_timings'
+            with mock.patch('karaoke.' + function, side_effect=AlignmentLimitError('Lyrics differ too much; retry.')):
                 status, _, result = self.request('POST', base + route, body)
             self.assertEqual(status, 400, result)
             self.assertIn('differ too much', result['error'])

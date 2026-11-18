@@ -31,8 +31,8 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager, JobPublication
-from .alignment import ALIGNMENT_FILE, alignable, force_align, max_bytes, read_emissions
-from .lyrics_auto import align_lines, word_timings, words_to_cues
+from .alignment import ALIGNMENT_FILE, alignable, max_bytes, place_lines, read_emissions
+from .lyrics_auto import word_timings, words_to_cues
 from .pronunciation import pronunciation as line_pronunciation
 from .ass import render_ass
 from .lrc import render_lrc
@@ -1436,10 +1436,9 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST" and resource == "align":
                 if transcript is None:
                     raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
-                # Lyrics in Latin letters or Korean, or Chinese in a song recognized as Mandarin, are laid on the letters
-                # measured in the singing; others, or a clip measured without the aligner, are matched to the recognized words.
-                cues = force_align(value["lines"], letters, project["duration"], transcript.get("language")) if letters is not None else None
-                self._json({"cues": cues if cues is not None else align_lines(value["lines"], transcript["words"], project["duration"])})
+                # Lyrics in a script the aligner reads are laid on the letters measured in the singing; others, or a clip
+                # measured without the aligner, are matched to the recognized words (see place_lines).
+                self._json({"cues": place_lines(value["lines"], transcript["words"], letters, project["duration"], transcript.get("language"))})
                 return
             if read and stem:
                 self._file(directory / _AUDIO_FILES[stem], "audio/wav")

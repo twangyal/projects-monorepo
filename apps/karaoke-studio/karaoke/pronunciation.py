@@ -3,8 +3,8 @@
 Korean is written in Revised Romanization and Cyrillic transliterated as Russian reads it (as the letter aligner spells
 them); Chinese, in a song recognized as Mandarin, in pinyin with tone marks, and in one recognized as Cantonese, in
 Jyutping with tone numbers; Japanese, in a song recognized as Japanese and with the optional reading dictionary, in
-Hepburn romaji word by word, the particles は, へ and を as they are said; Hindi in Devanagari as Hindi says it
-(``devanagari``).
+Hepburn romaji word by word, the particles は, へ and を as they are said; the Indian scripts as their languages
+say them (``indic``).
 Words already in Latin letters are kept as written.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ import unicodedata
 from collections.abc import Callable
 
 from .alignment import _HAN, CANTONESE, MANDARIN, _spelled, chinese_readings
-from .devanagari import is_devanagari, romanized
+from .indic import is_indic, romanized
 from .japanese import JAPANESE, is_kana, is_kanji, japanese_words
 from .lyrics_auto import lyric_words
 
@@ -28,8 +28,8 @@ def _script(ch: str) -> str:
         return 'kana'
     if is_kanji(ch) or _HAN.match(ch):
         return 'han'
-    if is_devanagari(ch):
-        return 'devanagari' if unicodedata.category(ch).startswith('L') else ''
+    if is_indic(ch):
+        return 'indic' if unicodedata.category(ch).startswith('L') else ''
     if unicodedata.category(ch).startswith('L'):
         return 'latin' if 'LATIN' in unicodedata.name(ch, '') else 'other'
     return ''
@@ -85,7 +85,7 @@ def pronunciation(text: str, language: str | None = None,
             continue
         if 'han' in scripts[k] or 'kana' in scripts[k]:
             return None
-        said[k] = _respelled(token) if {'hangul', 'cyrillic'} & scripts[k] else romanized(token) if 'devanagari' in scripts[k] else token
+        said[k] = _respelled(token) if {'hangul', 'cyrillic'} & scripts[k] else romanized(token) if 'indic' in scripts[k] else token
     return [piece or '' for piece in said]
 
 

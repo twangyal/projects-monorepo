@@ -9,8 +9,9 @@ lyrics too, and Korean is read in its Latin spelling (Revised Romanization, syll
 (transliterated letter by letter, with Russian readings). Chinese characters
 are read in pinyin when the song was recognized as Mandarin and in Jyutping when it was recognized as Cantonese: the
 characters alone do not say which is sung, and their readings differ. Japanese lyrics in a song recognized as Japanese
-are read in romaji when the optional reading dictionary is installed (see ``japanese``), and Hindi lyrics in Devanagari
-in Latin letters as Hindi says them (see ``devanagari``).
+are read in romaji when the optional reading dictionary is installed (see ``japanese``), and lyrics in the Indian
+scripts (Devanagari, Bengali, Gurmukhi, Gujarati, Odia, Tamil, Telugu, Kannada, Malayalam) in Latin letters as their
+languages say them (see ``indic``).
 
 On the first two minutes of five JamendoLyrics songs in each of English, French, Spanish and German (431 lines), 93%
 of line starts landed within a second of the singing, against 82% when lines were matched to recognized words, with
@@ -30,7 +31,7 @@ import re
 import struct
 import unicodedata
 
-from .devanagari import readings as devanagari_readings
+from .indic import readings as indic_readings
 from .japanese import CONTINUED, JAPANESE, is_kana, is_kanji, japanese_readings
 
 ALIGNER_REVISION = 'a19f851b3d42865797e410752b4c570c871e4825'
@@ -82,8 +83,8 @@ _CYRILLIC = dict(zip('абвгдеёжзийклмнопрстуфхцчшщъы
 # Runs of Chinese characters (the unified ideographs and their extensions), read in pinyin together so that a character
 # with several readings takes the one its phrase gives it.
 _HAN = re.compile('[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0003134f]+')
-# Runs of Devanagari (a word, between spaces and punctuation), read together: a letter's vowel depends on the next.
-_DEVANAGARI = re.compile('[\u0900-\u0963\u0966-\u097f\ua8e0-\ua8ff]+')
+# Runs of the Indian scripts (a word, between spaces and punctuation), read together: a letter's vowel depends on the next.
+_INDIC = re.compile('[\u0900-\u0963\u0966-\u0d7f\ua8e0-\ua8ff]+')
 MANDARIN, CANTONESE = 'zh', 'yue'
 # Languages whose lines are placed on the letters but whose words keep the recognized words' timing (see japanese).
 LINES_ONLY = frozenset({JAPANESE})
@@ -166,8 +167,8 @@ def readings(text: str, language: str | None = None) -> list[str]:
     ('ja') each kana and kanji word in romaji (``japanese.CONTINUED`` for a character read with the one before it).
     Without the reading package or the Japanese reading dictionary they stay unread."""
     spelled = [_spelled(ch) for ch in text]
-    for run in _DEVANAGARI.finditer(text):
-        spelled[run.start():run.end()] = devanagari_readings(run.group(), long_vowels=False)
+    for run in _INDIC.finditer(text):
+        spelled[run.start():run.end()] = indic_readings(run.group(), long_vowels=False)
     if language == JAPANESE and any(is_kana(ch) or is_kanji(ch) for ch in text):
         read = japanese_readings(text)
         return spelled if read is None else [_spelled(ch) if reading is None else reading for ch, reading in zip(text, read, strict=True)]
@@ -193,7 +194,7 @@ def word_letters(line: str, language: str | None = None) -> list[str]:
 
 def alignable(lines: list[str], language: str | None = None) -> bool:
     """Whether the lyrics are written in letters the aligner knows (at least nine in ten of them): Latin, Korean,
-    Cyrillic, Devanagari, or Chinese and Japanese in a song recognized as Mandarin, Cantonese or Japanese."""
+    Cyrillic, the Indian scripts, or Chinese and Japanese in a song recognized as Mandarin, Cantonese or Japanese."""
     known = total = 0
     for line in lines:
         spelled = readings(line, language)
@@ -355,6 +356,35 @@ def force_align(lines: list[str], log_probs, duration: float, language: str | No
             spans[index] = (before, max(before, min(after, before + 1.0)))
     groups = [[dict(text=line, start=start, end=max(end - HOLD, start))] for line, (start, end) in zip(lines, spans, strict=True)]
     return _finish(groups, duration, scores)
+
+
+# A line in an Indian script takes the recognized words' time when at least this share of its words was heard there.
+HEARD_SHARE = 0.34
+
+
+def place_lines(lines: list[str], words: list, log_probs, duration: float, language: str | None = None) -> list[dict]:
+    """Cues for supplied ``lines``: laid on the letters measured in the singing (``force_align``), or matched to the
+    recognized ``words`` when the letters cannot place them (no measurements, or a script that is not read).
+
+    A line in an Indian script whose words were heard (``HEARD_SHARE``) takes the recognized words' time: the letters
+    read those scripts only roughly, and on read Hindi and Tamil this started more lines within 0.3 s of the singing
+    than either way alone. Bengali, which Whisper writes poorly, keeps the letters' time.
+    """
+    from .lyrics_auto import align_lines
+    matched = align_lines(lines, words, duration)
+    forced = force_align(lines, log_probs, duration, language) if log_probs is not None else None
+    if forced is None or len(forced) != len(matched):
+        return forced if forced is not None else matched
+    placed: list[dict] = []
+    for heard, laid in zip(matched, forced, strict=True):
+        cue = dict(heard if _INDIC.search(heard['text']) and heard.get('matched', 0.0) >= HEARD_SHARE else laid)
+        # The two ways agree on the order; where they meet, the earlier line keeps its time.
+        if placed and cue['start'] < placed[-1]['end']:
+            cue['start'] = placed[-1]['end']
+            cue['end'] = max(cue['end'], min(cue['start'] + 0.3, duration))
+        if cue['end'] > cue['start']:
+            placed.append(cue)
+    return placed
 
 
 def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25, language: str | None = None) -> list[float] | None:

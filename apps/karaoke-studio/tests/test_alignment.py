@@ -6,9 +6,10 @@ import unittest
 import numpy as np
 
 from karaoke.alignment import (
-    BLANK, CLASSES, FRAME, LETTERS, SPACE, _path, alignable, fold, force_align, max_bytes, read_emissions, word_letters, write_emissions,
+    BLANK, CLASSES, FRAME, LETTERS, SPACE, _path, alignable, fold, force_align, max_bytes, place_lines, read_emissions, word_letters,
+    write_emissions,
 )
-from karaoke.lyrics_auto import LEAD_IN
+from karaoke.lyrics_auto import LEAD_IN, align_lines
 
 
 def plain_path(log_probs, tokens):
@@ -177,6 +178,27 @@ class ForcedAlignmentTests(unittest.TestCase):
             self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
             self.assertGreater(cue['matched'], 0.9)
 
+    def test_tamil_and_bengali_lines_start_where_their_letters_are_sung(self):
+        sung_at = [('வணக்கம் நண்பா', 1.5), ('நான் உன்னை காதலிக்கிறேன்', 7.0), ('আমি তোমাকে ভালোবাসি', 14.0)]
+        self.assertTrue(alignable([text for text, _ in sung_at]))
+        cues = force_align([text for text, _ in sung_at], sung(sung_at, 22), 22)
+        for cue, (_, start) in zip(cues, sung_at, strict=True):
+            self.assertAlmostEqual(cue['start'] + LEAD_IN, start, delta=0.05)
+            self.assertGreater(cue['matched'], 0.9)
+
+    def test_a_line_in_an_indian_script_heard_word_for_word_takes_the_recognized_time(self):
+        lines = ['வணக்கம் நண்பா', 'நான் உன்னை காதலிக்கிறேன்', 'hello my friend']
+        letters = sung([(lines[0], 1.5), (lines[1], 7.0), (lines[2], 14.0)], 22)
+        # The Tamil second line was heard at 8 s and the English line at 15 s; the first line was not heard.
+        heard = [dict(text=word, start=at + 0.4 * k, end=at + 0.3 + 0.4 * k, confidence=0.9)
+                 for line, at in ((lines[1], 8.0), (lines[2], 15.0)) for k, word in enumerate(line.split())]
+        cues, matched, laid = place_lines(lines, heard, letters, 22), align_lines(lines, heard, 22), force_align(lines, letters, 22)
+        self.assertEqual(cues, [laid[0], matched[1], laid[2]])
+        self.assertAlmostEqual(laid[1]['start'] + LEAD_IN, 7.0, delta=0.05)
+        self.assertGreater(cues[1]['start'], 7.5)
+        # Without measured letters every line is matched to the recognized words.
+        self.assertEqual(place_lines(lines, heard, None, 22), align_lines(lines, heard, 22))
+
     def test_korean_lines_start_where_their_romanized_letters_are_sung(self):
         sung_at = [('보고 싶어 너를', 1.5), ('oh baby 사랑해', 8.0), ('다시 만나', 15.0)]
         cues = force_align([text for text, _ in sung_at], sung(sung_at, 25), 25)
@@ -299,7 +321,7 @@ class ServerAlignmentTests(unittest.TestCase):
         self.assertEqual(self.helper.upload()['status'], 'complete')
         project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
         base = f'/api/projects/{project["id"]}'
-        with mock.patch('karaoke.server.force_align', wraps=real) as forced:
+        with mock.patch('karaoke.alignment.force_align', wraps=real) as forced:
             self.assertEqual(len(self.align(base, ['月亮代表我的心', '我爱你'])), 2)
             self.assertEqual(forced.call_args.args[3], 'zh')
         # The word timings sent to the preview, and the exports, are read the same way.
@@ -316,7 +338,7 @@ class ServerAlignmentTests(unittest.TestCase):
         self.assertEqual(self.helper.upload()['status'], 'complete')
         project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
         base = f'/api/projects/{project["id"]}'
-        with mock.patch('karaoke.server.force_align', wraps=real) as forced:
+        with mock.patch('karaoke.alignment.force_align', wraps=real) as forced:
             self.assertEqual(len(self.align(base, ['月亮代表我的心', '我愛你'])), 2)
             self.assertEqual(forced.call_args.args[3], 'yue')
         status, _, reply = self.helper.request('POST', base + '/word-timings', {'cues': [{'start': 17.0, 'end': 20.0, 'text': '我愛你'}]})
@@ -332,11 +354,11 @@ class ServerAlignmentTests(unittest.TestCase):
         self.assertEqual(self.helper.upload()['status'], 'complete')
         project = self.helper.request('GET', '/api/projects')[2]['projects'][0]
         base = f'/api/projects/{project["id"]}'
-        with DICTIONARY, mock.patch('karaoke.server.force_align', wraps=real) as forced:
+        with DICTIONARY, mock.patch('karaoke.alignment.force_align', wraps=real) as forced:
             self.assertEqual(len(self.align(base, ['出して輝き続けよ', '君の名は'])), 2)
             self.assertEqual(forced.call_args.args[3], 'ja')
         # Without the dictionary they are matched to the recognized words, as before.
-        with mock.patch('karaoke.japanese._dictionary', return_value=None), mock.patch('karaoke.server.force_align') as forced:
+        with mock.patch('karaoke.japanese._dictionary', return_value=None), mock.patch('karaoke.alignment.force_align') as forced:
             self.align(base, ['出して輝き続けよ', '君の名は'])
             forced.assert_not_called()
 
@@ -349,10 +371,10 @@ class ServerAlignmentTests(unittest.TestCase):
         lines = ['Lay awake at night', 'through all the pain']
         self.assertEqual(self.align(base, lines), [16.85, 28.45])
         # Lyrics in another script are matched to recognized words; Korean is spelled in Latin letters and laid on them.
-        with mock.patch('karaoke.server.force_align') as forced:
+        with mock.patch('karaoke.alignment.force_align') as forced:
             self.align(base, ['夜に目覚めて', '痛みを越えて'])
             forced.assert_not_called()
-        with mock.patch('karaoke.server.force_align', wraps=force_align) as forced:
+        with mock.patch('karaoke.alignment.force_align', wraps=force_align) as forced:
             self.assertEqual(len(self.align(base, ['사랑해 너를', '보고 싶어'])), 2)
             forced.assert_called_once()
         # Unreadable measurements are ignored rather than refused.

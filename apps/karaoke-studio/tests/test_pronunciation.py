@@ -27,6 +27,8 @@ class PronunciationTest(unittest.TestCase):
     def test_hindi_in_devanagari_is_read_in_latin_letters(self):
         self.assertEqual(pronunciation('तुम ही हो'), ['tum', 'hee', 'ho'])
         self.assertEqual(said_line(pronunciation('पहली नज़र में, I love you')), 'pahlee nazar men, I love you')
+        self.assertEqual(pronunciation('ভালোবাসি তোমাকে'), ['bhalobasi', 'tomake'])
+        self.assertEqual(pronunciation('நான் உன்னை'), ['naan', 'unnai'])
 
     def test_chinese_is_read_in_pinyin_with_tone_marks_or_jyutping_with_tone_numbers_by_the_song_s_language(self):
         self.assertEqual(pronunciation('我爱你', 'zh'), ['wǒ', 'ài', 'nǐ'])
