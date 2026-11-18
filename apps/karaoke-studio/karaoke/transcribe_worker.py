@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import collections
 from collections.abc import Callable
 import gc
@@ -11,6 +13,7 @@ from pathlib import Path
 import resource
 import socket
 import sys
+import tempfile
 import time
 import unicodedata
 import wave
@@ -52,14 +55,54 @@ LAST_HELD = 0.3
 VAD = dict(threshold=0.4, min_silence_duration=0.4, min_speech_duration=0.25, max_speech_duration=20.0)
 
 
+# The re-encoded Whisper tokens file (see whisper_tokens), written once per worker process.
+_whisper_tokens: dict[Path, Path] = {}
+_whisper_scratch: list[tempfile.TemporaryDirectory] = []
+
+
+def whisper_tokens(tokens: Path) -> Path:
+    """A copy of Whisper's tokens file that keeps every byte of its tokens.
+
+    Whisper's tokens are pieces of UTF-8, and one character can be split across two or three of them (many Devanagari,
+    Tamil and Bengali letters are). sherpa-onnx turns each token into text on its own, so those pieces
+    come back empty and the character is lost ("इतालवी भाषा" was written "ताली ासा"). The file names each token by its
+    bytes in base64; this copy encodes those names once more, so the recognizer returns the names themselves and
+    ``whisper_text`` joins the bytes before reading them.
+    """
+    if tokens not in _whisper_tokens:
+        lines = []
+        for line in tokens.read_text(encoding='utf-8').splitlines():
+            symbol, _, number = line.rpartition(' ')
+            lines.append(f"{base64.b64encode(symbol.encode('ascii')).decode('ascii')} {number}")
+        if not _whisper_scratch:
+            _whisper_scratch.append(tempfile.TemporaryDirectory(prefix='karaoke-whisper-'))
+        copy = Path(_whisper_scratch[0].name) / f'tokens-{len(_whisper_tokens)}.txt'
+        copy.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        _whisper_tokens[tokens] = copy
+    return _whisper_tokens[tokens]
+
+
+def whisper_text(tokens) -> str:
+    """The text of a phrase from a recognizer loaded with ``whisper_tokens``: its tokens' bytes joined and read as UTF-8
+    (a character left incomplete at the end is dropped)."""
+    raw = bytearray()
+    for token in tokens:
+        try:
+            raw += base64.b64decode(token, validate=True)
+        except (binascii.Error, ValueError):
+            continue
+    return raw.decode('utf-8', errors='ignore')
+
+
 def load(model_root: Path, model: AsrModel, threads: int = 3, language: str = ''):
     import sherpa_onnx
     directory = Path(model_root) / model.directory
     if model is WHISPER:
-        # Without a language Whisper detects one per input; with one it writes that language.
+        # Without a language Whisper detects one per input; with one it writes that language. Its text is read with
+        # whisper_text.
         return sherpa_onnx.OfflineRecognizer.from_whisper(
-            str(directory / 'turbo-encoder.int8.onnx'), str(directory / 'turbo-decoder.int8.onnx'), str(directory / 'turbo-tokens.txt'),
-            language=language, task='transcribe', num_threads=threads)
+            str(directory / 'turbo-encoder.int8.onnx'), str(directory / 'turbo-decoder.int8.onnx'),
+            str(whisper_tokens(directory / 'turbo-tokens.txt')), language=language, task='transcribe', num_threads=threads)
     if model is EAST_ASIAN:
         # Without inverse text normalization, sung numbers stay words ("ten thousand"), as lyrics write them.
         return sherpa_onnx.OfflineRecognizer.from_sense_voice(
@@ -339,7 +382,7 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
             report(0, 2 * total)
             texts = []
             for done, (_start, phrase) in enumerate(phrases, 1):
-                texts.append(lyric_words(_decode(reader, phrase).text))
+                texts.append(lyric_words(whisper_text(_decode(reader, phrase).tokens)))
                 report(done, 2 * total)
             reader = None
             gc.collect()

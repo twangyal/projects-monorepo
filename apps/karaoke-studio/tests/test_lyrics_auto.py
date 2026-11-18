@@ -1,4 +1,5 @@
 """Automatic lyric lines and supplied-lyric alignment (pure, no ML packages)."""
+import base64
 import dataclasses
 import hashlib
 import io
@@ -471,7 +472,8 @@ class RecognizerChoiceTests(unittest.TestCase):
 
         def decode(reader, phrase):
             written.append((reader, phrase))
-            return mock.Mock(text=f'{sung} words')
+            # Whisper's tokens as named by the re-encoded tokens file: their bytes in base64.
+            return mock.Mock(tokens=[base64.b64encode(piece.encode()).decode() for piece in (f' {sung}', ' words')])
 
         with mock.patch.object(transcribe_worker, 'song_language', lambda phrases, recognizer: heard_language), \
                 mock.patch.object(transcribe_worker, '_decode', decode):
@@ -496,6 +498,22 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper:en', 'multilingual']))
         model, _result, loads, _heard, _progress, _written = self.run_whisper(everything, 'fr', '', 'whisper')
         self.assertEqual((model, loads), (WHISPER, ['whisper', 'whisper', 'multilingual']))
+
+    def test_whisper_text_keeps_characters_split_across_its_tokens(self):
+        # Whisper's tokens are pieces of UTF-8, so इ (three bytes) can be split over two of them; sherpa-onnx would
+        # return each piece as nothing. The re-encoded tokens file names each token by its bytes, joined before reading.
+        with tempfile.TemporaryDirectory() as folder:
+            original = Path(folder) / 'tokens.txt'
+            pieces = [b' \xe0\xa4', b'\x87\xe0\xa4\xa4', b'\xe0\xa4\xbe']
+            original.write_text(''.join(f'{base64.b64encode(piece).decode()} {n}\n' for n, piece in enumerate(pieces)) + '= 3\n',
+                                encoding='utf-8')
+            names = [line.rpartition(' ')[0] for line in transcribe_worker.whisper_tokens(original).read_text(encoding='utf-8').splitlines()]
+            # The recognizer decodes each name once, so it returns the original file's names as the tokens.
+            returned = [base64.b64decode(name).decode('ascii') for name in names]
+            self.assertEqual(returned, [base64.b64encode(piece).decode() for piece in pieces] + ['='])
+            self.assertEqual(transcribe_worker.whisper_text(returned), ' इता')
+            # Without the re-encoding, each piece read alone loses the split letter.
+            self.assertEqual(''.join(piece.decode('utf-8', errors='ignore') for piece in pieces), ' ता')
 
     def test_whisper_needs_the_multilingual_model_to_time_its_words(self):
         model, _result, loads, _heard, _progress, _written = self.run_whisper((ENGLISH, WHISPER), 'fr', 'fr')
