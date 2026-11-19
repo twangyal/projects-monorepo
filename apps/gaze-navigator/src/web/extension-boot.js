@@ -4,6 +4,7 @@ import { createFrameCamera } from './frame-camera.js';
 import { createFrameSpeech } from './frame-speech.js';
 import { createEmbeddedFrames } from './embedded-frames.js';
 import { LOG_SETTINGS, logKey, storedLog } from './session-log.js';
+import { TRIAL_KEY } from './trial-tasks.js';
 
 const KEY = 'gaze-web-navigator';
 
@@ -58,6 +59,15 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     // navigates away straight after an instruction, or another tab logging at the same time, loses nothing.
     logging: () => ({ on: logging.on === true, words: logging.words === true }),
     addLog: entry => { chrome.storage.local.set({ [logKey(entry)]: entry }).catch(() => {}); },
+    // A trial's tasks (see trial-tasks.js) are started and ended in the popup; pages show the task at hand, move it on
+    // when the person says so, and follow each other's changes so every tab shows the same task.
+    loadTrial: async () => (await chrome.storage.local.get(TRIAL_KEY))[TRIAL_KEY] ?? null,
+    saveTrial: trial => { chrome.storage.local.set({ [TRIAL_KEY]: trial }).catch(() => {}); },
+    onTrialChange: callback => {
+      const listener = (changes, area) => { if (area === 'local' && TRIAL_KEY in changes) callback(changes[TRIAL_KEY].newValue ?? null); };
+      chrome.storage.onChanged.addListener(listener);
+      return () => chrome.storage.onChanged.removeListener(listener);
+    },
   };
   // The camera runs in an extension frame, so camera access belongs to Gaze Navigator, not the website.
   const createCamera = options => createFrameCamera({ ...options, runtime: chrome.runtime });

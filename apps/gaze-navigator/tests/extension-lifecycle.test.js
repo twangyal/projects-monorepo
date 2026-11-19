@@ -15,16 +15,18 @@ async function contentHarness(run,{local={get:async()=>({}),set:async()=>{}}}={}
  const saved=Object.fromEntries(['window','chrome','__gazeNavigatorRunning','__gazeNavigatorStop','__gazeNavigatorOwner','__gazeNavigatorReady','__gazeNavigatorError','__gazeNavigatorStart'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));
  let starts=0,stops=0,hold=null;
  globalThis.window={start:()=>{starts++;return{stop(){stops++;}}}};
- globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}},local,onChanged:{addListener(){}}}};
+ const listeners=new Set();
+ globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}},local,onChanged:{addListener(listener){listeners.add(listener);},removeListener(listener){listeners.delete(listener);}}}};
  await writeFile(join(directory,'entry.mjs'),await readFile('src/web/extension-boot.js','utf8'));
  await writeFile(join(directory,'session-log.js'),await readFile('src/web/session-log.js','utf8'));
+ await writeFile(join(directory,'trial-tasks.js'),await readFile('src/web/trial-tasks.js','utf8'));
  await writeFile(join(directory,'frame-speech.js'),'export const createFrameSpeech = () => ({});');
  await writeFile(join(directory,'frame-camera.js'),'export const createFrameCamera = () => ({});');await writeFile(join(directory,'embedded-frames.js'),'export const createEmbeddedFrames = () => ({});');await writeFile(join(directory,'overlay.js'),'export const startWebNavigator = ({window, store}) => { window.store = store; return window.start(); };');
  await writeFile(join(directory,'package.json'),'{"type":"module"}');
  const script=new vm.Script(await readFile('extension/content.js','utf8'),{importModuleDynamically:vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER});
  const tick=()=>new Promise(r=>setTimeout(r,10));
  const until=async predicate=>{for(let n=0;n<50&&!predicate();n++)await tick();assert.ok(predicate(),'startup completed');};
- try{await run({start:()=>script.runInThisContext(),stop:()=>globalThis.__gazeNavigatorStop?.(),until,tick,get starts(){return starts;},get stops(){return stops;},hold(p){hold=p;}});}
+ try{await run({start:()=>script.runInThisContext(),stop:()=>globalThis.__gazeNavigatorStop?.(),until,tick,get starts(){return starts;},get stops(){return stops;},hold(p){hold=p;},changed:(changes,area='local')=>{for(const listener of [...listeners])listener(changes,area);},get listeners(){return listeners.size;}});}
  finally{globalThis.__gazeNavigatorStop?.();for(const[k,descriptor]of Object.entries(saved)){if(descriptor)Object.defineProperty(globalThis,k,descriptor);else delete globalThis[k];}await rm(directory,{recursive:true,force:true});}
 }
 
@@ -46,6 +48,22 @@ test('pages add session-log entries under their own keys only while the popup ha
   assert.deepEqual(removed,[`${LOG_PREFIX}2026-01-01T00:00:00.000Z:k0`,`${LOG_PREFIX}2026-01-01T00:00:01.000Z:k1`]);
   const entry={at:'2026-11-18T09:30:00.000Z',site:'shop.example',outcome:'acted'};globalThis.window.store.addLog(entry);
   const [key]=Object.keys(written.at(-1));assert.ok(key.startsWith(`${LOG_PREFIX}${entry.at}:`));assert.deepEqual(written.at(-1)[key],entry);
+ },{local});
+});
+
+test('pages read, save and follow a trial in the extension storage the popup starts it in',async()=>{
+ const {TRIAL_KEY,startTrial}=await import('../src/web/trial-tasks.js');
+ const trial=startTrial(['Open the about page'],1000),items={[TRIAL_KEY]:trial},written=[];
+ const local={get:async key=>key===null?items:key in items?{[key]:items[key]}:{},set:async value=>{written.push(value);},remove:async()=>{}};
+ await contentHarness(async h=>{
+  h.start();await h.until(()=>h.starts===1);
+  const store=globalThis.window.store,seen=[];
+  assert.deepEqual(await store.loadTrial(),trial);
+  store.saveTrial({...trial,current:1});assert.deepEqual(written.at(-1),{[TRIAL_KEY]:{...trial,current:1}});
+  const before=h.listeners,unwatch=store.onTrialChange(value=>seen.push(value));assert.equal(h.listeners,before+1);
+  h.changed({[TRIAL_KEY]:{newValue:{...trial,current:1}}});h.changed({other:{newValue:1}});h.changed({[TRIAL_KEY]:{newValue:trial}},'session');h.changed({[TRIAL_KEY]:{}});
+  assert.deepEqual(seen,[{...trial,current:1},null],'only the trial in local storage, and null once it is removed');
+  unwatch();assert.equal(h.listeners,before);
  },{local});
  await contentHarness(async h=>{
   h.start();await h.until(()=>h.starts===1);assert.deepEqual(globalThis.window.store.logging(),{on:false,words:false});

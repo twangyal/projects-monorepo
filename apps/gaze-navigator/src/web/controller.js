@@ -4,6 +4,7 @@ import { applyEdit, dictated, dictationControl, interpret as interpretRules } fr
 import * as pageActions from './page-actions.js';
 import { commandHelp } from './command-help.js';
 import { learnedAction, learnedEntry, learnedSummary, taughtEntry, withoutLearned } from './learned.js';
+import { spokenDuration } from './trial-tasks.js';
 import { keyLabel } from './page-actions.js';
 import { areaNameScore, captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
@@ -624,6 +625,18 @@ export function createController({ window, actions = pageActions, interpret = in
       if (action.change === 'forget') { commands.learned.forget(); return reply(list.length ? `Forgot ${list.length === 1 ? 'the one phrase' : `all ${list.length} phrases`} taught or learned.` : 'Nothing was taught or learned, so there is nothing to forget.', 'success'); }
       return reply(list.length ? `${list.length} taught or learned, latest first: ${learnedSummary(list)}. Say "forget" and one of them, or "forget what you learned" to clear them all.`
         : 'Nothing taught or learned yet. Teach a phrase with "when I say …, I mean …", or say yes when I offer what you might mean.', 'info');
+    }
+    // A trial's tasks (see trial-tasks.js), started from the extension's toolbar popup: the task at hand, said again,
+    // done or skipped. Asking which task it is keeps a question waiting, as help does.
+    if (action.type === 'trial') {
+      if (!commands.trial) return reply('Trial tasks are not available here.', 'error');
+      const task = commands.trial.current(), said = next => `Task ${next.number} of ${next.total}: ${next.text}`;
+      if (!task) return reply(commands.trial.summary(), 'info', { trial: true, keepPrompt: true });
+      if (action.change === 'show') return reply(said(task), 'info', { trial: true, keepPrompt: true });
+      pending = null;
+      const { finished, next } = commands.trial.finish(action.change === 'done' ? 'done' : 'skipped');
+      const what = `Task ${finished.number} ${finished.outcome === 'done' ? 'done' : 'skipped'} after ${spokenDuration(finished.seconds)}.`;
+      return reply(next ? `${what} ${said(next)}` : `${what} That was the last task, so the trial is finished.`, 'success', { trial: true });
     }
     // A phrase taught by voice to stand for an instruction: "when I say basket, I mean open the basket".
     if (action.type === 'teach') {

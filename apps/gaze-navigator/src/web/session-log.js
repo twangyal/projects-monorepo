@@ -2,6 +2,7 @@
 // real users on real sites: when each was given, on which website, how (spoken or typed), with which pointer (the
 // mouse, or the camera following the eyes or the head), what happened and how long the answer took. What was said and the replies are kept
 // only when also asked for, since they can hold personal details. Nothing leaves the device until the log is downloaded.
+import { trialReport } from './trial-tasks.js';
 
 /** The most entries kept; the oldest give way. */
 export const MAX_LOG_ENTRIES = 1000;
@@ -11,13 +12,15 @@ export const LOG_PREFIX = 'gaze-navigator-log:';
 /** The extension's switches: `{ on, words }`, changed only from its toolbar popup. */
 export const LOG_SETTINGS = 'gaze-navigator-log-settings';
 
-/** One instruction's entry from its outcome report (see overlay.js `outcomeOf`). */
-export function logEntry(report, { at, site, tookMs, words = false }) {
+/** One instruction's entry from its outcome report (see overlay.js `outcomeOf`); during a trial, its task's number (see
+ * trial-tasks.js). */
+export function logEntry(report, { at, site, tookMs, words = false, task = null }) {
   const entry = {
     at: new Date(at).toISOString(), site: String(site ?? '').slice(0, 253), via: report.via ?? 'unknown', pointer: report.source ?? 'unknown',
     outcome: OUTCOMES.includes(report.outcome) ? report.outcome : 'other', tookMs: Math.max(0, Math.round(tookMs ?? 0)),
   };
   if (words) Object.assign(entry, { said: String(report.utterance ?? '').slice(0, 500), reply: String(report.message ?? '').slice(0, 500) });
+  if (Number.isInteger(task) && task > 0) entry.task = task;
   return entry;
 }
 
@@ -27,8 +30,9 @@ export function appendLog(entries, entry) {
   return [...kept, entry].slice(-MAX_LOG_ENTRIES);
 }
 
-/** The downloadable log: every entry, and how many instructions went each way, in all and per website. */
-export function logReport(entries, now = Date.now()) {
+/** The downloadable log: every entry, and how many instructions went each way, in all and per website, and with a trial
+ * (see trial-tasks.js), how each of its tasks went. */
+export function logReport(entries, now = Date.now(), trial = null) {
   const list = Array.isArray(entries) ? entries : [];
   const count = rows => Object.fromEntries(OUTCOMES.map(outcome => [outcome, rows.filter(row => row.outcome === outcome).length]));
   const sites = [...new Set(list.map(row => row.site))].sort();
@@ -37,6 +41,7 @@ export function logReport(entries, now = Date.now()) {
     kind: 'gaze-navigator-session-log', version: 1, downloadedAt: new Date(now).toISOString(),
     instructions: list.length, ...count(list), medianAnswerMs: took.length ? took[Math.floor((took.length - 1) / 2)] : null,
     sites: Object.fromEntries(sites.map(site => { const rows = list.filter(row => row.site === site); return [site, { instructions: rows.length, ...count(rows) }]; })),
+    ...(trial ? { trial: trialReport(trial, list) } : {}),
     entries: list,
   };
 }

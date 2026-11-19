@@ -7,6 +7,7 @@ import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, d
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { MAX_LEARNED, validLearned, withLearned, withoutLearned } from './learned.js';
+import { currentTask, finishTask, trialOpen, trialSummary, validTrial } from './trial-tasks.js';
 import { addressedSpeech, addressedFeedback, immediateSpeech } from './speech-address.js';
 import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -51,7 +52,7 @@ const STYLE = `
 .panel { position: fixed; right: 12px; bottom: 12px; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 560px); overflow: auto; pointer-events: auto; padding: 14px; border: 1px solid #456b5c; border-radius: 14px; background: #0a1b16; color: #eef8f3; box-shadow: 0 10px 36px #000a; font-size: 15px; line-height: 1.4; }
 /* Hidden, the panel keeps its answers and any question, so instructions still get feedback. */
 .panel.collapsed { width: min(300px, calc(100vw - 24px)); }
-.panel.collapsed .body > :not(.status):not(.prompt):not(.dictation) { display: none; }
+.panel.collapsed .body > :not(.status):not(.prompt):not(.dictation):not(.trial-task) { display: none; }
 .panel.left { right: auto; left: 12px; }
 .panel.top { bottom: auto; top: 12px; }
 @media (max-height: 700px) { .panel { max-height: 45vh; padding: 10px; } }
@@ -61,6 +62,8 @@ h2 { margin: 0; font-size: 16px; }
 .status.error { background: #3b1717; }
 .status.question { background: #3a2f12; }
 .status.success { background: #133b2a; }
+/* A trial's task at hand stays in view, also while the panel is hidden. */
+.trial-task { margin: 8px 0 0; padding: 6px 8px; border-left: 4px solid #8fc7ff; border-radius: 6px; background: #0f2233; font-weight: 600; }
 .transcript { margin: 0 0 8px; color: #a9c2b8; font-style: italic; }
 .transcript:empty { display: none; }
 .row label { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
@@ -184,6 +187,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   <section class="panel" role="region" aria-label="Gaze Navigator">
     <div class="head"><h2>Gaze Navigator</h2><button class="collapse" aria-expanded="true">Hide</button></div>
     <div class="body">
+      <p class="trial-task" hidden></p>
       <p class="status" role="status" aria-live="polite"></p>
       <p class="transcript" aria-live="off"></p>
       <p class="dictation hint" role="status" hidden></p>
@@ -252,7 +256,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   </section>`;
   const $ = selector => shadow.querySelector(selector);
   const ui = {
-    circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), dictation: $('.dictation'), transcript: $('.transcript'),
+    circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), dictation: $('.dictation'), transcript: $('.transcript'), trialTask: $('.trial-task'),
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), speechAddress: $('.speech-address'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'), useHead: $('.use-head'),
@@ -302,6 +306,26 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     // One phrase, or everything when none is named.
     forget(said) { learned = said == null ? [] : withoutLearned(learned, said); store.saveLearned?.(learned); },
   };
+  // A trial's tasks (see trial-tasks.js), written and started in the extension's toolbar popup and kept by its store, so
+  // every tab shows the same task; the practice website has its own tasks and no trial.
+  let trial = null;
+  const showTrial = saved => {
+    trial = validTrial(saved);
+    ui.trialTask.hidden = !trialOpen(trial);
+    ui.trialTask.textContent = trialOpen(trial) ? trialSummary(trial) : '';
+  };
+  const unwatchTrial = typeof store.loadTrial === 'function' ? store.onTrialChange?.(showTrial) : null;
+  if (typeof store.loadTrial === 'function') Promise.resolve(store.loadTrial()).then(saved => { if (!stopped) showTrial(saved); }).catch(() => {});
+  const trialTasks = typeof store.loadTrial === 'function' ? {
+    current: () => currentTask(trial),
+    summary: () => trialSummary(trial),
+    finish(outcome) {
+      const result = finishTask(trial, outcome, Date.now());
+      showTrial(result.trial);
+      store.saveTrial(result.trial);
+      return result;
+    },
+  } : null;
   // Personal details kept for filling forms, on this device only (see the store); never spoken or shown in replies.
   let details = {};
   Promise.resolve(store.loadDetails?.()).then(saved => { if (saved && typeof saved === 'object') details = { ...saved, ...details }; }).catch(() => {});
@@ -338,7 +362,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
   };
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, speechPrefix: setSpeechAddress, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, learned: learnedRequests, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, speechPrefix: setSpeechAddress, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, learned: learnedRequests, trial: trialTasks, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
@@ -896,16 +920,21 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     spokenContext = null;
     // Numbers stay usable without the gaze, but not while calibrating.
     if (numbering && used.trackingUnavailable !== 'calibration') used.numbered = numbered;
+    // While a trial is open, "task done", "skip task" and "what's my task" belong to it.
+    if (trialOpen(trial)) used.trial = true;
     // The page's videos and sounds, looked for once per instruction and only when it might be about them.
     if (used.trackingUnavailable !== 'calibration') {
       let media = null;
       used.media = () => (media ??= findMedia(document, { x: used.x, y: used.y, exclude: host, scopeCache }));
     }
+    // An instruction belongs to the trial task at hand when it was given (see trial-tasks.js).
+    const task = currentTask(trial)?.number ?? null;
     const askedAt = Date.now(), result = controller.handle(utterance, used, { alternatives, spoken: via === 'speech' });
     show(result, used);
     const report = answer => {
       const outcome = { utterance, via, source: settings.source, ...outcomeOf(answer) };
-      logInstruction(outcome, Date.now() - askedAt);
+      // Moving through a trial's tasks is noted in the trial itself, not as an instruction.
+      if (!answer.trial) logInstruction(outcome, Date.now() - askedAt, task);
       try { onResult?.(outcome); } catch { /* A listener's failure is its own. */ }
     };
     if (!result.followUp) report(result);
@@ -1479,13 +1508,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.logDownload.disabled = !entries.length; ui.logClear.disabled = !entries.length;
     ui.logState.textContent = note || logSummary(entries, on);
   }
-  function logInstruction(outcome, tookMs) {
+  function logInstruction(outcome, tookMs, task = null) {
     const { on, words } = logChoice();
     if (on) {
       const site = window.location.hostname || window.location.protocol.replace(/:$/, '');
       // The pointer: the mouse, or the camera following the eyes or the head.
       const pointer = settings.source === 'camera' ? (settings.cameraMode === 'head' ? 'head' : 'eyes') : 'mouse';
-      try { store.addLog?.(logEntry({ ...outcome, source: pointer }, { at: Date.now(), site, tookMs, words })); } catch { /* The instruction went ahead; only its entry is missing. */ }
+      try { store.addLog?.(logEntry({ ...outcome, source: pointer }, { at: Date.now(), site, tookMs, words, task })); } catch { /* The instruction went ahead; only its entry is missing. */ }
     }
     logControls();
   }
@@ -1599,6 +1628,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.clearTimeout(trailing);
       window.clearTimeout(placement);
       detachEmbedded?.();
+      unwatchTrial?.();
       resizeObserver.disconnect();
       spacer.remove();
       host.remove();

@@ -905,6 +905,19 @@ function teachCommand(said, context) {
   return { type: 'teach', phrase: rest, instruction: '', unsplit: true };
 }
 
+// A trial's tasks (see trial-tasks.js): "task done" (or "next task"), "skip task", and "what's my task". Only while a
+// trial is open (`context.trial`), so websites and the practice site keep these words otherwise, and never when a control
+// in the circle is named by everything said (a to-do list's "Next task" button).
+function trialCommand(text, context) {
+  if (!context.trial) return null;
+  const said = text.replace(/^the /, '');
+  if ((context.elements ?? []).some(element => (PRESSED_BY_NAME.has(element.role) || TICKED_BY_NAME.has(element.role)) && normalize(element.name ?? '').replace(/^the /, '') === said)) return null;
+  if (/^(?:(?:the |this |my )?task (?:is )?(?:done|finished|complete|completed)|next task|(?:i'?ve |i have |i'?m |i am )?(?:done|finished) (?:with )?(?:the |this |my )task)$/.test(text)) return { type: 'trial', change: 'done' };
+  if (/^skip (?:the |this |my )?task$|^(?:give up|move on) (?:on |from )?(?:the |this |my )?task$/.test(text)) return { type: 'trial', change: 'skip' };
+  if (/^(?:what(?:'s| is) (?:my|the) (?:task|current task)|(?:repeat|read|say|show) (?:me )?(?:my |the )?(?:task|current task)(?: again)?|which task (?:is it|am i on))$/.test(text)) return { type: 'trial', change: 'show' };
+  return null;
+}
+
 function learnedCommand(text) {
   if (/^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have you|did you) (?:learned|learnt|learn)(?: from me)?$|^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have i|did i) (?:taught|teach) you$|^(?:list|show) (?:the |my )?(?:learned|taught) (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'list' };
   if (/^forget (?:what|everything) (?:you(?:'ve| have)? (?:learned|learnt)|i(?:'ve| have)? (?:taught|told) you)$|^forget (?:the |my )?learned (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'forget' };
@@ -1167,6 +1180,8 @@ function interpretInCircle(utterance, context) {
   if (media) return media;
   const popup = popupCommand(text, context);
   if (popup) return popup;
+  const trial = trialCommand(text, context);
+  if (trial) return trial;
   const learned = learnedCommand(text);
   if (learned) return learned;
   const details = detailsCommand(command, text);

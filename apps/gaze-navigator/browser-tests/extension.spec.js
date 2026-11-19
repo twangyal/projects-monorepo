@@ -824,3 +824,72 @@ test('the session log is turned on, downloaded and cleared in the popup, and pag
   const kept = await worker.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).filter(key => key.startsWith('gaze-navigator-log:')));
   expect(kept).toEqual([]);
 });
+
+test('a trial’s tasks are written in the popup, shown on every website, moved on by voice and reported in the log', async ({ context, worker, control }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await expect(panel(page).locator('.trial-task')).toBeHidden();
+  // Outside a trial, the words are not the trial's.
+  await typeInstruction(page, 'task done');
+  await expect(status(page)).not.toContainText('Ready on');
+  await expect(status(page)).not.toContainText('Task 1');
+
+  await control.reload();
+  await expect(control.locator('#trialState')).toHaveText('No trial is running.');
+  await control.getByLabel('Tasks to try, one per line').fill('Open the about page\n\n  Go back home  \nWrite to the shop');
+  await control.getByRole('button', { name: 'Start trial' }).click();
+  await expect(control.locator('#trialState')).toHaveText('Started: the panel shows task 1 of 3. The session log is now on, so the download reports each task.');
+  await expect(control.getByLabel('Keep a log of instructions on this computer')).toBeChecked();
+  await expect(control.getByRole('button', { name: 'Start trial' })).toBeDisabled();
+  await expect(control.getByLabel('Tasks to try, one per line')).toBeDisabled();
+
+  // The open page shows the task at once, and so does the next page.
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 1 of 3: Open the about page');
+  await look(page, page.getByRole('link', { name: 'About us' }));
+  await typeInstruction(page, 'open about us');
+  await page.waitForURL('http://shop.example/about');
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 1 of 3: Open the about page');
+  await typeInstruction(page, "what's my task");
+  await expect(status(page)).toHaveText('Task 1 of 3: Open the about page');
+  await typeInstruction(page, 'task done');
+  await expect(status(page)).toHaveText(/^Task 1 done after \d+ seconds?\. Task 2 of 3: Go back home$/);
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 2 of 3: Go back home');
+
+  // Another tab shows the same task, and moving on there moves every tab on.
+  const other = await context.newPage();
+  await other.goto('http://shop.example/contact');
+  await expect(panel(other).locator('.trial-task')).toHaveText('Task 2 of 3: Go back home');
+  await typeInstruction(other, 'skip task');
+  await expect(status(other)).toHaveText(/^Task 2 skipped after \d+ seconds?\. Task 3 of 3: Write to the shop$/);
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 3 of 3: Write to the shop');
+  await typeInstruction(other, 'task done');
+  await expect(status(other)).toContainText('That was the last task, so the trial is finished.');
+  await expect(panel(page).locator('.trial-task')).toHaveText('The trial is finished: 2 of 3 tasks done, 1 skipped.');
+
+  await control.reload();
+  await expect(control.locator('#trialState')).toHaveText('The trial is finished: 2 of 3 tasks done, 1 skipped.');
+  await control.getByRole('button', { name: 'End trial' }).click();
+  await expect(control.locator('#trialState')).toHaveText('The trial is finished: 2 of 3 tasks done, 1 skipped. Download the log to keep the results.');
+  await expect(panel(page).locator('.trial-task')).toBeHidden();
+  await expect(panel(other).locator('.trial-task')).toBeHidden();
+  // The tasks stay, ready for the next person.
+  await expect(control.getByLabel('Tasks to try, one per line')).toHaveValue('Open the about page\nGo back home\nWrite to the shop');
+  await expect(control.getByRole('button', { name: 'Start trial' })).toBeEnabled();
+
+  const [file] = await Promise.all([control.waitForEvent('download'), control.getByRole('button', { name: 'Download log' }).click()]);
+  const log = JSON.parse(readFileSync(await file.path(), 'utf8'));
+  expect(log.trial.tasks.map(task => [task.number, task.text, task.outcome, task.instructions, task.acted])).toEqual([
+    [1, 'Open the about page', 'done', 1, 1], [2, 'Go back home', 'skipped', 0, 0], [3, 'Write to the shop', 'done', 0, 0]]);
+  expect(log.trial.tasks.every(task => task.seconds >= 0)).toBe(true);
+  expect(log.entries.map(entry => [entry.task, entry.outcome])).toEqual([[1, 'acted']]);
+
+  // Clearing the log takes the trial's results with it.
+  await control.getByRole('button', { name: 'Clear log' }).click();
+  await expect(control.locator('#logState')).toHaveText("Press Clear log again to delete 1 logged instruction and the trial's results.");
+  await control.getByRole('button', { name: 'Clear log' }).click();
+  await expect(control.locator('#logState')).toHaveText('The log is cleared.');
+  await expect(control.locator('#trialState')).toHaveText('No trial is running.');
+  expect(await worker.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).filter(key => key.startsWith('gaze-navigator-log:') || key === 'gaze-navigator-trial'))).toEqual([]);
+});
