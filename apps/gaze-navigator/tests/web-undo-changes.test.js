@@ -7,13 +7,13 @@ const control = (id, element, extra = {}) => ({ id, element, name: element.name,
 function page() {
   const log = [];
   let clock = 0;
-  const node = name => ({ name, isConnected: true });
+  const node = name => ({ name, isConnected: true, value: '' });
   const actions = {
     setChecked: (element, checked) => { log.push(['check', element.name, checked]); return { ok: true, message: `Checkbox ${checked ? 'checked' : 'unchecked'}.` }; },
     selectOption: (element, index) => { log.push(['option', element.name, index]); return { ok: true, message: `Option ${index} selected.` }; },
     rememberChange: (type, element) => ({ type, element, before: type === 'check' ? false : 0 }),
     revertChange: change => { log.push(['revert', change.type, change.element.name, change.before]); return { ok: true, message: `${change.element.name} put back.` }; },
-    readValue: () => '', writeValue: (element, value) => log.push(['write', element.name, value]),
+    readValue: element => element.value, writeValue: (element, value) => { element.value = value; log.push(['write', element.name, value]); },
   };
   return { log, node, actions, tick: ms => { clock += ms; }, now: () => clock };
 }
@@ -42,6 +42,8 @@ test('an old change, or text typed since, is not what "undo" puts back', () => {
   assert.ok(!site.log.some(([kind]) => kind === 'revert') && controller.handle('undo that', context).performed !== 'undo', 'two minutes later it is too late');
   controller.handle('check send me a copy', context);
   controller.handle('type hello', context);
+  assert.equal(message.value, 'hello');
   controller.handle('undo', context);
+  assert.equal(message.value, '');
   assert.ok(!site.log.some(([kind]) => kind === 'revert'), 'the typing is undone instead');
 });

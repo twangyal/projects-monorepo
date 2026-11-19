@@ -59,6 +59,8 @@ export function createController({ window, actions = pageActions, interpret = in
   // The fields a fill of saved details just wrote, which "undo" straight afterwards empties again.
   let filled = null;
   const history = new WeakMap();
+  const textRevision = new WeakMap();
+  let textSerial = 0, latestTextRevision = null;
   const rangeHistory = new WeakMap();
   const numberHistory = new WeakMap();
   const numberRevision = new WeakMap();
@@ -422,9 +424,13 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function remember(element, before = actions.readValue(element)) {
     const values = history.get(element) ?? [];
-    values.push(before);
+    // A newer edit may observe the baseline of a rejected outer write. Share that snapshot instead of
+    // retaining two identical Undo steps (and evicting useful older history twice).
+    if (values.at(-1) !== before) values.push(before);
     if (values.length > HISTORY_LIMIT) values.shift();
     history.set(element, values);
+    textRevision.set(element, ++textSerial);
+    latestTextRevision = textSerial;
   }
 
   function edit(element, name, change, sensitive = false, selection = null) {
@@ -443,11 +449,32 @@ export function createController({ window, actions = pageActions, interpret = in
     if (after === null) {
       return { ok: false, message: change.kind === 'undo' ? `Nothing to undo in ${label}.` : `"${change.find}" was not found in ${label}.` };
     }
-    if (change.kind === 'undo') values.pop();
+    const priorHistory = [...values], priorEditedAt = editedAt, executionTurn = turn;
+    const priorRevision = textRevision.get(element), priorLatest = latestTextRevision;
+    if (change.kind === 'undo') { values.pop(); textRevision.set(element, ++textSerial); latestTextRevision = textSerial; }
     else remember(element);
+    const revision = textRevision.get(element), rich = Boolean(element.isContentEditable), beforeType = element.type;
+    const beforeSensitive = Boolean(actions.isSensitive?.(element));
+    const sameMode = () => element.type === beforeType && Boolean(element.isContentEditable) === rich &&
+      Boolean(actions.isSensitive?.(element)) === beforeSensitive;
+    const current = () => turn === executionTurn && !paused && element.isConnected && sameMode() &&
+      actions.canWrite?.(element) !== false && (!actions.ownsFocus || actions.ownsFocus(element));
     editedAt = now();
-    actions.writeValue(element, after, change.kind === 'insert-selection'
-      ? { caret: selection.start + change.text.length } : undefined);
+    actions.writeValue(element, after, { isCurrent: current,
+      ...(change.kind === 'insert-selection' ? { caret: selection.start + change.text.length } : {}) });
+    // Website input/change handlers can reject or transform a write, or issue a newer command.
+    // Undo history is reconciled only while this operation still owns its field's revision.
+    const visible = value => rich && typeof value === 'string' ? value.replace(/\u00a0/g, ' ') : value;
+    const actual = actions.readValue(element), retained = visible(actual) === visible(after), succeeded = current() && retained;
+    const restoreHistory = change.kind === 'undo' ? !succeeded : visible(actual) === visible(before);
+    if (restoreHistory && textRevision.get(element) === revision) {
+      history.set(element, priorHistory);
+      if (priorRevision === undefined) textRevision.delete(element); else textRevision.set(element, priorRevision);
+      if (latestTextRevision === revision) { latestTextRevision = priorLatest; editedAt = priorEditedAt; }
+    }
+    if (turn !== executionTurn || paused) return { ok: false, message: 'Text entry was interrupted by a newer instruction. Check the field before continuing.' };
+    if (!sameMode()) return { ok: false, message: 'The field type or protection changed during text entry. Its text is hidden. Check the field before continuing.' };
+    if (!succeeded) return { ok: false, message: 'The website did not retain the requested available text change. Check the field before continuing.' };
     // A sensitive field's text is never echoed: the message is shown, announced and may be spoken aloud.
     if (sensitive || actions.isSensitive?.(element)) return { ok: true, message: after ? `${label} updated. Its text is hidden.` : `${label} cleared.` };
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
@@ -472,7 +499,7 @@ export function createController({ window, actions = pageActions, interpret = in
       if (!undo && !text) return reply('Dictation is still active. Speak some words, or say “stop dictation”.');
       const response = perform({ type: 'edit', targetId: 198, requireFocus: true,
         edit: undo ? { kind: 'undo' } : { kind: 'append', text, raw: /^[\s.,;:?!…)”]/u.test(text) } }, { ...context, elements: [target] });
-      if (response.tone === 'error' && !undo) dictation = null;
+      if (response.tone === 'error' && !undo && dictation === target && turn === current) dictation = null;
       return response;
     }
 
@@ -505,7 +532,8 @@ export function createController({ window, actions = pageActions, interpret = in
     spokenNow = spoken;
     learnFrom = spoken && !taught ? utterance : null;
     const response = decide(taught ?? heardAs ?? utterance, context, action, current);
-    if (!heardAs || !response) return response;
+    // Text edit replies deliberately redact protected or refused text; do not reintroduce it through an alternative.
+    if (!heardAs || !response || action.type === 'edit') return response;
     // Say which reading was used, also in the website's later answer when its state is checked afterwards.
     const noted = answer => (answer?.message ? { ...answer, message: `Heard "${heardAs}". ${answer.message}` } : answer);
     if (response.followUp && !response.assisting) response.followUp = Promise.resolve(response.followUp).then(noted);

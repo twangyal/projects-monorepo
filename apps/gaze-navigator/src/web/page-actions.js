@@ -854,8 +854,10 @@ function writeRichText(element, value) {
   } catch {
     native = false;
   }
-  if (native && element.textContent === value) return true;
-  // The site blocked or altered the native edit: replace just that span directly.
+  // A successful native edit already notified the site. Its handler may restore or transform the text;
+  // never replay the span over that decision. The controller checks the retained result.
+  if (native) return true;
+  // Where native editing is unavailable, replace just the changed span directly.
   if (element.textContent !== before) return true;
   range.deleteContents();
   if (inserted) {
