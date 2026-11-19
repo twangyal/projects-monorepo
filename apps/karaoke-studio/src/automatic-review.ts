@@ -65,6 +65,38 @@ export function applyReviewedLine(current: Cue[], rows: readonly ReviewedCue[], 
   return applySingleReviewedCue(current, selected, duration, true);
 }
 
+/** Apply checked, included rows atomically against the original current lyrics.
+ * `sources` maps unchanged output cues to their original timing-draft rows.
+ * Changed/inserted cues use null so only those times get new literal spellings.
+ */
+export function applyCheckedReviewedLines(current: Cue[], rows: readonly ReviewedCue[], checked: readonly number[], duration: number): {cues:Cue[];sources:(number|null)[];replaced:number;added:number;changed:boolean} {
+  if (!Array.isArray(rows) || rows.length > MAX_CUES || !Array.isArray(checked) || checked.length > MAX_CUES
+      || new Set(checked).size !== checked.length || checked.some(index => !Number.isInteger(index) || index < 0 || index >= rows.length)) throw new Error('Choose existing checked reviewed lines.');
+  const indices = [...checked].sort((a,b) => a-b).filter(index => rows[index].excluded !== true);
+  if (!indices.length) throw new Error('Check at least one included automatic line to apply. Excluded lines stay unchanged.');
+  let cues: Cue[], selected: Cue[];
+  try { cues = validateCues(current, duration); }
+  catch (error) { throw new Error(`Check current lyrics first: ${error instanceof Error ? error.message : 'Invalid lyric cues.'}`); }
+  try { selected = reviewedCues(indices.map(index => rows[index]), duration); }
+  catch (error) { throw new Error((error instanceof Error ? error.message : 'Check the selected lines.').replace(/Line (\d+)/g, (_, n) => `Line ${indices[Number(n)-1] + 1}`)); }
+  const removed = new Set<number>();
+  let changed = false, added = 0;
+  const replacements = selected.map((cue, at) => {
+    const overlaps = cues.flatMap((old, index) => old.start < cue.end && cue.start < old.end ? [index] : []);
+    if (overlaps.length > 1) throw new Error(`Reviewed line ${indices[at] + 1} overlaps more than one current line. Adjust its times or use a reviewed passage; current lyrics are unchanged.`);
+    const index = overlaps[0];
+    if (index !== undefined && removed.has(index)) throw new Error(`Several checked lines replace the same current line ${index + 1}. Use a reviewed passage for changed grouping; current lyrics are unchanged.`);
+    if (index !== undefined) removed.add(index); else added++;
+    const old = index === undefined ? undefined : cues[index];
+    const same = !!old && old.start === cue.start && old.end === cue.end && old.text === cue.text;
+    if (!same) changed = true;
+    return {cue:same ? old : keepSingers(old ? [old] : [], [cue])[0],source:same ? index : null};
+  });
+  const result = cues.flatMap((cue,index) => removed.has(index) ? [] : [{cue,source:index as number|null}]).concat(replacements)
+    .sort((a,b) => a.cue.start-b.cue.start);
+  return {cues:validateCues(result.map(item=>item.cue),duration),sources:result.map(item=>item.source),replaced:removed.size,added,changed};
+}
+
 /** Replace one overlapping cue or insert into a gap, for automatic and file reviews alike. */
 export function applySingleReviewedCue(current: Cue[], selected: Cue, duration: number, canAdjustTiming = false): {cues:Cue[];index:number;replaced:boolean;changed:boolean} {
   let cues: Cue[];
