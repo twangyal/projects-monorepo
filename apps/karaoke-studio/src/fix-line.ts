@@ -1,4 +1,5 @@
 import type { Cue } from './lyrics.ts';
+import type { RecognizedCue } from './auto-lyrics.ts';
 import { cueWords, type TimedWord } from './word-timing.ts';
 
 /**
@@ -83,4 +84,31 @@ export function wordAt(boxes: readonly WordBox[], x: number, y: number, slack = 
     if (away <= slack && away < distance) { best = index; distance = away; }
   }
   return best;
+}
+
+/** A word recognition was unsure of, where it lies in the current lyrics: its line, its place there, and when it starts. */
+export interface Doubtful { cue: number; word: number; start: number; text: string }
+/** How long before a doubtful word checking it starts playing, in seconds. */
+export const DOUBT_LEAD = 1.5;
+const sameWords = (a: string, b: string) => a.replace(/\s+/g, ' ').trim() === b.replace(/\s+/g, ' ').trim();
+
+/**
+ * The words recognition was unsure of (confidence below `below`) in the lines still as it heard them: the same words at
+ * about the same time (within half a second at each end). A line corrected, split, merged or moved since is not marked,
+ * nor one whose words the recognizer split differently. In the order they are sung.
+ */
+export function doubtfulWords(cues: readonly Cue[], recognized: readonly RecognizedCue[], below: number): Doubtful[] {
+  const out: Doubtful[] = [];
+  cues.forEach((cue, index) => {
+    const heard = recognized.find(line => Math.abs(line.start - cue.start) < 0.5 && Math.abs(line.end - cue.end) < 0.5 && sameWords(line.text, cue.text));
+    const words = heard ? cueWords(cue.text) : [];
+    if (!heard || words.length !== heard.words.length) return;
+    heard.words.forEach((word, k) => { if (word.confidence < below) out.push({ cue: index, word: k, start: word.start, text: words[k]! }); });
+  });
+  return out.sort((a, b) => a.start - b.start);
+}
+
+/** The doubtful word to check after one starting at `after` (or the playhead): the next to be sung, or null after the last. */
+export function nextDoubtful(list: readonly Doubtful[], after: number): Doubtful | null {
+  return list.find(item => item.start > after + 0.05) ?? null;
 }

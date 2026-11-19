@@ -28,6 +28,8 @@ test('RTL and mixed lyrics light their words where the line shows them, shaped w
   await expect(page.locator('#message')).toContainText('Your stems', { timeout: 15000 });
   await page.getByLabel('Paste lyrics, one line per cue').fill([...phrases.map(phrase => phrase.text), 'LEFT RIGHT'].join('\n'));
   await page.getByRole('button', { name: 'Create draft timings', exact: true }).click();
+  // The clip's recognized lines are replaced once the pasted ones are timed (at once, or after aligning them).
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue(phrases[0]!.text);
   const seek = (time: number) => page.locator('audio').evaluate((node, at) => { (node as HTMLAudioElement).currentTime = at; node.dispatchEvent(new Event('timeupdate')); }, time);
   for (const [index, phrase] of phrases.entries()) {
     const start = Number(await page.getByLabel(`Start line ${index + 1}`, { exact: true }).inputValue());

@@ -28,7 +28,7 @@ import { framed, joinPieces, lineWords, litWords, sungStretches, type WordPlace 
 import { cardLayout, isVideoSize, type CardLayout } from './card-layout.ts';
 import { guideLane, parseNotes, visibleBars, withGuide, type Note } from './melody-guide.ts';
 import { MAX_PASSAGES, passageLabel, retrySpan, unheardSinging, type Span } from './unheard-singing.ts';
-import { REACTION, lineMeant, matchedBoxes, playOnFrom, wordAt, wordMeant, wordSpan, type WordBox } from './fix-line.ts';
+import { DOUBT_LEAD, REACTION, doubtfulWords, lineMeant, matchedBoxes, nextDoubtful, playOnFrom, wordAt, wordMeant, wordSpan, type Doubtful, type WordBox } from './fix-line.ts';
 import { cueWords, parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 import { NUDGE, NUDGE_FAR, TAP_LEAD, WordTapping, nudgeWord } from './word-tapping.ts';
 
@@ -53,7 +53,7 @@ app.innerHTML = `
         <p id="review-preview-status" class="fine" role="status" hidden></p><p id="word-timing-status" class="fine" role="status" aria-live="polite" hidden></p>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><div class="field"><label for="playback-speed">Playback speed</label><select id="playback-speed" aria-describedby="playback-speed-help playback-speed-status" disabled><option value="1">1× — normal</option><option value="0.5">0.5× — half speed</option><option value="0.75">0.75× — three-quarter speed</option><option value="" disabled hidden>Unsupported player speed — choose a speed</option></select></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p id="playback-speed-status" class="fine" role="status" aria-live="polite"></p>
-        <div class="fix-line"><button id="fix-line" type="button" class="quiet" aria-describedby="fix-line-status" disabled>Fix this line</button><p id="fix-line-status" class="fine" role="status">Hear a wrong word? Press Fix this line, or click the word in the preview: the song pauses there. Type the fix, then press Enter to play on.</p></div>
+        <div class="fix-line"><button id="fix-line" type="button" class="quiet" aria-describedby="fix-line-status" disabled>Fix this line</button><button id="next-doubt" type="button" class="quiet" aria-describedby="fix-line-status" disabled>Next doubtful word</button><p id="fix-line-status" class="fine" role="status">Hear a wrong word? Press Fix this line, or click the word in the preview: the song pauses there. Type the fix, then press Enter to play on. Words dotted underneath were heard uncertainly: Next doubtful word plays each in turn.</p></div>
       </section>
       <section class="tools-panel panel" aria-label="Studio tools">
         <div class="lyrics-bar"><p id="save-state">Choose a clip to begin.</p><div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button></div><button id="save" class="quiet" disabled>Save lyrics</button></div>
@@ -120,6 +120,9 @@ let previewWords: { cue: number; start: number; boxes: WordBox[] } | null = null
 let previewNext: { cue: number; top: number; bottom: number } | null = null;
 let fixing: { cue: Cue; textarea: HTMLTextAreaElement } | null = null;
 let lastFix: { time: number; cue: Cue; word: number | null } | null = null;
+// The doubtful word being checked (see nextDoubt): playback stops after its line, and Fix this line selects it.
+let checking: { cue: Cue; word: number; text: string; start: number; until: number; paused: boolean } | null = null;
+let doubtCache: { cues: Cue[]; edit: number; recognized: Transcript; list: Doubtful[] } | null = null;
 const FIX_HELP = element('fix-line-status').textContent ?? '';
 let fixReasonShown = '';
 // The preview beside one tool at a time; Show all tools lists every tool.
@@ -750,6 +753,20 @@ function draw() {
   if (timing) drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, part.main, sungCharacters(timing.lines[index], time), part.accent, boxes);
   else drawBlock(current, middle, Math.floor(44 * scale), Math.floor(24 * scale), room, index >= 0 ? part.accent : look.main, undefined, part.accent, boxes);
   if (boxes) previewWords = { cue: index, start: cues[index].start, boxes: matchedBoxes(current, boxes) };
+  // Words recognition was unsure of are dotted underneath here (never in the video), to be checked while listening.
+  const unsure = previewWords ? doubtfulNow().filter(item => item.cue === index).map(item => item.word) : [];
+  if (previewWords && unsure.length) {
+    context.save(); context.strokeStyle = look.muted; context.lineWidth = 2.5; context.setLineDash([5, 5]);
+    for (const k of unsure) {
+      const box = previewWords.boxes[k];
+      if (!box) continue;
+      const y = box.y1 - (box.y1 - box.y0) * 0.12;
+      context.beginPath(); context.moveTo(box.x0, y); context.lineTo(box.x1, y); context.stroke();
+    }
+    context.restore();
+  }
+  const dotted = unsure.join(',');
+  if (stage.dataset.doubtful !== dotted) stage.dataset.doubtful = dotted;
   if (pieces) drawBlock(saidLine(pieces), cardPlace.said, Math.floor(28 * scale), Math.floor(18 * scale), 90, look.muted, saidCharacters(pieces, timing!.lines[index], time), part.accent);
   stage.dataset.said = pieces ? saidLine(pieces) : '';
   stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
@@ -777,10 +794,25 @@ function draw() {
   for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('active', !review && Number(row.dataset.cue) === index);
   for (const row of element('srt-review-list').querySelectorAll<HTMLElement>('[data-srt-cue]')) row.classList.toggle('review-active', !!review && index >= 0 && Number(row.dataset.srtCue) === review.indices[index]);
 }
-function animate() { draw(); if (!audio.paused && !audio.ended) animation = requestAnimationFrame(animate); }
+function animate() {
+  draw();
+  if (checking && !checking.paused && !audio.paused && audio.currentTime >= checking.until && working?.cues.includes(checking.cue)) {
+    audio.pause(); checking.paused = true;
+    fixStatus(`Paused after line ${working.cues.indexOf(checking.cue) + 1}. Fix this line corrects “${checking.text}”; Next doubtful word goes on.`);
+  }
+  if (!audio.paused && !audio.ended) animation = requestAnimationFrame(animate);
+}
 
 // Fixing a line while listening (see fix-line.ts): Fix this line, or a click on the preview, pauses the song and opens
 // the line meant in the Lyrics tool with the word meant selected, so typing replaces it; Enter there plays on.
+function doubtfulNow(): Doubtful[] {
+  if (!working || !transcript || transcript.projectId !== working.id || !transcript.value.available) return [];
+  const recognized = transcript.value;
+  if (doubtCache && doubtCache.cues === working.cues && doubtCache.edit === editGeneration && doubtCache.recognized === recognized) return doubtCache.list;
+  const list = doubtfulWords(working.cues, recognized.cues, UNSURE_CONFIDENCE);
+  doubtCache = { cues: working.cues, edit: editGeneration, recognized, list };
+  return list;
+}
 function fixUnavailable(): string {
   if (!working?.cues.length) return 'Fix this line works once the clip has lyric lines.';
   if (currentJob || loading || requestingJob || archiveChecking || saving || aligning) return 'Lines can be fixed once the studio has finished its work.';
@@ -794,6 +826,7 @@ function fixStatus(text: string): void {
 function fixControls(): void {
   const reason = fixUnavailable();
   element<HTMLButtonElement>('fix-line').disabled = !!reason;
+  element<HTMLButtonElement>('next-doubt').disabled = !!reason || !doubtfulNow().length;
   stage.dataset.fixable = String(!reason);
   // Say why only when something the user opened is in the way.
   const shown = reason && (srtOwner || srtReview || timingOwner) ? reason : '';
@@ -813,7 +846,10 @@ function fixLine(choice?: { cue: number; word: number | null }): void {
   // What prompted a press during playback was heard this long before it, in song time.
   const reaction = playing ? REACTION * (audio.playbackRate || 1) : 0;
   let index: number | null, word: number | null;
+  const checked = checking && cues.includes(checking.cue) && time >= checking.start - DOUBT_LEAD - 0.5 && time <= checking.until + 1 ? checking : null;
+  checking = null;
   if (choice) ({ cue: index, word } = choice);
+  else if (checked) { index = cues.indexOf(checked.cue); word = checked.word; }
   else if (!playing && lastFix && lastFix.time === time && cues.includes(lastFix.cue)) { index = cues.indexOf(lastFix.cue); word = lastFix.word; }
   else {
     index = lineMeant(cues, time, reaction);
@@ -846,6 +882,27 @@ function playOn(): void {
   void audio.play().catch(() => fixStatus('The player could not start. Press play to go on.'));
 }
 element('fix-line').addEventListener('click', () => fixLine());
+// Checking the words recognition was unsure of in turn: each plays from a moment before it to the end of its line.
+function nextDoubt(): void {
+  const reason = fixUnavailable();
+  if (reason) { fixStatus(reason); return; }
+  const list = doubtfulNow();
+  if (!list.length) { fixStatus('No words heard uncertainly are left in lines as they were recognized.'); return; }
+  const after = checking && working!.cues.includes(checking.cue) ? checking.start : audio.currentTime || 0, next = nextDoubtful(list, after), item = next ?? list[0]!;
+  stopKeyPreview(); retirePractice('Checking a doubtful word stopped practice.');
+  stopWordTapping('Checking a doubtful word stopped word timing. Nothing was changed by it.');
+  endFix();
+  const cue = working!.cues[item.cue]!;
+  checking = { cue, word: item.word, text: item.text, start: item.start, until: cue.end + 0.3, paused: false };
+  audio.currentTime = Math.max(0, item.start - DOUBT_LEAD);
+  fixStatus(`${next ? '' : 'Back to the first. '}Doubtful word ${list.indexOf(item) + 1} of ${list.length}: “${item.text}”, line ${item.cue + 1}. It pauses after the line; if the word is wrong, press Fix this line.`);
+  void audio.play().catch(() => fixStatus('The player could not start. Press play to hear the word.'));
+}
+element('next-doubt').addEventListener('click', nextDoubt);
+// Seeking away from the word being checked leaves it.
+audio.addEventListener('seeking', () => {
+  if (checking && (audio.currentTime < checking.start - DOUBT_LEAD - 0.5 || audio.currentTime > checking.until + 1)) checking = null;
+});
 stage.addEventListener('click', event => {
   const reason = fixUnavailable();
   if (reason) { fixStatus(reason); return; }
@@ -1308,7 +1365,7 @@ function savedCorrection(automatic: readonly Cue[]): string {
   return correctionCache.summary ? ` ${correctionCache.summary}` : '';
 }
 function autoControls() {
-  recognitionPreviewControls(); recognitionPassageControls();
+  recognitionPreviewControls(); recognitionPassageControls(); fixControls();
   void loadMelody(); unheardControls();
   const status = element('auto-status'), review = element<HTMLButtonElement>('auto-review'), transcribe = element<HTMLButtonElement>('auto-transcribe');
   const current = working && transcript?.projectId === working.id ? transcript.value : null;

@@ -144,3 +144,34 @@ test('Fix this line waits while a lyric review is open, so its drafts are not cl
   await expect(fix).toBeEnabled();
   await expect(page.locator('#fix-line-status')).toContainText('Hear a wrong word?');
 }));
+
+test('words heard uncertainly are dotted in the preview and checked in turn: each plays to the end of its line, and Fix selects it', async ({ page }) => withClip(page, async () => {
+  test.setTimeout(90000);
+  const next = page.getByRole('button', { name: 'Next doubtful word', exact: true }), status = page.locator('#fix-line-status');
+  // The fixture heard the last four words of line 3 uncertainly.
+  await expect(next).toBeEnabled();
+  await seek(page, 10.1);
+  await expect(page.locator('#stage')).toHaveAttribute('data-doubtful', '1,2,3,4');
+  await seek(page, 2.1);
+  await expect(page.locator('#stage')).toHaveAttribute('data-doubtful', '');
+  // Each press moves on to the next one, playing from a moment before it.
+  await next.click();
+  await expect(status).toContainText('Doubtful word 1 of 4: “it”, line 3.');
+  await next.click();
+  await expect(status).toContainText('Doubtful word 2 of 4: “back”, line 3.');
+  // It stops after the line, and Fix this line opens that word.
+  await expect(status).toContainText('Paused after line 3. Fix this line corrects “back”', { timeout: 15000 });
+  expect(await page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByRole('button', { name: 'Fix this line', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toBeFocused();
+  expect((await selected(page, 3))[0]).toBe('back');
+  // Corrected, the line is no longer as heard: none of its words are doubtful, and there are none left.
+  await page.keyboard.type('bring');
+  await page.keyboard.press('Enter');
+  await page.locator('audio').evaluate(a => (a as HTMLAudioElement).pause());
+  await expect(next).toBeDisabled();
+  await seek(page, 10.1);
+  await expect(page.locator('#stage')).toHaveAttribute('data-doubtful', '');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(next).toBeEnabled();
+}));

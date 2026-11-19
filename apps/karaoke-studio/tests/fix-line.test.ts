@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AFTER_LINE, REACTION, lineMeant, matchedBoxes, playOnFrom, wordAt, wordMeant, wordSpan, type WordBox } from '../src/fix-line.ts';
+import { AFTER_LINE, REACTION, doubtfulWords, lineMeant, matchedBoxes, nextDoubtful, playOnFrom, wordAt, wordMeant, wordSpan, type WordBox } from '../src/fix-line.ts';
 
 const cues = [
   { start: 2, end: 6, text: 'I went down to the shore' },
@@ -67,4 +67,18 @@ test('a click finds the word under it among the boxes that follow the line’s w
   assert.equal(wordAt(drawn, 205, 120), 1);
   assert.equal(wordAt(drawn, 150, 300), null);
   assert.equal(wordAt(drawn, 400, 120), null);
+});
+
+test('doubtful words are those heard uncertainly in lines still as recognized, in the order they are sung', () => {
+  const heard = (start: number, end: number, words: [string, number][]) => ({ start, end, text: words.map(([text]) => text).join(' '), confidence: 0.8,
+    words: words.map(([text, confidence], k) => ({ text, start: start + k * 0.5, end: start + k * 0.5 + 0.4, confidence })) });
+  const recognized = [heard(2, 6, [['I', 0.9], ['went', 0.4], ['down', 0.95]]), heard(6, 9, [['and', 0.3], ['the', 0.9], ['sea', 0.5]]), heard(14, 18, [['singing', 0.2]])];
+  const lines = [{ start: 2, end: 6, text: 'I went down' }, { start: 6.2, end: 9, text: 'and  the sea' }, { start: 14, end: 18, text: 'singing back' }];
+  const doubtful = doubtfulWords(lines, recognized, 0.7);
+  // Line 3 was corrected, so its word is checked already; spacing alone does not count as a change.
+  assert.deepEqual(doubtful.map(item => [item.cue, item.word, item.text]), [[0, 1, 'went'], [1, 0, 'and'], [1, 2, 'sea']]);
+  assert.equal(doubtfulWords([{ start: 3, end: 6, text: 'I went down' }], recognized, 0.7).length, 0, 'a line moved by a second is not as heard');
+  assert.deepEqual(nextDoubtful(doubtful, 0)?.text, 'went');
+  assert.deepEqual(nextDoubtful(doubtful, doubtful[0]!.start)?.text, 'and');
+  assert.equal(nextDoubtful(doubtful, 20), null);
 });

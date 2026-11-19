@@ -62,6 +62,8 @@ test('lines can be marked for singer 1, singer 2 or both: the preview colours th
   const singer2 = '216,231,242', anyone = '247,245,237';
   await seek(lines[1]!.start + 0.01);
   await expect(stage).toHaveAttribute('data-singer', '2');
+  // The words still to be sung take that colour once their timing has come from the studio.
+  await expect(stage).toHaveAttribute('data-word-timing', 'recognized');
   expect(await colours()).toContain(singer2);
   await seek(lines[2]!.start + 0.01);
   await expect(stage).toHaveAttribute('data-singer', 'both');
@@ -205,6 +207,8 @@ test('bulk parts wait for word tapping and preserve hand-set word starts through
   const line = project.cues[0] as { start: number; end: number; text: string };
   const words = line.text.split(/\s+/), starts = words.map((_, i) => Math.round((line.start + (i + .5) * (line.end - line.start) / words.length) * 100) / 100);
   await page.getByRole('button', { name: 'Time words line 1', exact: true }).click();
+  // Paused only once playing, or the player's start is cut short and word timing stops.
+  await expect.poll(() => page.locator('audio').evaluate(node => !(node as HTMLAudioElement).paused)).toBe(true);
   await page.locator('audio').evaluate(node => (node as HTMLAudioElement).pause());
   const group = page.getByRole('group', { name: 'Time the words of line 1', exact: true });
   for (const [i, word] of words.entries()) {
