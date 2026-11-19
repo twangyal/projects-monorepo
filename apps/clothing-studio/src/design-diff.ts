@@ -4,6 +4,7 @@ import { colourDifference } from './photo-colours.ts';
 import { NAMED_COLOURS } from './style-prompt.ts';
 import { FIT_NAMES, PART_IDS, garmentName, material, optionsOf, partName, printName, type FitKey, type PartStyle, type Product } from './product.ts';
 import type { Project } from './model.ts';
+import type { ProfileBody } from './top-body-profiles.ts';
 
 /** The everyday name nearest a colour ("navy", "sage green"). */
 export function colourWord(hex: string): string {
@@ -22,15 +23,14 @@ const style = (product: Product, part: PartStyle) => `${material(part.material).
 const sameStyle = (one: PartStyle, two: PartStyle) => one.material === two.material && one.color.toLowerCase() === two.color.toLowerCase()
   && JSON.stringify(one.print) === JSON.stringify(two.print) && grainAngleOf(one) === grainAngleOf(two);
 
-/** One line per difference, "Saved → now", or an empty list when the designs are the same. */
-export function designDifferences(saved: Project, current: Project): string[] {
-  const lines: string[] = [], then = saved.product, now = current.product;
-  if (saved.title !== current.title) lines.push(`Name: “${saved.title}” → “${current.title}”`);
+// The same supported garment settings are compared for the edited product and each worn copy.
+function productDifferences(then: Product | undefined, now: Product | undefined, includeName = true): string[] {
+  const lines: string[] = [];
   if (!then || !now) {
     if (!!then !== !!now) lines.push(then ? 'Garment: a product design → none' : 'Garment: none → a product design');
     return lines;
   }
-  if (garmentName(then) !== garmentName(now)) lines.push(`Garment: ${garmentName(then)} → ${garmentName(now)}`);
+  if (includeName && garmentName(then) !== garmentName(now)) lines.push(`Garment: ${garmentName(then)} → ${garmentName(now)}`);
   const measures = { ...then.measurements, ...now.measurements } as Record<string, unknown>;
   for (const key of Object.keys(measures)) {
     const a = (then.measurements as unknown as Record<string, unknown>)[key], b = (now.measurements as unknown as Record<string, unknown>)[key];
@@ -58,9 +58,28 @@ export function designDifferences(saved: Project, current: Project): string[] {
     lines.push(`Artwork: ${then.artwork.map(art => art.name || 'untitled').join(', ') || 'none'} → ${now.artwork.map(art => art.name || 'untitled').join(', ') || 'none'}`);
   }
   if ((then.colorways?.length ?? 0) !== (now.colorways?.length ?? 0)) lines.push(`Colorways: ${then.colorways?.length ?? 0} → ${now.colorways?.length ?? 0}`);
+  return lines;
+}
+
+const BODY_NAMES: Record<keyof ProfileBody, string> = {
+  chest: 'chest girth', waist: 'waist girth', hip: 'hip girth', chestDepth: 'chest depth', height: 'height', hipDepth: 'waist to hip',
+  upperArmGirth: 'upper-arm girth', neckGirth: 'neck girth', underbust: 'underbust girth', torsoLength: 'shoulder to waist',
+};
+const bodyValue = (value: number | null | undefined) => value == null ? 'automatic' : `${value} cm`;
+
+/** Differences in the compared garment and shared-body settings, from saved to current. */
+export function designDifferences(saved: Project, current: Project): string[] {
+  const lines: string[] = [];
+  if (saved.title !== current.title) lines.push(`Name: “${saved.title}” → “${current.title}”`);
+  for (const key of Object.keys(BODY_NAMES) as (keyof ProfileBody)[]) {
+    const a = saved.topBody?.[key] ?? null, b = current.topBody?.[key] ?? null;
+    if (a !== b) lines.push(`Body ${BODY_NAMES[key]}: ${bodyValue(a)} → ${bodyValue(b)}`);
+  }
+  lines.push(...productDifferences(saved.product, current.product));
   for (const [key, label] of [['wornWith', 'Worn with'], ['wornAlso', 'And with']] as const) {
     const a = saved[key], b = current[key];
     if ((a ? garmentName(a) : null) !== (b ? garmentName(b) : null)) lines.push(`${label}: ${a ? garmentName(a) : 'nothing'} → ${b ? garmentName(b) : 'nothing'}`);
+    if (a && b && a.base === b.base) lines.push(...productDifferences(a,b,false).map(line => `${label} · ${line}`));
   }
   if (!!saved.tucked !== !!current.tucked) lines.push(`Tucked in: ${saved.tucked ? 'yes' : 'no'} → ${current.tucked ? 'yes' : 'no'}`);
   return lines;

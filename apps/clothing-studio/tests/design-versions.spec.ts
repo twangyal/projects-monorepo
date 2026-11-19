@@ -11,7 +11,7 @@ test('versions are numbered for the design and compared with the current one in 
   await expect(status).toContainText('Saved version “Oxford shirt · v1”');
   // Unchanged, the saved version and the current design are the same.
   await page.getByRole('button', { name: 'Compare with current', exact: true }).click();
-  await expect(status).toContainText('The current design is the same as “Oxford shirt · v1”.');
+  await expect(status).toContainText('No changes in the compared garment and body settings since “Oxford shirt · v1”.');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Materials & prints', exact: true }).click();
   await page.locator('#part-color').fill('#1f2a4f');
