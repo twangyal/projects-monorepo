@@ -1,4 +1,4 @@
-import { validateCues, MAX_CUES, SINGERS, type Cue, type Singer } from './lyrics.ts';
+import { keptWordStarts, validateCues, MAX_CUES, SINGERS, type Cue, type Singer } from './lyrics.ts';
 import { cueWords } from './word-timing.ts';
 
 /** The line moved in time by `move`, its hand-set word starts with it. */
@@ -47,10 +47,15 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
 /**
  * Lines that take the place of others keep who sings there, so reviewing a duet's lines again keeps its parts: a line
  * without a singer takes the singer of the replaced lines it mostly covers (both, when those differ, as merging gives),
- * or else of the one it overlaps most.
+ * or else of the one it overlaps most. Exact unchanged text and boundaries also keep hand-set word starts,
+ * unless the incoming cue supplies its own.
  */
 export function keepSingers(replaced: readonly Cue[], cues: readonly Cue[]): Cue[] {
-  return cues.map(cue => {
+  return cues.map(incoming => {
+    const unchanged = replaced.find(line => line.start === incoming.start && line.end === incoming.end && line.text === incoming.text);
+    // Exact unchanged words/times retain manual alignment; a correction or regrouping needs fresh timing.
+    const wordStarts = incoming.wordStarts === undefined ? unchanged && keptWordStarts(unchanged) : [...incoming.wordStarts];
+    const cue = { ...incoming, ...(wordStarts ? { wordStarts } : {}) };
     if (cue.singer !== undefined) return cue;
     const overlap = (line: Cue) => Math.min(line.end, cue.end) - Math.max(line.start, cue.start);
     const touching = replaced.filter(line => overlap(line) > 0);
