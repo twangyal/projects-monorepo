@@ -6,7 +6,7 @@ import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
-import { MAX_LEARNED, validLearned, withLearned } from './learned.js';
+import { MAX_LEARNED, validLearned, withLearned, withoutLearned } from './learned.js';
 import { addressedSpeech, addressedFeedback, immediateSpeech } from './speech-address.js';
 import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -299,7 +299,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const learnedRequests = {
     list: () => learned,
     remember(entry) { learned = withLearned(learned, entry); store.saveLearned?.(learned); },
-    forget() { learned = []; store.saveLearned?.(learned); },
+    // One phrase, or everything when none is named.
+    forget(said) { learned = said == null ? [] : withoutLearned(learned, said); store.saveLearned?.(learned); },
   };
   // Personal details kept for filling forms, on this device only (see the store); never spoken or shown in replies.
   let details = {};

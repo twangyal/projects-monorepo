@@ -874,8 +874,39 @@ function mediaCommand(command, context) {
 }
 
 // Requests learned from a yes to an offer (see learned.js): "what have you learned", "forget what you learned".
+// A phrase taught to stand for an instruction (see learned.js): "when I say basket, I mean open the basket", with a
+// comma or quotation marks around the phrase, or, as speech arrives without them, split where the rest is an instruction
+// understood here that starts with a command word or is a control's whole name ("when I say basket open the basket",
+// "when I say my bag view basket"): the rules also understand a name with words before it, so any split would do. And
+// one taught or learned phrase forgotten: "forget what basket means" ("forget basket" too; see the controller).
+const TEACH_JOIN = /^(?:i mean|i want(?: you)? to|that means|it means|means|you should)\s+/i;
+const TEACH_MAX_WORDS = 16;
+const TEACH_START = /^(?:open|click|press|tap|go|choose|select|pick|tick|untick|check|uncheck|scroll|show|hide|type|write|search|find|play|pause|mute|unmute|read|fill|zoom|reload|refresh|close|accept|reject|add|remove|delete|clear|set|turn|move|put|use|take|follow|visit|view)\b/i;
+function teachCommand(said, context) {
+  const words = said.trim().replace(/[.!?]+$/, '');
+  const forget = /^forget what\s+(.+?)\s+means$/i.exec(words);
+  if (forget) return { type: 'learned', change: 'forget', phrase: unquote(forget[1]) };
+  const taught = /^when i say\s+(.+)$/i.exec(words);
+  if (!taught) return null;
+  const rest = taught[1].trim();
+  const marked = /^["“]([^"”]+)["”],?\s*(.*)$/.exec(rest) ?? /^([^,]+),\s*(.*)$/.exec(rest);
+  if (marked) return { type: 'teach', phrase: marked[1].trim(), instruction: marked[2].replace(TEACH_JOIN, '').trim() };
+  const joined = /^(.+?)\s+(?:i mean|i want(?: you)? to|that means|it means|means|you should)\s+(.+)$/i.exec(rest);
+  if (joined) return { type: 'teach', phrase: joined[1].trim(), instruction: joined[2].trim() };
+  const parts = rest.split(/\s+/), names = new Set([...(context.elements ?? []), ...(context.nearby ?? [])].map(element => normalize(element.name ?? '')).filter(Boolean));
+  if (parts.length <= TEACH_MAX_WORDS) {
+    for (let k = 1; k < parts.length; k++) {
+      const instruction = parts.slice(k).join(' ');
+      if (!TEACH_START.test(instruction) && !names.has(normalize(instruction))) continue;
+      const meant = interpretHeard(instruction, context);
+      if (meant.type !== 'unknown' && meant.type !== 'teach') return { type: 'teach', phrase: parts.slice(0, k).join(' '), instruction };
+    }
+  }
+  return { type: 'teach', phrase: rest, instruction: '', unsplit: true };
+}
+
 function learnedCommand(text) {
-  if (/^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have you|did you) (?:learned|learnt|learn)(?: from me)?$|^(?:list|show) (?:the |my )?learned (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'list' };
+  if (/^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have you|did you) (?:learned|learnt|learn)(?: from me)?$|^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have i|did i) (?:taught|teach) you$|^(?:list|show) (?:the |my )?(?:learned|taught) (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'list' };
   if (/^forget (?:what|everything) (?:you(?:'ve| have)? (?:learned|learnt)|i(?:'ve| have)? (?:taught|told) you)$|^forget (?:the |my )?learned (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'forget' };
   return null;
 }
@@ -1060,6 +1091,8 @@ function interpretInCircle(utterance, context) {
   const raw = heard.replace(LEADING_FILLER, '') || heard;
   // Everyday ways of saying the navigator's own commands ("hang on", "yep", "down a bit") read as those commands.
   const said = raw.replace(TRAILING_FILLER, '') || raw;
+  const teaching = teachCommand(said, context);
+  if (teaching) return teaching;
   const command = everydayCommand(said, normalize);
   const text = normalize(command);
   if (!text) return { type: 'unknown', message: 'No instruction was heard.' };

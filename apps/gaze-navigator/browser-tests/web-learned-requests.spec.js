@@ -59,12 +59,12 @@ test('a request confirmed once by voice acts directly next time, after a reload 
   await page.reload();
   await open(page);
   await hear(page, 'what have you learned');
-  await expect(status(page)).toContainText('1 learned from your answers, latest first: “something about a newsletter” for subscribe to our newsletter.');
+  await expect(status(page)).toContainText('1 taught or learned, latest first: “something about a newsletter” for subscribe to our newsletter.');
   await hear(page, 'something about a newsletter');
   await expect(status(page)).toContainText('(Learned from an earlier yes.)');
   expect(await page.evaluate(() => window.subscribed)).toBe(1);
   await hear(page, 'forget what you learned');
-  await expect(status(page)).toContainText('Forgot the one request learned from your answers.');
+  await expect(status(page)).toContainText('Forgot the one phrase taught or learned.');
   await hear(page, 'something about a newsletter');
   await expect(status(page)).toContainText('Did you mean "Subscribe to our newsletter"?');
 });
@@ -82,4 +82,27 @@ test('a typed request is not learned, since a page could type it', async ({ page
   expect(await page.evaluate(() => window.subscribed)).toBe(1);
   await typed('something about a newsletter');
   await expect(status(page)).toContainText('Did you mean "Subscribe to our newsletter"?');
+});
+
+test('a phrase taught by voice does what it stands for, after a reload too, until forgotten; typed, it is not taught', async ({ page }) => {
+  await open(page);
+  await panel(page).getByLabel('Typed instruction', { exact: true }).fill('when I say the usual, I mean subscribe to our newsletter');
+  await panel(page).getByRole('button', { name: 'Do it', exact: true }).click();
+  await expect(status(page)).toContainText('Say it aloud to teach a phrase');
+  await hear(page, 'when I say the usual I mean subscribe to our newsletter');
+  await expect(status(page)).toContainText('From now on, “the usual” does “subscribe to our newsletter”.');
+  expect(await page.evaluate(() => window.subscribed)).toBe(0);
+  await hear(page, 'the usual');
+  await expect(status(page)).toContainText('(Taught as “the usual”.)');
+  expect(await page.evaluate(() => window.subscribed)).toBe(1);
+  await page.reload();
+  await open(page);
+  await hear(page, 'the usual');
+  await expect(status(page)).toContainText('(Taught as “the usual”.)');
+  expect(await page.evaluate(() => window.subscribed)).toBe(1);
+  await hear(page, 'forget the usual');
+  await expect(status(page)).toContainText('Forgot “the usual”.');
+  await hear(page, 'the usual');
+  await expect(status(page)).not.toContainText('Taught as');
+  expect(await page.evaluate(() => window.subscribed)).toBe(1);
 });

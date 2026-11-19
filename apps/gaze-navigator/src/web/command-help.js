@@ -22,7 +22,7 @@ export function commandHelp({ context, pending, paused, dictation }) {
   else if (elements.some(element => element.role === 'combobox')) hints.push('For a dropdown, say “choose” followed by the option name.');
   else if (elements.some(element => element.role === 'slider')) hints.push('For a slider, say “set slider to forty percent”.');
   else if (elements.some(element => element.role === 'radio')) hints.push('For a radio choice, say “select” followed by its name and “radio button”.');
-  if (!hints.length) hints.push('Look at a control and say “click this” or name it, such as “open help”.');
+  if (!hints.length) hints.push('Look at a control and say “click this” or name it, such as “open help”. To use your own words for one, say “when I say …, I mean …”.');
   if (context.numbered?.length) hints.push('Say a displayed control number to use it. A question’s own numbers take priority.');
   else hints.push('Say “scroll down”, “go back”, or “show numbers” if pointing is difficult.');
   hints.push('Say “pause” or “cancel” to stop.');

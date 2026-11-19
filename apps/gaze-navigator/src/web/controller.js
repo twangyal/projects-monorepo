@@ -3,7 +3,7 @@
 import { applyEdit, dictated, dictationControl, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { commandHelp } from './command-help.js';
-import { learnedAction, learnedEntry, learnedSummary } from './learned.js';
+import { learnedAction, learnedEntry, learnedSummary, taughtEntry, withoutLearned } from './learned.js';
 import { keyLabel } from './page-actions.js';
 import { areaNameScore, captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
@@ -42,8 +42,10 @@ export function createController({ window, actions = pageActions, interpret = in
   let paused = false;
   let dictation = null;
   let pending = null;
-  // The words of the instruction being handled when it was spoken, which a yes to an offer learns (see learned.js).
+  // The words of the instruction being handled when it was spoken, which a yes to an offer learns (see learned.js), and
+  // whether the instruction being handled was spoken (a page could type into the panel, but cannot speak).
   let learnFrom = null;
+  let spokenNow = false;
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
@@ -484,13 +486,24 @@ export function createController({ window, actions = pageActions, interpret = in
       const chosen = readings.find(reading => reading.action.type !== 'unknown') ?? (action.alike ? undefined : readings.find(reading => reading.action.alike));
       if (chosen) ({ text: heardAs, action } = chosen);
     }
-    // A request learned from an earlier yes (see learned.js), said again, acts on the control it named.
+    // A request learned from an earlier yes (see learned.js), said again, acts on the control it named; a phrase taught
+    // by voice stands for its instruction, understood here. "Forget basket" forgets one taught or learned.
+    let taught = null;
     if (action.type === 'unknown' && !heardAs && commands.learned) {
-      const known = learnedAction(commands.learned.list(), utterance, context);
-      if (known) action = { ...known, learned: true };
+      const list = commands.learned.list(), forgetting = /^forget\s+["“]?(.+?)["”]?[.!]*$/i.exec(utterance.trim());
+      if (forgetting && withoutLearned(list, forgetting[1]).length < list.length) action = { type: 'learned', change: 'forget', phrase: forgetting[1] };
+      else {
+        const known = learnedAction(list, utterance, context);
+        if (known?.type === 'alias') {
+          taught = known.instruction;
+          action = { ...interpret(taught, context), taught: known.said };
+          if (action.type === 'unknown' && !action.alike) return reply(`“${known.said}” stands for “${taught}”, which does not apply here.`, 'error');
+        } else if (known) action = { ...known, learned: true };
+      }
     }
-    learnFrom = spoken ? utterance : null;
-    const response = decide(heardAs ?? utterance, context, action, current);
+    spokenNow = spoken;
+    learnFrom = spoken && !taught ? utterance : null;
+    const response = decide(taught ?? heardAs ?? utterance, context, action, current);
     if (!heardAs || !response) return response;
     // Say which reading was used, also in the website's later answer when its state is checked afterwards.
     const noted = answer => (answer?.message ? { ...answer, message: `Heard "${heardAs}". ${answer.message}` } : answer);
@@ -597,13 +610,37 @@ export function createController({ window, actions = pageActions, interpret = in
       pending = null;
       return runKeys(action);
     }
-    // Requests learned from a yes to an offer: listed or forgotten at once.
+    // Requests learned from a yes to an offer, and phrases taught: listed or forgotten at once.
     if (action.type === 'learned') {
       if (!commands.learned) return reply('Learned requests are not available here.', 'error');
       pending = null;
       const list = commands.learned.list();
-      if (action.change === 'forget') { commands.learned.forget(); return reply(list.length ? `Forgot ${list.length === 1 ? 'the one request' : `all ${list.length} requests`} learned from your answers.` : 'Nothing was learned, so there is nothing to forget.', 'success'); }
-      return reply(list.length ? `${list.length} learned from your answers, latest first: ${learnedSummary(list)}. Say "forget what you learned" to clear them.` : 'Nothing learned yet. When I offer what you might mean and you say yes, I remember it for next time.', 'info');
+      if (action.change === 'forget' && action.phrase != null) {
+        const left = withoutLearned(list, action.phrase);
+        if (left.length === list.length) return reply(`“${action.phrase}” was neither taught nor learned, so there is nothing to forget.`, 'info');
+        commands.learned.forget(action.phrase);
+        return reply(`Forgot “${action.phrase}”.`, 'success');
+      }
+      if (action.change === 'forget') { commands.learned.forget(); return reply(list.length ? `Forgot ${list.length === 1 ? 'the one phrase' : `all ${list.length} phrases`} taught or learned.` : 'Nothing was taught or learned, so there is nothing to forget.', 'success'); }
+      return reply(list.length ? `${list.length} taught or learned, latest first: ${learnedSummary(list)}. Say "forget" and one of them, or "forget what you learned" to clear them all.`
+        : 'Nothing taught or learned yet. Teach a phrase with "when I say …, I mean …", or say yes when I offer what you might mean.', 'info');
+    }
+    // A phrase taught by voice to stand for an instruction: "when I say basket, I mean open the basket".
+    if (action.type === 'teach') {
+      pending = null;
+      if (!commands.learned) return reply('Teaching phrases is not available here.', 'error');
+      if (!spokenNow) return reply('Say it aloud to teach a phrase: a page could type into this box, but it cannot speak for you.', 'error');
+      if (!action.instruction) return reply(action.phrase.includes(' ')
+        ? `Say "I mean" between the phrase and what it should do, for example "when I say the usual, I mean open the basket".`
+        : `Say what “${action.phrase}” should do, for example "when I say ${action.phrase}, I mean open the basket".`, 'question');
+      const own = interpret(action.phrase, context);
+      if (own.type !== 'unknown' && own.type !== 'clarify' && own.targetId == null) return reply(`“${action.phrase}” is already one of my commands, so it keeps doing that. Choose other words.`, 'error');
+      const meant = interpret(action.instruction, context);
+      if (meant.type === 'unknown' || meant.type === 'teach' || meant.type === 'learned') return reply(`“${action.instruction}” is not understood here, so it cannot be taught. Say it on its own first to check it works.`, 'error');
+      const entry = taughtEntry(action.phrase, action.instruction);
+      if (!entry) return reply('That is too long to teach: keep the phrase to a few words and the instruction to one.', 'error');
+      commands.learned.remember(entry);
+      return reply(`From now on, “${entry.said}” does “${entry.alias}”. Say “forget ${entry.said}” to undo this.`, 'success');
     }
     // Personal details kept on this device: saved, listed or forgotten at once; filled into the form nearest the gaze
     // only after a yes, and "undo" straight afterwards empties those fields again.
@@ -690,7 +727,7 @@ export function createController({ window, actions = pageActions, interpret = in
         }
         const done = execute(confirmation.action, confirmation.context, confirmation.activation, true);
         // Learned only when the yes was spoken too: a page could type one into the panel.
-        const entry = confirmation.learn && learnFrom && done?.tone === 'success' ? learnedEntry(confirmation.learn, confirmation.action, targetOf(confirmation.context, confirmation.action.targetId)) : null;
+        const entry = confirmation.learn && spokenNow && done?.tone === 'success' ? learnedEntry(confirmation.learn, confirmation.action, targetOf(confirmation.context, confirmation.action.targetId)) : null;
         if (entry) {
           commands.learned.remember(entry);
           done.message = `${done.message} Next time, “${entry.said}” does this without asking.`;
@@ -776,6 +813,7 @@ export function createController({ window, actions = pageActions, interpret = in
         if (outside && response.tone === 'success') response.message = `${response.message} It was just outside the gaze circle.`;
         else if (outside && response.tone === 'question') response.message = `Just outside the gaze circle: ${response.message}`;
         if (action.learned && response.tone === 'success') response.message = `${response.message} (Learned from an earlier yes.)`;
+        else if (action.taught && response.tone === 'success') response.message = `${response.message} (Taught as “${action.taught}”.)`;
         return response;
       }
     }
