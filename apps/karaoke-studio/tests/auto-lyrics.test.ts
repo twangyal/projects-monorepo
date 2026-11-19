@@ -88,3 +88,9 @@ test('word edit counts match a recursive oracle across repeated and unequal lyri
   changed[40]!.text = changed[40]!.text.replace('月', '星');
   assert.deepEqual(correction(long, changed), { words: 16000, changed: 1, lines: 80, moved: 0 });
 });
+
+test('transcript replies preserve an authoritative optional identity and refuse malformed identities', () => {
+  const reply = {available:true,model:'fixture',words:0,cues:[],identity:'a'.repeat(64)};
+  assert.deepEqual(parseTranscript(reply,16),reply);
+  for (const identity of ['', 'x'.repeat(64), 1, null]) assert.throws(()=>parseTranscript({...reply,identity},16));
+});

@@ -392,12 +392,12 @@ class KaraokeServer(ThreadingHTTPServer):
                 "current": self.transcript_reply(current, project),
                 "candidate": self.transcript_reply(candidate, project)}
 
-    @staticmethod
-    def transcript_reply(transcript, project):
+    @classmethod
+    def transcript_reply(cls, transcript, project):
         if transcript is None:
             return {"available": False}
         return {"available": True, "model": transcript["model"], "words": len(transcript["words"]),
-                "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)}
+                "identity": cls.transcript_identity(transcript), "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)}
 
     def update_recognition_preview(self, project, value, *, keep):
         if self._closing or self.uploading or self.jobs.busy():

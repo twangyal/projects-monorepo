@@ -5,7 +5,7 @@ import { cueWords } from './word-timing.ts';
 export interface RecognizedWord { text: string; start: number; end: number; confidence: number }
 /** What the studio recognized from a clip's separated vocals: lines with their mean confidence and their words. */
 export interface RecognizedCue extends Cue { confidence: number; words: RecognizedWord[] }
-export type Transcript = { available: false } | { available: true; model: string; words: number; cues: RecognizedCue[] };
+export type Transcript = { available: false } | { available: true; model: string; words: number; identity?: string; cues: RecognizedCue[] };
 export interface AlignedCue extends Cue { matched: number }
 
 /** Lines whose words were mostly not heard are placed between neighbours and need a listen. */
@@ -69,11 +69,12 @@ export function recognizerName(model: string): string {
 export function parseTranscript(value: unknown, duration: number): Transcript {
   const reply = record(value);
   if (reply.available === false && Object.keys(reply).length === 1) return { available: false };
-  if (reply.available !== true || Object.keys(reply).sort().join(',') !== 'available,cues,model,words'
+  if (reply.available !== true || Object.keys(reply).sort().join(',') !== ('identity' in reply ? 'available,cues,identity,model,words' : 'available,cues,model,words')
+    || 'identity' in reply && (typeof reply.identity !== 'string' || !/^[a-f0-9]{64}$/.test(reply.identity))
     || typeof reply.model !== 'string' || reply.model.length > 80 || !Number.isSafeInteger(reply.words) || (reply.words as number) < 0) {
     throw new Error('The studio returned an unreadable lyric reply.');
   }
-  return { available: true, model: reply.model, words: reply.words as number,
+  return { available: true, model: reply.model, words: reply.words as number, ...(typeof reply.identity === 'string' ? {identity:reply.identity} : {}),
     cues: cues(reply.cues, duration, 'confidence').map(({ start, end, text, score, words }) => ({ start, end, text, confidence: score, words: words! })) };
 }
 
