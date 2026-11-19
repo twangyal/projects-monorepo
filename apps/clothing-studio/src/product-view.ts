@@ -21,6 +21,7 @@ import {
 import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { validatePatternAllowance, patternDxf, patternSvg } from './pattern-export.ts';
+import { STUDIO_BACKDROPS, STUDIO_HEIGHT, STUDIO_VIEWS, STUDIO_WIDTH, studioChoice } from './studio-render.ts';
 import { artworkMarks, placementOnPattern } from './artwork-pattern.ts';
 import { tiledProductPatternHtml } from './product-print-pattern.ts';
 import { readStylePrompt } from './style-prompt.ts';
@@ -137,7 +138,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <label class="field">Pattern export size<select id="pattern-export-size" aria-describedby="pattern-export-help"></select></label><p id="pattern-export-help" class="fine-print"></p>
     <label class="field">Pattern seam allowance (cm)<input id="pattern-seam-allowance" type="number" min="0" max="2" step="any" value="1" aria-describedby="pattern-allowance-help"></label><p id="pattern-allowance-help" class="fine-print">Uniform 0–2 cm cutting offset for product SVG, DXF, tiled sheets and every outfit ZIP pattern. 0 cuts on the sewing line. This temporary output choice is not saved with the design and does not change finished measurements, drape or costing. It stays while editing this workspace; reload returns to 1 cm. Inspect corners and choose hem/closure finishes separately; verify with a toile.</p><div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button><button id="pattern-a4" class="product-export">Download A4 tiled pattern (HTML) ↓</button><button id="pattern-letter" class="product-export">Download US Letter tiled pattern (HTML) ↓</button></div><p class="fine-print">Tiled HTML prints each piece separately at full scale, with a calibration page, cut counts, row/column labels and 1 cm overlap. Open the file and print at 100% on its labelled paper; disable fit-to-page and browser headers/footers, and measure the 5 cm square first. Up to 256 pattern tiles and 2 MB; large patterns may need SVG or DXF. Apply or discard product drafts before tiled printing.</p>
     <p class="fine-print">Exports add the chosen uniform seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
-  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label><label class="field">Outfit export size<select id="outfit-export-size" aria-describedby="outfit-bundle-help"><option value="">Each garment’s sample</option>${SIZES.map(size => `<option value="${size}">${size}</option>`).join('')}</select></label><button id="outfit-bundle" class="product-export" aria-describedby="outfit-bundle-help">Download outfit patterns and tech packs (ZIP) ↓</button></div><p id="outfit-bundle-help" class="fine-print">All outfit garments at their own applied sample sizes or graded to the chosen outfit size: SVG, DXF, Excel and printable tech packs with measurement diagrams, plus applied artwork and uploaded repeat images. Apply or discard drafts first. No drape is needed.</p><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
+  <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button><button id="product-turntable" class="product-export">Export turntable video (WebM) ↓</button><div class="studio-render" role="group" aria-labelledby="studio-render-title"><p id="studio-render-title" class="studio-render-title">Studio render</p><label class="field">Studio view<select id="studio-view">${Object.entries(STUDIO_VIEWS).map(([value, name]) => `<option value="${value}">${name}</option>`).join('')}</select></label><label class="field">Backdrop<select id="studio-backdrop">${Object.entries(STUDIO_BACKDROPS).map(([value, name]) => `<option value="${value}">${name}</option>`).join('')}</select></label><button id="product-studio" class="product-export" aria-describedby="studio-render-help">Export studio render (PNG) ↓</button><p id="studio-render-help" class="fine-print">A ${STUDIO_WIDTH} × ${STUDIO_HEIGHT} px picture lit as in a photo studio: soft light from all round, a key light whose shadows fall across the garment, shading in the folds and the sheen of each fabric, with colours kept true. Drape first to show the garment as it hangs; the body is never shown.</p></div><label class="check-field"><input id="export-outfit" type="checkbox" aria-describedby="export-outfit-help"> Include worn garment in PNG, GLB and video</label><label class="field">Outfit export size<select id="outfit-export-size" aria-describedby="outfit-bundle-help"><option value="">Each garment’s sample</option>${SIZES.map(size => `<option value="${size}">${size}</option>`).join('')}</select></label><button id="outfit-bundle" class="product-export" aria-describedby="outfit-bundle-help">Download outfit patterns and tech packs (ZIP) ↓</button></div><p id="outfit-bundle-help" class="fine-print">All outfit garments at their own applied sample sizes or graded to the chosen outfit size: SVG, DXF, Excel and printable tech packs with measurement diagrams, plus applied artwork and uploaded repeat images. Apply or discard drafts first. No drape is needed.</p><p id="export-outfit-help" class="fine-print">Choose Wear with in Body &amp; drape, then drape the outfit to export both garments. The body is never exported.</p>
   <p class="fine-print">PNG, GLB and video use the size shown in 3D: the styling shell, or the current settled drape. The turntable video records one turn in real time, so it takes a few seconds. Include the worn garment to export the settled outfit together; patterns and tech packs remain garment-specific.</p>
   <section class="techpack" aria-labelledby="techpack-heading">
     <div class="techpack-head"><div><p class="eyebrow">TECH PACK</p><h4 id="techpack-heading">Factory-ready tech pack</h4>
@@ -1136,6 +1137,28 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       } finally { button.disabled = false; }
     }));
   }
+
+  // A studio render: the same garments as the PNG renders, photographed in the offscreen studio (see StudioScene).
+  $('product-studio').addEventListener('click', () => void exporting(async () => {
+    const button = $('product-studio') as HTMLButtonElement;
+    if (button.disabled) return;
+    const { view, backdrop } = studioChoice(($('studio-view') as HTMLSelectElement).value, ($('studio-backdrop') as HTMLSelectElement).value);
+    const snapshot = structuredClone(options.current()), sample = snapshot.product ?? template('blank'), includeWorn = ($('export-outfit') as HTMLInputElement).checked;
+    const appliedCompanion = includeWorn ? snapshot.wornWith ?? null : null, appliedAlso = includeWorn && snapshot.wornAlso && appliedCompanion && threePiece([sample, appliedCompanion, snapshot.wornAlso]) ? snapshot.wornAlso : null;
+    const { product: design, companion, also } = outfitViewed(sample, appliedCompanion, appliedAlso);
+    if (includeWorn && (!companion || !draping)) throw new Error('Drape the outfit and wait for it to settle before exporting both garments.');
+    const settled = captureDrape(sample);
+    if (includeWorn && (!settled?.companion || (also && !settled.also))) throw new Error('Drape the outfit and wait for it to settle before exporting its garments together.');
+    button.disabled = true;
+    options.notice('Rendering in the studio…');
+    try {
+      if (!await ready) throw new Error('The 3D view is unavailable.');
+      const exports = await import('./product-3d.ts');
+      const blob = await exports.productSnapshotStudio(design, view, backdrop, settled, companion, also);
+      options.download(blob, `${includeWorn ? '-outfit' : ''}-studio-${view}.png`, snapshot.title);
+      options.notice(`Studio render downloaded: ${STUDIO_VIEWS[view].toLowerCase()} view on a ${STUDIO_BACKDROPS[backdrop].toLowerCase()} backdrop.`);
+    } finally { button.disabled = false; }
+  }));
 
   $('outfit-bundle').addEventListener('click', () => void exporting(async () => {
     if (hasDrafts()) { refuseDrafts(); return; }

@@ -73,6 +73,9 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .product-templates .template-card { width: 100%; align-content: start; }
 .part-list label { white-space: nowrap; }
 .product-export { background: #eeeade; border-color: #e0ddcc; }
+.studio-render { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-top: 4px; }
+.studio-render-title { flex-basis: 100%; margin: 0; font-weight: 600; }
+.studio-render .fine-print { flex-basis: 100%; margin: 0; }
 .techpack { display: grid; gap: 12px; margin-top: 8px; padding-top: 14px; border-top: 1px solid #e3d9ca; }
 .techpack-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: end; }
 .techpack-head h4 { margin: 0; font-size: 18px; }

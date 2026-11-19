@@ -8,8 +8,14 @@ import Delaunator from 'delaunator';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { STUDIO_HEIGHT, STUDIO_TURN, STUDIO_WIDTH, fabricLook, studioDistance, type StudioBackdrop, type StudioView } from './studio-render.ts';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { ARTWORK_PART_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_UV_SHIFT, lapelShape, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { ARTWORK_PART_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_UV_SHIFT, lapelShape, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, type Material, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -42,11 +48,18 @@ class ProductModel {
   /** Artwork images still being drawn into their textures (see sleeveTexture). */
   private drawing: Promise<void>[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
+  /** Artwork decals, which lie on a part's surface: the studio lets them take shadows but not cast them. */
+  protected decals = new WeakSet<THREE.Object3D>();
   protected disposed = false;
   protected height = 72;
   protected low = 0;
   protected reframe() { /* No camera in a model-only export. */ }
   protected requestRender() { /* No renderer in a model-only export. */ }
+  /** A fabric's surface. The studio renderer draws it with the soft sheen of its fibres (see StudioScene). */
+  protected fabricSurface(fabric: Material, map: THREE.Texture, side: THREE.Side, highlighted = false): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({ map, roughness: 1 - fabric.sheen * 3, metalness: 0, side,
+      emissive: new THREE.Color(highlighted ? 0x553311 : 0x000000), emissiveIntensity: highlighted ? 0.35 : 0 });
+  }
 
   private texture(style: Product['parts'][PartId], motifs: Product['motifs'] = []): { texture: THREE.CanvasTexture; tileCm: number } {
     const motif = style.print?.motif.startsWith('upload:') ? motifs.find(m => `upload:${m.id}` === style.print!.motif)?.dataUrl ?? '' : '';
@@ -349,8 +362,7 @@ class ProductModel {
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
     geometry.setIndex(part.indices); geometry.computeVertexNormals();
     // A lined part shows its fabric outside only; its lining is drawn inside (see liningMesh).
-    const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: this.lined(product, part) ? THREE.FrontSide : THREE.DoubleSide,
-      emissive: new THREE.Color(highlighted ? 0x553311 : 0x000000), emissiveIntensity: highlighted ? 0.35 : 0 });
+    const surface = this.fabricSurface(material(style.material), texture, this.lined(product, part) ? THREE.FrontSide : THREE.DoubleSide, highlighted);
     const mesh = new THREE.Mesh(geometry, surface);
     mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
     return mesh;
@@ -369,7 +381,7 @@ class ProductModel {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
     geometry.setIndex(part.indices); geometry.computeVertexNormals();
-    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.BackSide }));
+    const mesh = new THREE.Mesh(geometry, this.fabricSurface(material(style.material), texture, THREE.BackSide));
     mesh.name = `${partName(product, part.part)} lining`; mesh.userData.lining = part.part;
     return mesh;
   }
@@ -421,7 +433,7 @@ class ProductModel {
     finally { restGeometry?.dispose(); }
     const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     decal.name = name; if (part) decal.userData.part = part;
-    holder.add(decal);
+    this.decals.add(decal); holder.add(decal);
   }
 
   /**
@@ -637,6 +649,105 @@ export class ProductScene extends ProductModel {
   }
 }
 
+/**
+ * An offscreen photo studio for presentation renders: soft light from all round (an image-based room environment), a
+ * key light from the upper left whose shadows fall across the garment (under a collar, beside a sleeve), shading in
+ * the folds (ground-truth ambient occlusion), fabrics with their fibres' sheen, and neutral tone mapping, which keeps
+ * colours true. The garment turns for each view while the camera and lights stay put, as on a photographer's turntable.
+ */
+export class StudioScene extends ProductModel {
+  private renderer: THREE.WebGLRenderer;
+  private scene = new THREE.Scene();
+  private camera = new THREE.PerspectiveCamera(20, STUDIO_WIDTH / STUDIO_HEIGHT, 1, 4000);
+  private turntable = new THREE.Group();
+  private key = new THREE.DirectionalLight(0xffffff, 1.5);
+  private environment: THREE.Texture;
+
+  constructor(private canvas = document.createElement('canvas')) {
+    super();
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
+    this.renderer.setPixelRatio(1); this.renderer.setSize(STUDIO_WIDTH, STUDIO_HEIGHT, false);
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.NeutralToneMapping;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.setClearColor(0x000000, 0);
+    const pmrem = new THREE.PMREMGenerator(this.renderer), room = new RoomEnvironment();
+    this.environment = pmrem.fromScene(room, 0.04).texture;
+    pmrem.dispose(); room.dispose();
+    this.scene.environment = this.environment; this.scene.environmentIntensity = 0.4;
+    this.turntable.add(this.group, this.worn); this.scene.add(this.turntable);
+    this.key.castShadow = true; this.key.shadow.mapSize.set(2048, 2048);
+    this.key.shadow.bias = -0.0005; this.key.shadow.normalBias = 0.35; this.key.shadow.radius = 3;
+    this.scene.add(this.key, this.key.target);
+    const fill = new THREE.DirectionalLight(0xfff3e6, 0.25); fill.position.set(220, 40, 160); this.scene.add(fill);
+  }
+
+  protected override fabricSurface(fabric: Material, map: THREE.Texture, side: THREE.Side): THREE.MeshStandardMaterial {
+    const look = fabricLook(fabric);
+    // The sheen takes the fabric's own colour, so a dark cloth is not greyed by it.
+    return new THREE.MeshPhysicalMaterial({ map, side, metalness: 0, roughness: look.roughness, sheen: 1, sheenColor: new THREE.Color().setScalar(look.sheen), sheenColorMap: map, sheenRoughness: look.sheenRoughness });
+  }
+
+  /** The garment as photographed from `view`, on `backdrop`, as a PNG of STUDIO_WIDTH × STUDIO_HEIGHT. */
+  async png(view: StudioView, backdrop: StudioBackdrop): Promise<Blob> {
+    this.turntable.rotation.y = STUDIO_TURN[view] * Math.PI / 180;
+    this.turntable.updateMatrixWorld(true);
+    const box = new THREE.Box3(), anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    for (const holder of [this.group, this.worn]) holder.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      box.expandByObject(object);
+      object.receiveShadow = true; object.castShadow = !this.decals.has(object);
+      const map = (object.material as THREE.MeshStandardMaterial).map;
+      if (map) map.anisotropy = anisotropy;
+    });
+    if (box.isEmpty()) throw new Error('There is no garment to render.');
+    const centre = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+    const distance = studioDistance(size, this.camera.fov, this.camera.aspect);
+    this.camera.position.set(centre.x, centre.y + distance * 0.05, centre.z + distance); this.camera.lookAt(centre);
+    this.camera.near = Math.max(1, distance - size.length()); this.camera.far = distance + size.length(); this.camera.updateProjectionMatrix();
+    // The key light: high on the left, in front of the garment, its shadow box just round the garment.
+    const reach = size.length() / 2 + 10, shadow = this.key.shadow.camera;
+    this.key.position.copy(centre).add(new THREE.Vector3(-0.5, 0.8, 0.9).normalize().multiplyScalar(reach + 200));
+    this.key.target.position.copy(centre); this.key.target.updateMatrixWorld();
+    shadow.left = -reach; shadow.right = reach; shadow.top = reach; shadow.bottom = -reach; shadow.near = 100; shadow.far = 2 * reach + 300; shadow.updateProjectionMatrix();
+    this.renderer.shadowMap.needsUpdate = true;
+    // Shading in the folds, a few centimetres across, smoothed and multiplied into the lit image before tone mapping.
+    const target = new THREE.WebGLRenderTarget(STUDIO_WIDTH, STUDIO_HEIGHT, { type: THREE.HalfFloatType, samples: 4 });
+    const composer = new EffectComposer(this.renderer, target), occlusion = new GTAOPass(this.scene, this.camera, STUDIO_WIDTH, STUDIO_HEIGHT);
+    try {
+      composer.setPixelRatio(1); composer.setSize(STUDIO_WIDTH, STUDIO_HEIGHT);
+      occlusion.normalMaterial.side = THREE.DoubleSide;
+      occlusion.updateGtaoMaterial({ radius: 8, distanceExponent: 1.5, thickness: 4, distanceFallOff: 1, scale: 1.2, samples: 16, screenSpaceRadius: false });
+      occlusion.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+      occlusion.blendIntensity = 0.8;
+      composer.addPass(new RenderPass(this.scene, this.camera)); composer.addPass(occlusion); composer.addPass(new OutputPass());
+      composer.render();
+    } finally { occlusion.dispose(); composer.dispose(); target.dispose(); }
+    // The backdrop is painted behind the render, so its colour is exact rather than tone mapped.
+    const photo = document.createElement('canvas'); photo.width = STUDIO_WIDTH; photo.height = STUDIO_HEIGHT;
+    const context = photo.getContext('2d');
+    if (!context) throw new Error('The studio render could not be drawn.');
+    if (backdrop === 'white') { context.fillStyle = '#ffffff'; context.fillRect(0, 0, STUDIO_WIDTH, STUDIO_HEIGHT); }
+    if (backdrop === 'studio') {
+      // A warm paper backdrop, lit brightest behind the garment and falling off gently towards the corners.
+      const glow = context.createRadialGradient(STUDIO_WIDTH / 2, STUDIO_HEIGHT * 0.42, STUDIO_WIDTH * 0.1, STUDIO_WIDTH / 2, STUDIO_HEIGHT * 0.5, STUDIO_HEIGHT * 0.75);
+      glow.addColorStop(0, '#f6f1e8'); glow.addColorStop(1, '#ddd3c4');
+      context.fillStyle = glow; context.fillRect(0, 0, STUDIO_WIDTH, STUDIO_HEIGHT);
+    }
+    context.drawImage(this.canvas, 0, 0);
+    const blob = await new Promise<Blob | null>(resolve => photo.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('The studio render could not be exported.');
+    return blob;
+  }
+
+  override dispose() {
+    if (this.disposed) return;
+    super.dispose();
+    this.environment.dispose();
+    this.renderer.dispose(); this.renderer.forceContextLoss();
+  }
+}
+
 /** Own one immutable scene for the full asynchronous export and always release its resources. */
 async function withProductSnapshot<T, M extends ProductModel>(create: () => M, product: Product, drape: GarmentDrapeResult | null, exportModel: (model: M) => Promise<T>, companion: Product | null = null, also: Product | null = null): Promise<T> {
   const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null, worn = companion ? structuredClone(companion) : null, third = also ? structuredClone(also) : null;
@@ -660,6 +771,9 @@ export function productSnapshotPng(product: Product, view: 'front' | 'back', dra
 }
 export function productSnapshotTurntable(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
   return withProductSnapshot(renderSnapshot, product, drape, scene => scene.turntable(), companion, also);
+}
+export function productSnapshotStudio(product: Product, view: StudioView, backdrop: StudioBackdrop, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<Blob> {
+  return withProductSnapshot(() => new StudioScene(), product, drape, scene => scene.png(view, backdrop), companion, also);
 }
 export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null, companion: Product | null = null, also: Product | null = null): Promise<ArrayBuffer> {
   return withProductSnapshot(() => new ProductModel(), product, drape, model => model.glb(!!companion), companion, also);
