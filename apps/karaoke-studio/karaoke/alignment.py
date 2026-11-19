@@ -24,6 +24,7 @@ and 77% of characters within 0.15 s against 63%.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 import hashlib
 import math
 from pathlib import Path
@@ -236,13 +237,15 @@ def read_emissions(raw: bytes, duration: float):
     return values
 
 
-def _path(log_probs, tokens: list[int]):
+def _path(log_probs, tokens: list[int], *, checkpoint: Callable[[], None] | None = None):
     """The most likely CTC path through ``tokens``: each token's first frame and the peak probability it reached.
 
     States alternate blank, token, blank, ... and a step may skip a blank between two different tokens. The score
     vectors are kept every ``span`` frames and each stretch is recomputed while tracing back, so memory grows with the
     square root of the length rather than with frames times states.
     """
+    if checkpoint is not None:
+        checkpoint()
     import numpy as np
     frames, states = log_probs.shape[0], 2 * len(tokens) + 1
     labels = np.full(states, BLANK, dtype=np.int64)
@@ -254,6 +257,8 @@ def _path(log_probs, tokens: list[int]):
     span = max(1, int(math.sqrt(frames)))
 
     def advance(score, t, back=None):
+        if checkpoint is not None:
+            checkpoint()
         step1 = np.empty_like(score)
         step1[0] = floor
         step1[1:] = score[:-1]
@@ -280,6 +285,8 @@ def _path(log_probs, tokens: list[int]):
     peak = np.zeros(len(tokens), dtype=np.float32)
 
     def visit(t: int, state: int) -> None:
+        if checkpoint is not None:
+            checkpoint()
         if state % 2 == 1:
             first[state // 2] = t
             peak[state // 2] = max(peak[state // 2], math.exp(float(log_probs[t, labels[state]])))
@@ -425,7 +432,8 @@ def place_lines(lines: list[str], words: list, log_probs, duration: float, langu
     return placed
 
 
-def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25, language: str | None = None) -> list[float] | None:
+def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25, language: str | None = None, *,
+                checkpoint: Callable[[], None] | None = None) -> list[float] | None:
     """When each lyric word of a line sung from ``start`` to ``end`` starts, from the letters measured there.
 
     Words without letters the aligner knows (numbers, symbols) start between their neighbours. Returns None when the
@@ -446,7 +454,7 @@ def force_words(text: str, log_probs, start: float, end: float, margin: float = 
     low, high = max(0, int((start - margin) / FRAME)), min(len(log_probs), math.ceil((end + margin) / FRAME))
     if high - low < len(tokens) + 10:
         return None
-    found = _path(log_probs[low:high], tokens)
+    found = _path(log_probs[low:high], tokens, **({'checkpoint': checkpoint} if checkpoint is not None else {}))
     if found is None:
         return None
     first = found[0]

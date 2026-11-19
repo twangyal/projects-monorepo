@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 import re
 import unicodedata
+from typing import Callable
 
 from .limits import MAX_CUES, MAX_LYRIC_CHARS
 from .word_alignment import AlignmentBudget, align as _align
@@ -312,7 +313,8 @@ MAX_STEPS = 16
 NEARBY = 0.25
 
 
-def word_timings(cues: list[dict], words: list, duration: float, letters=None, language: str | None = None) -> list[list[dict]]:
+def word_timings(cues: list[dict], words: list, duration: float, letters=None, language: str | None = None, *,
+                 checkpoint: Callable[[], None] | None = None) -> list[list[dict]]:
     """For each cue, its words with the time each starts being sung and whether it was heard.
 
     Words are matched to recognized words sung during the cue (spelling-tolerant global alignment).
@@ -326,10 +328,15 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
     ``model.validate_project``) keeps them. Starts never decrease within a line and stay inside the cue.
     """
     from .alignment import LINES_ONLY, alignable, force_words
+    if checkpoint is not None:
+        checkpoint()
     words = clean_words(words, duration)
     result = []
-    budget = AlignmentBudget()
+    # Keep one shared work budget; cancellation must not reset or bypass the alignment limit.
+    budget = AlignmentBudget(checkpoint=checkpoint)
     for cue in cues:
+        if checkpoint is not None:
+            checkpoint()
         start, end = float(cue['start']), float(cue['end'])
         tokens = lyric_words(cue['text'])
         if not tokens:
@@ -377,7 +384,7 @@ def word_timings(cues: list[dict], words: list, duration: float, letters=None, l
                 for k in range(index, run_end):
                     starts[k] = left + (right - left) * sum(weights[first:k]) / total
                 index = run_end
-            forced = (force_words(cue['text'], letters, start, end, language=language)
+            forced = (force_words(cue['text'], letters, start, end, language=language, **({'checkpoint': checkpoint} if checkpoint is not None else {}))
                       if letters is not None and language not in LINES_ONLY and alignable([cue['text']], language) else None)
             if forced is not None and len(forced) == len(tokens):
                 for k in range(len(tokens)):

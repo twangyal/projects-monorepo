@@ -1,6 +1,7 @@
 """Bounded spelling-tolerant global word alignment, without a word-pair matrix."""
 from array import array
 from dataclasses import dataclass
+from typing import Callable
 
 
 class AlignmentLimitError(ValueError):
@@ -11,8 +12,11 @@ class AlignmentLimitError(ValueError):
 class AlignmentBudget:
     """Shared across a request, including all its word-highlight lines."""
     remaining: int = 1_000_000
+    checkpoint: Callable[[], None] | None = None
 
     def spend(self, amount: int = 1) -> None:
+        if self.checkpoint is not None:
+            self.checkpoint()
         self.remaining -= amount
         if self.remaining < 0:
             raise AlignmentLimitError('These lyrics differ too much from recognition to align safely. '

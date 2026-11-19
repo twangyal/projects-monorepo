@@ -48,6 +48,11 @@ _MEMORY_PRESET, _BORDER_PRESET, _TILE, _TILE_XOR, _COLOURS_LOW, _COLOURS_HIGH = 
 _WIPE, _CLEAR, _DRAW = 0, 1, 2
 
 
+def _cancelled(cancel: threading.Event | None) -> None:
+    if cancel is not None and cancel.is_set():
+        raise RuntimeError('MP3+G export was cancelled.')
+
+
 def packet(instruction: int, data: bytes = b'') -> bytes:
     """One CD+G subcode packet: the graphics command, an instruction and its 16 data bytes (parity left empty, as
     players ignore it)."""
@@ -120,17 +125,21 @@ def _pixels(text: str, size: int, font_path: Path, height: int = PLACE_ROWS * TI
     return [[data[x, y] >= 96 for x in range(WIDTH)] for y in range(height)], left, whole
 
 
-def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, **timing) -> list[_Line]:
+def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, *, cancel: threading.Event | None = None, **timing) -> list[_Line]:
     """The saved lines as drawn, each wrapped to the screen's width with its words' times (see ``word_timings``)."""
+    _cancelled(cancel)
     project = validate_project(project)
     cues = project['cues']
-    timings = word_timings(cues, timing.get('words') or [], project['duration'], timing.get('letters'), timing.get('language'))
+    timings = word_timings(cues, timing.get('words') or [], project['duration'], timing.get('letters'), timing.get('language'),
+                           checkpoint=(lambda: _cancelled(cancel)) if cancel is not None else None)
     lines: list[_Line] = []
     for cue, words in zip(cues, timings, strict=True):
+        _cancelled(cancel)
         words = [word for word in words if word['text'].strip()]
         # Wrapped greedily: each piece is as many of the line's words as fit.
         pieces: list[list[int]] = []
         for index, word in enumerate(words):
+            _cancelled(cancel)
             if pieces:
                 candidate = _joined([words[k]['text'] for k in pieces[-1]] + [word['text']])
                 if _measure(candidate, size, font_path) <= WRAP:
@@ -138,6 +147,7 @@ def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, **timing) -> 
                     continue
             pieces.append([index])
         for number, piece in enumerate(pieces):
+            _cancelled(cancel)
             texts = [words[k]['text'] for k in piece]
             text = _joined(texts)
             mask, left, whole = _pixels(text, size, font_path)
@@ -146,6 +156,7 @@ def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, **timing) -> 
             end = untils[-1]
             placed, offset = [], 0
             for k, (word, until) in zip(piece, zip(texts, untils, strict=True), strict=True):
+                _cancelled(cancel)
                 spaced = text.index(word, offset)
                 x0 = left + _measure(text[:spaced], size, font_path) - 1
                 x1 = left + _measure(text[:spaced + len(word)], size, font_path) + 1
@@ -183,26 +194,29 @@ def _index(seconds: float) -> int:
     return max(0, round(seconds * PACKETS_PER_SECOND))
 
 
-def _title_page(project: dict, font_path: Path) -> list[bytes]:
+def _title_page(project: dict, font_path: Path, cancel: threading.Event | None = None) -> list[bytes]:
     artist, title = artist_and_title(project['title'])
     packets = []
     # A clip not named "Artist - Title" shows its name alone.
     for text, size, top, colour in ((title, TITLE_SIZE, 5, TEXT), *([(artist, ARTIST_SIZE, 9, MUTED)] if artist != UNKNOWN_ARTIST else [])):
         # A long title is cut to fit rather than wrapped.
         while len(text) > 1 and _measure(text, size, font_path) > WRAP:
+            _cancelled(cancel)
             text = text[:-2].rstrip() + '…'
+        _cancelled(cancel)
         mask, _, _ = _pixels(text, size, font_path)
         packets += [tile(BACKGROUND, colour, row, column, bits) for row, column, bits in _tiles(mask, top)]
     return packets
 
 
-def render_cdg(project: dict, font_path: Path, style: str = 'classic', **timing) -> bytes:
+def render_cdg(project: dict, font_path: Path, style: str = 'classic', *, cancel: threading.Event | None = None, **timing) -> bytes:
     """The project's saved lyrics as a CD+G file as long as the clip (see the module's description)."""
+    _cancelled(cancel)
     project = validate_project(project)
     if style not in STYLES:
         raise ValueError('Choose a lyric style for the karaoke graphics.')
     colours = STYLES[style]
-    lines = layout(project, font_path, LARGE_SIZE if style == 'large' else LYRIC_SIZE, **timing)
+    lines = layout(project, font_path, LARGE_SIZE if style == 'large' else LYRIC_SIZE, cancel=cancel, **timing)
     if not lines:
         raise ValueError('Add lyric lines with words before exporting MP3+G karaoke.')
     total = math.ceil(project['duration'] * PACKETS_PER_SECOND)
@@ -210,11 +224,12 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', **timing)
     places: list[list[tuple[int, int, list[bytes]]]] = [[] for _ in PLACES]
     first = max(0.0, lines[0].start - LEAD)
     opening = [*palette([colours['background'], colours['main'], colours['accent'], colours['muted']]), *clear_screen()]
-    title = _title_page(project, font_path) if first >= 1.5 else []
+    title = _title_page(project, font_path, cancel) if first >= 1.5 else []
     # The screen is cleared of the title just before the first line is drawn.
     places[0].append((_index(first), _CLEAR, clear_screen()))
     cleared = [_index(first)] * len(PLACES)  # when each place is free for its next line
     for number, line in enumerate(lines):
+        _cancelled(cancel)
         place, top = number % len(PLACES), PLACES[number % len(PLACES)]
         due = max(cleared[place], _index(line.start - LEAD))
         places[place].append((due, _DRAW, [tile(BACKGROUND, TEXT, row, column, bits) for row, column, bits in _tiles(line.mask, top)]))
@@ -223,8 +238,10 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', **timing)
                                                               for row, column, bits in _tiles(line.mask, top)]))
         else:
             for start, until, x0, x1 in line.words:
+                _cancelled(cancel)
                 span = max(1, x1 - x0)
                 for column in range(max(0, x0 // TILE_WIDTH), min(COLUMNS, (x1 - 1) // TILE_WIDTH + 1)):
+                    _cancelled(cancel)
                     # A tile lights as the wipe reaches it, so a word is fully lit while it is still sung.
                     share = min(1.0, max(0.0, (column * TILE_WIDTH - x0) / span))
                     low, high = max(x0, column * TILE_WIDTH), min(x1, (column + 1) * TILE_WIDTH)
@@ -236,10 +253,10 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', **timing)
         places[place].append((erase, _CLEAR, [tile(BACKGROUND, BACKGROUND, row, column, [0] * TILE_HEIGHT)
                                               for row, column, _ in _tiles(line.mask, top)]))
         cleared[place] = erase
-    return _schedule(total, opening + title, places)
+    return _schedule(total, opening + title, places, cancel=cancel)
 
 
-def _schedule(total: int, opening: list[bytes], places: list[list[tuple[int, int, list[bytes]]]]) -> bytes:
+def _schedule(total: int, opening: list[bytes], places: list[list[tuple[int, int, list[bytes]]]], *, cancel: threading.Event | None = None) -> bytes:
     """Lays the packets out in time, ``total`` of them: the opening at once, then at each packet the most urgent due
     step (a wipe, then clearing, then drawing; then the earliest due) sends its next packet. A step waits for the one
     before it in its place. Whatever is still waiting when the clip ends is left out."""
@@ -248,6 +265,7 @@ def _schedule(total: int, opening: list[bytes], places: list[list[tuple[int, int
     sent = [0] * len(places)      # packets of that step already sent
     slot = len(opening)
     while slot < total:
+        _cancelled(cancel)
         best = None
         for place, steps in enumerate(places):
             if position[place] < len(steps):
@@ -277,14 +295,16 @@ def export_cdg(project: dict, backing: Path, work_dir: Path, encode: Callable[[P
                cancel: threading.Event, stage: Callable[[str], None], style: str = 'classic', **timing) -> Path:
     """Writes the song as a zip in ``work_dir``: "Artist - Title.cdg" and "Artist - Title.mp3", the backing encoded by
     ``encode``. Returns the zip's path."""
+    _cancelled(cancel)
     name = song_name(project)
     stage('Drawing the karaoke graphics')
-    graphics = render_cdg(project, font_path, style, **timing)
-    if cancel.is_set():
-        raise RuntimeError('MP3+G export was cancelled.')
+    graphics = render_cdg(project, font_path, style, cancel=cancel, **timing)
+    _cancelled(cancel)
     stage('Encoding the backing as MP3')
+    _cancelled(cancel)
     audio = work_dir / 'backing.mp3'
     encode(backing, audio)
+    _cancelled(cancel)
     output = work_dir / 'export.mp3g.zip'
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(f'{name}.cdg', graphics)

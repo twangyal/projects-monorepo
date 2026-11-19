@@ -1,6 +1,10 @@
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
+
+from karaoke import cdg
+from karaoke.jobs import JobManager
 import zipfile
 from pathlib import Path
 
@@ -162,6 +166,147 @@ class CdgTests(unittest.TestCase):
             cancel.set()
             with self.assertRaises(RuntimeError):
                 export_cdg(self.project, backing, work, encode, FONT, cancel, stages.append)
+
+
+    def test_already_cancelled_export_does_not_begin_graphics_or_encoding(self):
+        cancel = threading.Event()
+        cancel.set()
+        with tempfile.TemporaryDirectory() as directory, patch('karaoke.cdg._pixels', wraps=cdg._pixels) as pixels:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                export_cdg(self.project, Path('backing.wav'), Path(directory),
+                           lambda *_: self.fail('Cancelled export encoded audio'), FONT, cancel, lambda _: None)
+            pixels.assert_not_called()
+
+    def test_cancellation_in_word_timing_does_not_align_the_remaining_cues(self):
+        cancel = threading.Event()
+        def forced(*args, **kwargs):
+            cancel.set()
+            return None
+        with patch('karaoke.alignment.force_words', side_effect=forced) as align:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                render_cdg(self.project, FONT, letters=object(), cancel=cancel)
+        self.assertEqual(align.call_count, 1)
+
+    def test_cancellation_during_word_matching_stops_the_alignment_frontier(self):
+        from karaoke import word_alignment
+        cancel = threading.Event()
+        project = update_project(self.project, 'Long lyric', [dict(start=1.0, end=29.0, text=' '.join(['hello'] * 40))], 1)
+        words = [dict(text='hella', start=1 + n * 0.22, end=1.1 + n * 0.22) for n in range(120)]
+        similar = word_alignment.similar
+        def compared(*args):
+            value = similar(*args)
+            cancel.set()
+            return value
+        with patch('karaoke.word_alignment.similar', side_effect=compared) as compare:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                render_cdg(project, FONT, words=words, cancel=cancel)
+        self.assertEqual(compare.call_count, 1)
+
+    def test_cancellation_during_letter_alignment_stops_between_frame_steps(self):
+        import numpy as np
+        from karaoke.alignment import CLASSES
+        cancel = threading.Event()
+        maximum = np.maximum
+        def advanced(*args, **kwargs):
+            value = maximum(*args, **kwargs)
+            cancel.set()
+            return value
+        with patch('numpy.maximum', side_effect=advanced) as advance:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                render_cdg(self.project, FONT, letters=np.zeros((1500, CLASSES), dtype=np.float32), cancel=cancel)
+        # Each frame step takes two maximums; no second frame should be processed.
+        self.assertEqual(advance.call_count, 2)
+
+    def test_cancellation_during_layout_stops_before_drawing_more_words(self):
+        cancel = threading.Event()
+        measure = cdg._measure
+        def measured(*args):
+            value = measure(*args)
+            cancel.set()
+            return value
+        with patch('karaoke.cdg._measure', side_effect=measured), patch('karaoke.cdg._pixels', wraps=cdg._pixels) as pixels:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                layout(self.project, FONT, cancel=cancel)
+            pixels.assert_not_called()
+
+    def test_cancellation_during_tiles_stops_before_packet_scheduling(self):
+        cancel = threading.Event()
+        tiles = cdg._tiles
+        def drawn(*args, **kwargs):
+            value = tiles(*args, **kwargs)
+            cancel.set()
+            return value
+        with patch('karaoke.cdg._tiles', side_effect=drawn), patch('karaoke.cdg._schedule') as schedule:
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                render_cdg(self.project, FONT, cancel=cancel)
+            schedule.assert_not_called()
+
+    def test_packet_scheduling_checks_cancellation_between_packets(self):
+        class CancelAfterFirstCheck:
+            calls = 0
+            active = False
+            def is_set(self):
+                if self.active:
+                    self.calls += 1
+                return self.calls > 1
+        cancel = CancelAfterFirstCheck()
+        schedule = cdg._schedule
+        def scheduling(*args, **kwargs):
+            cancel.active = True
+            return schedule(*args, **kwargs)
+        with patch('karaoke.cdg._schedule', side_effect=scheduling):
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                render_cdg(self.project, FONT, cancel=cancel)
+        self.assertEqual(cancel.calls, 2)
+
+    def test_cancellation_in_encoder_does_not_package_or_replace_previous_output(self):
+        cancel = threading.Event()
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            previous = work / 'export.mp3g.zip'
+            previous.write_bytes(b'previous complete export')
+            def encode(_, target):
+                target.write_bytes(b'ID3 mp3')
+                cancel.set()
+            with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+                export_cdg(self.project, work / 'backing.wav', work, encode, FONT, cancel, lambda _: None)
+            self.assertEqual(previous.read_bytes(), b'previous complete export')
+
+    def test_cancelled_graphics_job_releases_worker_without_rendering_rest_or_publishing(self):
+        manager = JobManager()
+        begun, resume = threading.Event(), threading.Event()
+        measure = cdg._measure
+        measured = []
+        def held(*args):
+            measured.append(args[0])
+            if len(measured) == 1:
+                begun.set()
+                if not resume.wait(5):
+                    raise RuntimeError('Test did not release layout')
+            return measure(*args)
+        published, cleaned = [], []
+        try:
+            with tempfile.TemporaryDirectory() as directory, patch('karaoke.cdg._measure', side_effect=held):
+                def work(cancel, stage):
+                    export_cdg(self.project, Path('backing.wav'), Path(directory),
+                               lambda *_: self.fail('Cancelled job encoded audio'), FONT, cancel, stage)
+                    return lambda: published.append('new export')
+                job = manager.start(self.project['id'], 'mp3g-export', work, lambda: cleaned.append(True))
+                self.assertTrue(begun.wait(5))
+                manager.cancel(job['id'])
+                resume.set()
+                manager._jobs[job['id']].thread.join(5)
+                self.assertEqual(manager.get(job['id'])['status'], 'cancelled')
+                self.assertEqual(len(measured), 1, 'cancelled layout did not keep measuring the other lyrics')
+                self.assertEqual(published, [])
+                self.assertEqual(cleaned, [True])
+                self.assertIsNone(manager.active())
+                following = manager.start(self.project['id'], 'export', lambda *_: lambda: 'next export')
+                manager._jobs[following['id']].thread.join(5)
+                self.assertEqual(manager.get(following['id'])['status'], 'complete')
+        finally:
+            resume.set()
+            manager.shutdown()
 
 
 if __name__ == '__main__':
