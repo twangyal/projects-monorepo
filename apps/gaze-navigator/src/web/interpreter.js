@@ -873,6 +873,13 @@ function mediaCommand(command, context) {
   return null;
 }
 
+// Requests learned from a yes to an offer (see learned.js): "what have you learned", "forget what you learned".
+function learnedCommand(text) {
+  if (/^(?:what|which) (?:(?:requests|words|phrases|things) )?(?:have you|did you) (?:learned|learnt|learn)(?: from me)?$|^(?:list|show) (?:the |my )?learned (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'list' };
+  if (/^forget (?:what|everything) (?:you(?:'ve| have)? (?:learned|learnt)|i(?:'ve| have)? (?:taught|told) you)$|^forget (?:the |my )?learned (?:requests|words|phrases)$/.test(text)) return { type: 'learned', change: 'forget' };
+  return null;
+}
+
 // Personal details kept on this device for filling forms: "remember my email is jo at example dot com", "fill in my
 // details" (or just "my address"), "what details do you have", "forget my phone number". Values keep how they were said.
 const DETAIL_WORDS = [[/^(?:full )?name$/, 'name'], [/^(?:first name|given name|forename)$/, 'given'], [/^(?:last name|surname|family name)$/, 'family'],
@@ -1127,6 +1134,8 @@ function interpretInCircle(utterance, context) {
   if (media) return media;
   const popup = popupCommand(text, context);
   if (popup) return popup;
+  const learned = learnedCommand(text);
+  if (learned) return learned;
   const details = detailsCommand(command, text);
   if (details) return details;
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };

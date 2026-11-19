@@ -6,6 +6,7 @@ import { createController } from './controller.js';
 import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, detailLabel, fillDetails, keyEventTarget, planDetails, pressKeys, restoreDetails } from './page-actions.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
+import { MAX_LEARNED, validLearned, withLearned } from './learned.js';
 import { addressedSpeech, addressedFeedback, immediateSpeech } from './speech-address.js';
 import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -86,6 +87,7 @@ summary { cursor: pointer; }
 // Default settings store: the tab's session storage. The extension supplies its own store so
 // nothing is written into a website's storage.
 const LOG_KEY = 'gaze-navigator-log';
+const LEARNED_KEY = 'gaze-navigator-learned';
 export function sessionStore(window) {
   return {
     load() {
@@ -103,6 +105,9 @@ export function sessionStore(window) {
     // On the practice website, saved details last only as long as the page: the website's own storage is not used.
     loadDetails: async () => null,
     saveDetails: () => {},
+    // Requests learned from a yes last as long as the tab.
+    loadLearned: () => { try { return JSON.parse(window.sessionStorage.getItem(LEARNED_KEY)) ?? []; } catch { return []; } },
+    saveLearned: list => { try { if (list.length) window.sessionStorage.setItem(LEARNED_KEY, JSON.stringify(list)); else window.sessionStorage.removeItem(LEARNED_KEY); } catch { /* Kept only in this page. */ } },
     // A session log lasts as long as the tab.
     loadLog: () => { try { const entries = JSON.parse(window.sessionStorage.getItem(LOG_KEY)); return Array.isArray(entries) ? entries : []; } catch { return []; } },
     addLog(entry) { try { window.sessionStorage.setItem(LOG_KEY, JSON.stringify(appendLog(this.loadLog(), entry))); } catch { /* Storage is full or blocked: the entry is skipped. */ } },
@@ -284,6 +289,18 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       finally { expireCameraSilence(); }
     },
   };
+  // Requests learned from a yes to an offer (see learned.js), kept by the store: on this device in the extension, for
+  // the tab's session on the website.
+  let learned = [];
+  Promise.resolve(store.loadLearned?.()).then(saved => {
+    // Anything learned before the store answered comes first.
+    learned = [...learned, ...validLearned(saved).filter(item => !learned.some(own => own.said === item.said))].slice(0, MAX_LEARNED);
+  }).catch(() => {});
+  const learnedRequests = {
+    list: () => learned,
+    remember(entry) { learned = withLearned(learned, entry); store.saveLearned?.(learned); },
+    forget() { learned = []; store.saveLearned?.(learned); },
+  };
   // Personal details kept for filling forms, on this device only (see the store); never spoken or shown in replies.
   let details = {};
   Promise.resolve(store.loadDetails?.()).then(saved => { if (saved && typeof saved === 'object') details = { ...saved, ...details }; }).catch(() => {});
@@ -320,7 +337,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
   };
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, speechPrefix: setSpeechAddress, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, browser: action => browser.run(action) }, assistant: assistantRelay });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate, circleSize: setCircleSize, speechPrefix: setSpeechAddress, panel: changePanel, numbers: setNumbers, find: findOnPage, keyTarget: () => keyEventTarget(document, pageFocus(), host), keys: action => pressKeys(document, pageFocus(), action, { exclude: host }), media: controlPageMedia, popup: findPopupControl, details: savedDetails, learned: learnedRequests, browser: action => browser.run(action) }, assistant: assistantRelay });
   // "Find": the words looked for, where they appear and which of those places is shown.
   let found = null;
   // "Show numbers": every control on screen numbered, kept up to date while the page scrolls or changes.
@@ -883,7 +900,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       let media = null;
       used.media = () => (media ??= findMedia(document, { x: used.x, y: used.y, exclude: host, scopeCache }));
     }
-    const askedAt = Date.now(), result = controller.handle(utterance, used, { alternatives });
+    const askedAt = Date.now(), result = controller.handle(utterance, used, { alternatives, spoken: via === 'speech' });
     show(result, used);
     const report = answer => {
       const outcome = { utterance, via, source: settings.source, ...outcomeOf(answer) };

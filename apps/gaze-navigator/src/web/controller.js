@@ -3,6 +3,7 @@
 import { applyEdit, dictated, dictationControl, interpret as interpretRules } from './interpreter.js';
 import * as pageActions from './page-actions.js';
 import { commandHelp } from './command-help.js';
+import { learnedAction, learnedEntry, learnedSummary } from './learned.js';
 import { keyLabel } from './page-actions.js';
 import { areaNameScore, captureActivationSnapshot, captureSubmissionSnapshot, captureDatePartsSnapshot, NUMBERED_FIRST_ID, composedContains, distanceToRect, isConsequentialName, regionIs, regionSupportsAxis } from './page-context.js';
 
@@ -41,6 +42,8 @@ export function createController({ window, actions = pageActions, interpret = in
   let paused = false;
   let dictation = null;
   let pending = null;
+  // The words of the instruction being handled when it was spoken, which a yes to an offer learns (see learned.js).
+  let learnFrom = null;
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
@@ -447,7 +450,7 @@ export function createController({ window, actions = pageActions, interpret = in
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 
-  function handle(utterance, context, { alternatives = [] } = {}) {
+  function handle(utterance, context, { alternatives = [], spoken = false } = {}) {
     const current = ++turn;
     if (dictation) {
       const control = dictationControl(utterance);
@@ -481,6 +484,12 @@ export function createController({ window, actions = pageActions, interpret = in
       const chosen = readings.find(reading => reading.action.type !== 'unknown') ?? (action.alike ? undefined : readings.find(reading => reading.action.alike));
       if (chosen) ({ text: heardAs, action } = chosen);
     }
+    // A request learned from an earlier yes (see learned.js), said again, acts on the control it named.
+    if (action.type === 'unknown' && !heardAs && commands.learned) {
+      const known = learnedAction(commands.learned.list(), utterance, context);
+      if (known) action = { ...known, learned: true };
+    }
+    learnFrom = spoken ? utterance : null;
     const response = decide(heardAs ?? utterance, context, action, current);
     if (!heardAs || !response) return response;
     // Say which reading was used, also in the website's later answer when its state is checked afterwards.
@@ -588,6 +597,14 @@ export function createController({ window, actions = pageActions, interpret = in
       pending = null;
       return runKeys(action);
     }
+    // Requests learned from a yes to an offer: listed or forgotten at once.
+    if (action.type === 'learned') {
+      if (!commands.learned) return reply('Learned requests are not available here.', 'error');
+      pending = null;
+      const list = commands.learned.list();
+      if (action.change === 'forget') { commands.learned.forget(); return reply(list.length ? `Forgot ${list.length === 1 ? 'the one request' : `all ${list.length} requests`} learned from your answers.` : 'Nothing was learned, so there is nothing to forget.', 'success'); }
+      return reply(list.length ? `${list.length} learned from your answers, latest first: ${learnedSummary(list)}. Say "forget what you learned" to clear them.` : 'Nothing learned yet. When I offer what you might mean and you say yes, I remember it for next time.', 'info');
+    }
     // Personal details kept on this device: saved, listed or forgotten at once; filled into the form nearest the gaze
     // only after a yes, and "undo" straight afterwards empties those fields again.
     if (action.type === 'details') {
@@ -671,7 +688,14 @@ export function createController({ window, actions = pageActions, interpret = in
           pending = null;
           return reply('The focused page target changed. Give the shortcut again. No key was pressed.', 'error');
         }
-        return execute(confirmation.action, confirmation.context, confirmation.activation, true);
+        const done = execute(confirmation.action, confirmation.context, confirmation.activation, true);
+        // Learned only when the yes was spoken too: a page could type one into the panel.
+        const entry = confirmation.learn && learnFrom && done?.tone === 'success' ? learnedEntry(confirmation.learn, confirmation.action, targetOf(confirmation.context, confirmation.action.targetId)) : null;
+        if (entry) {
+          commands.learned.remember(entry);
+          done.message = `${done.message} Next time, “${entry.said}” does this without asking.`;
+        }
+        return done;
       }
       pending = null;
       if (action.type === 'deny') return reply('Cancelled. Nothing was changed.', 'info', { cancelled: true });
@@ -733,7 +757,8 @@ export function createController({ window, actions = pageActions, interpret = in
       if (problem) return problem;
     }
     const risk = target && confirmable(offered, target) ? ' It may have consequences.' : '';
-    pending = { kind: 'confirm', action: offered, context, ...(target ? { farTarget: target } : {}), activation: activationOf(offered, target), expiresAt: now() + confirmMs };
+    pending = { kind: 'confirm', action: offered, context, ...(target ? { farTarget: target } : {}), activation: activationOf(offered, target), expiresAt: now() + confirmMs,
+      ...(learnFrom && commands.learned ? { learn: learnFrom } : {}) };
     return reply(`Did you mean "${heardAs ?? (target.name || target.role)}"?${risk} Say confirm to do it, or cancel.`, 'question');
   }
 
@@ -750,6 +775,7 @@ export function createController({ window, actions = pageActions, interpret = in
         const outside = action.outside && !targetOf(context, action.targetId)?.inside;
         if (outside && response.tone === 'success') response.message = `${response.message} It was just outside the gaze circle.`;
         else if (outside && response.tone === 'question') response.message = `Just outside the gaze circle: ${response.message}`;
+        if (action.learned && response.tone === 'success') response.message = `${response.message} (Learned from an earlier yes.)`;
         return response;
       }
     }

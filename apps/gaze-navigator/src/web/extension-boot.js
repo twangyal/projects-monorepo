@@ -9,6 +9,7 @@ const KEY = 'gaze-web-navigator';
 
 const CALIBRATION = 'gaze-calibration';
 const DETAILS = 'gaze-my-details';
+const LEARNED = 'gaze-navigator-learned';
 
 // Whether to keep a session log is chosen in the toolbar popup, which websites cannot reach; pages follow its changes.
 let logging = {};
@@ -49,6 +50,9 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     // Saved details stay on this device, in the extension's own storage, which websites cannot read.
     loadDetails: async () => (await chrome.storage.local.get(DETAILS))[DETAILS] ?? null,
     saveDetails: details => { (Object.keys(details).length ? chrome.storage.local.set({ [DETAILS]: details }) : chrome.storage.local.remove(DETAILS)).catch(() => {}); },
+    // Requests learned from a yes to an offer stay on this device too, for every website, until forgotten by voice.
+    loadLearned: async () => (await chrome.storage.local.get(LEARNED))[LEARNED] ?? [],
+    saveLearned: list => { (list.length ? chrome.storage.local.set({ [LEARNED]: list }) : chrome.storage.local.remove(LEARNED)).catch(() => {}); },
     // A session log, when turned on, stays on this computer in the extension's own storage until it is cleared; only
     // the popup reads, downloads or clears it. Each entry is written at once under its own key, so a page that
     // navigates away straight after an instruction, or another tab logging at the same time, loses nothing.
