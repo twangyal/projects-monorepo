@@ -6,7 +6,7 @@ import { mountWorkspace } from './workspace.ts';
 import {songFromFileName} from './lyrics-lookup.ts';
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
-import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
+import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, unsureWordBelow, UNSURE_CONFIDENCE, type RecognizedWord, type Transcript } from './auto-lyrics.ts';
 import { correctionReport, reportCsv, reportSummary, type CorrectionReport, type ReportClip } from './correction-report.ts';
 import { activeCue, countIn, draftCues, draftLines, formatTime, keptWordStarts, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Cue, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
@@ -809,7 +809,7 @@ function doubtfulNow(): Doubtful[] {
   if (!working || !transcript || transcript.projectId !== working.id || !transcript.value.available) return [];
   const recognized = transcript.value;
   if (doubtCache && doubtCache.cues === working.cues && doubtCache.edit === editGeneration && doubtCache.recognized === recognized) return doubtCache.list;
-  const list = doubtfulWords(working.cues, recognized.cues, UNSURE_CONFIDENCE);
+  const list = doubtfulWords(working.cues, recognized.cues, unsureWordBelow(recognized.model));
   doubtCache = { cues: working.cues, edit: editGeneration, recognized, list };
   return list;
 }
@@ -1753,7 +1753,7 @@ function reviewAutomatic(current: Transcript, source: 'reference' | 'candidate' 
     // Words recognition was unsure of, each a click from being heard on its own. They are listed only when they stand
     // out from the rest of the line: a line heard without word-level confidence (a forced-language pass marks every
     // word alike) or heard badly throughout is already flagged as a whole.
-    const doubtful = cue.words.filter(word => word.confidence < UNSURE_CONFIDENCE);
+    const doubtful = cue.words.filter(word => word.confidence < unsureWordBelow(current.model));
     if (doubtful.length && doubtful.length < cue.words.length) {
       row.dataset.unsureWords = String(doubtful.length);
       const group = document.createElement('div'); group.className = 'unsure-words'; group.setAttribute('role', 'group');

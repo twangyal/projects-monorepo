@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, type AlignedCue } from '../src/auto-lyrics.ts';
+import { ENGLISH_UNSURE_WORD, UNSURE_CONFIDENCE, correction, correctionSummary, parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, unsureWordBelow, type AlignedCue } from '../src/auto-lyrics.ts';
 import { draftLines } from '../src/lyrics.ts';
 
 const cue = (start: number, end: number, text: string, matched?: number) => (matched === undefined ? { start, end, text } : { start, end, text, matched });
@@ -46,6 +46,14 @@ test('uncertain lines are named so people know where to listen', () => {
   assert.equal(uncertainSummary(make([1, 0.2, 1])), 'line 2');
   assert.equal(uncertainSummary(make([0, 1, 0.4, 0.1])), 'lines 1, 3 and 4');
   assert.equal(uncertainSummary(make(Array(15).fill(0))), 'lines 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 and 3 more');
+});
+
+test('the English model’s words are marked for a listen a little higher than the other models’', () => {
+  // On the benchmark songs its words from 0.7 to 0.8 were mostly wrong; Whisper's, checked by a second model, were not.
+  assert.equal(unsureWordBelow('parakeet-tdt-0.6b-v2-int8+silero-vad'), ENGLISH_UNSURE_WORD);
+  for (const model of ['parakeet-tdt-0.6b-v3-int8+silero-vad', 'whisper-turbo-int8+parakeet-tdt-0.6b-v3-timing', 'sensevoice-small-int8+silero-vad', 'something new'])
+    assert.equal(unsureWordBelow(model), UNSURE_CONFIDENCE, model);
+  assert.ok(ENGLISH_UNSURE_WORD > UNSURE_CONFIDENCE);
 });
 
 test('corrections of automatic lyrics count changed words and moved line starts', () => {

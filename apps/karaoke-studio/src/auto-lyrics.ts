@@ -10,9 +10,18 @@ export interface AlignedCue extends Cue { matched: number }
 
 /** Lines whose words were mostly not heard are placed between neighbours and need a listen. */
 export const UNCERTAIN_SHARE = 0.5;
-/** Automatic lines whose words averaged below this confidence were usually misheard (see README). Single words
- * below it are marked for a listen: on English benchmark songs, about a third of them were right. */
+/** Automatic lines whose words averaged below this confidence were usually misheard (see README), and single words
+ * below it are marked for a listen. */
 export const UNSURE_CONFIDENCE = 0.7;
+/** The English model's single words are marked below this instead. On the first two minutes of five English benchmark
+ * songs its words from 0.7 to 0.8 were wrong 61% of the time, about as often as those below 0.7 (68%), so marking them
+ * too points to 62% of its wrong words rather than 45%, with about a quarter of all words marked. Whisper's words in
+ * that range (checked against the multilingual model) were wrong only 15% of the time, so other models keep 0.7. */
+export const ENGLISH_UNSURE_WORD = 0.8;
+/** The confidence below which a word heard by `model` is marked for a listen. */
+export function unsureWordBelow(model: string): number {
+  return model.startsWith('parakeet-tdt-0.6b-v2') ? ENGLISH_UNSURE_WORD : UNSURE_CONFIDENCE;
+}
 const MAX_LINE_WORDS = 400;
 
 function record(value: unknown): Record<string, unknown> {

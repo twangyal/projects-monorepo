@@ -175,3 +175,26 @@ test('words heard uncertainly are dotted in the preview and checked in turn: eac
   await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
   await expect(next).toBeEnabled();
 }));
+
+// The English model's words from 0.7 to 0.8 confidence were mostly wrong on the benchmark songs, so they are doubtful
+// too; the multilingual model's are not.
+for (const [model, marked] of [['the English model', true], ['parakeet-tdt-0.6b-v3-int8+silero-vad', false]] as const) {
+  test(`a word heard with 0.75 confidence is doubtful ${marked ? 'for the English model' : 'only below 0.7 for the other models'}`, async ({ page }) => {
+    await page.route('**/api/projects/*/transcript', async route => {
+      const response = await route.fetch(), reply = await response.json();
+      if (reply.available) { reply.cues[0].words[1].confidence = 0.75; if (!marked) reply.model = model; }
+      await route.fulfill({ response, json: reply });
+    });
+    await withClip(page, async () => {
+      await seek(page, 2.1);
+      await expect(page.locator('#stage')).toHaveAttribute('data-doubtful', marked ? '1' : '');
+      // Next doubtful word goes to the next one after the playhead.
+      await seek(page, 0);
+      await page.getByRole('button', { name: 'Next doubtful word', exact: true }).click();
+      await expect(page.locator('#fix-line-status')).toContainText(marked ? 'Doubtful word 1 of 5: “little”, line 1.' : 'Doubtful word 1 of 4: “it”, line 3.');
+      await page.locator('#audio').evaluate(a => (a as HTMLAudioElement).pause());
+      await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+      await expect(page.getByRole('group', { name: 'Unsure words in line 1' }).getByRole('button')).toHaveText(marked ? ['little'] : []);
+    });
+  });
+}
