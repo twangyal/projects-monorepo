@@ -58,11 +58,11 @@ export function garmentName(product: Pick<Product, 'base' | 'measurements'> & { 
   }
   return zip(BASE_NAMES[product.base]);
 }
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket', 'frontPocket', 'beltLoop', 'lapel'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband', 'collar', 'placket', 'skirtFront', 'skirtBack', 'yoke', 'backPocket', 'frontPocket', 'beltLoop', 'lapel', 'lining'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
   cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband', collar: 'Collar', placket: 'Placket',
-  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets', frontPocket: 'Front pockets', beltLoop: 'Belt loops', lapel: 'Lapels' };
+  skirtFront: 'Front skirt', skirtBack: 'Back skirt', yoke: 'Back yoke', backPocket: 'Back pockets', frontPocket: 'Front pockets', beltLoop: 'Belt loops', lapel: 'Lapels', lining: 'Lining' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -131,7 +131,9 @@ export function partsOf(product: Pick<Product, 'base' | 'options'> & Partial<Pic
   const pocketed = product.base === 'trousers' && optionsOf(product).backPockets ? [...fronted, 'backPocket' as const] : fronted;
   // A buttoned waistband's belt loops.
   const looped = product.base === 'trousers' && optionsOf(product).fly && optionsOf(product).beltLoops ? [...pocketed, 'beltLoop' as const] : pocketed;
-  return optionsOf(product).chestPocket ? [...looped, 'chestPocket'] : looped;
+  // A coat's lining.
+  const lined = product.base === 'tee' && optionsOf(product).coat && optionsOf(product).lining ? [...looped, 'lining' as const] : looped;
+  return optionsOf(product).chestPocket ? [...lined, 'chestPocket'] : lined;
 }
 
 /**
@@ -146,6 +148,11 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
   if (product.base === 'tee' && product.options?.coat && !coatAllowed(product, product.options)) {
     const options = { ...product.options };
     delete options.coat;
+    // Its lining goes with it.
+    if (options.lining) {
+      delete options.lining;
+      for (const parts of [product.parts, ...(product.colorways ?? []).map(colourway => colourway.parts)]) delete (parts as Partial<Product['parts']>).lining;
+    }
     // Its lapels go with it, and it buttons on a placket again.
     if (options.lapels) {
       delete options.lapels; delete options.peakLapels;
@@ -241,7 +248,8 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
   /** Notched lapels (coats): above the top button each front folds back along a roll line into a lapel lying on the
    * chest, styled on its own, and the collar runs round the back neck from one lapel to the other, notched where they
    * meet; the fronts button below without a placket (see lapelOf). */ lapels?: boolean;
-  /** Peak lapels instead of notched: each lapel's point rises above where the collar meets it (see lapelOf). */ peakLapels?: boolean }
+  /** Peak lapels instead of notched: each lapel's point rises above where the collar meets it (see lapelOf). */ peakLapels?: boolean;
+  /** A coat's lining: its body and sleeves are lined in a lining fabric, styled on its own (see liningPieces). */ lining?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -276,6 +284,12 @@ export function coatAllowed(product: Pick<Product, 'base'> & Partial<Pick<Produc
   const m = product.measurements as Measurements | undefined;
   return product.base === 'tee' && !!options.buttons && !!options.collar && (m?.length ?? 0) >= COAT_LENGTH && (m?.sleeve ?? 0) >= CUFFED_SLEEVE;
 }
+/** A lining goes in a coat. */
+export function liningAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
+  return product.base === 'tee' && !!options.coat && coatAllowed(product, options);
+}
+/** A new lining's fabric, in the body's colour. */
+export const LINING_MATERIAL = 'lining-90';
 /** Notched lapels go on a coat. */
 export function lapelsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Product, 'measurements'>>, options: Options): boolean {
   return !!options.coat && coatAllowed(product, options);
@@ -348,9 +362,10 @@ export function sleeveless(product: Pick<Product, 'base'> & Partial<Pick<Product
 
 /** The design with new module options: a new chest pocket starts in the front body's style, here and in every colorway. */
 export function withOptions(product: Product, wanted: Options): Product {
-  // Peak lapels go with the lapels.
+  // Peak lapels go with the lapels, and a lining with the coat when it stops being one.
   const next = { ...wanted };
   if (!next.lapels) delete next.peakLapels;
+  if (!next.coat && optionsOf(product).coat) delete next.lining;
   if (!hemAllowed(product.base, next.hem)) fail(`A ${BASE_NAMES[product.base].toLowerCase()} has a rib hem band, so its hem stays straight.`);
   if (next.chestPocket && !chestPocketAllowed(product.base)) fail(product.base === 'hoodie' ? 'A hoodie has a kangaroo pocket instead of a chest pocket.' : 'A chest pocket goes on a top.');
   if (next.collar && !collarAllowed(product.base)) fail('A collar goes on a T-shirt (a polo collar) or a sweatshirt (a stand collar).');
@@ -366,6 +381,7 @@ export function withOptions(product: Product, wanted: Options): Product {
   if (next.coat && !coatAllowed(product, next)) fail(`A coat is a long shirt: add the button front and collar, and make it at least ${COAT_LENGTH} cm long with sleeves of at least ${CUFFED_SLEEVE} cm first.`);
   if (next.coat && next.waistSeam) fail('A coat is not cut at the waist: take the waist seam off first.');
   if (next.lapels && !lapelsAllowed(product, next)) fail('Lapels go on a coat: make it a coat first.');
+  if (next.lining && !liningAllowed(product, next)) fail('A lining goes in a coat: make it a coat first.');
   if (next.collar && product.neckline !== 'crew') fail(product.base === 'tee' ? 'A polo has a round neck under its collar; choose the crew neckline first.'
     : 'A stand collar is sewn to a round neck; choose the crew neckline first.');
   const draft = structuredClone(product);
@@ -437,6 +453,13 @@ export function withOptions(product: Product, wanted: Options): Product {
   };
   setCuffs(draft.parts);
   for (const colorway of draft.colorways ?? []) setCuffs(colorway.parts);
+  // A new lining is a lining fabric in the body's colour.
+  const setLining = (parts: Record<PartId, PartStyle>) => {
+    const all = parts as Partial<Record<PartId, PartStyle>>;
+    if (next.lining) all.lining ??= { material: LINING_MATERIAL, color: parts.front.color, print: null }; else delete all.lining;
+  };
+  setLining(draft.parts);
+  for (const colorway of draft.colorways ?? []) setLining(colorway.parts);
   draft.options = { ...next };
   return draft;
 }
@@ -852,7 +875,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'lapels', 'peakLapels', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'lapels', 'peakLapels', 'lining', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -887,8 +910,10 @@ export function validateProduct(value: unknown): Product {
     if (o.lapels && !o.coat) fail('Lapels go on a coat.');
     if (o.peakLapels !== undefined && typeof o.peakLapels !== 'boolean') fail('Peak lapels must be on or off.');
     if (o.peakLapels && !o.lapels) fail('Peak lapels need lapels: add them first.');
+    if (o.lining !== undefined && typeof o.lining !== 'boolean') fail('Lining must be on or off.');
+    if (o.lining && !o.coat) fail('A lining goes in a coat.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.coat && o.lapels ? { lapels: true } : {}), ...(o.coat && o.lapels && o.peakLapels ? { peakLapels: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.coat && o.lapels ? { lapels: true } : {}), ...(o.coat && o.lapels && o.peakLapels ? { peakLapels: true } : {}), ...(o.coat && o.lining ? { lining: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
@@ -1482,8 +1507,9 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
 }
 
 export interface PatternPiece { part: PartId;
-  /** Derived pocketing cut pieces share their facing's grain, but are not saved styling or simulated parts. */
-  auxiliary?: 'pocketBagInner' | 'pocketBagOuter'; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
+  /** Derived pocketing cut pieces share their facing's grain, but are not saved styling or simulated parts; a coat's
+   * lining pieces are cut in the lining's style (see liningPieces). */
+  auxiliary?: 'pocketBagInner' | 'pocketBagOuter' | 'liningFront' | 'liningBack' | 'liningSleeve'; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
   /** Pleats: each pleat's fold line and the placement line it is folded over to, waist end first. */
   pleats?: { fold: [{ x: number; y: number }, { x: number; y: number }]; placement: [{ x: number; y: number }, { x: number; y: number }] }[];
   /** Darts: each one's left leg at the edge, its point, and its right leg at the edge. */
@@ -1491,9 +1517,13 @@ export interface PatternPiece { part: PartId;
 
 export const POCKETING = { name: 'Cotton twill pocketing', gsm: 130 } as const;
 export const patternKey = (piece: PatternPiece): string => piece.auxiliary ?? piece.part;
-export const patternLabel = (product: Product, piece: PatternPiece): string => piece.auxiliary
-  ? `Front pocket bag (${piece.auxiliary === 'pocketBagInner' ? 'inner' : 'outer'})` : partName(product, piece.part);
-export const patternFabric = (product: Product, piece: PatternPiece): string => piece.auxiliary
+/** Pocket bags are cut in pocketing, not in a styled part's fabric. */
+export const isPocketBag = (piece: PatternPiece): boolean => piece.auxiliary === 'pocketBagInner' || piece.auxiliary === 'pocketBagOuter';
+const LINING_PIECES = { liningFront: 'Front lining', liningBack: 'Back lining', liningSleeve: 'Sleeve lining' } as const;
+export const patternLabel = (product: Product, piece: PatternPiece): string => isPocketBag(piece)
+  ? `Front pocket bag (${piece.auxiliary === 'pocketBagInner' ? 'inner' : 'outer'})`
+  : piece.auxiliary && piece.auxiliary in LINING_PIECES ? LINING_PIECES[piece.auxiliary as keyof typeof LINING_PIECES] : partName(product, piece.part);
+export const patternFabric = (product: Product, piece: PatternPiece): string => isPocketBag(piece)
   ? `${POCKETING.name}, ${POCKETING.gsm} gsm` : material(product.parts[piece.part].material).name;
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
@@ -1554,6 +1584,46 @@ export function trouserDimensions(product: Product) {
 
 function makePiece(part: PartId, outline: { x: number; y: number }[], cutCount: number): PatternPiece {
   return { part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline) };
+}
+
+/** A lining ends this far above its coat's hems (sleeves too), where it is pleated over them; its back has a pleat this
+ * deep at the centre back for ease across the shoulders, cm. */
+export const LINING_LIFT_CM = 2, LINING_PLEAT_CM = 2;
+/** The part of a closed outline on the side seam's side of a cut, which runs from one point on the outline to another. */
+function cutAlong(outline: Pt[], cut: Pt[]): Pt[] {
+  const n = outline.length;
+  const at = (p: Pt) => {
+    let best = { i: 0, d: Infinity };
+    for (let i = 0; i < n; i++) {
+      const a = outline[i]!, b = outline[(i + 1) % n]!, dx = b.x - a.x, dy = b.y - a.y, t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+      const d = Math.hypot(a.x + t * dx - p.x, a.y + t * dy - p.y);
+      if (d < best.d) best = { i, d };
+    }
+    return best.i;
+  };
+  const from = at(cut[0]!), to = at(cut.at(-1)!);
+  // The outline's points from just after one edge round to the other, joined by the cut, either way round.
+  const chain = (start: number, end: number) => { const points: Pt[] = []; for (let i = (start + 1) % n; ; i = (i + 1) % n) { points.push(outline[i]!); if (i === end) break; } return points; };
+  const one = [...cut, ...chain(to, from)], other = [...[...cut].reverse(), ...chain(from, to)];
+  const meanX = (points: Pt[]) => points.reduce((sum, p) => sum + p.x, 0) / points.length;
+  return meanX(one) < meanX(other) ? one : other;
+}
+/** An outline with its hem raised `lift` cm, easing into the unchanged outline over the last 8 cm. */
+function raiseHem(outline: Pt[], lift: number): Pt[] {
+  const bottom = Math.max(...outline.map(p => p.y)), ease = 8;
+  return outline.map(p => ({ x: p.x, y: p.y - lift * Math.max(0, Math.min(1, (p.y - (bottom - ease)) / ease)) }));
+}
+/**
+ * A coat's lining pieces, from its undarted front half, back and sleeve (the lining takes the darts' fullness as ease):
+ * the front behind the facing (cut along the facing's inner edge, or to the front edge behind a placket), the back with
+ * a pleat at the centre back, and the sleeves as a mirrored pair, each ending LINING_LIFT_CM above the coat's hem.
+ */
+function liningPieces(front: Pt[], facingEdge: Pt[] | null, back: Pt[], sleeve: Pt[] | null): PatternPiece[] {
+  const frontLining = raiseHem(facingEdge ? cutAlong(front, facingEdge) : front, LINING_LIFT_CM);
+  const centre = Math.max(...back.map(p => p.x)) / 2;
+  const backLining = raiseHem(back.map(p => (p.x > centre + 1e-9 ? { x: p.x + LINING_PLEAT_CM, y: p.y } : p)), LINING_LIFT_CM);
+  return [{ ...makePiece('lining', frontLining, 2), auxiliary: 'liningFront' }, { ...makePiece('lining', backLining, 1), auxiliary: 'liningBack' },
+    ...(sleeve ? [{ ...makePiece('lining', raiseHem(sleeve, LINING_LIFT_CM), 2), auxiliary: 'liningSleeve' as const }] : [])];
 }
 
 /** A jacket's front facing, the piece that shows as the lapel, is this wide below the lapel, cm. */
@@ -2143,7 +2213,9 @@ export function patternPieces(product: Product): PatternPiece[] {
     }
     // The lapel folds back along the roll line, marked on the front as a fold.
     const fronts = dartedPiece('front', darted(front, half), cut), backBody = darted(body(false), null, 0, 'back');
-    return [lapelled ? { ...fronts, foldLine: lapelled.roll } : fronts, ...backs(backBody.outline, backBody.darts), ...sleeves, ...cuffs, ...neck, ...modules];
+    const lining = optionsOf(product).coat && optionsOf(product).lining
+      ? liningPieces(front, lapelled ? lapelled.facing.slice(-3) : null, body(false), sleeveless(product) ? null : sleevePiece()) : [];
+    return [lapelled ? { ...fronts, foldLine: lapelled.roll } : fronts, ...backs(backBody.outline, backBody.darts), ...sleeves, ...cuffs, ...neck, ...modules, ...lining];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, zip = zipAllowed(product.base) && !!optionsOf(product).zip;

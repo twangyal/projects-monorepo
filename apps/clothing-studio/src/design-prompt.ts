@@ -7,7 +7,7 @@ import { readStylePrompt } from './style-prompt.ts';
 import { contrastingInk, readSlogan, textPlace, type TextRequest } from './text-artwork.ts';
 import { GATHER, PLEAT_COUNT, PLEAT_DEPTH, pleatDepthLimit, validateSkirtMeasures, type PleatStyle, type SkirtMeasures } from './product-skirt.ts';
 import {
-  BASE_NAMES, DEFAULT_BUST_DART, DEFAULT_WAIST_DART, FISHEYE_MIN_BELOW_CM, waistDartsAllowed, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, lapelsAllowed, COAT_LENGTH, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
+  BASE_NAMES, DEFAULT_BUST_DART, DEFAULT_WAIST_DART, FISHEYE_MIN_BELOW_CM, waistDartsAllowed, DRESS_GATHER, DRESS_LENGTH, FIT_NAMES, FLOOR_LENGTH, MAXI_LENGTH, LIMITS, WAIST_FIT_KEYS, seamHalfAt, teeDimensions, waistShapeable, waistSeamAllowed, withSleeveLength, PART_NAMES, RIB_PARTS, SLEEVE_PRESETS, chestPocketAllowed, backPocketsAllowed, yokeAllowed, cuffsAllowed, CUFFED_SLEEVE, garmentName, hemAllowed, isBottoms, lapelsAllowed, liningAllowed, COAT_LENGTH, isSleeveArtwork, keepArtworkInside, legMeasurements, optionsOf, partName, partsOf,
   template, topMeasurements, validateProduct, withLegCuffs, withOptions, withSkirtWaistband, type Base, type FitKey, type PartId, type Product, zipAllowed } from './product.ts';
 
 export interface DesignScope { label: string; understood: string[] }
@@ -78,6 +78,8 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, parts => [parts.has('collar') ? 'collar' : 'neckband']],
   // A coat's lapels, before the collar.
   [/\blapels?\b/, parts => (parts.has('lapel') ? ['lapel'] : [])],
+  // A coat's lining.
+  [/\blinings?\b/, parts => (parts.has('lining') ? ['lining'] : [])],
   // A shirt's back yoke, before "back" alone takes the word.
   [/\b(?:back )?yokes?\b/, parts => (parts.has('yoke') ? ['yoke'] : [])],
   [/\b(front panels?|front)\b/, () => ['front']],
@@ -304,6 +306,22 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     } else {
       notApplied.push(`lapels (they go on a coat or blazer, not a ${garmentName(product).toLowerCase()})`);
       while (take(/\blapels?\b/));
+    }
+  }
+  // A coat's lining: added by naming it ("lined", "a red lining", which also styles it), taken off with "unlined" or
+  // "no lining". It goes in a coat or blazer only.
+  const noLining = !!take(/\b(?:unlined|(?:no|without)(?: a)? linings?)\b/), wantsLining = !noLining && /\b(?:lined|linings?)\b/.test(text);
+  take(/\b(?:fully )?lined\b/);
+  if (noLining && optionsOf(product).lining) {
+    product = withOptions(product, { ...optionsOf(product), lining: false });
+    garment.push('lining removed: the seams are bound');
+  } else if (wantsLining && !optionsOf(product).lining) {
+    if (liningAllowed(product, optionsOf(product))) {
+      product = withOptions(product, { ...optionsOf(product), lining: true });
+      garment.push('lined');
+    } else {
+      notApplied.push(`a lining (it goes in a coat or blazer, not a ${garmentName(product).toLowerCase()})`);
+      while (take(/\blinings?\b/));
     }
   }
   const noPocket = take(/\b(no|without (?:a )?)(?: chest)? pockets?\b/);

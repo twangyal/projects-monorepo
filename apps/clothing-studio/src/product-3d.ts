@@ -92,9 +92,10 @@ class ProductModel {
       for (const part of rest) {
         const positions = parts.find(item => item.part === part.part)?.positions;
         if (!positions || positions.length !== part.positions.length) continue;
-        const mesh = this.partMesh(garment, part, positions, false);
+        const mesh = this.partMesh(garment, part, positions, false), lining = this.liningMesh(garment, part, positions);
         mesh.name = `${garment.name}: ${mesh.name}`; mesh.userData = {};
         this.worn.add(mesh); meshes.set(part.part, mesh);
+        if (lining) { lining.name = `${garment.name}: ${lining.name}`; this.worn.add(lining); }
       }
       return { garment, rest, meshes };
     });
@@ -106,6 +107,8 @@ class ProductModel {
       // A draped part keeps its unshaped surface, where artwork is placed from (see pickArtworkPoint).
       if (shaped) mesh.userData.rest = part.positions;
       this.group.add(mesh); this.parts.set(part.part, mesh);
+      const lining = this.liningMesh(product, part, shaped ? draped.positions : part.positions);
+      if (lining) this.group.add(lining);
     }
     this.group.updateMatrixWorld(true); this.worn.updateMatrixWorld(true);
     for (const { garment, rest, meshes } of wornMeshes) for (const art of garment.artwork) {
@@ -345,10 +348,29 @@ class ProductModel {
     // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
     geometry.setIndex(part.indices); geometry.computeVertexNormals();
-    const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.DoubleSide,
+    // A lined part shows its fabric outside only; its lining is drawn inside (see liningMesh).
+    const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: this.lined(product, part) ? THREE.FrontSide : THREE.DoubleSide,
       emissive: new THREE.Color(highlighted ? 0x553311 : 0x000000), emissiveIntensity: highlighted ? 0.35 : 0 });
     const mesh = new THREE.Mesh(geometry, surface);
     mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
+    return mesh;
+  }
+
+  /** Whether a part is lined: a lined coat's body and sleeves. */
+  private lined(product: Product, part: PartMesh): boolean {
+    return !!optionsOf(product).lining && !!product.parts.lining && LINED_PARTS.has(part.part);
+  }
+
+  /** A lined part's lining, at `positions`: the same surface seen from inside, in the lining's fabric (the garment's
+   * faces turn outward, so their backs face the body). Null for a part that is not lined. */
+  private liningMesh(product: Product, part: PartMesh, positions: ArrayLike<number>): THREE.Mesh | null {
+    if (!this.lined(product, part)) return null;
+    const style = product.parts.lining!, { texture, tileCm } = this.texture(style, product.motifs), geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
+    geometry.setIndex(part.indices); geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.BackSide }));
+    mesh.name = `${partName(product, part.part)} lining`; mesh.userData.lining = part.part;
     return mesh;
   }
 
@@ -471,6 +493,9 @@ class ProductModel {
     this.group.clear(); this.worn.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear(); this.drawing = [];
   }
 }
+
+/** The parts a coat's lining lines: its body and sleeves. */
+const LINED_PARTS: ReadonlySet<PartId> = new Set(['front', 'back', 'sleeveLeft', 'sleeveRight']);
 
 export class ProductScene extends ProductModel {
   readonly renderer: THREE.WebGLRenderer;

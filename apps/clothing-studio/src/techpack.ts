@@ -4,7 +4,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, POCKETING, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, PEAK_LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKETING, isPocketBag, LINING_LIFT_CM, LINING_PLEAT_CM, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, PEAK_LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -23,10 +23,11 @@ export interface FabricUsage { style: PartStyle; parts: PartId[]; areaM2: number
 export function fabricUsage(product: Product): FabricUsage[] {
   const groups = new Map<string, { style: PartStyle; parts: PartId[]; area: number }>();
   for (const piece of patternPieces(product)) {
-    if (piece.auxiliary) continue;
+    if (isPocketBag(piece)) continue;
     const style = product.parts[piece.part], key = JSON.stringify(style);
     const group = groups.get(key) ?? { style, parts: [], area: 0 };
-    group.parts.push(piece.part); group.area += piece.areaCm2 * piece.cutCount; groups.set(key, group);
+    if (!group.parts.includes(piece.part)) group.parts.push(piece.part);
+    group.area += piece.areaCm2 * piece.cutCount; groups.set(key, group);
   }
   return [...groups.values()].map(({ style, parts, area }) => {
     const areaM2 = area * WASTE / 10_000;
@@ -36,7 +37,7 @@ export function fabricUsage(product: Product): FabricUsage[] {
 
 /** Pocketing is a different cloth from the styled facings; estimate it from the actual bag cuts, with the same waste. */
 export function pocketingUsage(product: Product): { pieces: number; areaM2: number; linearM: number } {
-  const bags = patternPieces(product).filter(piece => piece.auxiliary);
+  const bags = patternPieces(product).filter(isPocketBag);
   const areaM2 = bags.reduce((sum, piece) => sum + piece.areaCm2 * piece.cutCount, 0) * WASTE / 10000;
   return { pieces: bags.reduce((sum, piece) => sum + piece.cutCount, 0), areaM2, linearM: areaM2 / (FABRIC_WIDTH_CM / 100) };
 }
@@ -197,10 +198,14 @@ function samplePack(product: Product, date: string): TechPack {
       detail: `${cm(dart.intake)} taken in at each side seam, ${cm(dart.side.y)} below the high point shoulder (${cm(dart.side.y - dims.shoulderDrop - dims.armDepth)} below the underarm), each dart ${cm(Math.hypot(dart.side.x - dart.apex.x, dart.side.y - dart.apex.y))} long and ending ${cm(Math.hypot(dart.apex.x - dart.bust.x, dart.apex.y - dart.bust.y))} short of the bust point, ${cm(dart.bust.x)} from the centre front; sew before the side seams` }] : []),
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? `${armholesOnly ? 'Armhole' : 'Underarm'} to hem in one pass${dims.shaped ? `, following the curve in to ${cm(dims.waistHalf * 2)} (½) at the waist line, ${cm(dims.waistY)} below the high point shoulder` : ''}; insert care label at left side` : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' && modules.coat ? [
-      // A coat's woven hems are turned up deeper and blind-stitched, and its unlined seams bound.
-      { area: 'Seams', operation: 'Press open and bind each allowance', detail: 'Unlined: the inside seams are finished with bias binding' },
-      ...(modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: 'Turn up and blind-stitch', detail: '4 cm turn-up' }]),
-      { area: 'Body hem', operation: 'Turn up and blind-stitch', detail: `5 cm turn-up; the ${modules.lapels ? 'facings run' : 'placket runs'} down to the hem` },
+      // A coat's woven hems are turned up deeper and blind-stitched. Unlined, its seams are bound; lined, the lining is
+      // bagged in over them, ending above the hems in a pleat.
+      modules.lining && product.parts.lining
+        ? { area: 'Lining', operation: `Sew the lining's fronts, back and sleeves, press the ${cm(LINING_PLEAT_CM)} centre-back pleat, then bag it in: sew it to the ${modules.lapels ? 'facings' : 'front edges'} and back neck, turn the coat through an opening left in a sleeve lining seam, close it, and tack the lining to the seams at the underarms`,
+          detail: `Front lining cut 2 (${modules.lapels ? 'behind the facings' : 'to the front edge'}), back lining cut 1 and sleeve linings cut 2, in ${material(product.parts.lining.material).name.toLowerCase()}; each ends ${cm(LINING_LIFT_CM)} above the hem it is sewn to, folded over it in a jump pleat; the coat's seams are pressed open inside it` }
+        : { area: 'Seams', operation: 'Press open and bind each allowance', detail: 'Unlined: the inside seams are finished with bias binding' },
+      ...(modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: 'Turn up and blind-stitch', detail: `4 cm turn-up${modules.lining ? ', the sleeve lining sewn to it' : ''}` }]),
+      { area: 'Body hem', operation: 'Turn up and blind-stitch', detail: `5 cm turn-up; the ${modules.lapels ? 'facings run' : 'placket runs'} down to the hem${modules.lining ? ', and the lining is sewn to the turn-up' : ''}` },
     ] : product.base === 'tee' ? [
       ...(armholesOnly || modules.cuffs ? [] : [{ area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' }]),
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
