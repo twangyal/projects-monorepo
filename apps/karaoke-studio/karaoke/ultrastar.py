@@ -69,32 +69,49 @@ def render_ultrastar(project: dict, words: list | None = None, letters=None, lan
         lines.append(_header('LANGUAGE', LANGUAGES[language]))
     lines += [_header('MP3', audio), *([_header('INSTRUMENTAL', instrumental)] if instrumental else []),
               *([_header('VOCALS', vocals)] if vocals else []), f'#BPM:{BPM}', f'#GAP:{gap}']
-    end = 0  # The beat after the last note written.
-    pitch = 0
-    for number, (cue, line) in enumerate(sung):
-        previous = ''
-        for index, word in enumerate(line):
-            text = _plain(word['text'])
-            start = word['start']
-            until = line[index + 1]['start'] if index + 1 < len(line) else cue['end']
-            # The melody guide's notes sung during the word, cut to it.
-            heard = [(max(start, note[0]), min(until, note[1]), note[2]) for note in notes if note[0] < until and note[1] > start]
-            heard = [part for part in heard if beat(part[1]) > beat(part[0])]
-            spaced = (' ' if previous and needs_space(previous, text) else '') + text
-            if not heard:
-                first = max(beat(start), end)
-                length = max(1, beat(until) - first)
-                lines.append(f'F {first} {length} {pitch} {spaced}')
-                end = first + length
-            for part, (a, b, midi) in enumerate(heard):
-                first = max(beat(a), end)
-                length = max(1, beat(b) - first)
-                pitch = midi - MIDDLE_C
-                lines.append(f': {first} {length} {pitch} {spaced if part == 0 else "~"}')
-                end = first + length
-            previous = text
-        if number + 1 < len(sung):
-            lines.append(f'- {end}')
+    def voice_lines(track):
+        result = []
+        end = 0  # The beat after the last note written.
+        pitch = 0
+        for number, (cue, line) in enumerate(track):
+            if duet and cue.get('singer') in (None, 'both') and end > beat(line[0]['start']):
+                raise ValueError('UltraStar cannot keep this shared line synchronized at its beat precision. '
+                                 'Spread the preceding word starts or export a video.')
+            previous = ''
+            for index, word in enumerate(line):
+                text = _plain(word['text'])
+                start = word['start']
+                until = line[index + 1]['start'] if index + 1 < len(line) else cue['end']
+                # The melody guide's notes sung during the word, cut to it.
+                heard = [(max(start, note[0]), min(until, note[1]), note[2]) for note in notes if note[0] < until and note[1] > start]
+                heard = [part for part in heard if beat(part[1]) > beat(part[0])]
+                spaced = (' ' if previous and needs_space(previous, text) else '') + text
+                if not heard:
+                    first = max(beat(start), end)
+                    length = max(1, beat(until) - first)
+                    result.append(f'F {first} {length} {pitch} {spaced}')
+                    end = first + length
+                for part, (a, b, midi) in enumerate(heard):
+                    first = max(beat(a), end)
+                    length = max(1, beat(b) - first)
+                    pitch = midi - MIDDLE_C
+                    result.append(f': {first} {length} {pitch} {spaced if part == 0 else "~"}')
+                    end = first + length
+                previous = text
+            if number + 1 < len(track):
+                result.append(f'- {end}')
+        return result
+
+    # Official player delimiters and singer headers: https://usdx.eu/format/ . All voices share the global GAP.
+    voices = [(singer, [(cue, line) for cue, line in sung if cue.get('singer') in (None, 'both', singer)]) for singer in (1, 2)]
+    duet = any(cue.get('singer') is not None for cue, _ in sung) and all(track for _, track in voices)
+    if duet:
+        lines += ['#P1:Singer 1', '#P2:Singer 2']
+        for singer, track in voices:
+            lines.append(f'P{singer}')
+            lines.extend(voice_lines(track))
+    else:
+        lines.extend(voice_lines(sung))
     lines.append('E')
     return '\n'.join(lines) + '\n'
 

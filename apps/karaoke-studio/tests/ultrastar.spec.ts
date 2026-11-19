@@ -60,3 +60,19 @@ test('a clip exports as an UltraStar song: its lyrics on the melody, beside the 
   expect(text.split('\n').filter(line => line.startsWith('- '))).toHaveLength(2);
   expect(text.trimEnd().endsWith('E')).toBe(true);
 }));
+
+for(const width of [1280,390])test(`saved duet assignments export two UltraStar voices at ${width}px`,async({page})=>withClip(page,async id=>{
+  test.setTimeout(90000);await page.setViewportSize({width,height:900});
+  for(const [index,singer] of ['1','2','both'].entries())await page.getByRole('combobox',{name:`Singer line ${index+1}`,exact:true}).selectOption(singer);
+  await page.getByRole('button',{name:'Save lyrics',exact:true}).click();await expect(page.locator('#message')).toContainText('saved locally');
+  const before=await(await page.request.get(`/api/projects/${id}`)).json();
+  const pending=page.waitForEvent('download',{timeout:60000});await page.getByRole('button',{name:'Export UltraStar song',exact:true}).click();
+  const files=stored(await readFile((await(await pending).path())!)),text=[...files].find(([name])=>name.endsWith('.txt'))![1].toString('utf8');
+  expect(text).toContain('#P1:Singer 1');expect(text).toContain('#P2:Singer 2');
+  const [first,second]=text.split('\nP1\n')[1]!.split('\nP2\n');
+  const words=(track:string)=>track.split('\n').filter(line=>/^[:F] /.test(line)).map(line=>line.split(' ').slice(4).join(' ').trim()).filter(word=>word!=='~');
+  expect(words(first!)).toEqual(['Hello','little','world','Sing','it','back','to','me']);
+  expect(words(second!)).toEqual(['This','is','our','chorus','Sing','it','back','to','me']);
+  expect((await(await page.request.get(`/api/projects/${id}`)).json())).toEqual(before);
+  expect([...files.keys()].filter(name=>name.endsWith('.mp3'))).toHaveLength(3);
+}));

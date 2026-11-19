@@ -56,6 +56,74 @@ class UltraStarTests(unittest.TestCase):
         self.assertEqual(artist_and_title('Untitled demo'), ('Unknown artist', 'Untitled demo'))
         self.assertEqual(song_name(update_project(self.project, 'AC/DC - Back: In Black?', self.project['cues'], 1)), 'AC DC - Back In Black')
 
+    def test_assigned_singers_have_separate_absolute_tracks(self):
+        cues = [{**cue, 'singer': index + 1} for index, cue in enumerate(self.project['cues'])]
+        project = update_project(self.project, self.project['title'], cues, 1)
+        text = render_ultrastar(project, self.words, None, None, self.notes)
+        self.assertIn('#P1:Singer 1\n#P2:Singer 2\n', text)
+        self.assertIn('\nP1\n', text)
+        self.assertIn('\nP2\n', text)
+        first, second = text.split('\nP1\n')[1].split('\nP2\n')
+        self.assertEqual(first.splitlines(), [': 0 8 4 Hello', ': 8 7 5 ~', ': 16 13 7  little', 'F 32 21 7  world'])
+        self.assertEqual(second.splitlines(), [': 80 13 0 Sing', 'F 96 16 0  it', ': 112 19 2  back', 'E'])
+        self.assertIn('#GAP:1000\n', text)
+
+    def test_shared_lines_reach_both_singers_with_independent_phrase_breaks(self):
+        cues = [dict(start=1, end=2, text='One', singer=1), dict(start=3, end=4, text='Two', singer=2),
+                dict(start=5, end=6, text='Together', singer='both'), dict(start=7, end=8, text='Anyone')]
+        project = update_project(self.project, self.project['title'], cues, 1)
+        text = render_ultrastar(project, notes=[[1, 2, 60], [3, 4, 64], [5, 6, 67], [7, 8, 69]])
+        self.assertIn('\nP1\n', text)
+        self.assertIn('\nP2\n', text)
+        first, second = text.split('\nP1\n')[1].split('\nP2\n')
+        self.assertEqual(first.splitlines(), [': 0 27 0 One', '- 27', ': 107 26 7 Together', '- 133', ': 160 27 9 Anyone'])
+        self.assertEqual(second.splitlines(), [': 53 27 4 Two', '- 80', ': 107 26 7 Together', '- 133', ': 160 27 9 Anyone', 'E'])
+
+    def test_second_singer_can_start_the_song_and_shared_spaceless_lines_keep_their_words(self):
+        project = update_project(self.project, 'Song', [dict(start=1, end=2, text='Two', singer=2), dict(start=5, end=6, text='One', singer=1)], 1)
+        text = render_ultrastar(project)
+        self.assertIn('\nP1\n', text)
+        self.assertIn('\nP2\n', text)
+        first, second = text.split('\nP1\n')[1].split('\nP2\n')
+        self.assertTrue(first.startswith('F 107 '), text)
+        self.assertTrue(second.startswith('F 0 '), text)
+        shared = update_project(self.project, 'Song', [dict(start=1, end=2, text='我爱你', singer='both')], 1)
+        text = render_ultrastar(shared)
+        self.assertIn('\nP1\n', text)
+        self.assertIn('\nP2\n', text)
+        first, second = text.split('\nP1\n')[1].split('\nP2\n')
+        for track in (first, second):
+            self.assertEqual([line.split(' ', 4)[-1] for line in track.splitlines() if line.startswith('F ')], ['我', '爱', '你'])
+
+    def test_packed_word_starts_cannot_shift_a_shared_line_apart_between_singers(self):
+        cues = [dict(start=1, end=3, text='a b c d e f g', singer=1,
+                     wordStarts=[1, 2.95, 2.955, 2.96, 2.965, 2.97, 2.975]),
+                dict(start=3, end=3.3, text='Both', singer='both')]
+        project = update_project(self.project, 'Song', cues, 1)
+        with self.assertRaisesRegex(ValueError, 'shared line.*precision'):
+            render_ultrastar(project, notes=[[3, 3.3, 65]])
+        # The single-voice exporter retains its existing quantization behavior.
+        mono = update_project(self.project, 'Song', [{**cue, 'singer': 1} for cue in cues], 1)
+        self.assertIn(': 58 3 5 Both', render_ultrastar(mono, notes=[[3, 3.3, 65]]))
+
+    def test_word_starts_that_fit_before_a_shared_boundary_keep_both_copies_identical(self):
+        project = update_project(self.project, 'Song', [
+            dict(start=1, end=3, text='a b c d e f g', singer=1, wordStarts=[1, 2.75, 2.79, 2.83, 2.87, 2.91, 2.95]),
+            dict(start=3, end=3.3, text='Both', singer='both')], 1)
+        text = render_ultrastar(project, notes=[[3, 3.3, 65]])
+        first, second = text.split('\nP1\n')[1].split('\nP2\n')
+        for track in (first, second):
+            self.assertIn(': 53 8 5 Both', track.splitlines())
+
+    def test_a_single_populated_singer_stays_solo_without_an_empty_track(self):
+        for singer in (1, 2):
+            project = update_project(self.project, 'Song', [{**cue, 'singer': singer} for cue in self.project['cues']], 1)
+            text = render_ultrastar(project, self.words, None, None, self.notes)
+            self.assertNotIn('\nP1\n', text)
+            self.assertNotIn('\nP2\n', text)
+            self.assertEqual(len([line for line in text.splitlines() if line.startswith('- ')]), 1)
+            self.assertEqual([line.split(' ', 4)[-1].strip() for line in notes_of(text) if line.startswith((': ', 'F '))], ['Hello', '~', 'little', 'world', 'Sing', 'it', 'back'])
+
     def test_the_song_is_zipped_in_its_own_folder_with_its_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
