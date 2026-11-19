@@ -178,8 +178,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       product.measurements = { ...m, chest: Math.max(m.chest, blazer.chest), length: Math.max(m.length, COAT_LENGTH), sleeve: Math.max(m.sleeve, blazer.sleeve) };
       const kept = { ...optionsOf(product) };
       delete kept.waistSeam;
-      product = withOptions({ ...product, neckline: 'crew' }, { ...kept, buttons: true, collar: true, coat: true, lapels: true });
-      garment.push(`garment: ${garmentName(product)} with notched lapels, ${topMeasurements(product).length} cm long`);
+      // Its lapels are notched unless peak lapels are named, or it had them already.
+      const peak = /\bpeak(?:ed)? lapels?\b/.test(text) || (!!kept.peakLapels && !/\bnotch(?:ed)? lapels?\b/.test(text));
+      delete kept.peakLapels;
+      product = withOptions({ ...product, neckline: 'crew' }, { ...kept, buttons: true, collar: true, coat: true, lapels: true, ...(peak ? { peakLapels: true } : {}) });
+      garment.push(`garment: ${garmentName(product)} with ${peak ? 'peak' : 'notched'} lapels, ${topMeasurements(product).length} cm long`);
     } else if (base === product.base && id === 'coat') {
       // A top described as a coat keeps its styling and becomes one: a button front and collar on a round neck, at
       // least as long, roomy and long-sleeved as the coat template, and not cut at the waist.
@@ -280,17 +283,24 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     product.parts = { ...product.parts, cuffLeft: { ...product.parts.cuffLeft, color: contrast }, cuffRight: { ...product.parts.cuffRight, color: contrast } };
     garment.push('contrast cuffs');
   }
-  // A coat's notched lapels: added by naming them ("notched lapels", "satin lapels", which also styles them), taken off
-  // with "no lapels". They go on a coat or blazer only.
+  // A coat's lapels: added by naming them ("notched lapels", "satin lapels", which also styles them), taken off with
+  // "no lapels". They go on a coat or blazer only. They are notched unless named peak lapels, whose points rise above
+  // the collar; "no peak lapels" makes them notched again.
+  const noPeak = !!take(/\b(?:no|without) peak(?:ed)? lapels?\b/);
   const noLapels = !!take(/\b(?:no|without) (?:notched )?lapels?\b/), wantsLapels = !noLapels && /\blapels?\b/.test(text);
-  take(/\bnotched(?= lapels?\b)/);
+  const peaked = !!take(/\bpeak(?:ed)?(?= lapels?\b)/), notched = noPeak || !!take(/\bnotch(?:ed)?(?= lapels?\b)/);
   if (noLapels && optionsOf(product).lapels) {
     product = withOptions(product, { ...optionsOf(product), lapels: false });
     garment.push('lapels removed: buttoned up to the collar');
+  } else if ((wantsLapels || noPeak) && optionsOf(product).lapels && peaked !== !!optionsOf(product).peakLapels && (peaked || notched)) {
+    const others = { ...optionsOf(product) };
+    delete others.peakLapels;
+    product = withOptions(product, { ...others, ...(peaked ? { peakLapels: true } : {}) });
+    garment.push(peaked ? 'peak lapels' : 'notched lapels');
   } else if (wantsLapels && !optionsOf(product).lapels) {
     if (lapelsAllowed(product, optionsOf(product))) {
-      product = withOptions(product, { ...optionsOf(product), lapels: true });
-      garment.push('notched lapels added');
+      product = withOptions(product, { ...optionsOf(product), lapels: true, ...(peaked ? { peakLapels: true } : {}) });
+      garment.push(`${peaked ? 'peak' : 'notched'} lapels added`);
     } else {
       notApplied.push(`lapels (they go on a coat or blazer, not a ${garmentName(product).toLowerCase()})`);
       while (take(/\blapels?\b/));

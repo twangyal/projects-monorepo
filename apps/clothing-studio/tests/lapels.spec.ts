@@ -14,7 +14,7 @@ test('a blazer has notched lapels, styled on their own; a coat can gain them, an
   page.on('dialog', dialog => dialog.accept());
   await page.goto('/');
   await editor(page).getByRole('button', { name: /^Use the Blazer template/ }).click();
-  const lapels = page.getByRole('checkbox', { name: 'Notched lapels', exact: true }), coat = page.getByRole('checkbox', { name: 'Coat', exact: true });
+  const lapels = page.getByRole('checkbox', { name: 'Lapels', exact: true }), coat = page.getByRole('checkbox', { name: 'Coat', exact: true });
   await expect(coat).toBeChecked();
   await expect(lapels).toBeChecked();
   await expect(editor(page).locator('#lapels-help')).toBeVisible();
@@ -53,4 +53,38 @@ test('a blazer has notched lapels, styled on their own; a coat can gain them, an
   expect(saved.options.coat).toBeUndefined();
   expect(saved.options.lapels).toBeUndefined();
   expect(saved.parts.placket).toBeTruthy();
+});
+
+test('a blazer’s lapels can be peak lapels: the pattern and tech pack follow, and Undo or taking the lapels off makes them notched', async ({ page }) => {
+  test.setTimeout(150000);
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/');
+  await editor(page).getByRole('button', { name: /^Use the Blazer template/ }).click();
+  const lapels = page.getByRole('checkbox', { name: 'Lapels', exact: true }), peak = page.getByRole('checkbox', { name: 'Peak lapels', exact: true });
+  const techpack = editor(page).locator('#techpack-preview'), help = editor(page).locator('#peak-lapels-help');
+  await expect(peak).not.toBeChecked();
+  await expect(help).toBeHidden();
+  const notchedFront = await editor(page).locator('[data-piece="front"]').first().innerHTML();
+  await peak.check();
+  await expect(page.locator('#message')).toContainText('Peak lapels: each point now rises above the collar');
+  await expect(help).toBeVisible();
+  await expect(techpack).toContainText('a peak lapel, 9.0 cm wide at its point');
+  await expect(techpack).toContainText('meeting each lapel under its peak');
+  expect(await editor(page).locator('[data-piece="front"]').first().innerHTML()).not.toBe(notchedFront);
+  expect((await backup(page)).product.options.peakLapels).toBe(true);
+  expect(await glbNodes(page)).toEqual(expect.arrayContaining(['Lapels', 'Lapels stitching']));
+
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(peak).not.toBeChecked();
+  await expect(techpack).toContainText('notched where it meets each lapel');
+  // Described, they come back; with the lapels taken off, the option goes with them.
+  await page.getByLabel('Describe a style', { exact: false }).first().fill('peak lapels');
+  await page.getByRole('button', { name: 'Apply to the garment', exact: true }).click();
+  await expect(page.locator('#describe-result')).toContainText('peak lapels');
+  await expect(peak).toBeChecked();
+  await lapels.uncheck();
+  await expect(peak).toBeHidden();
+  expect((await backup(page)).product.options.peakLapels).toBeUndefined();
+  await lapels.check();
+  await expect(peak).not.toBeChecked();
 });

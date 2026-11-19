@@ -4,7 +4,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, POCKETING, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKETING, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, PEAK_LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -118,7 +118,7 @@ function samplePack(product: Product, date: string): TechPack {
       : (modules.collar || modules.buttons) && product.base === 'tee' ? [
         modules.collar ? pom('K', 'Collar height', 'Flat draft, neckline sewing edge to outer fall edge at centre back', COLLAR_CM, 0, 0.25) : pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25),
         ...(modules.lapels ? [pom('W', 'Break point', 'High point shoulder line straight down to the top button, where the lapels fold back', dims.waistY, 0.5, 0.5),
-          pom('Z', 'Lapel width', 'Square from the roll line at the lapel point', LAPEL_CM, 0, 0.25)]
+          pom('Z', 'Lapel width', 'Square from the roll line at the lapel point', modules.peakLapels ? PEAK_LAPEL_CM : LAPEL_CM, 0, 0.25)]
           : [pom('W', 'Placket length', 'Neckline seam at centre front to the bottom of the placket', placket.length, 0, 0.5)])]
       : modules.collar ? [pom('K', 'Collar height', 'Finished rib stand collar, neckline seam to top edge', STAND_COLLAR_CM, 0, 0.25)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
@@ -156,8 +156,8 @@ function samplePack(product: Product, date: string): TechPack {
       ] : [{ area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` }]),
     ] : product.base === 'tee' && modules.lapels ? [
       { area: 'Fronts and lapels', operation: 'Fuse the fronts and facings; sew each facing to its front round the lapel and down the front edge, turn, and press the lapel back along the roll line from the top button',
-        detail: `Fronts and facings cut 2 (mirrored pairs), ${product.parts.lapel!.material === product.parts.front.material ? 'the facings in the body fabric' : 'the facings in the chosen lapel fabric'}; the lapel is cut on the front, folds back along the marked roll line and is ${cm(LAPEL_CM)} wide at its point; ${placket.buttons} buttonholes on the wearer's left from the break point down, ${cm(JACKET_BUTTON_GAP_CM)} apart` },
-      { area: 'Collar', operation: 'Fuse the collar, sew and turn it, then set it to the neckline between the roll lines, notched where it meets each lapel, and topstitch',
+        detail: `Fronts and facings cut 2 (mirrored pairs), ${product.parts.lapel!.material === product.parts.front.material ? 'the facings in the body fabric' : 'the facings in the chosen lapel fabric'}; the lapel is cut on the front, folds back along the marked roll line and is ${modules.peakLapels ? `a peak lapel, ${cm(PEAK_LAPEL_CM)} wide at its point, which rises above the collar's end` : `${cm(LAPEL_CM)} wide at its point`}; ${placket.buttons} buttonholes on the wearer's left from the break point down, ${cm(JACKET_BUTTON_GAP_CM)} apart` },
+      { area: 'Collar', operation: `Fuse the collar, sew and turn it, then set it to the neckline between the roll lines, ${modules.peakLapels ? 'meeting each lapel under its peak' : 'notched where it meets each lapel'}, and topstitch`,
         detail: `Cut 2, upper and under collar, ${product.parts.collar!.material === product.parts.front.material ? 'in the body fabric' : 'in the chosen collar fabric'}; ${cm(COLLAR_CM)} finished; fold at the marked stand/fall line` },
     ] : (modules.collar || modules.buttons) && product.base === 'tee' ? [
       modules.buttons

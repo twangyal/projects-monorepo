@@ -148,7 +148,7 @@ export function withSleeveLength<T extends Pick<Product, 'base' | 'measurements'
     delete options.coat;
     // Its lapels go with it, and it buttons on a placket again.
     if (options.lapels) {
-      delete options.lapels;
+      delete options.lapels; delete options.peakLapels;
       const placket = (parts: Product['parts']) => { parts.placket ??= structuredClone(parts.lapel ?? parts.front); delete (parts as Partial<Product['parts']>).lapel; };
       placket(product.parts); for (const colourway of product.colorways ?? []) placket(colourway.parts);
     }
@@ -240,7 +240,8 @@ export interface Options { hem: Hem; chestPocket: boolean; /** A centre-front zi
    * buttons and hems. */ coat?: boolean;
   /** Notched lapels (coats): above the top button each front folds back along a roll line into a lapel lying on the
    * chest, styled on its own, and the collar runs round the back neck from one lapel to the other, notched where they
-   * meet; the fronts button below without a placket (see lapelOf). */ lapels?: boolean }
+   * meet; the fronts button below without a placket (see lapelOf). */ lapels?: boolean;
+  /** Peak lapels instead of notched: each lapel's point rises above where the collar meets it (see lapelOf). */ peakLapels?: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
@@ -282,6 +283,8 @@ export function lapelsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Prod
 /** A lapel's width at its point, square from the roll line, and how far it lies off the front (the front and its
  * facing folded back), cm. Jacket buttons are this far apart below the top one. */
 export const LAPEL_CM = 8, LAPEL_LIFT_CM = 0.45, JACKET_BUTTON_GAP_CM = 10;
+/** A peak lapel is a little wider at its point than a notched one. */
+export const PEAK_LAPEL_CM = 9;
 /** How far a lapel rolls up off the chest along its fold, and how wide the roll is, cm. Its flat coordinates are moved
  * this far across, clear of zero, so its stitching can be drawn on it. */
 const LAPEL_ROLL = { height: 0.7, width: 2.5 };
@@ -300,6 +303,12 @@ export function lapelOf(product: Product, neck: Pt[]): { breakY: number; roll: [
   const R = { x, y: a.x === b.x ? b.y : a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x) };
   const length = Math.hypot(R.x - B.x, R.y - B.y), u = { x: (R.x - B.x) / length, y: (R.y - B.y) / length }, n = { x: -u.y, y: u.x };
   const at = (t: number, w: number): Pt => ({ x: B.x + u.x * length * t + n.x * w, y: B.y + u.y * length * t + n.y * w });
+  // A peak lapel's point rises from the gorge, where the collar meets it, to above the gorge and further out, so the
+  // notch between them closes into a V; its outer edge is fuller to carry it.
+  if (optionsOf(product).peakLapels) {
+    const point = at(1.02, PEAK_LAPEL_CM);
+    return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.95, 2.5), point, at(0.62, LAPEL_CM * 0.98), at(0.25, LAPEL_CM * 0.5)], point };
+  }
   const point = at(0.8, LAPEL_CM);
   return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.97, 3), point, at(0.5, LAPEL_CM * 0.82), at(0.22, LAPEL_CM * 0.45)], point };
 }
@@ -338,7 +347,10 @@ export function sleeveless(product: Pick<Product, 'base'> & Partial<Pick<Product
 }
 
 /** The design with new module options: a new chest pocket starts in the front body's style, here and in every colorway. */
-export function withOptions(product: Product, next: Options): Product {
+export function withOptions(product: Product, wanted: Options): Product {
+  // Peak lapels go with the lapels.
+  const next = { ...wanted };
+  if (!next.lapels) delete next.peakLapels;
   if (!hemAllowed(product.base, next.hem)) fail(`A ${BASE_NAMES[product.base].toLowerCase()} has a rib hem band, so its hem stays straight.`);
   if (next.chestPocket && !chestPocketAllowed(product.base)) fail(product.base === 'hoodie' ? 'A hoodie has a kangaroo pocket instead of a chest pocket.' : 'A chest pocket goes on a top.');
   if (next.collar && !collarAllowed(product.base)) fail('A collar goes on a T-shirt (a polo collar) or a sweatshirt (a stand collar).');
@@ -840,7 +852,7 @@ export function validateProduct(value: unknown): Product {
   if (isBottoms({base}) && p.neckline !== 'crew') fail('Bottoms have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
-    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'lapels', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
+    const o = plain(p.options, ['hem', 'chestPocket', ...(['zip', 'zipOpen', 'collar', 'buttons', 'waistSeam', 'yoke', 'cuffs', 'coat', 'lapels', 'peakLapels', 'backPockets', 'frontPockets', 'fly', 'beltLoops'] as const).filter(key => Object.hasOwn(p.options as object, key))], 'Modules');
     if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
     if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
     if (o.zip !== undefined && typeof o.zip !== 'boolean') fail('Front zip must be on or off.');
@@ -873,8 +885,10 @@ export function validateProduct(value: unknown): Product {
     if (o.coat && o.waistSeam) fail('A coat is not cut at the waist.');
     if (o.lapels !== undefined && typeof o.lapels !== 'boolean') fail('Lapels must be on or off.');
     if (o.lapels && !o.coat) fail('Lapels go on a coat.');
+    if (o.peakLapels !== undefined && typeof o.peakLapels !== 'boolean') fail('Peak lapels must be on or off.');
+    if (o.peakLapels && !o.lapels) fail('Peak lapels need lapels: add them first.');
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean, ...(o.zip ? { zip: true } : {}), ...(o.buttons ? { buttons: true } : {}),
-      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.coat && o.lapels ? { lapels: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
+      ...((o.zip || o.buttons) && o.zipOpen ? { zipOpen: true } : {}), ...(o.collar ? { collar: true } : {}), ...(o.waistSeam ? { waistSeam: true } : {}), ...(o.yoke ? { yoke: true } : {}), ...(o.cuffs ? { cuffs: true } : {}), ...(o.coat ? { coat: true } : {}), ...(o.coat && o.lapels ? { lapels: true } : {}), ...(o.coat && o.lapels && o.peakLapels ? { peakLapels: true } : {}), ...(o.backPockets ? { backPockets: true } : {}), ...(o.frontPockets ? { frontPockets: true } : {}), ...(o.fly ? { fly: true } : {}), ...(o.fly && o.beltLoops ? { beltLoops: true } : {}) };
   }
   const ids = partsOf({ base, options, measurements });
   let fit: Fit | undefined;
