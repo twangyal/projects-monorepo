@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { captureActivationSnapshot, captureSubmissionSnapshot, submissionBinding, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName, chipsOf } from './page-context.js';
+import { captureActivationSnapshot, captureSubmissionSnapshot, submissionBinding, isEditable, isSensitive, isRichText, richSelection, rememberRichSelection, captureSelectSnapshot, captureTextSelectionSnapshot, captureDetailSnapshot, captureDisclosureSnapshot, captureRadioSnapshot, captureTabSnapshot, captureNumberSnapshot, captureDateSnapshot, captureTimeSnapshot, captureMonthSnapshot, captureWeekSnapshot, accessibleName, chipsOf } from './page-context.js';
 import { namesIn, sentence } from './choices.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
@@ -1454,19 +1454,67 @@ export function detailValue(details, kind) {
 /** The fields of `fields` (from formDetailFields) a fill would write, each with its value; `only` keeps one kind. */
 export function planDetails(fields, details, only = null) {
   const used = new Set();
+  const privateValues = Object.keys(DETAIL_LABELS).map(kind => detailValue(details,kind)?.toLowerCase()).filter(Boolean);
   return fields.filter(field => field.empty && (!only || field.kind === only || (only === 'name' && ['given', 'family'].includes(field.kind))))
-    .map(field => ({ ...field, value: detailValue(details, field.kind) }))
+    .map(field => ({ ...field, name:privateValues.some(value => (field.name ?? '').toLowerCase().includes(value)) ? detailLabel(field.kind) : field.name,
+      value: detailValue(details, field.kind) }))
     .filter(field => field.value && !used.has(field.element) && used.add(field.element));
 }
-/** Writes each planned value, returning what each field held before, for undo. */
-export function fillDetails(plan) {
-  return plan.filter(({ element }) => element.isConnected && canWrite(element)).map(({ element, value, name, kind }) => {
-    const before = element.value ?? '';
-    writeValue(element, value);
-    return { element, before, name, kind };
-  });
+// Compare meaning and ownership as well as value; focus/input handlers may repurpose the same DOM node.
+function detailMatches(element, snapshot, value) {
+  if (!snapshot || snapshot.blocked || !element.isConnected || !canWrite(element) || isSensitive(element) || !controlVisible(element)) return false;
+  try {
+    const current = captureDetailSnapshot(element);
+    return !current.blocked && !current.badInput && current.value === value &&
+      ['document','root','form','formOwner','groupOwner','type','role','name','group','id','autocomplete','kind','valueAttribute','formId','formName','formAction','formDestination','formMethod','formLabel','formLabelledBy','formLabelText']
+        .every(key => current[key] === snapshot[key]) && current.fieldsets.length === snapshot.fieldsets.length &&
+      current.fieldsets.every((group,index) => ['element','legend','text','label','labelledBy','name'].every(key => group[key] === snapshot.fieldsets[index][key])) &&
+      current.frames.length === snapshot.frames.length &&
+      current.frames.every((frame,index) => frame.element === snapshot.frames[index].element && frame.document === snapshot.frames[index].document && frame.element.isConnected && frame.element.contentDocument === frame.document);
+  } catch { return false; }
 }
-export function restoreDetails(filled) {
-  for (const { element, before } of filled) if (element.isConnected && canWrite(element)) writeValue(element, before);
+/** Fill only the confirmed empty states. Earlier retained writes remain visible if a later field changes. */
+export function fillDetails(plan, { isCurrent = () => true } = {}) {
+  const filled = [], result = (ok, attempted = false) => ({ok,filled,attempted});
+  if (!Array.isArray(plan) || !plan.length) return result(false);
+  const expected = new Map(plan.map(item => [item.element,item.snapshot?.value]));
+  const ready = () => isCurrent() && plan.every(item => typeof item.value === 'string' && item.value &&
+    item.snapshot?.value === '' && !item.snapshot.badInput && detailMatches(item.element,item.snapshot,expected.get(item.element)));
+  if (!ready()) return result(false);
+  for (const {element,value,name,kind,snapshot} of plan) {
+    if (!ready()) return result(false,filled.length > 0);
+    element.focus({preventScroll:true});
+    if (!ready() || !ownsFocus(element)) return result(false,filled.length > 0);
+    let started = false;
+    writeValue(element,value,{isCurrent:()=>ready() && ownsFocus(element),onWrite:()=>{started=true;expected.set(element,value);}});
+    const retained = detailMatches(element,snapshot,value);
+    if (started && retained) filled.push({element,value,before:snapshot.value,name,kind,snapshot});
+    if (!ready() || !ownsFocus(element) || !retained) return result(false,started || filled.length > 0);
+  }
+  return result(true,true);
 }
-
+/** Undo only still-matching filled values; later corrections are kept, never cleared to force the restore. */
+export function restoreDetails(entries, { isCurrent = () => true } = {}) {
+  const restored = [];
+  const stillRestored = entry => detailMatches(entry.element,entry.snapshot,entry.before);
+  const reconciled = () => restored.every(stillRestored);
+  const result = (next,ok=false) => {
+    const actual = restored.filter(stillRestored), remaining = entries.filter(entry => !actual.includes(entry));
+    return {ok:ok && remaining.length === 0,restored:actual,remaining,
+      unvisited:entries.slice(next).filter(entry => remaining.includes(entry) && detailMatches(entry.element,entry.snapshot,entry.value))};
+  };
+  for (let index=0;index<entries.length;index++) {
+    const entry=entries[index], {element,value,before,snapshot}=entry;
+    if (!isCurrent() || !reconciled()) return result(index);
+    if (!detailMatches(element,snapshot,value)) continue;
+    element.focus({preventScroll:true});
+    if (!isCurrent() || !reconciled() || !detailMatches(element,snapshot,value) || !ownsFocus(element)) return result(index);
+    let started=false;
+    const ready = () => isCurrent() && reconciled() && ownsFocus(element) && detailMatches(element,snapshot,started?before:value);
+    writeValue(element,before,{isCurrent:ready,onWrite:()=>{started=true;}});
+    const cleared=started && stillRestored(entry);
+    if (cleared) restored.push(entry);
+    if (!ready() || !cleared) return result(index+1);
+  }
+  return result(entries.length,true);
+}

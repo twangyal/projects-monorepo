@@ -162,8 +162,10 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type === 'key') return runKeys(action);
     if (action.type === 'media') return runMedia(action, context);
     if (action.type === 'details') {
-      const result = commands.details.fill(action.plan);
-      if (result.ok) filled = { entries: result.filled, at: now() };
+      const isCurrent = () => turn === executionTurn && !paused;
+      const result = commands.details.fill(action.plan,{isCurrent});
+      if (!isCurrent()) return reply('Stopped filling because a newer instruction arrived. Check the form before continuing.','error');
+      if (result.filled?.length) filled = { entries: result.filled, at: now() };
       return reply(result.message, result.ok ? 'success' : 'error');
     }
     const target = targetOf(context, action.targetId);
@@ -532,8 +534,8 @@ export function createController({ window, actions = pageActions, interpret = in
     spokenNow = spoken;
     learnFrom = spoken && !taught ? utterance : null;
     const response = decide(taught ?? heardAs ?? utterance, context, action, current);
-    // Text edit replies deliberately redact protected or refused text; do not reintroduce it through an alternative.
-    if (!heardAs || !response || action.type === 'edit') return response;
+    // Text edit and personal-detail replies omit private values; do not reintroduce them through an alternative.
+    if (!heardAs || !response || action.type === 'edit' || action.type === 'details') return response;
     // Say which reading was used, also in the website's later answer when its state is checked afterwards.
     const noted = answer => (answer?.message ? { ...answer, message: `Heard "${heardAs}". ${answer.message}` } : answer);
     if (response.followUp && !response.assisting) response.followUp = Promise.resolve(response.followUp).then(noted);
@@ -552,7 +554,11 @@ export function createController({ window, actions = pageActions, interpret = in
     const fill = filled;
     if (action.type !== 'confirm') filled = null;
     if (fill && /^undo(?: that| it| filling| the fill)?[.!]*$/i.test(String(utterance ?? '').trim()) && now() - fill.at <= FILL_UNDO_MS && commands.details) {
-      return reply(commands.details.restore(fill.entries).message, 'success');
+      const isCurrent = () => turn === current && !paused;
+      const result = commands.details.restore(fill.entries,{isCurrent});
+      if (!isCurrent()) return reply('Stopped restoring saved-detail fields because a newer instruction arrived. Check the form before continuing.','error');
+      if (result.remaining?.length) filled = {...fill,entries:result.remaining};
+      return reply(result.message,result.ok === false ? 'error' : 'success');
     }
     // "Undo" straight after a checkbox, section, dropdown or radio button changed puts it back, unless text was typed since.
     const change = changed;

@@ -1041,8 +1041,10 @@ export const DETAIL_KINDS = ['name', 'given', 'family', 'email', 'tel', 'street'
 const DETAIL_HINTS = { name: 'name', 'given-name': 'given', 'family-name': 'family', email: 'email', tel: 'tel', 'tel-national': 'tel',
   'street-address': 'street', 'address-line1': 'street', 'address-level2': 'city', 'postal-code': 'postcode' };
 export function detailKind(element, name = accessibleName(element)) {
-  if (!isEditable(element) || isSensitive(element) || element.tagName === 'TEXTAREA' && !/address/i.test(element.getAttribute('autocomplete') ?? '')) return null;
-  const hint = (element.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/).find(token => token in DETAIL_HINTS);
+  const tokens = (element.getAttribute('autocomplete') ?? '').toLowerCase().split(/\s+/);
+  if (!isEditable(element) || isSensitive(element) || tokens.some(token => /^(?:cc-.*|one-time-code|current-password|new-password)$/.test(token)) ||
+    element.tagName === 'TEXTAREA' && !/address/i.test(element.getAttribute('autocomplete') ?? '')) return null;
+  const hint = tokens.find(token => token in DETAIL_HINTS);
   if (hint) return DETAIL_HINTS[hint];
   const type = (element.getAttribute('type') ?? '').toLowerCase();
   if (type === 'email') return 'email';
@@ -1059,6 +1061,24 @@ export function detailKind(element, name = accessibleName(element)) {
   return null;
 }
 
+/** The identity and empty value shown when a saved-detail fill is offered. Never persisted. */
+export function captureDetailSnapshot(element) {
+  const form = element.form ?? element.closest('form');
+  const fieldsets = [];
+  for (let parent=element.parentElement;parent;parent=parent.parentElement ?? parent.getRootNode()?.host) {
+    if (parent.tagName !== 'FIELDSET') continue;
+    const legend = parent.querySelector(':scope > legend');
+    fieldsets.push({element:parent,legend,text:clean(legend?.textContent ?? ''),label:parent.getAttribute('aria-label'),
+      labelledBy:parent.getAttribute('aria-labelledby'),name:parent.hasAttribute('aria-labelledby') ? accessibleName(parent) : null});
+  }
+  return { ...captureRadioSnapshot(element), id: element.id, autocomplete: element.getAttribute('autocomplete'),
+    formId:form?.getAttribute('id'), formName:form?.getAttribute('name'), formAction:form?.getAttribute('action'),
+    formDestination:form?.action, formLabelText:form?.hasAttribute('aria-labelledby') ? accessibleName(form) : null, fieldsets,
+    formMethod:form?.getAttribute('method'), formLabel:form?.getAttribute('aria-label'), formLabelledBy:form?.getAttribute('aria-labelledby'),
+    valueAttribute: element.getAttribute('value'), value: element.value, badInput:element.validity?.badInput === true,
+    kind: detailKind(element), blocked: disclosureLocked(element) };
+}
+
 /**
  * The form nearest the gaze point (or the page's fields outside any form, when it has no forms), with each of its
  * fields that asks for a personal detail: `{ element, kind, name, empty }`. Fields in open shadow roots and
@@ -1067,14 +1087,14 @@ export function detailKind(element, name = accessibleName(element)) {
 export function formDetailFields(document, { x = NaN, y = NaN, exclude = null, scopeCache = null } = {}) {
   const { scopes } = searchScopes(document, exclude, scopeCache), view = document.defaultView, groups = new Map();
   for (const { root, frames } of scopes) for (const element of root.querySelectorAll('input, textarea')) {
-    if (exclude?.contains(element) || !usable(element, exclude)) continue;
+    if (exclude?.contains(element) || !usable(element, exclude) || disclosureLocked(element)) continue;
     const name = accessibleName(element), kind = detailKind(element, name);
     if (!kind) continue;
     const rect = viewportRect(element, frames);
     if (!(rect.width > 0 && rect.height > 0)) continue;
     const form = element.form ?? element.closest('form') ?? root;
     if (!groups.has(form)) groups.set(form, []);
-    groups.get(form).push({ element, kind, name, empty: !(element.value ?? '').trim(), rect });
+    groups.get(form).push({ element, kind, name, empty: element.value === '' && !element.validity?.badInput, rect, snapshot: captureDetailSnapshot(element) });
   }
   let best = null, nearest = Infinity;
   for (const fields of groups.values()) {

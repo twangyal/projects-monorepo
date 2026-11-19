@@ -285,7 +285,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   // The assistant is attached only after the model has loaded; until then rules answer alone.
   let assistant = null, assistLoad = 0, stopped = false;
   let closing = false;
-  let sourceGeneration = 0;
+  let sourceGeneration = 0, runGeneration = 0;
   const assistantRelay = {
     needs: (...args) => Boolean(assistant?.needs(...args)),
     improve: async (...args) => {
@@ -360,14 +360,17 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (!fields.length) return { ok: false, message: only ? `No empty field for your ${detailLabel(only)} was found in the form nearest your gaze.` : 'No empty field this form asks for matches your saved details.' };
       return { ok: true, fields, message: `Fill ${fields.length === 1 ? `"${fields[0].name || detailLabel(fields[0].kind)}"` : `${fields.length} fields (${listOf(fields.map(field => field.name || detailLabel(field.kind)))})`} with your saved details? Say confirm, or cancel.` };
     },
-    fill(plan) {
-      const filled = fillDetails(plan ?? []);
-      return filled.length ? { ok: true, filled, message: `Filled ${listOf(filled.map(field => field.name || detailLabel(field.kind)))}. Check them before sending; say undo to empty them again.` }
-        : { ok: false, message: 'The form changed and those fields cannot be written. Nothing was filled.' };
+    fill(plan, options) {
+      const result = fillDetails(plan ?? [],options), names=listOf(result.filled.map(field=>field.name||detailLabel(field.kind)));
+      return {...result,message:result.ok ? `Filled ${names}. Check them before sending; say undo to empty them again.`
+        : `Stopped filling because the form or instruction changed. ${result.filled.length ? `Entered ${names} before stopping; say undo to empty those unchanged fields.` : result.attempted ? 'A field may have changed.' : 'Nothing was filled.'} Check the form before continuing.`};
     },
-    restore(entries) {
-      restoreDetails(entries);
-      return { message: `Emptied ${listOf(entries.map(field => field.name || detailLabel(field.kind)))} again.` };
+    restore(entries, options) {
+      const result=restoreDetails(entries,options), names=listOf(result.restored.map(field=>field.name||detailLabel(field.kind)));
+      const unvisited=result.unvisited ?? [], kept=listOf(result.remaining.filter(field=>!unvisited.includes(field)).map(field=>field.name||detailLabel(field.kind)));
+      const waiting=listOf(unvisited.map(field=>field.name||detailLabel(field.kind)));
+      return {...result,message:result.ok ? `Emptied ${names} again.`
+        : `${result.restored.length ? `Emptied ${names}. ` : ''}${kept ? `Kept changed or unavailable fields (${kept}). ` : ''}${waiting ? `Fields not yet restored (${waiting}). Say undo to retry.` : !kept ? 'Restoring stopped because the field or instruction changed.' : ''} Check the form before continuing.`};
     },
   };
 
@@ -918,6 +921,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function run(utterance, captured, via = 'panel', alternatives = []) {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     if (document.hidden) return { message: 'Return to this tab to give an instruction.', tone: 'info' };
+    const generation = ++runGeneration;
     expireCameraSilence();
     keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
@@ -939,7 +943,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     // An instruction belongs to the trial task at hand when it was given (see trial-tasks.js).
     const task = currentTask(trial)?.number ?? null;
     const askedAt = Date.now(), result = controller.handle(utterance, used, { alternatives, spoken: via === 'speech' });
-    show(result, used);
+    if (generation === runGeneration) show(result, used);
     const report = answer => {
       const outcome = { utterance, via, source: settings.source, ...outcomeOf(answer) };
       // Moving through a trial's tasks is noted in the trial itself, not as an instruction.
@@ -948,7 +952,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     };
     if (!result.followUp) report(result);
     // A model-assisted answer follows unless a newer instruction came first.
-    result.followUp?.then(later => { if (later && !stopped && !closing) { show(later, used); report(later); } });
+    result.followUp?.then(later => { if (later && generation === runGeneration && !stopped && !closing) { show(later, used); report(later); } });
     return result;
   }
 
