@@ -1467,11 +1467,20 @@ function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neck
   }
 }
 
-export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
+export interface PatternPiece { part: PartId;
+  /** Derived pocketing cut pieces share their facing's grain, but are not saved styling or simulated parts. */
+  auxiliary?: 'pocketBagInner' | 'pocketBagOuter'; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number; foldLine?: [{x:number;y:number},{x:number;y:number}];
   /** Pleats: each pleat's fold line and the placement line it is folded over to, waist end first. */
   pleats?: { fold: [{ x: number; y: number }, { x: number; y: number }]; placement: [{ x: number; y: number }, { x: number; y: number }] }[];
   /** Darts: each one's left leg at the edge, its point, and its right leg at the edge. */
   darts?: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }][] }
+
+export const POCKETING = { name: 'Cotton twill pocketing', gsm: 130 } as const;
+export const patternKey = (piece: PatternPiece): string => piece.auxiliary ?? piece.part;
+export const patternLabel = (product: Product, piece: PatternPiece): string => piece.auxiliary
+  ? `Front pocket bag (${piece.auxiliary === 'pocketBagInner' ? 'inner' : 'outer'})` : partName(product, piece.part);
+export const patternFabric = (product: Product, piece: PatternPiece): string => piece.auxiliary
+  ? `${POCKETING.name}, ${POCKETING.gsm} gsm` : material(product.parts[piece.part].material).name;
 
 /** The garment's overall height in the 3D view, in cm (hem at 0). */
 export function garmentHeight(product: Product): number {
@@ -1617,7 +1626,7 @@ function trouserPieces(product: Product): PatternPiece[] {
   // Belt loops are cut as one strip, three times as wide as a loop (folded in three), then cut into five.
   const loop = BELT_LOOP_CM.width * 3, loopLength = d.waistbandHeight + BELT_LOOP_CM.above + BELT_LOOP_CM.below + 2;
   const loops = optionsOf(product).fly && optionsOf(product).beltLoops ? [makePiece('beltLoop', [{ x: 0, y: 0 }, { x: loop, y: 0 }, { x: loop, y: loopLength * 5 }, { x: 0, y: loopLength * 5 }], 1)] : [];
-  return [makePiece('front', front, 2), ...facings, ...backs, makePiece('waistband', band, 1), ...loops, ...cuffs, ...pockets];
+  return [makePiece('front', front, 2), ...facings, ...frontPocketBags(product), ...backs, makePiece('waistband', band, 1), ...loops, ...cuffs, ...pockets];
 }
 
 /** A leg panel's rise: its centre seam from the waist round the crotch curve to the inseam, cm. */
@@ -1691,6 +1700,38 @@ export function frontPocketEdge(product: Product, grow = 0, steps = 10): Pt[] {
     return { x: d.sideAt(true, y) + (opening + grow) * Math.cos(t), y };
   });
 }
+/** The pocket's inner bag joins the front scoop; the full outer bag carries the facing behind it.
+ * Both join on the same rounded lower path. Keep the bags above the crotch and within the front waist, supporting the existing facing;
+ * the nominal allowance (opening + 6 by depth + 18 cm) is shortened/narrowed where this front needs it. */
+export function frontPocketBags(product: Product): PatternPiece[] {
+  if (!isBottoms(product) || !optionsOf(product).frontPockets) return [];
+  const d = trouserDimensions(product), { opening, depth } = frontPocketOf(product), edge = frontPocketEdge(product);
+  const width = Math.min(opening + 6, d.centreAt(true, 0) - d.sideAt(true, 0)), height = Math.min(depth + 18, d.rise - 1);
+  // Below the opening, follow the actual front's polygonal side seam, including its taper below the hip.
+  const side = [edge.at(-1)!], steps = d.fly ? 6 : 1;
+  for (let i = 1; i <= steps; i++) { const y = d.hipDepth * i / steps; if (y > depth) side.push({ x: d.sideAt(true, y), y }); }
+  side.push({ x: (d.frontHip + d.frontCrotch - d.frontHem) / 2, y: d.length });
+  const sideAt = (y: number) => {
+    if (y <= depth) return d.sideAt(true, y);
+    const end = side.findIndex(p => p.y >= y), a = side[end - 1]!, b = side[end]!;
+    return a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y);
+  };
+  const r = Math.min(3, width / 4, (height - depth) / 3), point = (u: number, y: number) => ({ x: sideAt(y) + u, y });
+  // A straight inner edge avoids tight reverse curvature when a very fitted waist opens into a broad hip.
+  // Its ends remain inside the front, and its top supports the full facing even at the minimum waist.
+  const join = [edge[0]!, point(width, 0), point(width, height - r)];
+  for (let i = 1; i <= 4; i++) { const a = Math.PI / 2 * i / 4; join.push(point(width - r + r * Math.cos(a), height - r + r * Math.sin(a))); }
+  join.push(point(r, height));
+  for (let i = 1; i <= 4; i++) { const a = Math.PI / 2 + Math.PI / 2 * i / 4; join.push(point(r + r * Math.cos(a), height - r + r * Math.sin(a))); }
+  for (let i = 1; i <= 10; i++) join.push(point(0, height - r + (depth - height + r) * i / 10));
+  // Use the exact endpoint of the front scoop (including its floating-point spelling).
+  join[join.length - 1] = edge.at(-1)!;
+  const inner = [...join, ...edge.slice(1, -1).reverse()];
+  const outer = [point(0, 0), ...join];
+  for (let i = 1; i < 10; i++) outer.push(point(0, depth * (1 - i / 10)));
+  return [{ ...makePiece('frontPocket', inner, 2), auxiliary: 'pocketBagInner' }, { ...makePiece('frontPocket', outer, 2), auxiliary: 'pocketBagOuter' }];
+}
+
 /** A back pocket's outline: square-topped, its sides `height` long, coming to a point `point` below its top. */
 function backPocketOutline(width: number, height: number, point: number, x: number, y: number): Pt[] {
   return [{ x, y }, { x: x + width, y }, { x: x + width, y: y + height }, { x: x + width / 2, y: y + point }, { x, y: y + height }];

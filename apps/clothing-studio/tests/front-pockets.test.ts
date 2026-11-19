@@ -29,7 +29,7 @@ function toSurface(point: number[], positions: ArrayLike<number>, indices: Array
   }
   return best;
 }
-const area = (product: Product, part: string) => patternPieces(product).filter(piece => piece.part === part).reduce((sum, piece) => sum + piece.areaCm2, 0);
+const area = (product: Product, part: string) => patternPieces(product).filter(piece => piece.part === part && !piece.auxiliary).reduce((sum, piece) => sum + piece.areaCm2, 0);
 
 test('trousers and shorts can have front scoop pockets, their facings styled on their own; other garments cannot', () => {
   assert.ok(partsOf(jeans).includes('frontPocket'));
@@ -79,7 +79,7 @@ test('the tech pack measures and sews the pockets, with pocketing for the bags, 
   const pack = buildTechPack(jeans, '2026-11-18');
   assert.ok(pack.poms.some(row => row.name === 'Front pocket opening') && pack.poms.some(row => row.name === 'Front pocket depth'));
   assert.ok(pack.construction.some(row => row.area === 'Front pockets' && /understitch/.test(row.operation)));
-  assert.match(pack.bom.find(row => row.item === 'P1 Pocketing')!.quantity, /^4 pcs, 16\.0 cm × 25\.0 cm each/);
+  assert.match(pack.bom.find(row => row.item === 'P1 Pocketing')!.quantity, /^4 pcs \(2 inner \+ 2 outer, mirrored pairs\); [\d.]+ m²/);
   assert.ok(!buildTechPack(trousers, '2026-11-18').bom.some(row => row.item === 'P1 Pocketing'));
   // Named, they are added to trousers without bringing back pockets; "jeans" brings both.
   const fronted = readDesignPrompt('front pockets', trousers).product;

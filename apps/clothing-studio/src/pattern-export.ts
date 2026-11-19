@@ -2,7 +2,7 @@
 // allowance, a grainline, artwork placements and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG
 // (cm).
 import { artworkMarks } from './artwork-pattern.ts';
-import { garmentName, material, partName, patternPieces, type PatternPiece, type Product } from './product.ts';
+import { garmentName, patternKey, patternLabel, patternFabric, patternPieces, type PatternPiece, type Product } from './product.ts';
 
 import { grainAngleOf, grainLine } from './grain.ts';
 
@@ -64,8 +64,8 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     const shift = (p: Pt) => ({ x: p.x - minX + x, y: p.y - minY + allowance });
     const angle = grainAngleOf(product.parts[piece.part]);
     const grain = grainLine(sewing, angle).map(shift) as [Pt, Pt];
-    const fabric = material(product.parts[piece.part].material).name;
-    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · grain ${angle}° CW from up · ${allowance} cm uniform seam allowance`,
+    const fabric = patternFabric(product, piece);
+    laid.push({ piece, label: patternLabel(product, piece), detail: `${product.name} · ${garmentName(product)} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric} · grain ${angle}° CW from up · ${allowance} cm uniform seam allowance`,
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}),
       ...(piece.pleats ? { pleats: piece.pleats.map(line => ({ fold: line.fold.map(shift) as [Pt, Pt], placement: line.placement.map(shift) as [Pt, Pt] })) } : {}),
       ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}),
@@ -75,6 +75,21 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
   }
   const height = Math.max(...laid.flatMap(item => item.cutting.map(p => p.y))) + allowance;
   return { pieces: laid, width: x - GAP_CM + allowance, height };
+}
+
+/** Text rows stay within each piece's own cutting bounds, including narrow auxiliary pieces. */
+function pieceText(item: LaidOutPiece): { text: string; size: number; down: number }[] {
+  const xs = item.cutting.map(p => p.x), width = Math.max(.5, Math.max(...xs) - Math.min(...xs) - .8), size = .35;
+  const columns = Math.max(1, Math.floor(width / size)), detail: string[] = []; let row = '';
+  for (const word of item.detail.split(/\s+/u)) {
+    if (row && Array.from(row + ' ' + word).length > columns) { detail.push(row); row = ''; }
+    const letters = Array.from(word);
+    while (letters.length > columns) { if (row) { detail.push(row); row = ''; } detail.push(letters.splice(0, columns).join('')); }
+    if (letters.length) row += (row ? ' ' : '') + letters.join('');
+  }
+  if (row) detail.push(row);
+  return [{ text: item.label, size: Math.min(.8, width / Math.max(1, Array.from(item.label).length)), down: 0 },
+    ...detail.map((text, i) => ({ text, size, down: .9 + i * .5 }))];
 }
 
 // DXF (R12 ASCII). Layers: CUT (cutting line), SEW (finished line), GRAIN, FOLD, PLEAT-FOLD and PLEAT-PLACE (a pleat's
@@ -119,8 +134,9 @@ export function patternDxf(product: Product, allowance = SEAM_ALLOWANCE_CM): str
       note('ARTWORK', art.at, 6, art.label);
     }
     const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), label = mm({ x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 });
-    for (const [text, dy, height] of [[item.label, 0, 18], [item.detail, -26, 9]] as const) {
-      pair(0, 'TEXT'); pair(8, 'TEXT'); pair(10, label.x); pair(20, label.y + dy); pair(30, 0); pair(40, height); pair(1, plainText(text)); pair(72, 1); pair(11, label.x); pair(21, label.y + dy); pair(31, 0);
+    pair(999, plainText(`${item.label}: ${item.detail}`));
+    for (const { text, down, size } of pieceText(item)) {
+      pair(0, 'TEXT'); pair(8, 'TEXT'); pair(10, label.x); pair(20, label.y - down * 10); pair(30, 0); pair(40, size * 10); pair(1, plainText(text)); pair(72, 1); pair(11, label.x); pair(21, label.y - down * 10); pair(31, 0);
     }
   }
   pair(0, 'ENDSEC'); pair(0, 'EOF');
@@ -133,20 +149,20 @@ const ARTWORK_INK = '#7b3fa0';
 function pieceSvg(item: LaidOutPiece, labels = true): string {
   const points = (list: Pt[]) => list.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
   const xs = item.sewing.map(p => p.x), ys = item.sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const [a, b] = item.grain;
-  return `<g data-piece="${item.piece.part}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
+  const [a, b] = item.grain, key = patternKey(item.piece);
+  return `<g data-piece="${key}"><polygon points="${points(item.cutting)}" fill="none" stroke="#111" stroke-width="0.05"/>` +
     `<polygon points="${points(item.sewing)}" fill="none" stroke="#666" stroke-width="0.04" stroke-dasharray="0.4 0.3"/>` +
-    `<defs><clipPath id="grain-clip-${item.piece.part}"><polygon points="${points(item.sewing)}"/></clipPath></defs>` +
-    `<line clip-path="url(#grain-clip-${item.piece.part})" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
-    (item.foldLine ? `<line data-fold="${item.piece.part}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
-    (item.darts ?? []).map(dart => `<polyline data-dart="${item.piece.part}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
-    (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${item.piece.part}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +
-      `<line data-pleat-placement="${item.piece.part}" x1="${pleat.placement[0].x.toFixed(2)}" y1="${pleat.placement[0].y.toFixed(2)}" x2="${pleat.placement[1].x.toFixed(2)}" y2="${pleat.placement[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05" stroke-dasharray="0.6 0.4"/>`).join('') +
+    `<defs><clipPath id="grain-clip-${key}"><polygon points="${points(item.sewing)}"/></clipPath></defs>` +
+    `<line clip-path="url(#grain-clip-${key})" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" stroke="#111" stroke-width="0.05" marker-start="url(#grain)" marker-end="url(#grain)"/>` +
+    (item.foldLine ? `<line data-fold="${key}" x1="${item.foldLine[0].x.toFixed(2)}" y1="${item.foldLine[0].y.toFixed(2)}" x2="${item.foldLine[1].x.toFixed(2)}" y2="${item.foldLine[1].y.toFixed(2)}" stroke="#b5452b" stroke-width="0.05" stroke-dasharray="0.8 0.2 0.2 0.2"/>` : '') +
+    (item.darts ?? []).map(dart => `<polyline data-dart="${key}" points="${points(dart)}" fill="none" stroke="#111" stroke-width="0.05"/>`).join('') +
+    (item.pleats ?? []).map(pleat => `<line data-pleat-fold="${key}" x1="${pleat.fold[0].x.toFixed(2)}" y1="${pleat.fold[0].y.toFixed(2)}" x2="${pleat.fold[1].x.toFixed(2)}" y2="${pleat.fold[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05"/>` +
+      `<line data-pleat-placement="${key}" x1="${pleat.placement[0].x.toFixed(2)}" y1="${pleat.placement[0].y.toFixed(2)}" x2="${pleat.placement[1].x.toFixed(2)}" y2="${pleat.placement[1].y.toFixed(2)}" stroke="#2f5d8a" stroke-width="0.05" stroke-dasharray="0.6 0.4"/>`).join('') +
     // Artwork labels are drawn even on tiles, whose headers name only the piece.
-    item.artwork.map(art => `<g data-artwork="${item.piece.part}"${art.turned ? ' data-turned=""' : ''}>${art.lines.map(line => `<polyline points="${points(line)}" fill="none" stroke="${ARTWORK_INK}" stroke-width="0.05" stroke-dasharray="0.25 0.15"/>`).join('')}` +
+    item.artwork.map(art => `<g data-artwork="${key}"${art.turned ? ' data-turned=""' : ''}>${art.lines.map(line => `<polyline points="${points(line)}" fill="none" stroke="${ARTWORK_INK}" stroke-width="0.05" stroke-dasharray="0.25 0.15"/>`).join('')}` +
       `<text x="${art.at.x.toFixed(2)}" y="${art.at.y.toFixed(2)}" font-size="0.6" text-anchor="middle" fill="${ARTWORK_INK}" font-family="sans-serif">${xml(art.label)}</text></g>`).join('') +
-    (labels ? `<text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" font-size="1.6" text-anchor="middle" font-family="sans-serif">${xml(item.label)}</text>` +
-    `<text x="${cx.toFixed(2)}" y="${(cy + 1.6).toFixed(2)}" font-size="0.7" text-anchor="middle" font-family="sans-serif">${xml(item.detail)}</text>` : '') + '</g>';
+    (labels ? `<title>${xml(item.label)}</title><desc>${xml(item.detail)}</desc>` + pieceText(item).map(row =>
+      `<text x="${cx.toFixed(2)}" y="${(cy + row.down).toFixed(2)}" font-size="${row.size}" text-anchor="middle" font-family="monospace">${xml(row.text)}</text>`).join('') : '') + '</g>';
 }
 
 export function patternSvg(product: Product, allowance = SEAM_ALLOWANCE_CM): string {
@@ -166,6 +182,6 @@ export function patternPieceSvgs(product: Product, allowance = SEAM_ALLOWANCE_CM
     const width = Math.max(...item.cutting.map(p => p.x)) - minX + 1, height = Math.max(...item.cutting.map(p => p.y)) - minY + 1;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}cm" height="${height}cm" viewBox="0 0 ${width} ${height}">` +
       `<defs><marker id="grain" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="1.2" markerHeight="1.2" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#111"/></marker></defs><g transform="translate(${-minX} ${-minY})">${pieceSvg(item, false)}</g></svg>`;
-    return { part: item.piece.part, label: item.label, detail: item.detail, svg };
+    return { part: item.piece.part, key: patternKey(item.piece), label: item.label, detail: item.detail, svg };
   });
 }

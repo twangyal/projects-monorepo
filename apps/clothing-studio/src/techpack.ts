@@ -4,7 +4,7 @@ import { FITTED_HIP_DEPTH, skirtBandHeight, skirtDraft, skirtFit, skirtGather, s
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
 import { gradedProduct, LEG_GRADES, TOP_GRADES } from './size-grades.ts';
-import { BASE_NAMES, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKETING, JACKET_BUTTON_GAP_CM, bodiceShift, bustDartOf, waistDartsOf, LAPEL_CM, BELT_LOOP_CM, FLY_EXTENSION_CM, FLY_WIDTH_CM, backPocketOf, frontPocketOf, FRONT_POCKET_FACING_CM, trouserRise, trouserYoke, CHEST_LINE_CM, COLLAR_CM, YOKE_CM, SHIRT_CUFF_CM, seamHalfAt, wholeFrontOutline, NECK_RIB_RATIO, STAND_COLLAR_CM, garmentName, isSleeveArtwork, ARTWORK_PARTS, ARTWORK_PART_NAMES, isWovenCollar, placketOf, sleeveCap, sleeveless, POCKET_FOLD_CM, flare, partName, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, zipLength, ZIP_CLEAR, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -23,6 +23,7 @@ export interface FabricUsage { style: PartStyle; parts: PartId[]; areaM2: number
 export function fabricUsage(product: Product): FabricUsage[] {
   const groups = new Map<string, { style: PartStyle; parts: PartId[]; area: number }>();
   for (const piece of patternPieces(product)) {
+    if (piece.auxiliary) continue;
     const style = product.parts[piece.part], key = JSON.stringify(style);
     const group = groups.get(key) ?? { style, parts: [], area: 0 };
     group.parts.push(piece.part); group.area += piece.areaCm2 * piece.cutCount; groups.set(key, group);
@@ -31,6 +32,13 @@ export function fabricUsage(product: Product): FabricUsage[] {
     const areaM2 = area * WASTE / 10_000;
     return { style, parts, areaM2, linearM: areaM2 / (FABRIC_WIDTH_CM / 100) };
   });
+}
+
+/** Pocketing is a different cloth from the styled facings; estimate it from the actual bag cuts, with the same waste. */
+export function pocketingUsage(product: Product): { pieces: number; areaM2: number; linearM: number } {
+  const bags = patternPieces(product).filter(piece => piece.auxiliary);
+  const areaM2 = bags.reduce((sum, piece) => sum + piece.areaCm2 * piece.cutCount, 0) * WASTE / 10000;
+  return { pieces: bags.reduce((sum, piece) => sum + piece.cutCount, 0), areaM2, linearM: areaM2 / (FABRIC_WIDTH_CM / 100) };
 }
 
 /**
@@ -73,11 +81,10 @@ function samplePack(product: Product, date: string): TechPack {
     ] : [{ item: 'T2 Waistband elastic', description: 'Knitted elastic, 3 cm wide', color: 'White', placement: 'Waistband channel', quantity: `${cm(legs.elastic)} (relaxed waist less 4 cm)` }]),
       label('T3', 'Waistband label', 'Woven label, 5 × 2 cm', 'Centre back waistband, inside'),
       { ...label('T4', 'Care and content label', 'Printed satin label', 'Left side seam, 10 cm below the waistband'), color: 'White' });
-    // Front pocket bags: each 6 cm wider than its opening and 18 cm deeper, cut double.
     if (optionsOf(product).frontPockets) {
-      const scoop = frontPocketOf(product);
-      bom.push({ item: 'P1 Pocketing', description: 'Cotton twill pocketing, 130 gsm', color: 'Natural', placement: 'Front pocket bags',
-        quantity: `4 pcs, ${cm(scoop.opening + 6)} × ${cm(scoop.depth + 18)} each (2 per pocket)` });
+      const usage = pocketingUsage(product);
+      bom.push({ item: 'P1 Pocketing', description: `${POCKETING.name}, ${POCKETING.gsm} gsm`, color: 'Natural', placement: 'Front pocket bags (inner and outer)',
+        quantity: `${usage.pieces} pcs (2 inner + 2 outer, mirrored pairs); ${usage.areaM2.toFixed(2)} m² (area equivalent ≈ ${usage.linearM.toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide, not a cutting marker, including ${Math.round((WASTE - 1) * 100)}% waste)` });
     }
     return { ...trouserPack(product, spec, date), bom: [...bom, ...artworkBom(product)] };
   }
@@ -294,8 +301,8 @@ function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date:
   ];
   poms.push(...details.map(([name, how, value], i) => pom(String.fromCharCode(65 + poms.length + i), name, how, value, 0, 0.25)));
   const construction: ConstructionRow[] = [
-    ...(scoop ? [{ area: 'Front pockets', operation: 'Stitch each pocket bag to its front leg’s curved opening, turn, understitch and topstitch twice; sew the facing to the back bag, close the bag with a French seam, then baste it to the waist and side seam',
-      detail: `${cm(scoop.opening)} across the waist from the side seam, ${cm(scoop.depth)} down the side seam; the facing is cut ${cm(FRONT_POCKET_FACING_CM)} deeper than the opening; pocket bags in pocketing` }] : []),
+    ...(scoop ? [{ area: 'Front pockets', operation: 'Stitch the inner pocket bag to the front leg’s matching scoop, turn, understitch and topstitch twice; stitch the facing over the upper outer bag, join inner and outer bags along their matching lower perimeter, finish the seam, then baste the top and side into the garment seams',
+      detail: `${cm(scoop.opening)} across the waist from the side seam, ${cm(scoop.depth)} down the side seam; the facing is cut ${cm(FRONT_POCKET_FACING_CM)} deeper than the opening; cut 2 inner and 2 outer bags in pocketing as mirrored pairs; use their labelled cutting pieces. Bags stay above the crotch and fit the front waist (reaching the centre seam at close waists); inspect the pocket finish and validate with a toile` }] : []),
     ...(yoke ? [{ area: 'Back yoke', operation: 'Flat-fell each yoke to its back leg and topstitch twice, before the crotch seam',
       detail: `Seam ${cm(yoke.side)} below the waist at the side seam, ${cm(yoke.back)} at the centre back; match the yokes across the centre back seam` }] : []),
     ...(pocket ? [{ area: 'Back pockets', operation: 'Turn the top under twice and topstitch; press the other edges under 1 cm, then topstitch each pocket to its back leg and bar-tack the top corners',
