@@ -83,7 +83,9 @@ export const BUST_DIFFERENCE = [2, 40] as const;
 /** Optional body measurements beyond the chest; omitted ones follow automatic proportions. With `underbust`, the chest
  * is the full bust, measured over the bust. */
 export const BODY_NECK_GIRTH = [20, 65] as const;
-export interface TopBodyShape { waist?: number; hip?: number; chestDepth?: number; height?: number; hipDepth?: number; upperArmGirth?: number; neckGirth?: number; underbust?: number }
+/** Vertical shoulder-level to natural waist distance, independent of total height. */
+export const BODY_TORSO_LENGTH = [20, 60] as const;
+export interface TopBodyShape { waist?: number; hip?: number; chestDepth?: number; height?: number; hipDepth?: number; upperArmGirth?: number; neckGirth?: number; underbust?: number; torsoLength?: number }
 /** Body height, if given, sets the body's lengths (arm, torso landmarks, legs) as typical fractions of it. */
 export function validateBodyHeight(height: unknown): number | undefined {
   if (height === undefined) return undefined;
@@ -114,6 +116,14 @@ export function validateBodyNeckGirth(value: unknown): number | undefined {
   }
   return value;
 }
+/** Vertical distance from shoulder level to the natural waist; absent preserves proportional landmarks. */
+export function validateBodyTorsoLength(value: unknown): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < BODY_TORSO_LENGTH[0] || value > BODY_TORSO_LENGTH[1]) {
+    throw new Error('Body shoulder-to-waist distance must be from 20 to 60 cm, or blank for automatic proportions.');
+  }
+  return value;
+}
 /** Girth just under the bust, for a body with a bust; absent, the body has none. */
 export function validateBodyUnderbust(value: unknown, chest: number): number | undefined {
   if (value === undefined) return undefined;
@@ -133,8 +143,10 @@ export function validateTopBodyShape(chest:number, shape:TopBodyShape = {}):TopB
   const waist=shape.waist===undefined?(underbust===undefined?chest*.86:Math.min(chest*.86,underbust*.95)):shape.waist,hip=shape.hip===undefined?chest*1.02:shape.hip;
   if(typeof waist!=='number'||!Number.isFinite(waist)||waist<BODY_WAIST[0]||waist>BODY_WAIST[1])throw new Error('Body waist must be from 50 to 180 cm, or blank for automatic proportions.');
   if(typeof hip!=='number'||!Number.isFinite(hip)||hip<BODY_HIP[0]||hip>BODY_HIP[1])throw new Error('Body hip must be from 50 to 220 cm, or blank for automatic proportions.');
-  const height = validateBodyHeight(shape.height), hipDepth = validateBodyHipDepth(shape.hipDepth), upperArmGirth = validateBodyUpperArmGirth(shape.upperArmGirth), neckGirth = validateBodyNeckGirth(shape.neckGirth);
-  const tall = { ...(height === undefined ? {} : { height }), ...(hipDepth === undefined ? {} : { hipDepth }), ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(neckGirth === undefined ? {} : { neckGirth }), ...(underbust === undefined ? {} : { underbust }) };
+  const height = validateBodyHeight(shape.height), torsoLength = validateBodyTorsoLength(shape.torsoLength), hipDepth = validateBodyHipDepth(shape.hipDepth), upperArmGirth = validateBodyUpperArmGirth(shape.upperArmGirth), neckGirth = validateBodyNeckGirth(shape.neckGirth);
+  const frame = underbust === undefined ? chest : underbust + 0.4 * (chest - underbust);
+  if (torsoLength !== undefined && torsoLength < (height === undefined ? frame * .21 : height * .11) + 4) throw new Error('The shoulder-to-waist distance must put the waist at least 4 cm below the armpit on this body proxy.');
+  const tall = { ...(torsoLength === undefined ? {} : { torsoLength }), ...(height === undefined ? {} : { height }), ...(hipDepth === undefined ? {} : { hipDepth }), ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(neckGirth === undefined ? {} : { neckGirth }), ...(underbust === undefined ? {} : { underbust }) };
   if (shape.chestDepth !== undefined) {
     const depth = shape.chestDepth;
     if (typeof depth !== 'number' || !Number.isFinite(depth) || depth < BODY_CHEST_DEPTH[0] || depth > BODY_CHEST_DEPTH[1]) {
@@ -230,7 +242,7 @@ export function trouserBodyWaist(product: Product): number {
   return d.fly ? Math.max(BODY_WAIST[0], d.waist - 2) : d.waist;
 }
 
-export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?: number; height?: number; hipDepth?: number } = {}): BodyProxy {
+export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?: number; height?: number; hipDepth?: number; torsoLength?: number } = {}): BodyProxy {
   const d = trouserDimensions(product), waist = shape.waist ?? trouserBodyWaist(product), hip = shape.hip ?? d.hip, height = validateBodyHeight(shape.height);
   if (typeof waist !== 'number' || !Number.isFinite(waist) || waist < BODY_WAIST[0] || waist > BODY_WAIST[1]) throw new Error('Body waist must be from 50 to 180 cm.');
   if (typeof hip !== 'number' || !Number.isFinite(hip) || hip < BODY_HIP[0] || hip > BODY_HIP[1]) throw new Error('Body hip must be from 50 to 220 cm.');
@@ -240,7 +252,8 @@ export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?
   const hipDepth = validateBodyHipDepth(shape.hipDepth);
   const waistHalf = stadiumHalfWidth(waist, 0.8), hipHalf = stadiumHalfWidth(hip, 0.75), top = d.length + d.waistbandHeight;
   // The legs' length (crotch to floor) is 45% of the body's height when it is given, else 80 cm.
-  const crotchY = d.inseam + 3.5, legLength = height ? 0.45 * height : 80, kneeY = crotchY - 0.475 * legLength, ankleY = crotchY - 0.925 * legLength;
+  const torsoLength = validateBodyTorsoLength(shape.torsoLength);
+  const crotchY = d.inseam + 3.5, legLength = height ? 0.45 * height + (torsoLength === undefined ? 0 : .235 * height - torsoLength) : 80, kneeY = crotchY - 0.475 * legLength, ankleY = crotchY - 0.925 * legLength;
   const hipY = hipDepth === undefined ? d.length - d.hipDepth : top - hipDepth;
   if (hipDepth !== undefined && hipY <= crotchY) throw new Error(`Body waist-to-hip depth must place the hip above the trouser crotch (less than ${Number((top - crotchY).toFixed(2))} cm for this proxy).`);
   // A leg's room at height y: the trouser leg's circumference there (front plus back, linear from crotch to hem).
@@ -260,7 +273,7 @@ export function trouserBodyProxy(product: Product, shape: { waist?: number; hip?
     capsules.push({ a: [side * legX, crotchY + thigh * 0.6, 0], b: [side * legX * 0.92, kneeY, 0], radius: thigh, end: knee, limb: true });
     capsules.push({ a: [side * legX * 0.92, kneeY, 0], b: [side * legX * 0.85, ankleY, 0], radius: knee, end: ankle, limb: true });
   }
-  return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, torso, capsules, bottom: crotchY,
+  return { chest: 0, waist, hip, chestDepth: 2 * waistHalf * 0.8, ...(torsoLength === undefined ? {} : { torsoLength }), torso, capsules, bottom: crotchY,
     landmarks: { waist: top, hip: hipY, floor: crotchY - legLength, ...(height ? { height } : {}) } };
 }
 
@@ -286,7 +299,7 @@ export interface TorsoSection { y: number; halfWidth: number; halfDepth: number 
 /** `bottom`, when set, is the height below which the torso ends (the crotch, between the legs). */
 /** Heights of body landmarks (y, cm) and, for a top on a body of given height, how far its sleeves reach past the wrists. */
 export interface BodyLandmarks { waist?: number; hip?: number; floor?: number; height?: number; sleeveBeyondWrist?: number; bust?: number }
-export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; upperArmGirth?: number; neckGirth?: number; underbust?: number; torso: TorsoSection[]; capsules: Capsule[]; bottom?: number; landmarks?: BodyLandmarks }
+export interface BodyProxy { chest: number; waist: number; hip: number; chestDepth: number; upperArmGirth?: number; neckGirth?: number; underbust?: number; torsoLength?: number; torso: TorsoSection[]; capsules: Capsule[]; bottom?: number; landmarks?: BodyLandmarks }
 
 /** Half-width of a stadium section of circumference c whose depth is `ratio` of its width. */
 const stadiumHalfWidth = (c: number, ratio: number) => c / (4 + ratio * (2 * Math.PI - 4));
@@ -330,7 +343,7 @@ export function bustSpheres(halfWidth: number, halfDepth: number, chest: number)
 
 /** The body proxy for a top, standing so that its shoulders carry the garment's shoulder line. */
 export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = {}): BodyProxy {
-  const {waist,hip,chestDepth,height,hipDepth,upperArmGirth,neckGirth,underbust}=validateTopBodyShape(chest,shape);
+  const {waist,hip,chestDepth,height,hipDepth,upperArmGirth,neckGirth,underbust,torsoLength}=validateTopBodyShape(chest,shape);
   const d = teeDimensions(product), top = d.length, shoulderLine = top - d.shoulderDrop;
   // With a bust, the chest is measured over it: the body's frame (the chest under the arms, shoulders, neck, arms and,
   // without a height, its lengths) follows a girth between the underbust and the bust instead.
@@ -345,13 +358,14 @@ export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = 
   // Torso depths below the shoulder: typical fractions of the body's height when it is given, else of its chest.
   const torsoTop = top - d.shoulderDrop - OFFSET - shoulderRadius;
   const armpit = height ? shoulderLine - 0.11 * height : top - d.shoulderDrop - frame * 0.21;
-  const waistY = height ? shoulderLine - 0.235 * height : top - frame * 0.44, hipY = hipDepth === undefined ? (height ? shoulderLine - 0.335 * height : top - frame * 0.64) : waistY - hipDepth;
+  const waistY = torsoLength === undefined ? (height ? shoulderLine - 0.235 * height : top - frame * 0.44) : shoulderLine - torsoLength;
+  const hipY = hipDepth === undefined ? (torsoLength === undefined ? (height ? shoulderLine - 0.335 * height : top - frame * 0.64) : waistY - (height ? .1 * height : frame * .2)) : waistY - hipDepth;
   const torso: TorsoSection[] = [
     { y: torsoTop, halfWidth: shoulderHalf, halfDepth: shoulderRadius },
     { y: armpit, halfWidth: chestHalf, halfDepth: chestHalf * depth },
     { y: waistY, halfWidth: waistHalf, halfDepth: waistHalf * depth },
     { y: hipY, halfWidth: hipHalf, halfDepth: hipHalf * 0.74 },
-    { y: -60, halfWidth: hipHalf, halfDepth: hipHalf * 0.74 },
+    { y: torsoLength === undefined ? -60 : Math.min(-60, hipY - 20), halfWidth: hipHalf, halfDepth: hipHalf * 0.74 },
   ];
   const neckBase: Vec = [0, torsoTop + 3.5, -1], angle = d.sleeveAngle * Math.PI / 180;
   const capsules: Capsule[] = [
@@ -387,7 +401,7 @@ export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = 
     capsules.push({ a: at(0), b: at(Math.min(reach, armEnd)), radius: upper, end: armEnd < reach ? wrist : opening, limb: true });
     if (armEnd > reach) capsules.push({ a: at(reach), b: at(armEnd), radius: opening, end: wrist, limb: true });
   }
-  return { chest, waist, hip, chestDepth: chestDepth ?? bustDepth ?? 2 * chestHalf * depth, ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(neckGirth === undefined ? {} : { neckGirth }), ...(underbust === undefined ? {} : { underbust }), torso, capsules,
+  return { chest, waist, hip, ...(torsoLength === undefined ? {} : { torsoLength }), chestDepth: chestDepth ?? bustDepth ?? 2 * chestHalf * depth, ...(upperArmGirth === undefined ? {} : { upperArmGirth }), ...(neckGirth === undefined ? {} : { neckGirth }), ...(underbust === undefined ? {} : { underbust }), torso, capsules,
     landmarks: { waist: waistY, hip: hipY, ...(height ? { height, sleeveBeyondWrist: reach - armEnd } : {}), ...(bust === undefined ? {} : { bust }) } };
 }
 
