@@ -2,11 +2,16 @@
 // because websites cannot reach it: pages only add entries, only while the log is on (see src/web/session-log.js), and
 // move a trial on when the person says so (see src/web/trial-tasks.js).
 import { LOG_SETTINGS, logFileName, logReport, logSummary, storedLog } from './src/web/session-log.js';
-import { TRIAL_KEY, endTrial, parseTasks, startTrial, trialOpen, trialSummary, validTrial } from './src/web/trial-tasks.js';
+import { TRIAL_KEY, parseTasks, trialOpen, trialSummary, validTrial } from './src/web/trial-tasks.js';
 
 const $ = id => document.getElementById(id);
-let choice = { on: false, words: false }, clearArmed = 0, trial = null, replaceArmed = 0;
+let choice = { on: false, words: false }, clearArmed = null, trial = null, replaceArmed = null;
 const storedTrial = async () => validTrial((await chrome.storage.local.get(TRIAL_KEY))[TRIAL_KEY]);
+async function changeTrial(request) {
+  const result = await chrome.runtime.sendMessage({ type: 'gaze:trial', request });
+  if (!result?.ok) throw new Error('Trial change was not saved.');
+  return result;
+}
 const counted = count => `${count} logged ${count === 1 ? 'instruction' : 'instructions'}`;
 
 async function entries() {
@@ -35,7 +40,7 @@ const failed = () => { $('logState').textContent = 'Could not read the session l
 for (const [id, key] of [['logOn', 'on'], ['logWords', 'words']]) {
   $(id).addEventListener('change', async event => {
     try {
-      await chrome.storage.local.set({ [LOG_SETTINGS]: { ...choice, [key]: event.target.checked } });
+      await changeTrial({ op: 'logging', key, value: event.target.checked });
       await refresh();
     } catch {
       event.target.checked = choice[key] === true;
@@ -56,45 +61,45 @@ $('logDownload').addEventListener('click', async () => {
 // Clearing deletes what was collected, a trial's results with it, so it takes a second press.
 $('logClear').addEventListener('click', async () => {
   try {
-    const kept = await entries(), current = await storedTrial();
-    if (Date.now() - clearArmed > 10_000) {
-      clearArmed = Date.now();
+    const kept = await entries(), current = trial;
+    if (!clearArmed || Date.now() - clearArmed.at > 10_000) {
+      clearArmed = { at: Date.now(), trial: current };
       const what = [kept.length || !current ? counted(kept.length) : null, current ? "the trial's results" : null].filter(Boolean).join(' and ');
       $('logState').textContent = `Press Clear log again to delete ${what}${trialOpen(current) ? ', which ends the trial' : ''}.`;
       return;
     }
-    clearArmed = 0;
-    await chrome.storage.local.remove([...storedLog(await chrome.storage.local.get(null)).keys, TRIAL_KEY]);
+    const expected = clearArmed.trial;
+    clearArmed = null;
+    await changeTrial({ op: 'clear', expected });
     await refresh('The log is cleared.');
-  } catch { failed(); }
+  } catch { clearArmed = null; $('logState').textContent = 'Could not clear the log; the trial may have changed. Close and reopen this popup, then try again.'; }
 });
 
 // A trial: the tasks written above, shown one at a time in the panel on every website. Starting one turns the log on,
 // so the download can say how each task went.
-const trialFailed = () => { $('trialState').textContent = 'Could not save the trial. Nothing was changed; try again.'; };
+const trialFailed = () => { $('trialState').textContent = 'Could not save the trial; it may have changed in another tab. Close and reopen this popup, then try again.'; };
 $('trialStart').addEventListener('click', async () => {
   try {
     const tasks = parseTasks($('trialTasks').value);
     if (!tasks.length) { $('trialState').textContent = 'Write at least one task, one per line.'; return; }
     // Starting again replaces the last trial's results, so that takes a second press while there are any.
-    const current = await storedTrial();
-    if (current?.results.length && Date.now() - replaceArmed > 10_000) {
-      replaceArmed = Date.now();
+    const current = trial;
+    if (current?.results.length && (!replaceArmed || Date.now() - replaceArmed.at > 10_000 || JSON.stringify(replaceArmed.trial) !== JSON.stringify(current))) {
+      replaceArmed = { at: Date.now(), trial: current };
       $('trialState').textContent = "Press Start trial again to replace the last trial's results. Download the log first to keep them.";
       return;
     }
-    replaceArmed = 0;
-    const turnOn = choice.on !== true;
-    await chrome.storage.local.set({ [TRIAL_KEY]: startTrial(tasks, Date.now()), ...(turnOn ? { [LOG_SETTINGS]: { ...choice, on: true } } : {}) });
+    const expected = replaceArmed?.trial ?? current;
+    replaceArmed = null;
+    const { loggingStarted: turnOn } = await changeTrial({ op: 'start', expected, tasks });
     await refresh('', `Started: the panel shows task 1 of ${tasks.length}.${turnOn ? ' The session log is now on, so the download reports each task.' : ''}`);
   } catch { trialFailed(); }
 });
 $('trialEnd').addEventListener('click', async () => {
   try {
-    const current = await storedTrial();
+    const current = trial;
     if (!trialOpen(current)) { await refresh(); return; }
-    const ended = endTrial(current, Date.now());
-    await chrome.storage.local.set({ [TRIAL_KEY]: ended });
+    const { trial: ended } = await changeTrial({ op: 'end', expected: current });
     await refresh('', `${trialSummary(ended)} Download the log to keep the results.`);
   } catch { trialFailed(); }
 });

@@ -634,9 +634,19 @@ export function createController({ window, actions = pageActions, interpret = in
       if (!task) return reply(commands.trial.summary(), 'info', { trial: true, keepPrompt: true });
       if (action.change === 'show') return reply(said(task), 'info', { trial: true, keepPrompt: true });
       pending = null;
-      const { finished, next } = commands.trial.finish(action.change === 'done' ? 'done' : 'skipped');
-      const what = `Task ${finished.number} ${finished.outcome === 'done' ? 'done' : 'skipped'} after ${spokenDuration(finished.seconds)}.`;
-      return reply(next ? `${what} ${said(next)}` : `${what} That was the last task, so the trial is finished.`, 'success', { trial: true });
+      const saved = result => {
+        if (!result?.finished || result.ok === false) return reply(result?.message ?? 'The trial changed. No task was moved on. Ask what your task is.', 'error', { trial: true });
+        const { finished, next } = result;
+        const what = `Task ${finished.number} ${finished.outcome === 'done' ? 'done' : 'skipped'} after ${spokenDuration(finished.seconds)}.`;
+        return reply(next ? `${what} ${said(next)}` : `${what} That was the last task, so the trial is finished.`, 'success', { trial: true });
+      };
+      const failed = () => reply('Could not save the task result. Ask what your task is, then try again.', 'error', { trial: true });
+      try {
+        const result = commands.trial.finish(action.change === 'done' ? 'done' : 'skipped');
+        if (typeof result?.then !== 'function') return saved(result);
+        const followUp = Promise.resolve(result).then(saved, failed).then(answer => current === turn && !paused ? answer : null);
+        return reply('Saving the task result…', 'info', { trial: true, followUp });
+      } catch { return failed(); }
     }
     // A phrase taught by voice to stand for an instruction: "when I say basket, I mean open the basket".
     if (action.type === 'teach') {

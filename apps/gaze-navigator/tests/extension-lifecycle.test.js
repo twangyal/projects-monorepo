@@ -7,16 +7,19 @@ import {pathToFileURL} from 'node:url';
 // Control messages come from Gaze Navigator's own popup page.
 const POPUP={url:'chrome-extension://test/popup.html'};
 import vm from 'node:vm';
+import { createTrialStore } from '../src/web/trial-store.js';
+// vm.Script runs the worker body with the same imported dependency supplied explicitly.
+const backgroundSource = (await readFile('extension/background.js', 'utf8')).replace(/^import .*createTrialStore.*\n/m, '');
 
 // Execute the shipped entry/content modules with only the DOM runtime replaced.
 // Real ESM caching is essential: replacing import with a fresh function misses this regression.
-async function contentHarness(run,{local={get:async()=>({}),set:async()=>{}}}={}){
+async function contentHarness(run,{local={get:async()=>({}),set:async()=>{}},sendMessage=async()=>({ok:true})}={}){
  const directory=await mkdtemp(join(tmpdir(),'gaze-entry-'));
  const saved=Object.fromEntries(['window','chrome','__gazeNavigatorRunning','__gazeNavigatorStop','__gazeNavigatorOwner','__gazeNavigatorReady','__gazeNavigatorError','__gazeNavigatorStart'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));
  let starts=0,stops=0,hold=null;
  globalThis.window={start:()=>{starts++;return{stop(){stops++;}}}};
  const listeners=new Set();
- globalThis.chrome={runtime:{getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}},local,onChanged:{addListener(listener){listeners.add(listener);},removeListener(listener){listeners.delete(listener);}}}};
+ globalThis.chrome={runtime:{sendMessage,getURL:()=>pathToFileURL(join(directory,'entry.mjs')).href},storage:{session:{get:async()=>{if(hold)await hold;return{};},set:async()=>{},remove:async()=>{}},local,onChanged:{addListener(listener){listeners.add(listener);},removeListener(listener){listeners.delete(listener);}}}};
  await writeFile(join(directory,'entry.mjs'),await readFile('src/web/extension-boot.js','utf8'));
  await writeFile(join(directory,'session-log.js'),await readFile('src/web/session-log.js','utf8'));
  await writeFile(join(directory,'trial-tasks.js'),await readFile('src/web/trial-tasks.js','utf8'));
@@ -51,20 +54,20 @@ test('pages add session-log entries under their own keys only while the popup ha
  },{local});
 });
 
-test('pages read, save and follow a trial in the extension storage the popup starts it in',async()=>{
+test('pages request durable trial completion and follow committed storage changes',async()=>{
  const {TRIAL_KEY,startTrial}=await import('../src/web/trial-tasks.js');
- const trial=startTrial(['Open the about page'],1000),items={[TRIAL_KEY]:trial},written=[];
+ const trial=startTrial(['Open the about page'],1000),items={[TRIAL_KEY]:trial},written=[],requests=[];
  const local={get:async key=>key===null?items:key in items?{[key]:items[key]}:{},set:async value=>{written.push(value);},remove:async()=>{}};
  await contentHarness(async h=>{
   h.start();await h.until(()=>h.starts===1);
   const store=globalThis.window.store,seen=[];
   assert.deepEqual(await store.loadTrial(),trial);
-  store.saveTrial({...trial,current:1});assert.deepEqual(written.at(-1),{[TRIAL_KEY]:{...trial,current:1}});
+  await store.finishTrial(trial,'done');assert.deepEqual(requests,[{type:'gaze:trial',request:{op:'finish',expected:trial,outcome:'done'}}]);assert.deepEqual(written,[],'pages never write a trial snapshot directly');
   const before=h.listeners,unwatch=store.onTrialChange(value=>seen.push(value));assert.equal(h.listeners,before+1);
   h.changed({[TRIAL_KEY]:{newValue:{...trial,current:1}}});h.changed({other:{newValue:1}});h.changed({[TRIAL_KEY]:{newValue:trial}},'session');h.changed({[TRIAL_KEY]:{}});
   assert.deepEqual(seen,[{...trial,current:1},null],'only the trial in local storage, and null once it is removed');
   unwatch();assert.equal(h.listeners,before);
- },{local});
+ },{local,sendMessage:async request=>{requests.push(request);return{ok:true};}});
  await contentHarness(async h=>{
   h.start();await h.until(()=>h.starts===1);assert.deepEqual(globalThis.window.store.logging(),{on:false,words:false});
  });
@@ -85,7 +88,7 @@ test('background status probes the current page instead of remembered continuati
   commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(){}},onRemoved:{addListener(){}}},
   action:{setBadgeText:async()=>{},setTitle:async()=>{}},
   scripting:{executeScript:async()=>{probes++;return[{result:{on:false,phase:'off',message:''}}];}}};
- vm.runInNewContext(await readFile('extension/background.js','utf8'),{chrome,console});
+ vm.runInNewContext(backgroundSource,{chrome,console,createTrialStore});
  const status=await new Promise(resolve=>listener({type:'gaze:status',tabId:7},POPUP,resolve));
  assert.equal(status.on,false);assert.equal(probes,1);
 });
@@ -98,7 +101,7 @@ test('an old navigation decision cannot restart after a newer explicit Stop',asy
   permissions:{contains:async()=>true},commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(fn){onUpdated=fn;}},onRemoved:{addListener(){}}},
   action:{setBadgeText:async()=>{},setTitle:async()=>{}},
   scripting:{executeScript:async spec=>{if(spec.files){world.__gazeNavigatorRunning=true;return[];}return[{result:await spec.func(...(spec.args??[]))}];}}};world.chrome=chrome;
- vm.runInNewContext(await readFile('extension/background.js','utf8'),world);
+ vm.runInNewContext(backgroundSource,Object.assign(world,{createTrialStore}));
  const navigation=onUpdated(7,{status:'complete'},{url:'https://example.test/'});
  await new Promise(r=>setImmediate(r));assert.equal(typeof releasePreferences,'function');
  assert.equal(await new Promise(resolve=>listener({type:'gaze:stop',tabId:7},POPUP,resolve)),'off');
@@ -124,7 +127,7 @@ for(const sequence of [['toggle','toggle'],['stop','toggle']])test(`explicit ${s
  storage:{session:{setAccessLevel:async()=>{},get:async()=>({enabledTabs:structuredClone(enabled)}),set:async value=>{enabled=value.enabledTabs;}},local:{get:async()=>({})}},permissions:{contains:async()=>true},
  commands:{onCommand:{addListener(){}}},tabs:{onUpdated:{addListener(){}},onRemoved:{addListener(){}}},action:{setBadgeText:async()=>{},setTitle:async()=>{}},
  scripting:{executeScript:async spec=>{if(spec.files){world.__gazeNavigatorRunning=true;return[];}return[{result:await spec.func(...(spec.args??[]))}];}}};world.chrome=chrome;
- vm.runInNewContext(await readFile('extension/background.js','utf8'),world);
+ vm.runInNewContext(backgroundSource,Object.assign(world,{createTrialStore}));
  const responses=await Promise.all(sequence.map(mode=>new Promise(resolve=>listener({type:`gaze:${mode}`,tabId:7},POPUP,resolve))));
  assert.deepEqual(responses,sequence[0]==='toggle'?['on','off']:['off','on']);assert.equal(world.__gazeNavigatorRunning,sequence[0]==='stop');
 });
@@ -136,7 +139,7 @@ test('a content script inside a website cannot turn the navigator on or off or r
     commands: { onCommand: { addListener() {} } }, tabs: { onUpdated: { addListener() {} }, onRemoved: { addListener() {} } },
     action: { setBadgeText: async () => {}, setTitle: async () => {} },
     scripting: { executeScript: async () => { scripted++; return [{ result: 'stop' }]; } } };
-  vm.runInNewContext(await readFile('extension/background.js', 'utf8'), { chrome, console });
+  vm.runInNewContext(backgroundSource, { chrome, console, createTrialStore });
   const website = { url: 'https://example.com/page', tab: { id: 7 }, frameId: 0 };
   for (const type of ['gaze:toggle', 'gaze:start', 'gaze:stop', 'gaze:status', 'gaze:page-status']) {
     let answered = false;

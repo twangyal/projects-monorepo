@@ -132,3 +132,37 @@ test('the controller says the task at hand, moves on, and keeps a waiting questi
   // Without a trial store (the practice website) there is nothing to move on.
   assert.equal(createController({ window: {}, interpret, actions, commands: {} }).handle('task done', page).message, 'Trial tasks are not available here.');
 });
+
+test('trial completion waits for a durable save and gives a retry after failure', async () => {
+  const trial = startTrial(['One', 'Two'], 0);
+  let resolve, reject;
+  const controller = createController({ window: {}, commands: { trial: {
+    current: () => currentTask(trial), summary: () => trialSummary(trial),
+    finish: () => new Promise((yes, no) => { resolve = yes; reject = no; }),
+  } } });
+  const context = { elements: [], trial: true };
+  const waiting = controller.handle('task done', context);
+  assert.equal(waiting.tone, 'info');
+  assert.match(waiting.message, /Saving/);
+  resolve({ ok: true, ...finishTask(trial, 'done', 1200) });
+  assert.equal((await waiting.followUp).message, 'Task 1 done after 1 second. Task 2 of 2: Two');
+  const failed = controller.handle('task done', context);
+  reject(new Error('storage unavailable'));
+  assert.match((await failed.followUp).message, /Could not save.*try again/i);
+  const stale = controller.handle('task done', context);
+  resolve({ ok: false, trial: null, message: 'The trial changed. No task was moved on.' });
+  assert.equal((await stale.followUp).tone, 'error');
+});
+
+test('a late trial save cannot replace feedback for a newer instruction', async () => {
+  let resolve;
+  const controller = createController({ window: {}, commands: { trial: {
+    current: () => ({ number: 1, total: 1, text: 'One' }), summary: () => 'One',
+    finish: () => new Promise(yes => { resolve = yes; }),
+  } } });
+  const context = { elements: [], trial: true };
+  const waiting = controller.handle('task done', context);
+  controller.handle('pause', context);
+  resolve({ ok: true, ...finishTask(startTrial(['One'], 0), 'done', 1200) });
+  assert.equal(await waiting.followUp, null);
+});

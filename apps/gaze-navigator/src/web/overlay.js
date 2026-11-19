@@ -7,7 +7,7 @@ import { canWrite, isSensitive, chooseMedia, choosePopupControl, controlMedia, d
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { MAX_LEARNED, validLearned, withLearned, withoutLearned } from './learned.js';
-import { currentTask, finishTask, trialOpen, trialSummary, validTrial } from './trial-tasks.js';
+import { currentTask, trialOpen, trialSummary, validTrial } from './trial-tasks.js';
 import { addressedSpeech, addressedFeedback, immediateSpeech } from './speech-address.js';
 import { createFeedbackVoice } from './feedback-voice.js';
 import { createKeyboardCommands } from './keyboard-command.js';
@@ -314,15 +314,24 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.trialTask.hidden = !trialOpen(trial);
     ui.trialTask.textContent = trialOpen(trial) ? trialSummary(trial) : '';
   };
-  const unwatchTrial = typeof store.loadTrial === 'function' ? store.onTrialChange?.(showTrial) : null;
-  if (typeof store.loadTrial === 'function') Promise.resolve(store.loadTrial()).then(saved => { if (!stopped) showTrial(saved); }).catch(() => {});
+  let trialChanges = 0;
+  const unwatchTrial = typeof store.loadTrial === 'function' ? store.onTrialChange?.(saved => { ++trialChanges; if (!stopped) showTrial(saved); }) : null;
+  // An initial read can arrive after a newer storage event; that event already supplied the current task.
+  if (typeof store.loadTrial === 'function') {
+    const version = trialChanges;
+    Promise.resolve(store.loadTrial()).then(saved => { if (!stopped && version === trialChanges) showTrial(saved); }).catch(() => {});
+  }
   const trialTasks = typeof store.loadTrial === 'function' ? {
     current: () => currentTask(trial),
     summary: () => trialSummary(trial),
-    finish(outcome) {
-      const result = finishTask(trial, outcome, Date.now());
-      showTrial(result.trial);
-      store.saveTrial(result.trial);
+    async finish(outcome) {
+      const version = trialChanges;
+      const result = await store.finishTrial(trial, outcome);
+      // A durable reply can arrive before its storage event. But once a newer event has been observed, do not speak
+      // the reply's old next task after another tab advanced, or the popup ended, cleared or replaced the trial.
+      if (result?.ok && version !== trialChanges && JSON.stringify(trial) !== JSON.stringify(validTrial(result.trial))) {
+        return { ok: false, message: 'The task result was saved, but the trial has since changed. Ask what your task is.' };
+      }
       return result;
     },
   } : null;

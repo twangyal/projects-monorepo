@@ -62,7 +62,7 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
     // A trial's tasks (see trial-tasks.js) are started and ended in the popup; pages show the task at hand, move it on
     // when the person says so, and follow each other's changes so every tab shows the same task.
     loadTrial: async () => (await chrome.storage.local.get(TRIAL_KEY))[TRIAL_KEY] ?? null,
-    saveTrial: trial => { chrome.storage.local.set({ [TRIAL_KEY]: trial }).catch(() => {}); },
+    finishTrial: (expected, outcome) => chrome.runtime.sendMessage({ type: 'gaze:trial', request: { op: 'finish', expected, outcome } }),
     onTrialChange: callback => {
       const listener = (changes, area) => { if (area === 'local' && TRIAL_KEY in changes) callback(changes[TRIAL_KEY].newValue ?? null); };
       chrome.storage.onChanged.addListener(listener);

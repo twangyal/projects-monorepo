@@ -893,3 +893,46 @@ test('a trial’s tasks are written in the popup, shown on every website, moved 
   await expect(control.locator('#trialState')).toHaveText('No trial is running.');
   expect(await worker.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).filter(key => key.startsWith('gaze-navigator-log:') || key === 'gaze-navigator-trial'))).toEqual([]);
 });
+
+test('trial results wait for durable storage, recover from failure and reject a stale tab request', async ({ context, worker, control }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  await control.reload();
+  await control.getByLabel('Tasks to try, one per line').fill('One\nTwo');
+  await control.getByRole('button', { name: 'Start trial' }).click();
+  await expect(control.locator('#trialState')).toContainText('Started:');
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 1 of 2: One');
+  const expected = await worker.evaluate(async () => (await chrome.storage.local.get('gaze-navigator-trial'))['gaze-navigator-trial']);
+  await worker.evaluate(() => {
+    const set = chrome.storage.local.set.bind(chrome.storage.local);
+    globalThis.trialSaveMode = 'hold';
+    chrome.storage.local.set = async items => {
+      if ('gaze-navigator-trial' in items) {
+        if (globalThis.trialSaveMode === 'hold') await new Promise(resolve => { globalThis.releaseTrialSave = resolve; });
+        if (globalThis.trialSaveMode === 'fail') throw new Error('Test storage failure');
+      }
+      return set(items);
+    };
+  });
+  await typeInstruction(page, 'task done');
+  await expect(status(page)).toHaveText('Saving the task result…');
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 1 of 2: One');
+  expect(await worker.evaluate(async () => (await chrome.storage.local.get('gaze-navigator-trial'))['gaze-navigator-trial'].current)).toBe(0);
+  await worker.evaluate(() => { globalThis.trialSaveMode = ''; globalThis.releaseTrialSave(); });
+  await expect(status(page)).toContainText('Task 1 done after');
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 2 of 2: Two');
+  const stale = await control.evaluate(expected => chrome.runtime.sendMessage({ type: 'gaze:trial', request: { op: 'finish', expected, outcome: 'done' } }), expected);
+  expect(stale.ok).toBe(false); expect(stale.trial.current).toBe(1);
+  await worker.evaluate(() => { globalThis.trialSaveMode = 'fail'; });
+  await typeInstruction(page, 'task done');
+  await expect(status(page)).toContainText('Could not save the trial');
+  await expect(panel(page).locator('.trial-task')).toHaveText('Task 2 of 2: Two');
+  await worker.evaluate(() => { globalThis.trialSaveMode = ''; });
+  await typeInstruction(page, 'task done');
+  await expect(status(page)).toContainText('That was the last task');
+  await page.reload();
+  await expect(panel(page).locator('.trial-task')).toHaveText('The trial is finished: 2 of 2 tasks done.');
+  const saved = await worker.evaluate(async () => (await chrome.storage.local.get('gaze-navigator-trial'))['gaze-navigator-trial']);
+  expect(saved.results.map(result => [result.number, result.outcome])).toEqual([[1, 'done'], [2, 'done']]);
+});

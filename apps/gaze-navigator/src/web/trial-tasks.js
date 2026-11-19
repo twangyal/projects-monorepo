@@ -63,6 +63,7 @@ export function validTrial(value) {
   if (value.endedAt != null && !time(value.endedAt)) return null;
   const results = value.results.filter(item => item && Number.isInteger(item.number) && text(item.text) && OUTCOMES.includes(item.outcome) && time(item.seconds));
   return { tasks: [...value.tasks], current: value.current, startedAt: value.startedAt, taskStartedAt: value.taskStartedAt, results,
+    ...(typeof value.id === 'string' && value.id.length <= 64 ? { id: value.id } : {}),
     ...(value.endedAt != null ? { endedAt: value.endedAt } : {}) };
 }
 

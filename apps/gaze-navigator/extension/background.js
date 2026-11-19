@@ -1,3 +1,5 @@
+import { createTrialStore } from './src/web/trial-store.js';
+
 // Decides where the navigator runs. Only the tab the user turned it on for, unless they grant
 // host access for "stay on while browsing" or "start on every website".
 const ENABLED = 'enabledTabs';
@@ -259,7 +261,23 @@ function onFrameMessage(message, sender, respond) {
   return false;
 }
 
+// Created once on the first trial request; its queue survives for this worker's lifetime. A restarted worker reads
+// storage afresh, so no cached trial can revive an old task.
+let trials;
+function changeTrial(request) {
+  trials ??= createTrialStore({ storage: chrome.storage.local });
+  return trials(request);
+}
+
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
+  const fromExtensionPage = typeof sender.url === 'string' && sender.url.startsWith(chrome.runtime.getURL(''));
+  if (message?.type === 'gaze:trial') {
+    // Pages may only finish their current task. Starting, ending and clearing belong to the extension's own pages.
+    const fromPopup = sender.url === chrome.runtime.getURL('popup.html');
+    if (!fromPopup && !(sender.tab?.id !== undefined && sender.frameId === 0 && message.request?.op === 'finish')) return false;
+    changeTrial(message.request).then(respond, () => respond({ ok: false, message: 'Could not save the trial. Ask what your task is, then try again.' }));
+    return true;
+  }
   if (typeof message?.type === 'string' && message.type.startsWith('gaze:frame-')) return onFrameMessage(message, sender, respond);
   if (message?.type === 'gaze:assist' && sender.tab?.id !== undefined && ['load', 'decide', 'yes'].includes(message.op)) {
     ensureOffscreen()
@@ -282,7 +300,6 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   }
   // Turning the navigator on or off and reading status belong to Gaze Navigator's own pages (the popup),
   // not to content scripts running inside websites.
-  const fromExtensionPage = typeof sender.url === 'string' && sender.url.startsWith(chrome.runtime.getURL(''));
   if (!fromExtensionPage && ['gaze:toggle', 'gaze:start', 'gaze:stop', 'gaze:status', 'gaze:page-status'].includes(message?.type)) return false;
   if (message?.type === 'gaze:toggle' || message?.type === 'gaze:start' || message?.type === 'gaze:stop') {
     run(message.tabId, message.type.slice(5)).then(respond);

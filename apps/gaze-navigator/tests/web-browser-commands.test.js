@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { createTrialStore } from '../src/web/trial-store.js';
 import { interpret, spokenAddress } from '../src/web/interpreter.js';
 import { createController } from '../src/web/controller.js';
 
-const source = await readFile('extension/background.js', 'utf8');
+const source = (await readFile('extension/background.js', 'utf8')).replace(/^import .*createTrialStore.*\n/m, '');
 const page = { elements: [{ id: 1, name: 'Settings', role: 'button', distance: 0 }] };
 
 test('browser commands are read from speech, and website addresses only when they are addresses', () => {
@@ -50,13 +51,13 @@ test('the controller asks the browser, confirms closing a tab, and waits while p
   assert.match(createController({ window: {}, interpret }).handle('reload', page).message, /not available/);
 });
 
-function background({ access = true, zoom = 1 } = {}) {
+function background({ access = true, zoom = 1, storage = { get: async () => ({}) } } = {}) {
   let listener, onUpdated;
   const scripts = [];
   const calls = [], tabs = [{ id: 7, index: 0, windowId: 1 }, { id: 8, index: 1, windowId: 1 }];
   const chrome = {
     runtime: { getURL: p => 'chrome-extension://test/' + p, onInstalled: { addListener() {} }, onStartup: { addListener() {} }, onMessage: { addListener(fn) { listener = fn; } } },
-    storage: { session: { setAccessLevel: async () => {}, get: async () => ({}), set: async () => {} }, local: { get: async () => ({}) } },
+    storage: { session: { setAccessLevel: async () => {}, get: async () => ({}), set: async () => {} }, local: storage },
     permissions: { contains: async () => access }, commands: { onCommand: { addListener() {} } },
     tabs: { onUpdated: { addListener(fn) { onUpdated = fn; } }, onRemoved: { addListener() {} }, onActivated: { addListener() {} },
       reload: async id => calls.push(['reload', id]), update: async (id, change) => calls.push(['update', id, change]),
@@ -66,10 +67,10 @@ function background({ access = true, zoom = 1 } = {}) {
     // The navigator is not yet running in a tab it is asked to start in; asked to stop, it stops.
     scripting: { executeScript: async spec => { scripts.push([spec.target.tabId, spec.files?.[0] ?? (spec.args?.[0] ?? 'stop')]); return [{ result: spec.args?.[0] }]; } },
   };
-  vm.runInNewContext(source, { chrome, console, setTimeout, URL });
+  vm.runInNewContext(source, { chrome, console, setTimeout, URL, createTrialStore });
   const send = (action, sender = { tab: tabs[0], frameId: 0 }) => new Promise(resolve => { if (!listener({ type: 'gaze:browser', action }, sender, resolve)) resolve(null); });
   const loaded = (tabId, url = 'https://example.com/') => onUpdated(tabId, { status: 'complete' }, { id: tabId, url });
-  return { send, calls, scripts, loaded };
+  return { send, calls, scripts, loaded, sendTrial: (request, sender) => new Promise(resolve => { if (!listener({ type: 'gaze:trial', request }, sender, resolve)) resolve(null); }), trialRequest: (op, sender) => listener({ type: 'gaze:trial', request: { op } }, sender, () => {}) };
 }
 const settle = () => new Promise(resolve => setTimeout(resolve, 300));
 
@@ -114,4 +115,37 @@ test('the navigator carries on in the page or tab a browser command leads to, an
   await limited.loaded(7);
   await settle();
   assert.deepEqual(limited.scripts, []);
+});
+
+
+test('only the popup starts, ends or clears a trial; embedded extension frames cannot ask', () => {
+  const { trialRequest } = background();
+  for (const op of ['start', 'end', 'clear', 'logging']) {
+    assert.equal(trialRequest(op, { tab: { id: 7 }, frameId: 0, url: 'http://shop.example/' }), false);
+    assert.equal(trialRequest(op, { tab: { id: 7 }, frameId: 4, url: 'chrome-extension://test/capture.html' }), false);
+  }
+  assert.equal(trialRequest('finish', { tab: { id: 7 }, frameId: 3, url: 'http://shop.example/' }), false);
+});
+
+
+test('the worker routes popup and top-frame trial requests through one durable queue', async () => {
+  const data = {}, storage = {
+    get: async key => key == null ? structuredClone(data) : { [key]: structuredClone(data[key]) },
+    set: async values => { Object.assign(data, structuredClone(values)); },
+    remove: async keys => { for (const key of keys) delete data[key]; },
+  };
+  const { sendTrial } = background({ storage });
+  const popup = { url: 'chrome-extension://test/popup.html' }, page = { url: 'https://shop.example/', tab: { id: 7 }, frameId: 0 };
+  const start = await sendTrial({ op: 'start', expected: null, tasks: ['One', 'Two'] }, popup);
+  assert.equal(start.ok, true);
+  const [first, duplicate] = await Promise.all([
+    sendTrial({ op: 'finish', expected: start.trial, outcome: 'done' }, page),
+    sendTrial({ op: 'finish', expected: start.trial, outcome: 'done' }, page),
+  ]);
+  assert.equal(first.ok, true); assert.equal(duplicate.ok, false);
+  const end = await sendTrial({ op: 'end', expected: first.trial }, popup);
+  assert.equal(end.ok, true); assert.ok(end.trial.endedAt);
+  await sendTrial({ op: 'clear', expected: end.trial }, popup);
+  assert.equal('gaze-navigator-trial' in data, false);
+  assert.equal((await sendTrial({ op: 'finish', expected: first.trial, outcome: 'done' }, page)).ok, false);
 });
