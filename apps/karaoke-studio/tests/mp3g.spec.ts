@@ -70,3 +70,33 @@ test('a clip exports as MP3+G karaoke: CD+G lyric graphics beside an MP3 of the 
   expect(refused.status()).toBe(400);
   expect((await refused.json()).error).toContain('lyric style');
 }));
+
+test('a saved duet keeps each singer in its MP3+G graphics and highlights with the part colours', async ({ page }) => withClip(page, async id => {
+  test.setTimeout(90000);
+  for (const [line, singer] of [[1, '1'], [2, '2'], [3, 'both']] as const) {
+    await page.getByRole('combobox', { name: `Singer line ${line}`, exact: true }).selectOption(singer);
+  }
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect.poll(async () => (await (await page.request.get(`/api/projects/${id}`)).json()).cues.map((cue: { singer?: string }) => cue.singer)).toEqual([1, 2, 'both']);
+  const downloaded = page.waitForEvent('download', { timeout: 60000 });
+  await page.getByRole('button', { name: 'Export MP3+G karaoke', exact: true }).click();
+  const files = entries(await readFile((await (await downloaded).path())!));
+  const data = [...files].find(([name]) => name.endsWith('.cdg'))![1];
+  const drawn = new Set<number>(), flips = new Set<number>(), colours = new Map<number, number[]>();
+  for (let offset = 0; offset < data.length; offset += 24) {
+    if ((data[offset]! & 0x3f) !== 9) continue;
+    const kind = data[offset + 1]! & 0x3f;
+    if (kind === 6) drawn.add(data[offset + 5]! & 15);
+    if (kind === 38) flips.add(data[offset + 5]! & 15);
+    if (kind === 30 || kind === 31) for (let k = 0; k < 8; k++) {
+      const high = data[offset + 4 + k * 2]!, low = data[offset + 5 + k * 2]!;
+      colours.set((kind === 31 ? 8 : 0) + k, [high >> 2, ((high & 3) << 2) | (low >> 4), low & 15]);
+    }
+  }
+  // All three roles are drawn; XOR 1 turns their unsung slots4/6/8 into sung slots5/7/9, leaving background alone.
+  for (const colour of [4, 6, 8]) expect(drawn.has(colour)).toBe(true);
+  expect([...flips]).toEqual([1]);
+  expect(colours.get(5)).toEqual([13, 11, 7]);
+  expect(colours.get(7)).toEqual([8, 12, 15]);
+  expect(colours.get(9)).toEqual([12, 10, 15]);
+}));

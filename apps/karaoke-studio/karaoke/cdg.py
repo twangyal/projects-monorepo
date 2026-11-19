@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw
 from .lyrics_auto import needs_space, word_timings
 from .model import validate_project
 from .ultrastar import UNKNOWN_ARTIST, artist_and_title, song_name
-from .video import STYLES, _fonts, text_layout
+from .video import STYLES, _fonts, part_look, text_layout
 
 PACKETS_PER_SECOND = 300
 WIDTH, HEIGHT = 300, 216
@@ -41,6 +41,8 @@ LYRIC_SIZE, LARGE_SIZE, TITLE_SIZE, ARTIST_SIZE = 20, 25, 24, 18
 LEAD, AFTER = 5.0, 0.4
 # The palette: background, lyrics not yet sung, sung lyrics, and the artist on the title page.
 BACKGROUND, TEXT, SUNG, MUTED = 0, 1, 2, 3
+# Three duet parts, each with unsung/sung colours, fit alongside the four ordinary colours in CD+G's 16 slots.
+PART_PAIRS = {1: (4, 5), 2: (6, 7), 'both': (8, 9)}
 
 _GRAPHICS = 0x09
 _MEMORY_PRESET, _BORDER_PRESET, _TILE, _TILE_XOR, _COLOURS_LOW, _COLOURS_HIGH = 1, 2, 6, 38, 30, 31
@@ -92,6 +94,8 @@ class _Line:
     end: float
     words: list[tuple[float, float, int, int]] = field(default_factory=list)
     whole: bool = False  # lit all at once (right-to-left text, whose words' places are not measured here)
+    singer: int | str | None = None
+    lyric_mask: list[list[bool]] | None = None  # excludes the static part label from either kind of wipe
 
 
 def _measure(text: str, size: int, font_path: Path) -> float:
@@ -125,6 +129,11 @@ def _pixels(text: str, size: int, font_path: Path, height: int = PLACE_ROWS * TI
     return [[data[x, y] >= 96 for x in range(WIDTH)] for y in range(height)], left, whole
 
 
+def _shift_mask(mask: list[list[bool]], dx: int) -> list[list[bool]]:
+    """Translate already shaped glyphs by whole pixels, preserving their direction and visual order."""
+    return [[row[x - dx] if 0 <= x - dx < WIDTH else False for x in range(WIDTH)] for row in mask]
+
+
 def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, *, cancel: threading.Event | None = None, **timing) -> list[_Line]:
     """The saved lines as drawn, each wrapped to the screen's width with its words' times (see ``word_timings``)."""
     _cancelled(cancel)
@@ -136,13 +145,16 @@ def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, *, cancel: th
     for cue, words in zip(cues, timings, strict=True):
         _cancelled(cancel)
         words = [word for word in words if word['text'].strip()]
+        singer = cue.get('singer')
+        prefix = 'Both: ' if singer == 'both' else f'{singer}: ' if singer is not None else ''
         # Wrapped greedily: each piece is as many of the line's words as fit.
         pieces: list[list[int]] = []
         for index, word in enumerate(words):
             _cancelled(cancel)
             if pieces:
                 candidate = _joined([words[k]['text'] for k in pieces[-1]] + [word['text']])
-                if _measure(candidate, size, font_path) <= WRAP:
+                width = (_measure(prefix, size, font_path) if prefix else 0) + _measure(candidate, size, font_path)
+                if width <= WRAP:
                     pieces[-1].append(index)
                     continue
             pieces.append([index])
@@ -150,7 +162,28 @@ def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, *, cancel: th
             _cancelled(cancel)
             texts = [words[k]['text'] for k in piece]
             text = _joined(texts)
-            mask, left, whole = _pixels(text, size, font_path)
+            piece_size = size
+            # A label must not clip a single word that fitted before it. Fit an assigned strip down to a readable
+            # minimum; an unsplittable word still too wide needs editing or a video, rather than silently losing text.
+            if prefix:
+                def width_at(size):
+                    return _measure(prefix, size, font_path) + _measure(text, size, font_path)
+                while width_at(piece_size) > WRAP and piece_size > 12:
+                    _cancelled(cancel)
+                    piece_size -= 1
+                if width_at(piece_size) > WRAP:
+                    raise ValueError('A lyric word is too wide for CD+G. Add a space within it or export a video instead.')
+            mask, left, whole = _pixels(text, piece_size, font_path)
+            lyric_mask = None
+            if prefix:
+                # Shape the lyric on its own: a Latin "Both:" must not change an RTL lyric's base direction, and a
+                # numeric "2:" must not itself be reversed. The separate LTR label stays unsung throughout.
+                label_mask, _, _ = _pixels(prefix, piece_size, font_path)
+                dx = round(_measure(prefix, piece_size, font_path) / 2)
+                lyric_mask = _shift_mask(mask, dx)
+                label_mask = _shift_mask(label_mask, -round(_measure(text, piece_size, font_path) / 2))
+                mask = [[a or b for a, b in zip(lyric_row, label_row, strict=True)] for lyric_row, label_row in zip(lyric_mask, label_mask, strict=True)]
+                left += dx
             # Each word is sung from its start to the next word's (the line's end for its last word).
             untils = [words[k + 1]['start'] if k + 1 < len(words) else float(cue['end']) for k in piece]
             end = untils[-1]
@@ -158,11 +191,11 @@ def layout(project: dict, font_path: Path, size: int = LYRIC_SIZE, *, cancel: th
             for k, (word, until) in zip(piece, zip(texts, untils, strict=True), strict=True):
                 _cancelled(cancel)
                 spaced = text.index(word, offset)
-                x0 = left + _measure(text[:spaced], size, font_path) - 1
-                x1 = left + _measure(text[:spaced + len(word)], size, font_path) + 1
+                x0 = left + _measure(text[:spaced], piece_size, font_path) - 1
+                x1 = left + _measure(text[:spaced + len(word)], piece_size, font_path) + 1
                 placed.append((float(words[k]['start']), max(until, float(words[k]['start'])), math.floor(x0), math.ceil(x1)))
                 offset = spaced + len(word)
-            lines.append(_Line(mask, placed[0][0], end, placed, whole))
+            lines.append(_Line(mask, placed[0][0], end, placed, whole, singer, lyric_mask))
     return lines
 
 
@@ -223,7 +256,10 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', *, cancel
     # Each place is a queue of steps sent in order: (due packet, kind, packets).
     places: list[list[tuple[int, int, list[bytes]]]] = [[] for _ in PLACES]
     first = max(0.0, lines[0].start - LEAD)
-    opening = [*palette([colours['background'], colours['main'], colours['accent'], colours['muted']]), *clear_screen()]
+    entries = [colours['background'], colours['main'], colours['accent'], colours['muted']]
+    if any(line.singer is not None for line in lines):
+        entries += [colour for singer in PART_PAIRS for colour in part_look(style, singer)]
+    opening = [*palette(entries), *clear_screen()]
     title = _title_page(project, font_path, cancel) if first >= 1.5 else []
     # The screen is cleared of the title just before the first line is drawn.
     places[0].append((_index(first), _CLEAR, clear_screen()))
@@ -231,11 +267,13 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', *, cancel
     for number, line in enumerate(lines):
         _cancelled(cancel)
         place, top = number % len(PLACES), PLACES[number % len(PLACES)]
+        text_colour, sung_colour = PART_PAIRS.get(line.singer, (TEXT, SUNG))
+        lyric_mask = line.lyric_mask if line.lyric_mask is not None else line.mask
         due = max(cleared[place], _index(line.start - LEAD))
-        places[place].append((due, _DRAW, [tile(BACKGROUND, TEXT, row, column, bits) for row, column, bits in _tiles(line.mask, top)]))
+        places[place].append((due, _DRAW, [tile(BACKGROUND, text_colour, row, column, bits) for row, column, bits in _tiles(line.mask, top)]))
         if line.whole:
-            places[place].append((_index(line.start), _WIPE, [tile(0, TEXT ^ SUNG, row, column, bits, xor=True)
-                                                              for row, column, bits in _tiles(line.mask, top)]))
+            places[place].append((_index(line.start), _WIPE, [tile(0, text_colour ^ sung_colour, row, column, bits, xor=True)
+                                                              for row, column, bits in _tiles(lyric_mask, top)]))
         else:
             for start, until, x0, x1 in line.words:
                 _cancelled(cancel)
@@ -245,8 +283,8 @@ def render_cdg(project: dict, font_path: Path, style: str = 'classic', *, cancel
                     # A tile lights as the wipe reaches it, so a word is fully lit while it is still sung.
                     share = min(1.0, max(0.0, (column * TILE_WIDTH - x0) / span))
                     low, high = max(x0, column * TILE_WIDTH), min(x1, (column + 1) * TILE_WIDTH)
-                    flips = [tile(0, TEXT ^ SUNG, row, at_column, bits, xor=True)
-                             for row, at_column, bits in _tiles(line.mask, top, range(column, column + 1), lambda x, low=low, high=high: low <= x < high)]
+                    flips = [tile(0, text_colour ^ sung_colour, row, at_column, bits, xor=True)
+                             for row, at_column, bits in _tiles(lyric_mask, top, range(column, column + 1), lambda x, low=low, high=high: low <= x < high)]
                     if flips:
                         places[place].append((_index(start + (until - start) * share), _WIPE, flips))
         erase = _index(line.end + AFTER)

@@ -168,6 +168,78 @@ class CdgTests(unittest.TestCase):
                 export_cdg(self.project, backing, work, encode, FONT, cancel, stages.append)
 
 
+    def test_duet_parts_use_the_video_colours_and_highlight_in_their_own_palette_pairs(self):
+        from karaoke.video import STYLES, part_look
+        roles = [1, 2, 'both', None, None]
+        cues = [{**cue, **({'singer': role} if role is not None else {})} for cue, role in zip(self.project['cues'], roles, strict=True)]
+        project = update_project(self.project, self.project['title'], cues, 1)
+        for style in STYLES:
+            with self.subTest(style=style):
+                screen = Screen(render_cdg(project, FONT, style, words=self.words))
+                screen.at(1)
+                for role, first_row, start, end, pair in [(1, 2, 8, 10, (4, 5)), (2, 6, 11, 13, (6, 7)), ('both', 10, 14, 16, (8, 9))]:
+                    for colour, index in zip(part_look(style, role), pair, strict=True):
+                        self.assertEqual(screen.colours[index], tuple(round(int(colour[k:k + 2], 16) / 17) for k in (1, 3, 5)))
+                    rows = place_rows(first_row)
+                    self.assertGreater(count(screen.at(start - 0.3), pair[0], rows), 50, 'part colour appears before singing')
+                    sung = screen.at(end - 0.05)
+                    self.assertGreater(count(sung, pair[1], rows), 50, 'lyric pixels light in this part colour')
+                    self.assertGreater(count(sung, pair[0], rows), 5, 'the printed part label stays visible beside sung words')
+                    self.assertEqual(count(screen.at(end + 0.7), pair[0], rows) + count(screen.at(end + 0.7), pair[1], rows), 0)
+                # An unassigned line in a duet keeps the ordinary lyric colours.
+                self.assertGreater(count(screen.at(18.95), SUNG, place_rows(14)), 50)
+
+    def test_wrapped_duet_strips_repeat_the_part_label_without_adding_or_retiming_words(self):
+        from karaoke.lyrics_auto import word_timings
+        cue = dict(start=8.0, end=14.0, text='This lyric line is far too long to fit across the small karaoke screen', singer=2)
+        project = update_project(self.project, 'Duet', [cue], 1)
+        with patch('karaoke.cdg._pixels', wraps=cdg._pixels) as draw:
+            lines = layout(project, FONT)
+        self.assertGreater(len(lines), 2)
+        self.assertEqual(sum(call.args[0] == '2: ' for call in draw.call_args_list), len(lines), 'each continuation draws its own part label')
+        self.assertTrue(all(line.singer == 2 for line in lines))
+        expected = word_timings([cue], [], project['duration'])[0]
+        self.assertEqual([word[0] for line in lines for word in line.words], [word['start'] for word in expected])
+        self.assertTrue(all(0 <= word[2] < word[3] <= WIDTH for line in lines for word in line.words))
+
+    def test_a_duet_label_cannot_push_a_previously_fitting_word_off_screen(self):
+        word = 'W' * 13
+        self.assertLess(cdg._measure(word, cdg.LYRIC_SIZE, FONT), cdg.WRAP)
+        self.assertGreater(cdg._measure('Both: ' + word, cdg.LYRIC_SIZE, FONT), cdg.WRAP)
+        project = update_project(self.project, 'Duet', [dict(start=8.0, end=10.0, text=word, singer='both')], 1)
+        lines = layout(project, FONT)
+        self.assertTrue(all(0 <= item[2] < item[3] <= WIDTH for line in lines for item in line.words))
+        too_wide = update_project(project, 'Duet', [dict(start=8.0, end=10.0, text='W' * 80, singer='both')], 2)
+        with self.assertRaisesRegex(ValueError, r'too wide.*CD\+G'):
+            layout(too_wide, FONT)
+
+    def test_a_right_to_left_duet_line_keeps_its_part_with_whole_line_highlighting(self):
+        project = update_project(self.project, 'Duet', [dict(start=8.0, end=10.0, text='مرحبا بالعالم', singer=2)], 1)
+        lines = layout(project, FONT)
+        self.assertTrue(all(line.whole and line.singer == 2 for line in lines))
+        screen = Screen(render_cdg(project, FONT))
+        self.assertGreater(count(screen.at(8.6), 7), 50)
+        self.assertEqual(count(screen.at(10.7), 6) + count(screen.at(10.7), 7), 0)
+
+    def test_mixed_rtl_duets_keep_lyric_visual_order_and_draw_labels_as_separate_ltr_runs(self):
+        text = 'שלום עולם ABC'
+        solo = update_project(self.project, 'Solo', [dict(start=8.0, end=10.0, text=text)], 1)
+        def ink(pixels, colour):
+            points = {(x, y) for y, row in enumerate(pixels) for x, value in enumerate(row) if value == colour}
+            if not points:
+                return set()
+            left, top = min(x for x, _ in points), min(y for _, y in points)
+            return {(x - left, y - top) for x, y in points}
+        expected = ink(Screen(render_cdg(solo, FONT)).at(8.6), SUNG)
+        for singer, label, unsung, sung in [(2, '2: ', 6, 7), ('both', 'Both: ', 8, 9)]:
+            with self.subTest(singer=singer):
+                duet = update_project(self.project, 'Duet', [dict(start=8.0, end=10.0, text=text, singer=singer)], 1)
+                actual = Screen(render_cdg(duet, FONT)).at(8.6)
+                self.assertTrue(ink(actual, sung) == expected, 'lyric glyphs and visual order are unchanged by a part label')
+                label_mask, _, _ = cdg._pixels(label, cdg.LYRIC_SIZE, FONT)
+                label_pixels = [[unsung if pixel else 0 for pixel in row] for row in label_mask]
+                self.assertTrue(ink(actual, unsung) == ink(label_pixels, unsung), 'the label keeps its own left-to-right order and never joins the lyric wipe')
+
     def test_already_cancelled_export_does_not_begin_graphics_or_encoding(self):
         cancel = threading.Event()
         cancel.set()
