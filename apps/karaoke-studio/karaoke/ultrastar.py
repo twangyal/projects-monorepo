@@ -35,10 +35,13 @@ def _plain(text: str) -> str:
     return re.sub(r'\s+', ' ', _CONTROL.sub(' ', text)).strip()
 
 
+UNKNOWN_ARTIST = 'Unknown artist'
+
+
 def artist_and_title(title: str) -> tuple[str, str]:
     """A clip named "Artist - Title" as its artist and title; otherwise an unknown artist."""
     artist, separator, song = _plain(title).partition(' - ')
-    return (artist.strip(), song.strip()) if separator and artist.strip() and song.strip() else ('Unknown artist', _plain(title) or 'Untitled')
+    return (artist.strip(), song.strip()) if separator and artist.strip() and song.strip() else (UNKNOWN_ARTIST, _plain(title) or 'Untitled')
 
 
 def _header(name: str, value: str) -> str:

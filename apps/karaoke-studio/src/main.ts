@@ -32,7 +32,7 @@ import { DOUBT_LEAD, REACTION, doubtfulWords, lineMeant, matchedBoxes, nextDoubt
 import { cueWords, parseWordTiming, saidCharacters, saidLine, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 import { NUDGE, NUDGE_FAR, TAP_LEAD, WordTapping, nudgeWord } from './word-tapping.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage' | 'ultrastar-export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe' | 'transcribe-passage' | 'ultrastar-export' | 'mp3g-export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string; retainedOnCancel?: boolean; recognitionFailed?: boolean; song?: { title?: string; artist?: string } }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 // Languages Whisper is told outright (the keys of WHISPER_CHOICES in karaoke/transcription.py).
@@ -102,7 +102,7 @@ app.innerHTML = `
           <div class="export-row"><label class="guide-vocal">Guide vocal <select id="guide-vocal" disabled><option value="0">Off</option><option value="15">Quiet</option><option value="30">Medium</option></select></label><label class="guide-vocal">Key <select id="key-change" aria-describedby="key-status" disabled><option value="6">+6 (higher)</option><option value="5">+5 (higher)</option><option value="4">+4 (higher)</option><option value="3">+3 (higher)</option><option value="2">+2 (higher)</option><option value="1">+1 (higher)</option><option value="0" selected>0 (original)</option><option value="-1">−1 (lower)</option><option value="-2">−2 (lower)</option><option value="-3">−3 (lower)</option><option value="-4">−4 (lower)</option><option value="-5">−5 (lower)</option><option value="-6">−6 (lower)</option></select></label><button id="key-preview" class="quiet" aria-describedby="key-status" disabled>Hear this key</button><label class="guide-vocal">Lyrics <select id="lyric-style" aria-describedby="lyric-style-note"><option value="classic">Classic</option><option value="contrast">High contrast</option><option value="large">Large print</option><option value="light">Light</option></select></label><label class="guide-vocal">Background <select id="video-background" aria-describedby="video-background-note" disabled><option value="cover">Song cover art</option><option value="plain">Plain colour</option></select></label><label class="guide-vocal">Video size <select id="video-size"><option value="720p">HD 1280×720</option><option value="1080p">Full HD 1920×1080</option><option value="vertical">Vertical 1080×1920 (phones)</option></select></label><label class="guide-vocal">Pronunciation <select id="lyric-pronunciation" aria-describedby="lyric-pronunciation-note"><option value="show">Show for other scripts</option><option value="hide">Hide</option></select></label><label class="guide-vocal">Melody <select id="melody-guide" aria-describedby="melody-guide-note"><option value="hide">Hidden</option><option value="show">Pitch bars</option></select></label></div>
           <p id="key-status" class="fine" role="status" aria-live="polite">The key moves the backing and guide vocal up or down in semitones without changing the tempo, so the song suits your voice.</p><p id="lyric-pronunciation-note" class="fine">Lines in Korean, Cyrillic or an Indian script, and Chinese or Japanese lines in a song recognized as Mandarin, Cantonese or Japanese, show how they are said in Latin letters under them, lighting up with the words: romanized Korean, romanized Indian scripts, pinyin with tone marks, Jyutping with tone numbers, romaji (with the Japanese reading dictionary installed) and Russian transliteration.</p><p id="melody-guide-note" class="fine">Pitch bars show the notes the studio finds in the separated vocals, scrolling past the playhead as they are sung, in the preview and the video. They are found automatically, so a note can be a semitone off and quiet or breathy notes can be missing. <span id="melody-guide-status" role="status"></span></p><p id="lyric-style-note" class="fine">Lyrics sets how the video draws them, and the preview shows the same: high contrast is white and yellow on black, large print makes the lines being sung much bigger.</p><p id="video-background-note" class="fine">With a song file that carries cover art, or a picture you choose, the video shows it softly behind the lyrics; choose Plain colour for the lyric style's own background. <label class="text-button file-button">Choose picture<input id="video-picture" type="file" accept="image/png,image/jpeg,image/webp" disabled></label> <button id="video-picture-remove" class="text-button" disabled>Remove picture</button></p>
           <div class="export-actions"><button id="export-video" class="primary" disabled>Export karaoke MP4</button><button id="video-download" class="text-button" hidden>Download MP4 again</button></div>
-          <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="ass-download" class="text-button" disabled>Export karaoke subtitles (ASS)</button><button id="ultrastar-export" class="text-button" disabled title="The saved lyrics on the melody guide's notes, with the song, backing and vocals as MP3s, for UltraStar Deluxe, Vocaluxe and Performous">Export UltraStar song</button><button id="backing-download" class="text-button">Download backing WAV</button><span>HD, Full HD or vertical · 24 fps · estimated backing</span></div>
+          <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="lrc-download" class="text-button" disabled>Export word-timed LRC</button><button id="ass-download" class="text-button" disabled>Export karaoke subtitles (ASS)</button><button id="ultrastar-export" class="text-button" disabled title="The saved lyrics on the melody guide's notes, with the song, backing and vocals as MP3s, for UltraStar Deluxe, Vocaluxe and Performous">Export UltraStar song</button><button id="mp3g-export" class="text-button" disabled title="CD+G lyric graphics beside an MP3 of the backing, with the key, guide vocal and lyric style chosen here, for karaoke players and machines that play MP3+G">Export MP3+G karaoke</button><button id="backing-download" class="text-button">Download backing WAV</button><span>HD, Full HD or vertical · 24 fps · estimated backing</span></div>
         </section>
       </section>
     </div><footer><span>Built for your next kitchen concert.</span><span>AI estimates the stems and the lyrics. You review and correct them.</span></footer>
@@ -338,6 +338,7 @@ function controls() {
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('ass-download').disabled = element<HTMLButtonElement>('lyrics-download').disabled;
   element<HTMLButtonElement>('ultrastar-export').disabled = element<HTMLButtonElement>('lyrics-download').disabled || !session;
+  element<HTMLButtonElement>('mp3g-export').disabled = element<HTMLButtonElement>('ultrastar-export').disabled;
   element<HTMLButtonElement>('lrc-download').disabled = lrcExportGeneration === projectGeneration || element<HTMLButtonElement>('lyrics-download').disabled;
   element<HTMLSelectElement>('guide-vocal').disabled = element<HTMLButtonElement>('export-video').disabled;
   element<HTMLSelectElement>('video-size').disabled = element<HTMLButtonElement>('export-video').disabled;
@@ -2719,6 +2720,24 @@ element('ultrastar-export').addEventListener('click', async () => {
     message(`Could not export the UltraStar song: ${error instanceof Error ? error.message : 'Connection lost.'}`, true);
   } finally { requestingJob = false; controls(); }
 });
+// MP3+G karaoke for karaoke players: CD+G graphics of the saved lyrics beside an MP3 of the backing, with the key, guide
+// vocal and lyric style chosen for the video.
+element('mp3g-export').addEventListener('click', async () => {
+  if (!working || dirty || draftDirty || timingOwner || currentJob || requestingJob || loading || saving) return;
+  const id = working.id, revision = working.revision;
+  const guideVocal = Number(element<HTMLSelectElement>('guide-vocal').value), semitones = Number(element<HTMLSelectElement>('key-change').value);
+  const style = element<HTMLSelectElement>('lyric-style').value;
+  requestingJob = true; controls();
+  try {
+    const options = { revision, ...(guideVocal ? { guideVocal } : {}), ...(semitones ? { semitones } : {}), ...(style !== 'classic' ? { style } : {}) };
+    const { job } = await request<{ job: Job }>(`/api/projects/${id}/mp3g`, json('POST', options));
+    if (working?.id !== id) return;
+    message(`Preparing MP3+G karaoke in ${keyName(semitones)}: drawing the lyric graphics and encoding the backing.`);
+    startPolling(job, false, true);
+  } catch (error) {
+    message(`Could not export MP3+G karaoke: ${error instanceof Error ? error.message : 'Connection lost.'}`, true);
+  } finally { requestingJob = false; controls(); }
+});
 element('delete-project').addEventListener('click', async () => {
   if (!working || timingBusy()) return;
   if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
@@ -2745,7 +2764,7 @@ function showJob(job: Job | null) {
   if (job) retirePractice('Studio media work stopped practice.');
   currentJob = job; element('job-panel').hidden = !job;
   if (job) {
-    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'ultrastar-export': 'Preparing your UltraStar song', 'archive-import': 'Restoring a project archive', transcribe: 'Listening for the lyrics', 'transcribe-passage': 'Listening to the selected passage' };
+    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'ultrastar-export': 'Preparing your UltraStar song', 'mp3g-export': 'Preparing your MP3+G karaoke', 'archive-import': 'Restoring a project archive', transcribe: 'Listening for the lyrics', 'transcribe-passage': 'Listening to the selected passage' };
     element('job-title').textContent = titles[job.kind];
     element('job-stage').textContent = job.stage + (ownedJob ? '' : ' — observed studio work; cancellation belongs to its starting page.');
   }
@@ -2779,6 +2798,11 @@ async function pollJob(id: string, epoch = pollEpoch) {
           download(`/api/projects/${job.projectId}/ultrastar`, '.ultrastar.zip');
           message('UltraStar song ready: the zip holds a folder to copy into the game’s songs folder.');
         } else message('The studio finished an UltraStar song. Export it again here to download it.');
+      } else if (job.kind === 'mp3g-export') {
+        if (ownedJob && working?.id === job.projectId) {
+          download(`/api/projects/${job.projectId}/mp3g`, '.mp3g.zip');
+          message('MP3+G karaoke ready: the zip holds a CD+G file and an MP3 with the same name, for a karaoke player.');
+        } else message('The studio finished MP3+G karaoke. Export it again here to download it.');
       } else if (job.kind === 'archive-export') {
         if (ownedJob && archiveJobRevision !== null) {
           archiveCaches.set(job.projectId, archiveJobRevision);

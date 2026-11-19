@@ -38,7 +38,8 @@ from .alignment import ALIGNMENT_FILE, alignable, max_bytes, place_lines, read_e
 from .lyrics_auto import word_timings, words_to_cues
 from .pronunciation import pronunciation as line_pronunciation
 from .ass import render_ass
-from .ultrastar import export_ultrastar
+from .ultrastar import UNKNOWN_ARTIST, artist_and_title, export_ultrastar
+from .cdg import export_cdg
 from .lrc import render_lrc
 from .recognition_passage import PASSAGE_FILE, passage_range, crop_vocals, passage_result, validate_passage, passage_reply
 from .transcription import CHOICES
@@ -53,7 +54,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|ultrastar|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover|melody))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|ultrastar|mp3g|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover|melody))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -942,6 +943,83 @@ class KaraokeServer(ThreadingHTTPServer):
             self.cleanup_work(work_dir)
             raise
 
+    def start_mp3g_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic"):
+        """MP3+G karaoke of the saved lyrics: CD+G graphics beside an MP3 of the backing with the export's key change
+        and guide vocal (see cdg)."""
+        if self._closing or self.uploading:
+            raise JobBusy("An audio upload is in progress. Wait before exporting.")
+        project = validate_project(project)
+        if not project["cues"]:
+            raise RequestError(400, "Add and timestamp lyric lines, then save before exporting MP3+G karaoke.")
+        transcript = self.optional_transcript(project)
+        timing = {"words": transcript["words"]} if transcript else {}
+        letters = self.read_alignment(project) if transcript else None
+        if letters is not None:
+            timing["letters"] = letters
+        if transcript and transcript.get("language"):
+            timing["language"] = transcript["language"]
+        work_dir = self.new_work()
+        project_dir = self.projects_dir / project["id"]
+        artist, title = artist_and_title(project["title"])
+
+        def work(cancel, stage):
+            work_fd = self._open_work(work_dir)
+            try:
+                project_fd = self._open_project(project["id"])
+                try:
+                    owned_work = self._descriptor_path(work_fd)
+                    owned_project = self._descriptor_path(project_fd)
+
+                    def encode(source: Path, target: Path) -> None:
+                        from .pipeline import _run
+                        from .video import _audio_program
+                        arguments = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
+                                     "-protocol_whitelist", "file", "-i", str(source)]
+                        if guide_vocal:
+                            arguments += ["-protocol_whitelist", "file", "-i", str(owned_project / "vocals.wav")]
+                        # The video's audio program, written for inputs 1 (backing) and 2 (vocals).
+                        program = _audio_program(guide_vocal / 100, semitones)
+                        if program:
+                            arguments += ["-filter_complex", program.replace("[1:a]", "[0:a]").replace("[2:a]", "[1:a]"), "-map", "[mix]"]
+                        arguments += ["-vn", "-c:a", "libmp3lame", "-b:a", "192k", "-metadata", f"title={title}",
+                                      *(["-metadata", f"artist={artist}"] if artist != UNKNOWN_ARTIST else []), str(target)]
+                        _run(arguments, cancel, timeout=900)
+                        if target.is_symlink() or not target.is_file() or target.stat().st_size <= 0:
+                            raise RuntimeError("The MP3+G audio could not be encoded.")
+                    with inherit_media_handles(work_fd, project_fd):
+                        output = export_cdg(project, owned_project / "backing.wav", owned_work, encode, self.font_path,
+                                            cancel, stage, style=style, **timing)
+                    self.check_storage()
+                    if output.is_symlink() or not output.is_file() or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES:
+                        raise RuntimeError("MP3+G export did not produce complete karaoke files.")
+                finally:
+                    os.close(project_fd)
+            finally:
+                os.close(work_fd)
+
+            def publish():
+                if self.project(project["id"])["revision"] != project["revision"]:
+                    raise RuntimeError("Saved project changed during export; export again.")
+                fd = self._open_project(project["id"])
+                try:
+                    work_fd = self._open_work(work_dir)
+                    try:
+                        os.replace("export.mp3g.zip", "mp3g.zip", src_dir_fd=work_fd, dst_dir_fd=fd)
+                    finally:
+                        os.close(work_fd)
+                    _atomic_json(project_dir / "mp3g-revision.json", {"revision": project["revision"]}, directory_fd=fd)
+                finally:
+                    os.close(fd)
+                return f'/api/projects/{project["id"]}/mp3g'
+
+            return publish
+
+        try:
+            return self.jobs.start(project["id"], "mp3g-export", work, lambda: self.cleanup_work(work_dir))
+        except BaseException:
+            self.cleanup_work(work_dir)
+            raise
+
     def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
                      background: str = "cover", size: str = "720p", pronunciation: bool = True, melody: bool = False):
         if self._closing or self.uploading:
@@ -1339,6 +1417,18 @@ class Handler(BaseHTTPRequestHandler):
                 value = self._read_json()
                 if set(value) != {"revision"} or type(value["revision"]) is not int or value["revision"] < 0:
                     raise RequestError(400, "Provide the saved revision to export as an UltraStar song.")
+            elif self.command == "POST" and resource == "mp3g":
+                value = self._read_json()
+                guide, semitones, style = value.get("guideVocal", 0), value.get("semitones", 0), value.get("style", "classic")
+                if ("revision" not in value or set(value) - {"revision", "guideVocal", "semitones", "style"}
+                        or type(value["revision"]) is not int or value["revision"] < 0):
+                    raise RequestError(400, "Provide the saved revision to export as MP3+G karaoke.")
+                if type(guide) is not int or not 0 <= guide <= MAX_GUIDE_VOCAL:
+                    raise RequestError(400, f"Choose a guide vocal level from 0 to {MAX_GUIDE_VOCAL} percent.")
+                if type(semitones) is not int or not -MAX_SEMITONES <= semitones <= MAX_SEMITONES:
+                    raise RequestError(400, f"Choose a key change from -{MAX_SEMITONES} to +{MAX_SEMITONES} semitones.")
+                if style not in VIDEO_STYLES:
+                    raise RequestError(400, "Choose a lyric style: classic, contrast, large or light.")
             elif self.command == "POST" and resource in ("export", "key-preview"):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
@@ -1457,6 +1547,23 @@ class Handler(BaseHTTPRequestHandler):
                     if value["revision"] != project["revision"]:
                         raise RequestError(409, "Saved revision changed; export the current saved clip.")
                     job = server.start_ultrastar_export(project)
+                if self.command == "POST" and resource == "mp3g":
+                    if value["revision"] != project["revision"]:
+                        raise RequestError(409, "Saved revision changed; export the current saved clip.")
+                    job = server.start_mp3g_export(project, guide_vocal=guide, semitones=semitones, style=style)
+                if read and resource == "mp3g":
+                    marker = directory / "mp3g-revision.json"
+                    if not (directory / "mp3g.zip").is_file() or not marker.is_file():
+                        raise RequestError(404, "Export MP3+G karaoke before downloading it.")
+                    try:
+                        with server.project_file(project_id, marker.name) as source:
+                            if os.fstat(source.fileno()).st_size > MAX_JSON:
+                                raise ValueError("Oversized MP3+G revision")
+                            current = json.loads(source.read(MAX_JSON + 1))["revision"]
+                    except (ValueError, KeyError, TypeError):
+                        raise RequestError(409, "Export this saved revision before downloading its MP3+G karaoke.") from None
+                    if current != project["revision"]:
+                        raise RequestError(409, "Saved lyrics changed; export the MP3+G karaoke again.")
                 if read and resource == "ultrastar":
                     marker = directory / "ultrastar-revision.json"
                     if not (directory / "ultrastar.zip").is_file() or not marker.is_file():
@@ -1547,7 +1654,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == 'POST' and resource == 'archive':
                 self._json({'job': job}, 202)
                 return
-            if self.command == "POST" and resource in ("export", "transcribe", "transcribe-passage", "ultrastar"):
+            if self.command == "POST" and resource in ("export", "transcribe", "transcribe-passage", "ultrastar", "mp3g"):
                 self._json({"job": job}, 202)
                 return
             if self.command == "POST" and resource == "key-preview":
@@ -1602,6 +1709,10 @@ class Handler(BaseHTTPRequestHandler):
             if read and resource == "ultrastar":
                 self._file(directory / "ultrastar.zip", "application/zip",
                            disposition=self._attachment(project["title"], ".ultrastar.zip"))
+                return
+            if read and resource == "mp3g":
+                self._file(directory / "mp3g.zip", "application/zip",
+                           disposition=self._attachment(project["title"], ".mp3g.zip"))
                 return
             if read and resource == "video":
                 self._file(directory / "video.mp4", "video/mp4",
