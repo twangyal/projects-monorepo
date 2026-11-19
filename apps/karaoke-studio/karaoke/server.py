@@ -38,6 +38,7 @@ from .alignment import ALIGNMENT_FILE, alignable, max_bytes, place_lines, read_e
 from .lyrics_auto import word_timings, words_to_cues
 from .pronunciation import pronunciation as line_pronunciation
 from .ass import render_ass
+from .ultrastar import export_ultrastar
 from .lrc import render_lrc
 from .recognition_passage import PASSAGE_FILE, passage_range, crop_vocals, passage_result, validate_passage, passage_reply
 from .transcription import CHOICES
@@ -52,7 +53,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover|melody))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|lrc|ass|video|export|ultrastar|key-preview|archive|archive-info|transcript|recognition-preview|recognition-passage|transcribe|transcribe-passage|align|word-timings|cover|melody))?")
 # Guide vocal: share of the separated vocals mixed under the backing in an exported video, in percent.
 MAX_GUIDE_VOCAL = 50
 # Key change in semitones for exported videos and their previews (the same bound as karaoke.video.MAX_SEMITONES).
@@ -869,6 +870,78 @@ class KaraokeServer(ThreadingHTTPServer):
                 self._melodies.popitem(last=False)
             return notes
 
+    def start_ultrastar_export(self, project: dict):
+        """An UltraStar song of the saved lyrics on the melody guide's notes, with its audio as MP3s (see ultrastar)."""
+        if self._closing or self.uploading:
+            raise JobBusy("An audio upload is in progress. Wait before exporting.")
+        project = validate_project(project)
+        if not project["cues"]:
+            raise RequestError(400, "Add and timestamp lyric lines, then save before exporting an UltraStar song.")
+        transcript = self.optional_transcript(project)
+        timing = {"words": transcript["words"]} if transcript else {}
+        letters = self.read_alignment(project) if transcript else None
+        if letters is not None:
+            timing["letters"] = letters
+        if transcript and transcript.get("language"):
+            timing["language"] = transcript["language"]
+        work_dir = self.new_work()
+        project_dir = self.projects_dir / project["id"]
+
+        def work(cancel, stage):
+            work_fd = self._open_work(work_dir)
+            try:
+                project_fd = self._open_project(project["id"])
+                try:
+                    owned_work = self._descriptor_path(work_fd)
+                    owned_project = self._descriptor_path(project_fd)
+                    stage("Finding the melody in the separated vocals")
+                    try:
+                        with open(owned_project / "vocals.wav", "rb") as source:
+                            notes = self.melody(project["id"], source)
+                    except (OSError, ValueError) as error:
+                        raise RuntimeError("The melody could not be found in the separated vocals.") from error
+
+                    def encode(source: Path, target: Path) -> None:
+                        from .pipeline import _run
+                        _run(["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", str(source), "-vn",
+                              "-c:a", "libmp3lame", "-b:a", "192k", str(target)], cancel, timeout=900)
+                        if target.is_symlink() or not target.is_file() or target.stat().st_size <= 0:
+                            raise RuntimeError("The UltraStar audio could not be encoded.")
+                    sources = {"original": owned_project / "source.wav", "backing": owned_project / "backing.wav",
+                               "vocals": owned_project / "vocals.wav"}
+                    with inherit_media_handles(work_fd, project_fd):
+                        output = export_ultrastar(project, sources, owned_work, encode, cancel, stage, notes=notes, **timing)
+                    self.check_storage()
+                    if output.is_symlink() or not output.is_file() or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES:
+                        raise RuntimeError("UltraStar export did not produce a complete song.")
+                finally:
+                    os.close(project_fd)
+            finally:
+                os.close(work_fd)
+
+            def publish():
+                if self.project(project["id"])["revision"] != project["revision"]:
+                    raise RuntimeError("Saved project changed during export; export again.")
+                fd = self._open_project(project["id"])
+                try:
+                    work_fd = self._open_work(work_dir)
+                    try:
+                        os.replace("export.ultrastar.zip", "ultrastar.zip", src_dir_fd=work_fd, dst_dir_fd=fd)
+                    finally:
+                        os.close(work_fd)
+                    _atomic_json(project_dir / "ultrastar-revision.json", {"revision": project["revision"]}, directory_fd=fd)
+                finally:
+                    os.close(fd)
+                return f'/api/projects/{project["id"]}/ultrastar'
+
+            return publish
+
+        try:
+            return self.jobs.start(project["id"], "ultrastar-export", work, lambda: self.cleanup_work(work_dir))
+        except BaseException:
+            self.cleanup_work(work_dir)
+            raise
+
     def start_export(self, project: dict, guide_vocal: int = 0, semitones: int = 0, style: str = "classic",
                      background: str = "cover", size: str = "720p", pronunciation: bool = True, melody: bool = False):
         if self._closing or self.uploading:
@@ -1262,6 +1335,10 @@ class Handler(BaseHTTPRequestHandler):
                 if (set(value) != {"revision"} or type(value["revision"]) is not int
                         or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
                     raise RequestError(400, "Provide one portable saved revision when backing up.")
+            elif self.command == "POST" and resource == "ultrastar":
+                value = self._read_json()
+                if set(value) != {"revision"} or type(value["revision"]) is not int or value["revision"] < 0:
+                    raise RequestError(400, "Provide the saved revision to export as an UltraStar song.")
             elif self.command == "POST" and resource in ("export", "key-preview"):
                 value = self._read_json()
                 guide, semitones, start = value.get("guideVocal", 0), value.get("semitones", 0), value.get("start")
@@ -1376,6 +1453,23 @@ class Handler(BaseHTTPRequestHandler):
                     except (ArchiveError, OSError, ValueError):
                         archive_source.close()
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
+                if self.command == "POST" and resource == "ultrastar":
+                    if value["revision"] != project["revision"]:
+                        raise RequestError(409, "Saved revision changed; export the current saved clip.")
+                    job = server.start_ultrastar_export(project)
+                if read and resource == "ultrastar":
+                    marker = directory / "ultrastar-revision.json"
+                    if not (directory / "ultrastar.zip").is_file() or not marker.is_file():
+                        raise RequestError(404, "Export an UltraStar song before downloading it.")
+                    try:
+                        with server.project_file(project_id, marker.name) as source:
+                            if os.fstat(source.fileno()).st_size > MAX_JSON:
+                                raise ValueError("Oversized UltraStar revision")
+                            current = json.loads(source.read(MAX_JSON + 1))["revision"]
+                    except (ValueError, KeyError, TypeError):
+                        raise RequestError(409, "Export this saved revision before downloading its UltraStar song.") from None
+                    if current != project["revision"]:
+                        raise RequestError(409, "Saved lyrics changed; export the UltraStar song again.")
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project, guide_vocal=guide, semitones=semitones, style=style,
                                               background=background, size=size, pronunciation=pronounce, melody=melody_shown)
@@ -1453,7 +1547,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == 'POST' and resource == 'archive':
                 self._json({'job': job}, 202)
                 return
-            if self.command == "POST" and resource in ("export", "transcribe", "transcribe-passage"):
+            if self.command == "POST" and resource in ("export", "transcribe", "transcribe-passage", "ultrastar"):
                 self._json({"job": job}, 202)
                 return
             if self.command == "POST" and resource == "key-preview":
@@ -1504,6 +1598,10 @@ class Handler(BaseHTTPRequestHandler):
             if read and resource == "ass":
                 self._bytes(render_ass(project, transcript["words"] if transcript else [], letters, (transcript or {}).get("language")).encode("utf-8"),
                             "text/plain; charset=utf-8", disposition=self._attachment(project["title"], ".ass"))
+                return
+            if read and resource == "ultrastar":
+                self._file(directory / "ultrastar.zip", "application/zip",
+                           disposition=self._attachment(project["title"], ".ultrastar.zip"))
                 return
             if read and resource == "video":
                 self._file(directory / "video.mp4", "video/mp4",
