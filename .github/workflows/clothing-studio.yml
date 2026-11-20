@@ -20,6 +20,11 @@ permissions:
 
 jobs:
   verify:
+    name: Verify (shard ${{ matrix.shard }}/3)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -35,10 +40,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: npm run test:browser -- --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: clothing-studio-browser-results
+          name: clothing-studio-browser-results-${{ matrix.shard }}
           path: apps/clothing-studio/test-results
           retention-days: 7
