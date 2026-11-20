@@ -12,7 +12,7 @@ installed models from the song's language. Models are installed explicitly by
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
@@ -45,7 +45,7 @@ class AsrModel:
 
 # Parakeet v2 recognizes English singing best (30.9% WER on 20 English songs against v3's 42.3%);
 # v3 covers 25 European languages (25.4% German, 44.1% French). Each has its own directory.
-ENGLISH = AsrModel(
+LEGACY_ENGLISH = AsrModel(
     'english', 'parakeet-tdt-0.6b-v2-int8+silero-vad', 'lyrics-asr',
     'sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2', 482468385,
     '157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad', {
@@ -55,7 +55,7 @@ ENGLISH = AsrModel(
         'tokens.txt': 'ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d',
         VAD_FILE: VAD_SHA256,
     })
-MULTILINGUAL = AsrModel(
+LEGACY_MULTILINGUAL = AsrModel(
     'multilingual', 'parakeet-tdt-0.6b-v3-int8+silero-vad', 'lyrics-asr-v3',
     'sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2', 487170055,
     '5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf', {
@@ -91,7 +91,22 @@ WHISPER = AsrModel(
         'turbo-tokens.txt': 'b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126',
         VAD_FILE: VAD_SHA256,
     })
+# The publisher replaced both archives on 2026-11-07, including the ONNX bytes. Keep each old
+# revision pinned and readable, and give fresh installations distinct transcript/cache provenance.
+ENGLISH = replace(LEGACY_ENGLISH, name=LEGACY_ENGLISH.name + '-2026-11-07',
+    archive_bytes=482440461, archive_sha256='6fc4426b54aa549a0019b8a75b8dea59164e71790a37ac56a045ad57f915f714',
+    files={**LEGACY_ENGLISH.files,
+        'encoder.int8.onnx': '92a10bd9c23936ea0566c29f963bc57c2a5df4261b6a8921c39abea66557ca8b',
+        'decoder.int8.onnx': '4d097bae3bac5c96018d5293ba39f1b657296102b142affda40378f38b020f41',
+        'joiner.int8.onnx': '77a29f3e5ac7d37074e0af465391b80f314015d5b97f0f90c6c7767f1d56f428'})
+MULTILINGUAL = replace(LEGACY_MULTILINGUAL, name=LEGACY_MULTILINGUAL.name + '-2026-11-07',
+    archive_bytes=487211443, archive_sha256='1495e91b59d7fc53ddca91f3431758ec99f8fa253fdb0e1e851be0f72b14b0f9',
+    files={**LEGACY_MULTILINGUAL.files,
+        'encoder.int8.onnx': '1afbe69c1ffdabee94755f42e4daf1d93549131a3da11356bda84fcef0f2c479',
+        'decoder.int8.onnx': '0222a86147299d4dee90edf95b6d13827edb42ad8b7c9cf0b2582f030937c0b5',
+        'joiner.int8.onnx': 'cbd02f3696e9944970111fb439d9c3fd365a80374565f13f2b9c7007d253fc98'})
 ASR_MODELS = (ENGLISH, MULTILINGUAL, EAST_ASIAN, WHISPER)
+LEGACY_MODELS = (LEGACY_ENGLISH, LEGACY_MULTILINGUAL)
 EAST_ASIAN_CHOICES = {'chinese': 'zh', 'cantonese': 'yue', 'japanese': 'ja', 'korean': 'ko'}
 # Languages Whisper can be told outright, where telling it the song's language beats its own guess: it took read
 # Bengali for Gujarati or Hindi, and Hindi and Urdu share their sounds.
@@ -102,7 +117,8 @@ WHISPER_CHOICES = {
     'swahili': 'sw',
 }
 CHOICES = ('auto', *(model.key for model in ASR_MODELS), *EAST_ASIAN_CHOICES, *WHISPER_CHOICES)
-KNOWN_MODELS = frozenset(model.name for model in ASR_MODELS)
+WHISPER_CURRENT_TIMING = WHISPER.name + '-2026-11-07'
+KNOWN_MODELS = frozenset([*(model.name for model in (*ASR_MODELS, *LEGACY_MODELS)), WHISPER_CURRENT_TIMING])
 
 # Language choice from the multilingual model's first words: function words that are English and
 # not common words of the other languages it covers (so not "a", "in", "is", "so", "was", "will").
@@ -119,7 +135,7 @@ MAX_WORDS = 6000
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 
 
-_verified: dict[str, tuple] = {}
+_verified: dict[tuple, tuple] = {}
 
 
 def model_ready(model_root: Path, model: AsrModel) -> bool:
@@ -130,27 +146,46 @@ def model_ready(model_root: Path, model: AsrModel) -> bool:
         signature = tuple((info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns) for info in stats)
     except OSError:
         return False
-    if _verified.get(str(directory)) == signature:
-        return True
+    key = (str(directory), tuple(sorted(model.files.items())))
+    cached = _verified.get(key)
+    if cached is not None and cached[0] == signature:
+        return cached[1]
+
+    def remember(ready: bool) -> bool:
+        _verified[key] = (signature, ready)
+        return ready
     try:
         for name, expected in model.files.items():
             path = directory / name
             if path.is_symlink() or not path.is_file() or path.stat().st_size > 800_000_000:
-                return False
+                return remember(False)
             digest = hashlib.sha256()
             with path.open('rb') as source:
                 for chunk in iter(lambda: source.read(1024 * 1024), b''):
                     digest.update(chunk)
             if digest.hexdigest() != expected:
-                return False
-        _verified[str(directory)] = signature
-        return True
+                return remember(False)
+        return remember(True)
     except OSError:
         return False
 
 
+def model_revisions(model: AsrModel) -> tuple[AsrModel, ...]:
+    """Known exact revisions of one logical recognizer, preferred revision first."""
+    result = []
+    for candidate in (model, *ASR_MODELS, *LEGACY_MODELS):
+        if candidate.key == model.key and candidate.directory == model.directory and candidate not in result:
+            result.append(candidate)
+    return tuple(result)
+
+
 def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
-    return tuple(model for model in ASR_MODELS if model_ready(model_root, model))
+    found = []
+    for model in ASR_MODELS:
+        actual = next((revision for revision in model_revisions(model) if model_ready(model_root, revision)), None)
+        if actual is not None:
+            found.append(actual)
+    return tuple(found)
 
 
 def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple[AsrModel, ...]:
@@ -158,14 +193,25 @@ def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple
     if not isinstance(choice, str) or choice not in CHOICES:
         raise ValueError('Choose a recognition model, or the song\'s language for an explicit retry.')
     # Whisper's words are timed by the multilingual model; without it, Whisper is not used.
-    usable = tuple(model for model in models if model is not WHISPER or MULTILINGUAL in models)
+    timing = next((model for model in models if model.key == 'multilingual'), None)
+    usable = tuple(model for model in models if model is not WHISPER or timing is not None)
     model_choice = 'east-asian' if choice in EAST_ASIAN_CHOICES else 'whisper' if choice in WHISPER_CHOICES else choice
-    selected = usable if choice == 'auto' else (WHISPER, MULTILINGUAL) if model_choice == 'whisper' and WHISPER in usable \
+    selected = usable if choice == 'auto' else (WHISPER, timing) if model_choice == 'whisper' and WHISPER in usable \
         else tuple(model for model in usable if model.key == model_choice and model is not WHISPER)
     if not selected:
         option = '' if choice == 'auto' else ' --only whisper and --only multilingual' if model_choice == 'whisper' else f' --only {model_choice}'
         raise RuntimeError(f'The requested lyric recognition model is unavailable. Run scripts/setup_lyrics_model.py{option} with this studio’s model directory, then retry.')
     return selected
+
+
+def transcript_model_name(model: AsrModel, models: tuple[AsrModel, ...]) -> str:
+    """Report the concrete Parakeet revision, including the timing half of a Whisper result."""
+    if model.key != 'whisper':
+        return model.name
+    timing = next((candidate for candidate in models if candidate.key == 'multilingual'), None)
+    if timing is None:
+        raise ValueError('Whisper transcription needs an installed multilingual timing model.')
+    return WHISPER_CURRENT_TIMING if timing.name == MULTILINGUAL.name else WHISPER.name
 
 
 def asr_ready(model_root: Path) -> bool:
@@ -176,7 +222,7 @@ def asr_ready(model_root: Path) -> bool:
 def archive_model(archive: Path) -> AsrModel | None:
     """The model whose pinned archive size ``archive`` has (its checksum is verified before extraction)."""
     size = Path(archive).stat().st_size
-    return next((model for model in ASR_MODELS if model.archive_bytes == size), None)
+    return next((model for model in (*ASR_MODELS, *LEGACY_MODELS) if model.archive_bytes == size), None)
 
 
 def _plain(word: str) -> str:

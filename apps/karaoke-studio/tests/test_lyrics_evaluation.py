@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from karaoke.transcription import ENGLISH, MULTILINGUAL
+from karaoke.transcription import ENGLISH, MULTILINGUAL, WHISPER
 from karaoke import transcription
 from scripts.evaluate_lyrics import process
 
@@ -80,6 +80,26 @@ class EvaluationCacheTests(unittest.TestCase):
              words=[dict(text='stale', start=0, end=99, confidence=1)], seconds=1)))
         self.assertEqual(process(self.song, work, self.root / 'models', self.cap)['duration'], 10)
         self.assertEqual(json.loads((work / 'transcript.json').read_text())['duration'], 99, 'legacy evidence preserved')
+
+    def test_whisper_cache_admits_only_the_actual_installed_timing_revision(self):
+        # Existing production now reports this distinct combination for refreshed v3 timing.
+        name = WHISPER.name + '-2026-11-07'
+
+        def transcribe(_vocals, output, _models, duration, *_args, **_kwargs):
+            value = dict(model=name, words=[dict(text='word', start=0, end=duration, confidence=1)], seconds=1)
+            output.write_text(json.dumps(value))
+            return value
+
+        with mock.patch('karaoke.transcription.installed_models', return_value=(WHISPER, MULTILINGUAL)), \
+                mock.patch('karaoke.transcription.transcribe_vocals', transcribe):
+            first = self.run_song('whisper')
+            self.assertEqual(self.run_song('whisper'), first)
+            cache = next((self.root / 'work').rglob('transcript-*.json'))
+            wrong = json.loads(cache.read_text())
+            wrong['model'] = WHISPER.name
+            cache.write_text(json.dumps(wrong))
+            with self.assertRaisesRegex(ValueError, 'another recognizer'):
+                self.run_song('whisper')
 
 
 if __name__ == '__main__':

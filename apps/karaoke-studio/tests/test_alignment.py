@@ -10,6 +10,7 @@ from karaoke.alignment import (
     write_emissions,
 )
 from karaoke.lyrics_auto import LEAD_IN, align_lines
+from karaoke.transcription import ENGLISH
 
 
 def plain_path(log_probs, tokens):
@@ -293,14 +294,14 @@ class TranscriptionMeasuresLettersTests(unittest.TestCase):
     def test_the_aligner_runs_after_recognition_and_its_failure_keeps_the_transcript(self):
         result, commands, root = self.run_transcription(lambda path: write_emissions(path, sung([('la', 1.0)], 40)))
         self.assertEqual(commands, ['transcribe_worker.py', 'align_worker.py'])
-        self.assertEqual(result['model'], 'parakeet-tdt-0.6b-v2-int8+silero-vad')
+        self.assertEqual(result['model'], ENGLISH.name)
         self.assertEqual(read_emissions((root / 'alignment.bin').read_bytes(), 40).shape, (2000, CLASSES))
 
         def broken(path):
             path.with_name(path.name + '.part').write_bytes(b'half')
             raise RuntimeError('aligner crashed')
         result, commands, root = self.run_transcription(broken)
-        self.assertEqual(result['model'], 'parakeet-tdt-0.6b-v2-int8+silero-vad')
+        self.assertEqual(result['model'], ENGLISH.name)
         self.assertEqual(sorted(p.name for p in root.iterdir()), ['transcript.json'])
 
 

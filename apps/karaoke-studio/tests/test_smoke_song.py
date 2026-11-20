@@ -2,7 +2,7 @@ import unittest
 
 from karaoke.pipeline import MODEL_NAME, MODEL_SHA256
 from karaoke.limits import MAX_WORKER_RSS_KIB
-from karaoke.transcription import ENGLISH, MULTILINGUAL
+from karaoke.transcription import ENGLISH, LEGACY_ENGLISH, MULTILINGUAL
 from scripts.smoke_song import SOURCE_BYTES, admit_sample, check_recognition
 
 
@@ -26,6 +26,11 @@ class SongSmokeTests(unittest.TestCase):
         self.assertEqual(report['recognizer'], ENGLISH.name)
         self.assertNotIn('words', report)
         self.assertNotIn('cues', report)
+
+    def test_existing_legacy_english_installations_report_their_own_pins(self):
+        report = check_recognition({**self.transcript(), 'model': LEGACY_ENGLISH.name}, 10.0, self.processing())
+        self.assertEqual(report['recognizer'], LEGACY_ENGLISH.name)
+        self.assertEqual(report['recognizerFiles'], LEGACY_ENGLISH.files)
 
     def test_empty_unknown_or_wrong_recognizer_output_cannot_pass(self):
         for model, words in ((ENGLISH.name, []), (MULTILINGUAL.name, self.transcript()['words']), ('fake', self.transcript()['words'])):

@@ -24,8 +24,8 @@ from karaoke.limits import (  # noqa: E402
 )
 from karaoke.lyrics_auto import _token, lyric_words  # noqa: E402
 from karaoke.transcription import (  # noqa: E402
-    CHOICES, DETECTION_WORDS, EAST_ASIAN, EAST_ASIAN_CHOICES, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, WHISPER, WHISPER_CHOICES,
-    AsrModel, installed_models, selected_models, sounds_east_asian, sounds_english,
+    CHOICES, DETECTION_WORDS, EAST_ASIAN, EAST_ASIAN_CHOICES, MAX_WORDS, VAD_FILE, WHISPER, WHISPER_CHOICES,
+    AsrModel, installed_models, selected_models, transcript_model_name, sounds_east_asian, sounds_english,
 )
 from karaoke.word_alignment import align  # noqa: E402
 
@@ -369,6 +369,8 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
             report(done, total)
         words.sort(key=lambda word: (word['start'], word['end']))
         return EAST_ASIAN, words[:MAX_WORDS], EAST_ASIAN_CHOICES[model_choice]
+    english_model = next((model for model in models if model.key == 'english'), None)
+    multilingual_model = next((model for model in models if model.key == 'multilingual'), None)
     if WHISPER in models:
         # Whisper reads songs in languages other than English, Chinese, Japanese and Korean (and any song when chosen),
         # in the language it hears, or the one it is told.
@@ -393,7 +395,7 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
                 report(done, 2 * total)
             reader = None
             gc.collect()
-            timing = load_model(MULTILINGUAL)
+            timing = load_model(multilingual_model)
             words = []
             for done, ((start, phrase), text) in enumerate(zip(phrases, texts, strict=True), total + 1):
                 words.extend(retime(text, recognize_phrase(timing, start, phrase), start / RATE, (start + len(phrase)) / RATE))
@@ -403,7 +405,7 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
         listener = None
         gc.collect()
         models = tuple(model for model in models if model is not WHISPER)
-    first = MULTILINGUAL if MULTILINGUAL in models else EAST_ASIAN if EAST_ASIAN in models else ENGLISH
+    first = multilingual_model or (EAST_ASIAN if EAST_ASIAN in models else english_model)
     model = models[0] if len(models) == 1 else first
     recognizer = load_model(model)
     words: list[dict] = []
@@ -430,16 +432,16 @@ def recognize(phrases, load_model: Callable[..., object], models: tuple[AsrModel
     if len(models) > 1:
         heard = listen()
         unsure = sum(word['confidence'] for word in words) / max(len(words), 1) < EAST_ASIAN_CONFIDENCE
-        english = ENGLISH in models and model is not ENGLISH and sounds_english(heard)
+        english = english_model is not None and model.key != 'english' and sounds_english(heard)
         # Uncertainty is checked first: misheard Korean or Japanese is full of English-looking words ("the", "and").
-        if model is MULTILINGUAL and EAST_ASIAN in models and unsure:
+        if model.key == 'multilingual' and EAST_ASIAN in models and unsure:
             switch(EAST_ASIAN)
             if not sounds_east_asian(listen()):
-                switch(ENGLISH if english else MULTILINGUAL)
+                switch(english_model if english else multilingual_model)
         elif english:
-            switch(ENGLISH)
-        elif model is EAST_ASIAN and not sounds_east_asian(heard):
-            switch(ENGLISH)
+            switch(english_model)
+        elif model is EAST_ASIAN and english_model is not None and not sounds_east_asian(heard):
+            switch(english_model)
     told = None
     if model is EAST_ASIAN:
         listen()
@@ -503,7 +505,7 @@ def main() -> None:
                                        models, progress, model_choice=args.model_choice)
     temporary = args.output.with_suffix('.json.part')
     with temporary.open('x', encoding='utf-8') as stream:
-        stream.write(json.dumps({'model': model.name, 'words': words, 'seconds': round(time.perf_counter() - started, 3),
+        stream.write(json.dumps({'model': transcript_model_name(model, models), 'words': words, 'seconds': round(time.perf_counter() - started, 3),
                                  **({'language': language} if language else {})}))
     temporary.replace(args.output)
 

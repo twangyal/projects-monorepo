@@ -25,7 +25,7 @@ import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from karaoke.alignment import ALIGNER, ALIGNER_SOURCE, aligner_ready  # noqa: E402
-from karaoke.transcription import ASR_MODELS, ASR_RELEASE, VAD_FILE, AsrModel, archive_model, model_ready  # noqa: E402
+from karaoke.transcription import ASR_MODELS, ASR_RELEASE, VAD_FILE, AsrModel, archive_model, installed_models, model_ready, model_revisions  # noqa: E402
 
 VAD_BYTES = 643854
 
@@ -53,9 +53,13 @@ def setup(model_root: Path, model: AsrModel, archive: Path | None = None, vad: P
     model_root.mkdir(parents=True, exist_ok=True)
     destination = model_root / model.directory
     if destination.exists():
-        if model_ready(model_root, model):
+        if any(model_ready(model_root, revision) for revision in model_revisions(model)):
             return destination
         raise RuntimeError(f'The existing {model.directory} directory is incomplete or corrupt. Rename or remove it and run setup again.')
+    if archive is not None:
+        supplied = archive_model(archive)
+        if supplied is not None and supplied.key == model.key:
+            model = supplied
     prefix = model.archive.removesuffix('.tar.bz2') + '/'
     with tempfile.TemporaryDirectory(prefix='.lyrics-setup-', dir=model_root) as temporary:
         staging = Path(temporary)
@@ -131,7 +135,8 @@ def main() -> None:
         if args.only and model.key != args.only:
             continue
         destination = setup(args.model_dir, model, archives.get(model.key), args.vad)
-        print(f'{model.key.capitalize()} lyric recognition model verified at {destination}')
+        model = next(actual for actual in installed_models(destination.parent) if actual.key == model.key)
+        print(f'{model.key.capitalize()} lyric recognition model verified at {destination} ({model.name})')
         print(f'Archive SHA256: {model.archive_sha256}\nProvenance: {ASR_RELEASE}{model.archive} and {ASR_RELEASE}{VAD_FILE}')
     if not args.only or args.only == 'aligner':
         destination = setup_aligner(args.model_dir)

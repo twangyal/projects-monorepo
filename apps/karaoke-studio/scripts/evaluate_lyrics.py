@@ -50,7 +50,7 @@ def edit_distance(a: list[str], b: list[str]) -> int:
 def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DURATION,
             *, model_choice: str = 'auto') -> dict:
     from karaoke.pipeline import MODEL_SHA256, separate_clip
-    from karaoke.transcription import installed_models, selected_models, transcribe_vocals, validate_transcript
+    from karaoke.transcription import installed_models, selected_models, transcribe_vocals, transcript_model_name, validate_transcript
     if type(max_seconds) not in (int, float) or not math.isfinite(max_seconds) or not 1 <= max_seconds <= MAX_DURATION:
         raise ValueError(f'Evaluation length must be 1–{MAX_DURATION} seconds.')
     models = selected_models(installed_models(model_dir), model_choice)
@@ -77,7 +77,7 @@ def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DU
         if not 0 < duration <= max_seconds:
             raise ValueError('Cached evaluation duration exceeds this clip bound.')
         validate_transcript({key: value[key] for key in ('model', 'words', 'seconds')}, duration)
-        if value['model'] not in {model.name for model in models}:
+        if value['model'] not in {transcript_model_name(model, models) for model in models}:
             raise ValueError('Cached evaluation transcript came from another recognizer.')
         return {**value, 'clipDirectory': str(work)}
     media = work / 'media'

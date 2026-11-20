@@ -22,7 +22,7 @@ from karaoke.limits import MAX_WORKER_RSS_KIB, SAMPLE_RATE  # noqa: E402
 from karaoke.lyrics_auto import words_to_cues  # noqa: E402
 from karaoke.model import create_project, validate_project  # noqa: E402
 from karaoke.pipeline import MODEL_NAME, MODEL_SHA256, _run, separate_clip  # noqa: E402
-from karaoke.transcription import ENGLISH, transcribe_vocals, validate_transcript  # noqa: E402
+from karaoke.transcription import ENGLISH, model_revisions, transcribe_vocals, validate_transcript  # noqa: E402
 from scripts.smoke_model import check_outputs  # noqa: E402
 
 SOURCE_REVISION = '556ef2121492d72398a988af1b38b55176f5973a'
@@ -47,7 +47,8 @@ def check_recognition(transcript: dict, duration: float, processing: dict) -> di
     if type(duration) not in (int, float) or not math.isfinite(duration) or abs(duration - SECONDS) > 1 / SAMPLE_RATE:
         raise RuntimeError('The real-song smoke must use its exact ten-second clip.')
     transcript = validate_transcript(transcript, duration)
-    if transcript['model'] != ENGLISH.name or not transcript['words']:
+    revision = next((model for model in model_revisions(ENGLISH) if model.name == transcript['model']), None)
+    if revision is None or not transcript['words']:
         raise RuntimeError('The real English model must produce nonempty recognized words.')
     if processing.get('model') != MODEL_NAME or processing.get('modelSha256') != MODEL_SHA256:
         raise RuntimeError('Separation did not report the checksum-pinned production model.')
@@ -60,7 +61,7 @@ def check_recognition(transcript: dict, duration: float, processing: dict) -> di
     project = validate_project({**project, 'cues': words_to_cues(transcript['words'], duration)})
     if not project['cues']:
         raise RuntimeError('Recognized words did not produce valid automatic lyric cues.')
-    return dict(recognizer=transcript['model'], recognizedWords=len(transcript['words']),
+    return dict(recognizer=transcript['model'], recognizerFiles=revision.files, recognizedWords=len(transcript['words']),
                 automaticCues=len(project['cues']), recognitionSeconds=transcript['seconds'],
                 separationPeakRssKiB=rss, separationNetworkAttempts=attempts)
 
@@ -115,7 +116,7 @@ def run(model_dir: Path, work_dir: Path, source: Path | None = None) -> dict:
     report = dict(status='passed', scope='real-model execution; not recognition quality acceptance',
                   source=provenance, duration=duration, pcmPeaks=pcm,
                   separator=MODEL_NAME, separatorSha256=MODEL_SHA256,
-                  recognizerFiles=ENGLISH.files, elapsedSeconds=round(time.monotonic()-started, 3), **result)
+                  elapsedSeconds=round(time.monotonic()-started, 3), **result)
     (directory / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
 

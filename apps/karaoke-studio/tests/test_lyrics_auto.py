@@ -319,6 +319,15 @@ class RecognizerChoiceTests(unittest.TestCase):
             model, result, self.language = recognize(phrases, load, models, lambda done, total: progress.append((done, total)), model_choice=choice)
         return model, result, loads, heard, progress
 
+    def test_routing_keeps_concrete_installed_parakeet_revisions(self):
+        english = dataclasses.replace(ENGLISH, name='prior-english')
+        multilingual = dataclasses.replace(MULTILINGUAL, name='prior-multilingual')
+        for language, expected, loads in [('en', english, ['multilingual', 'english']),
+                                          ('fr', multilingual, ['multilingual'])]:
+            model, _result, actual, _heard, _progress = self.run_choice((english, multilingual), language)
+            self.assertEqual(model, expected)
+            self.assertEqual(actual, loads)
+
     def test_english_songs_are_heard_again_by_the_english_model(self):
         model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL), 'en')
         self.assertEqual((model, loads), (ENGLISH, ['multilingual', 'english']))
