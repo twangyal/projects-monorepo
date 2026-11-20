@@ -8,6 +8,17 @@ import { MAX_TASKS, MAX_TASK_CHARS, currentTask, endTrial, finishTask, parseTask
 
 const control = (id, name, role = 'button', extra = {}) => ({ id, name, role, distance: id * 10, element: { isConnected: true, name }, ...extra });
 
+test('trial comparisons ignore transported result key order while preserving real state changes', () => {
+  const saved = finishTask({ ...startTrial(['One', 'Two'], 1000), id: 'same-trial' }, 'done', 2400).trial;
+  const transported = { ...saved, results: saved.results.map(result => Object.fromEntries(Object.entries(result).reverse())) };
+  assert.equal(JSON.stringify(validTrial(saved)), JSON.stringify(validTrial(transported)));
+  for (const changed of [{ ...saved, id: 'other-trial' }, { ...saved, current: 2 },
+    { ...saved, results: [{ ...saved.results[0], outcome: 'skipped' }] },
+    { ...saved, results: [{ ...saved.results[0], seconds: 8 }] }]) {
+    assert.notEqual(JSON.stringify(validTrial(saved)), JSON.stringify(validTrial(changed)));
+  }
+});
+
 test('tasks are written one per line, and a trial moves through them noting each outcome and time', () => {
   assert.deepEqual(parseTasks('  Find the opening hours \n\n\tPut a book on hold\r\nRenew a loan  '), ['Find the opening hours', 'Put a book on hold', 'Renew a loan']);
   assert.equal(parseTasks(Array.from({ length: 30 }, (_, k) => `Task ${k}`).join('\n')).length, MAX_TASKS);

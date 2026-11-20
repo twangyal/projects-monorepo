@@ -61,7 +61,9 @@ export function validTrial(value) {
   if (!value.tasks.length || value.tasks.length > MAX_TASKS || !value.tasks.every(text)) return null;
   if (!Number.isInteger(value.current) || value.current < 0 || value.current > value.tasks.length || !time(value.startedAt) || !time(value.taskStartedAt)) return null;
   if (value.endedAt != null && !time(value.endedAt)) return null;
-  const results = value.results.filter(item => item && Number.isInteger(item.number) && text(item.text) && OUTCOMES.includes(item.outcome) && time(item.seconds));
+  // Storage events and message replies may enumerate nested keys differently; compare the same admitted fields.
+  const results = value.results.filter(item => item && Number.isInteger(item.number) && text(item.text) && OUTCOMES.includes(item.outcome) && time(item.seconds))
+    .map(({ number, text, outcome, seconds }) => ({ number, text, outcome, seconds }));
   return { tasks: [...value.tasks], current: value.current, startedAt: value.startedAt, taskStartedAt: value.taskStartedAt, results,
     ...(typeof value.id === 'string' && value.id.length <= 64 ? { id: value.id } : {}),
     ...(value.endedAt != null ? { endedAt: value.endedAt } : {}) };

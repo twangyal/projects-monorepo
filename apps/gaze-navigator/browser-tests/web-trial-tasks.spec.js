@@ -84,3 +84,18 @@ test('a durable task reply may arrive before its storage event', async ({ page }
   await page.evaluate(() => window.changeTrial(window.committedTrial));
   await expect(task(page)).toHaveText('Task 2 of 2: Two');
 });
+
+test('a storage event with reordered result keys still acknowledges its matching durable reply', async ({ page }) => {
+  await setup(page);
+  await expect(task(page)).toHaveText('Task 1 of 2: One');
+  await say(page, 'task done');
+  await page.evaluate(() => {
+    window.commitTrialSave(false);
+    const transported = structuredClone(window.committedTrial);
+    transported.results = transported.results.map(result => Object.fromEntries(Object.entries(result).reverse()));
+    window.changeTrial(transported);
+    window.replyTrialSave();
+  });
+  await expect(status(page)).toContainText('Task 1 done after');
+  await expect(task(page)).toHaveText('Task 2 of 2: Two');
+});
