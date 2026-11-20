@@ -63,7 +63,7 @@ function productDifferences(then: Product | undefined, now: Product | undefined,
 
 const BODY_NAMES: Record<keyof ProfileBody, string> = {
   chest: 'chest girth', waist: 'waist girth', hip: 'hip girth', chestDepth: 'chest depth', height: 'height', hipDepth: 'waist to hip',
-  upperArmGirth: 'upper-arm girth', neckGirth: 'neck girth', underbust: 'underbust girth', torsoLength: 'shoulder to waist',
+  upperArmGirth: 'upper-arm girth', neckGirth: 'neck girth', underbust: 'underbust girth', torsoLength: 'shoulder to waist', shoulderWidth: 'shoulder width',
 };
 const bodyValue = (value: number | null | undefined) => value == null ? 'automatic' : `${value} cm`;
 
