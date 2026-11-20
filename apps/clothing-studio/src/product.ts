@@ -299,6 +299,10 @@ export function lapelsAllowed(product: Pick<Product, 'base'> & Partial<Pick<Prod
 export const LAPEL_CM = 8, LAPEL_LIFT_CM = 0.45, JACKET_BUTTON_GAP_CM = 10;
 /** A peak lapel is a little wider at its point than a notched one. */
 export const PEAK_LAPEL_CM = 9;
+/** Finished width measured square from the roll line to the lapel point; unchanged across sizes. */
+export function lapelWidthOf(product: Pick<Product, 'fit' | 'options' | 'base'>): number {
+  return product.fit?.lapelWidth ?? (optionsOf(product).peakLapels ? PEAK_LAPEL_CM : LAPEL_CM);
+}
 /** How far a lapel rolls up off the chest along its fold, and how wide the roll is, cm. Its flat coordinates are moved
  * this far across, clear of zero, so its stitching can be drawn on it. */
 const LAPEL_ROLL = { height: 0.7, width: 2.5 };
@@ -320,11 +324,11 @@ export function lapelOf(product: Product, neck: Pt[]): { breakY: number; roll: [
   // A peak lapel's point rises from the gorge, where the collar meets it, to above the gorge and further out, so the
   // notch between them closes into a V; its outer edge is fuller to carry it.
   if (optionsOf(product).peakLapels) {
-    const point = at(1.02, PEAK_LAPEL_CM);
-    return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.95, 2.5), point, at(0.62, LAPEL_CM * 0.98), at(0.25, LAPEL_CM * 0.5)], point };
+    const width = lapelWidthOf(product), point = at(1.02, width);
+    return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.95, 2.5), point, at(0.62, LAPEL_CM * 0.98 * (width / PEAK_LAPEL_CM)), at(0.25, LAPEL_CM * 0.5 * (width / PEAK_LAPEL_CM))], point };
   }
-  const point = at(0.8, LAPEL_CM);
-  return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.97, 3), point, at(0.5, LAPEL_CM * 0.82), at(0.22, LAPEL_CM * 0.45)], point };
+  const width = lapelWidthOf(product), point = at(0.8, width);
+  return { breakY: B.y, roll: [B, R], lapel: [B, R, at(0.97, 3), point, at(0.5, width * 0.82), at(0.22, width * 0.45)], point };
 }
 /** The coat's lapels as lapelOf draws them (on its own front neckline). */
 export function lapelShape(product: Product): ReturnType<typeof lapelOf> { return lapelOf(product, topFrame(product).front.neck); }
@@ -511,13 +515,13 @@ export const WAIST_DART = [1, 4] as const, DEFAULT_WAIST_DART = 2;
  * out keeps its default. Optional chest-pocket width/height/placement use P/Q/R/V. Defaults are chest-based where applicable; back neck drop is 2 cm and shoulder drop is 4 cm.
  */
 export const POCKET_FIT_KEYS = ['chestPocketWidth', 'chestPocketHeight', 'chestPocketX', 'chestPocketY'] as const;
-export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'hoodWidth', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'waistWidth', 'waistPosition', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
+export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'hoodHeight', 'hoodWidth', 'neckRibHeight', 'cuffHeight', 'hemBandHeight', 'armholeDepth', 'waistWidth', 'waistPosition', 'hemWidth', 'sleeveOpening', 'lapelWidth', ...POCKET_FIT_KEYS] as const;
 /** A T-shirt's waist shaping (X, Y): with a waist width its side seams curve in through it at the waist position. */
 export const WAIST_FIT_KEYS = ['waistWidth', 'waistPosition'] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
 export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop', hoodHeight: 'Hood side height', hoodWidth: 'Hood side width', neckRibHeight: 'Neck rib height', cuffHeight: 'Cuff height', hemBandHeight: 'Hem band height',
-  chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
+  lapelWidth: 'Lapel width', chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
   armholeDepth: 'Armhole depth', waistWidth: 'Waist width (½)', waistPosition: 'Waist position', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number; waistbandHeight?: number;
@@ -554,7 +558,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [40, 150], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], waistbandHeight: [4, 10], legCuffHeight: [4, 12], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], waistWidth: [28, 76], waistPosition: [25, 70], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
+  fit: { lapelWidth: [4, 12], shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], hoodHeight: [24, 44], hoodWidth: [20, 34], neckRibHeight: [1, 4], cuffHeight: [2, 12], hemBandHeight: [2, 12], armholeDepth: [15, 36], waistWidth: [28, 76], waistPosition: [25, 70], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -1114,7 +1118,7 @@ const capCurve = (width: number, height: number): Pt[] =>
 /** Every fit point of measure of a top as it is now: edited ones as edited, the rest at their proportional values. */
 export function fitValues(product: Product): Record<FitKey, number> {
   const d = teeDimensions(product);
-  return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, waistWidth: d.waistHalf * 2, waistPosition: d.waistY, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+  return { lapelWidth: lapelWidthOf(product), chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, cuffHeight: d.cuffHeight, hemBandHeight: d.band, hoodHeight: d.hoodHeight, hoodWidth: d.hoodWidth, armholeDepth: d.armDepth, waistWidth: d.waistHalf * 2, waistPosition: d.waistY, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
 }
 
 export function teeDimensions(product: Product) {
@@ -1445,6 +1449,14 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (product.base === 'hoodie' && product.fit?.neckRibHeight !== undefined) fail('A hoodie has a hood instead of a neck rib.');
   if (product.base === 'tee' && (product.fit?.cuffHeight !== undefined || product.fit?.hemBandHeight !== undefined)) fail('Cuff and hem band heights apply only to sweatshirts and hoodies.');
   const d = teeDimensions(product as Product), sleeves = !sleeveless(product);
+  // Preserve older drafts; these guards apply when a designer authors a finished lapel width.
+  if (optionsOf(product).lapels && product.fit?.lapelWidth !== undefined) {
+    const shape = lapelShape(product as Product);
+    if (shape.point.x > d.shoulderX - 0.5) fail('The lapel point must stay at least 0.5 cm inside the shoulder: narrow the lapel or widen the shoulders.');
+    if (optionsOf(product).peakLapels && shape.point.y >= shape.lapel[2]!.y - 1e-6) fail('A peak lapel must rise above the collar join: narrow the lapel or lower the break point.');
+    const pieces = lapelPieces(product as Product);
+    if (outlineCrosses(pieces.front) || outlineCrosses(pieces.facing)) fail('This lapel width and body fit make the front or facing cross itself: adjust the neck, break point or lapel width.');
+  }
   if (sleeves && d.cuffHeight && d.sleeveLength - d.cuffHeight < 2) fail('The cuff must leave at least 2 cm of measured sleeve fabric.');
   // The sleeve's underarm seams run from the cap to the opening above the cuff.
   if (sleeves && d.cuffHeight) {
@@ -1463,6 +1475,25 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
     if (d.shaped && (d.waistHalf > d.half || d.waistHalf < d.half * 0.7)) fail(`Waist width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 2).toFixed(1)} cm for this chest: no wider than the chest.`);
   }
   if (sleeves && d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
+}
+
+/** Non-adjacent sewing edges cannot cross or touch an edge interior; shared endpoints are allowed. */
+function outlineCrosses(points: Pt[]): boolean {
+  const side = (a: Pt, b: Pt, c: Pt) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  const opposite = (a: number, b: number) => a > 1e-8 && b < -1e-8 || a < -1e-8 && b > 1e-8;
+  const interior = (p: Pt, a: Pt, b: Pt) => {
+    const length2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+    if (length2 < 1e-12 || Math.abs(side(a, b, p)) > 1e-7 * Math.sqrt(length2)) return false;
+    const t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / length2;
+    return t > 1e-7 && t < 1 - 1e-7;
+  };
+  for (let i = 0; i < points.length; i++) for (let j = i + 2; j < points.length; j++) {
+    if (i === 0 && j === points.length - 1) continue;
+    const a = points[i]!, b = points[(i + 1) % points.length]!, c = points[j]!, d = points[(j + 1) % points.length]!;
+    if (opposite(side(a, b, c), side(a, b, d)) && opposite(side(c, d, a), side(c, d, b))
+      || interior(a, c, d) || interior(b, c, d) || interior(c, a, b) || interior(d, a, b)) return true;
+  }
+  return false;
 }
 
 /** A gathered skirt hangs from a waist seam, and its gathered waist edge is no longer than its hem. */

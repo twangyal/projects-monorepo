@@ -880,13 +880,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
     for (const key of FIT_KEYS) {
-      if ((key === 'hoodHeight' || key === 'hoodWidth') && draft.base !== 'hoodie' || POCKET_FIT_KEYS.some(pocket => pocket === key) || key === 'neckRibHeight' && draft.base === 'hoodie' || (key === 'cuffHeight' || key === 'hemBandHeight') && draft.base === 'tee'
+      if ((key === 'hoodHeight' || key === 'hoodWidth') && draft.base !== 'hoodie' || (POCKET_FIT_KEYS.some(pocket => pocket === key) || key === 'lapelWidth') || key === 'neckRibHeight' && draft.base === 'hoodie' || (key === 'cuffHeight' || key === 'hemBandHeight') && draft.base === 'tee'
         || WAIST_FIT_KEYS.some(waist => waist === key) && !waistShapeable(draft)) continue;
       const raw = ($(`fit-${key}`) as HTMLInputElement).value;
       if (raw.trim() === '') throw new Error(`Fill in ${FIT_NAMES[key].toLowerCase()}.`);
       const value = Number(raw);
       // Displayed values are rounded to 0.1 cm, so an untouched field differs by at most 0.05.
       if (Math.abs(value - proportional[key]) > 0.06) fit[key] = value;
+    }
+    // Hidden or untouched lapel width retains its exact authored value behind the rounded display.
+    if (!optionsOf(draft).lapels || !drafts.has('fit-lapelWidth')) {
+      if (draft.fit?.lapelWidth !== undefined) fit.lapelWidth = draft.fit.lapelWidth;
+    } else {
+      const raw = ($('fit-lapelWidth') as HTMLInputElement).value;
+      if (raw.trim() === '') throw new Error('Fill in lapel width.');
+      const value = Number(raw);
+      if (value !== proportional.lapelWidth) fit.lapelWidth = value;
     }
     // Untouched pocket fields retain exact authored values or remain derived from the new body fit.
     const pocketDefaults = fitValues({ ...draft, fit });
@@ -1619,6 +1628,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const ribInput = $('fit-neckRibHeight') as HTMLInputElement; ribInput.disabled = design.base === 'hoodie'; ribInput.closest('label')!.hidden = design.base === 'hoodie';
       for (const key of ['cuffHeight', 'hemBandHeight']) { const input = $(`fit-${key}`) as HTMLInputElement; input.disabled = design.base === 'tee'; input.closest('label')!.hidden = design.base === 'tee'; }
       for (const key of WAIST_FIT_KEYS) { const input = $(`fit-${key}`) as HTMLInputElement, off = !waistShapeable(design); input.disabled = off; input.closest('label')!.hidden = off; }
+      const lapelInput = $('fit-lapelWidth') as HTMLInputElement; lapelInput.disabled = !optionsOf(design).lapels; lapelInput.closest('label')!.hidden = !optionsOf(design).lapels;
       const values = fitValues(design);
       for (const key of FIT_KEYS) ($(`fit-${key}`) as HTMLInputElement).value = String(Math.round(values[key] * 10) / 10);
       $('reset-fit').toggleAttribute('disabled', !design.fit);

@@ -15,7 +15,7 @@ export interface DesignReading { product: Product; scopes: DesignScope[]; ignore
 
 // Named top pattern measurements, in the same units and conventions as the fit controls.
 const TOP_FIT_LABELS: Partial<Record<string, FitKey>> = {
-  'shoulder width': 'shoulderWidth', 'shoulder drop': 'shoulderDrop',
+  'lapel width': 'lapelWidth', 'shoulder width': 'shoulderWidth', 'shoulder drop': 'shoulderDrop',
   'neck width': 'neckWidth', 'front neck drop': 'frontNeckDrop', 'back neck drop': 'backNeckDrop',
   'armhole depth': 'armholeDepth', 'waist width': 'waistWidth', 'waist position': 'waistPosition', 'hem width': 'hemWidth',
 };
@@ -289,7 +289,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
   // "no lapels". They go on a coat or blazer only. They are notched unless named peak lapels, whose points rise above
   // the collar; "no peak lapels" makes them notched again.
   const noPeak = !!take(/\b(?:no|without) peak(?:ed)? lapels?\b/);
-  const noLapels = !!take(/\b(?:no|without) (?:notched )?lapels?\b/), wantsLapels = !noLapels && /\blapels?\b/.test(text);
+  const noLapels = !!take(/\b(?:no|without) (?:notched )?lapels?\b/), wantsLapels = !noLapels && /\blapels?\b(?!\s+width\b)/.test(text);
   const peaked = !!take(/\bpeak(?:ed)?(?= lapels?\b)/), notched = noPeak || !!take(/\bnotch(?:ed)?(?= lapels?\b)/);
   if (noLapels && optionsOf(product).lapels) {
     product = withOptions(product, { ...optionsOf(product), lapels: false });
@@ -550,7 +550,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     // Convert the written decimal in one step so equivalent cm and mm values compare equally.
     const value = Number(unit === 'mm' ? `${raw}e-1` : raw);
     const fit = TOP_FIT_LABELS[label];
-    if (fit && top) {
+    if (fit && top && (fit !== 'lapelWidth' || optionsOf(product).lapels)) {
       if (fitValues.has(fit) && fitValues.get(fit) !== value) throw new Error(`Conflicting ${label} measurements. Give one value in cm or mm.`);
       fitValues.set(fit, value);
     } else if (!supported.has(key)) { notApplied.push(`${match[0]} (not a supported measurement on this garment)`); }
@@ -560,6 +560,7 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     }
     const start = match.index!;
     // A measured trim scopes adjacent styling to that trim, even if it was removed or the height is unsupported.
+    if (key === 'lapel width') measuredParts.push({ start, parts: ['lapel'] });
     if (key === 'waistband height') measuredParts.push({ start, parts: ['waistband'] });
     if (key === 'ankle cuff height') measuredParts.push({ start, parts: ['cuffLeft', 'cuffRight'] });
     const remaining = key === 'sleeve' && supported.has(key) ? 'sleeves' : '';
@@ -591,6 +592,11 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     for (const [key, value] of values) garment.push(`${key === 'legOpening' ? 'leg opening' : key}: ${value} cm`);
   }
 
+  // Numeric sleeve edits above can remove the lapels after their measurement was read.
+  if (fitValues.has('lapelWidth') && !optionsOf(product).lapels) {
+    notApplied.push(`lapel width ${fitValues.get('lapelWidth')} cm (not a supported measurement on this garment)`);
+    fitValues.delete('lapelWidth');
+  }
   if (fitValues.size) {
     product.fit = { ...product.fit, ...Object.fromEntries(fitValues) };
     for (const [key, value] of fitValues) garment.push(`${FIT_NAMES[key].toLowerCase()}: ${value} cm`);
