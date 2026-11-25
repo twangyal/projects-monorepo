@@ -31,9 +31,11 @@ import subprocess
 import sys
 import time
 
-import numpy as np
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Apply the same offline runtime policy as the studio before native imports,
+# including the standalone UVR path, which need not import a production worker.
+import karaoke  # noqa: E402, F401
+import numpy as np  # noqa: E402
 
 RATE = 44100
 SILENT_RMS = 10 ** (-40 / 20)

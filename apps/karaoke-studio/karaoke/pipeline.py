@@ -111,7 +111,8 @@ def _run(command: list[str], cancel: threading.Event, *, timeout: float = 10,
     try:
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, start_new_session=os.name == 'posix',
-                                   pass_fds=media_handles())
+                                   pass_fds=media_handles(),
+                                   env={**os.environ, 'ORT_DISABLE_TELEMETRY': '1'})
     except FileNotFoundError as error:
         raise RuntimeError(f'Required executable {command[0]} is unavailable. Install FFmpeg and the documented Python environment.') from error
     buffers = [bytearray(), bytearray()]
