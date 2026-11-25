@@ -38,7 +38,7 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
       if (field?.isContentEditable) { onUnavailable('Use speech or the ordinary instruction box for an editable page region.'); return; }
       if (!onStart()) return;
       const protect = /^(INPUT|TEXTAREA)$/.test(field?.tagName ?? '');
-      session = { chars: [], cursor: 0, anchor: 0, field, protected: protect, readOnly: field?.readOnly };
+      session = { chars: [], cursor: 0, anchor: 0, field, protected: protect, readOnly: field?.readOnly, userInput: event.isTrusted === true };
       if (protect) {
         field.readOnly = true;
         const Observer = field.ownerDocument?.defaultView?.MutationObserver;
@@ -55,6 +55,7 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
     }
     if (!session) return;
     if (stale(event)) return;
+    if (event.isTrusted !== true) session.userInput = false;
     // Real keyboards deliver modifier keydown before Ctrl/Cmd+A/V or browser shortcuts.
     if (['Control', 'Meta', 'Alt', 'Shift', 'AltGraph'].includes(event.key)) return;
     if (event.key === 'Escape') { consume(event); end(); return; }
@@ -71,8 +72,8 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Enter') {
-      const text = session.chars.join('').trim();
-      end(false); if (text) onSubmit(text); else onCancel(); return;
+      const text = session.chars.join('').trim(), userInput = session.userInput;
+      end(false); if (text) onSubmit(text, { userInput }); else onCancel(); return;
     }
     if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
       const { cursor, anchor, chars } = session;
@@ -95,6 +96,7 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
   function paste(event) {
     if (!session) return;
     if (stale(event)) return;
+    if (event.isTrusted !== true) session.userInput = false;
     consume(event); replace(event.clipboardData?.getData('text/plain') ?? '');
   }
   function focusChanged() {

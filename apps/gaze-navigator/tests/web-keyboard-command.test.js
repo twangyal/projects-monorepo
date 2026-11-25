@@ -7,9 +7,9 @@ function session() {
   let active = field;
   const windowEvents = new Map();
   const view = { addEventListener: (type, listener) => windowEvents.set(type, listener), removeEventListener: type => windowEvents.delete(type) };
-  const events = new Map(), changes = [], submitted = [], cancelled = [];
+  const events = new Map(), changes = [], submitted = [], origins = [], cancelled = [];
   const document = { defaultView: view, hidden: false, addEventListener: (type, listener) => events.set(type, listener), removeEventListener: type => events.delete(type) };
-  const commands = createKeyboardCommands({ getActiveElement: () => active, onChange: value => changes.push(value), onSubmit: text => submitted.push(text), onCancel: () => cancelled.push(true) });
+  const commands = createKeyboardCommands({ getActiveElement: () => active, onChange: value => changes.push(value), onSubmit: (text, origin) => { submitted.push(text); origins.push(origin); }, onCancel: () => cancelled.push(true) });
   field.ownerDocument = document;
   commands.attach(document);
   const key = (key, extra = {}) => {
@@ -17,7 +17,7 @@ function session() {
     events.get('keydown')?.(event); return event;
   };
   const start = () => key('G', { altKey: true, shiftKey: true });
-  return { field, commands, events, windowEvents, document, changes, submitted, cancelled, key, start, changeFocus: next => { active = next; } };
+  return { field, commands, events, windowEvents, document, changes, submitted, origins, cancelled, key, start, changeFocus: next => { active = next; } };
 }
 
 test('explicit mode captures a command without editing or blurring the page field', () => {
@@ -143,4 +143,16 @@ test('the extension page-toggle binding does not enter the in-page command edito
   s.key(binding.split('+').at(-1), { altKey: binding.includes('Alt+'), shiftKey: binding.includes('Shift+'), ctrlKey: binding.includes('Ctrl+'), metaKey: binding.includes('Command+') });
   assert.equal(s.commands.active, false, 'page toggle and command entry must use distinct bindings');
   s.start(); assert.equal(s.commands.active, true, 'existing command entry stays available'); s.commands.stop();
+});
+
+
+test('browser command origin requires native events throughout keyboard entry', () => {
+  for (const injected of [false, true]) {
+    const s = session();
+    s.key('G', { altKey: true, shiftKey: true, isTrusted: true });
+    for (const char of 'switch to browser tab Mail') s.key(char, { isTrusted: true });
+    if (injected) s.key('x', { isTrusted: false });
+    s.key('Enter', { isTrusted: true });
+    assert.equal(s.origins[0].userInput, !injected);
+  }
 });

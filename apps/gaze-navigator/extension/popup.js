@@ -33,6 +33,7 @@ async function refresh() {
   $('page-help').textContent = status.on
     ? 'Use Start listening in the page panel, or type an instruction. For webcam gaze, open Tracking and settings → Camera; allow access and look at each calibration dot.'
     : 'Turn on to show controls on this website. Pointer context and typed instructions work before enabling camera or speech.';
+  if (!status.on && status.browserNotice) $('page-help').textContent = `${status.browserNotice} ${$('page-help').textContent}`;
   $('access').textContent = granted
     ? 'Website access granted: your browsing choices below control automatic restarts.'
     : 'Staying on after a page change, or starting everywhere, needs website access. You will be asked only when you choose either option.';

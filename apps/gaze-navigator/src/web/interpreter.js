@@ -540,6 +540,22 @@ export function spokenAddress(said) {
   if (!match || !(match[2].length === 2 ? !NOT_COUNTRIES.has(match[2]) : ENDINGS.has(match[2]))) return null;
   return `https://${match[1]}${match[3] ?? '/'}`;
 }
+function directBrowserTab(command) {
+  const match = /^(?:switch\s+to|go\s+to|open|select|choose)\s+(?:the\s+)?browser\s+tab\b([\s\S]*)$/i.exec(command.trim());
+  if (!match) return null;
+  const raw = match[1].trim(), named = /^(?:called|named)\s+(.+)$/i.exec(raw);
+  // A literal title can itself end in punctuation or "please"; do not read those as command filler.
+  if (named) return { type: 'tab', move: 'select', name: unquote(named[1]).toLowerCase() };
+  const target = raw.toLowerCase().replace(/\s+/g, ' ').replace(/[.!?]+$/, '').replace(TRAILING_FILLER, '').trim();
+  if (target && !/^[,:;]/.test(target)) {
+    const value = spokenNumber(target.replace(/^number /, ''));
+    if (value !== null) {
+      const position = Number(value);
+      if (Number.isSafeInteger(position) && position > 0) return { type: 'tab', move: 'select', position };
+    } else if (!/^number\b/.test(target)) return { type: 'tab', move: 'select', name: unquote(target) };
+  }
+  return { type: 'unknown', message: 'Say a browser tab’s title or site, or a positive whole tab number, for example “switch to browser tab three”. Nothing was changed.' };
+}
 function browserCommand(command, context) {
   const said = command.trim().toLowerCase().replace(/[.!?]+$/, '');
   // A control on the page named like the address ("Example.com" in a footer) is opened instead.
@@ -1102,6 +1118,9 @@ function interpretInCircle(utterance, context) {
   const heard = (utterance ?? '').trim();
   // Dictation keeps its own words; commands also drop trailing politeness.
   const raw = heard.replace(LEADING_FILLER, '') || heard;
+  // One total parser owns explicit browser scope, before page matching or command politeness changes its title.
+  const directTab = directBrowserTab(raw);
+  if (directTab) return directTab;
   // Everyday ways of saying the navigator's own commands ("hang on", "yep", "down a bit") read as those commands.
   const said = raw.replace(TRAILING_FILLER, '') || raw;
   const teaching = teachCommand(said, context);

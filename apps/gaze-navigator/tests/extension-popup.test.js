@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-async function popup({phase='off',denied=false,storageFailure=false,shortcut='Alt+Shift+N',shortcutFailure=false}={}){
+async function popup({phase='off',denied=false,storageFailure=false,shortcut='Alt+Shift+N',shortcutFailure=false,browserNotice}={}){
  const timers=[];const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',checked:false,disabled:false,hidden:true,listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});return nodes.get(id);};
- const chrome={commands:{getAll:async()=>{if(shortcutFailure)throw Error('commands unavailable');return[{name:'toggle-navigator',shortcut}];}},tabs:{query:async()=>[{id:7}]},storage:{local:{get:async()=>({}),set:async()=>{if(storageFailure)throw Error('storage unavailable');}}},permissions:{contains:async()=>false,request:async()=>!denied},runtime:{sendMessage:async({type})=>type==='gaze:page-status'?{on:false,phase,message:phase==='unavailable'?'This page does not allow navigator access.':''}:{on:false}}};
+ const chrome={commands:{getAll:async()=>{if(shortcutFailure)throw Error('commands unavailable');return[{name:'toggle-navigator',shortcut}];}},tabs:{query:async()=>[{id:7}]},storage:{local:{get:async()=>({}),set:async()=>{if(storageFailure)throw Error('storage unavailable');}}},permissions:{contains:async()=>false,request:async()=>!denied},runtime:{sendMessage:async({type})=>type==='gaze:page-status'?{on:false,phase,browserNotice,message:phase==='unavailable'?'This page does not allow navigator access.':''}:{on:false}}};
  const run=new (Object.getPrototypeOf(async function(){}).constructor)('chrome','document','setTimeout','clearTimeout',await readFile('extension/popup.js','utf8'));
  await run(chrome,{getElementById:node},callback=>{timers.push(callback);return timers.length;},()=>{});await new Promise(r=>setImmediate(r));return{node,chrome,timers};
 }
@@ -60,4 +60,10 @@ test('popup reports actual assigned, conflicting and unassigned page-toggle shor
 });
 test('shortcut lookup failure explains toolbar recovery without blocking current-page control',async()=>{
  const h=await popup({shortcutFailure:true});assert.match(h.node('shortcut').textContent,/Could not check/);assert.match(h.node('shortcut').textContent,/toolbar popup/);assert.equal(h.node('toggle').disabled,false);assert.match(h.node('state').textContent,/Off for this page/);
+});
+
+
+test('continuation recovery remains visible in the extension popup after switching tabs', async () => {
+ const h=await popup({phase:'unavailable',browserNotice:'Tab switched, but the navigator could not continue. Open a supported website.'});
+ assert.match(h.node('page-help').textContent,/Tab switched.*supported website/);
 });

@@ -124,6 +124,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
 const ZOOMS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 // Tabs loading a page the navigator asked for, and when it asked; a load that has not finished in time is forgotten.
 const carried = new Map(), CARRY_MS = 60000;
+const tabSelections = new Map();
+let selectionSerial = 0;
 let closedAt = 0;
 // The navigator moves with the user to another tab: the one left behind stops once its reply has been shown, so the
 // two do not compete for the camera and microphone.
@@ -131,7 +133,36 @@ const leave = tab => setTimeout(() => { run(tab.id, 'stop').catch(() => {}); }, 
 function webAddress(value) {
   try { const url = new URL(String(value)); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch { return null; }
 }
-async function browserCommand(tab, action) {
+// Metadata is used locally and only with existing host access; never inspect a tab's page or full URL for a name.
+const tabName = value => String(value ?? '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+function tabHost(tab) {
+  const url = webAddress(tab.url);
+  return url ? new URL(url).hostname.toLowerCase().replace(/^www\./, '') : '';
+}
+function selectBrowserTab(tabs, action, access) {
+  const numbered = action.position !== undefined;
+  if (numbered) {
+    if (action.name !== undefined || !Number.isSafeInteger(action.position) || action.position < 1) return { error: 'Choose one positive whole browser tab number. Nothing was changed.' };
+    const target = tabs.find(tab => tab.index === action.position - 1);
+    return target ? { target } : { error: `No browser tab has that number in this window (${tabs.length} tabs). Nothing was changed.` };
+  }
+  if (typeof action.name !== 'string' || !action.name.trim() || action.name.length > 160) return { error: 'Say a browser tab title, site or number. Nothing was changed.' };
+  if (!access) return { error: 'Selecting a tab by name needs the existing access to all websites. You can use a browser tab number instead; no permission was requested.' };
+  const wanted = tabName(action.name), host = wanted.replace(/\s+dot\s+/g, '.').replace(/^www\./, '');
+  const readable = tabs.filter(tab => tabHost(tab));
+  const exact = readable.filter(tab => tabName(tab.title) === wanted || tabHost(tab) === host);
+  const matches = exact.length ? exact : readable.filter(tab => tabName(tab.title).includes(wanted));
+  if (!matches.length) return { error: 'No readable website tab matches that name in this window. Say its browser tab number or a more exact title. Nothing was changed.' };
+  if (matches.length > 1) {
+    // This reply is shown in a website's open shadow DOM: other tabs' titles/URLs must stay in the worker.
+    const choices = matches.slice(0, 6).map(tab => tab.index + 1).join(', ');
+    return { error: `Several browser tabs match, at positions ${choices}${matches.length > 6 ? ' (more matches are open)' : ''}. Say “switch to browser tab number ${matches[0].index + 1}” with your chosen position, or give a more exact name. Nothing was changed.` };
+  }
+  return { target: matches[0] };
+}
+async function browserCommand(tab, action, userInput = false) {
+  if (action?.type === 'tab' && action.move === 'select' && userInput !== true) return { ok: false, message: 'Browser tab selection needs genuine user input: a spoken instruction or your typed command. Nothing was changed.' };
+  if (!action?.selectionToken) tabSelections.delete(tab.id);
   const access = await hostAccess();
   const after = access ? '' : ' Gaze Navigator stops there: turn it back on from the toolbar or with Alt+Shift+N, or allow it on all websites to keep it on.';
   if (action?.type === 'reload') {
@@ -164,6 +195,40 @@ async function browserCommand(tab, action) {
     setTimeout(() => { chrome.tabs.remove(tab.id).catch(() => {}); }, 200);
     return { ok: true, message: `Closing this tab.${access ? '' : ' Turn Gaze Navigator on in the next tab from the toolbar or with Alt+Shift+N.'}` };
   }
+  if (action?.type === 'tab' && action.move === 'select') {
+    const tabs = (await chrome.tabs.query({ windowId: tab.windowId })).filter(other => other.windowId === tab.windowId);
+    if (action.selectionToken) {
+      const offered = tabSelections.get(tab.id); tabSelections.delete(tab.id);
+      const target = offered && tabs.find(other => other.id === offered.target.id);
+      if (!offered || offered.token !== action.selectionToken || Date.now() > offered.expiresAt || !target ||
+          target.index !== offered.target.index || target.url !== offered.target.url || target.title !== offered.target.title) {
+        return { ok: false, message: 'That browser tab choice expired or changed. Give the instruction again. Nothing was changed.' };
+      }
+      await chrome.tabs.update(target.id, { active: true });
+      leave(tab);
+      return { ok: true, message: `Switched to browser tab ${target.index + 1}. The navigator was stopped as confirmed; use the toolbar on a supported website to continue.` };
+    }
+    const { target, error } = selectBrowserTab(tabs, action, access);
+    if (error) return { ok: false, message: error };
+    if (target.id === tab.id) return { ok: true, message: `Browser tab ${target.index + 1} is already active. Nothing was changed.` };
+    let available = access;
+    if (access) {
+      // Check injection before leaving, so unavailable continuation can be explained on the still-visible source.
+      try { await chrome.scripting.executeScript({ target: { tabId: target.id }, func: () => true, args: ['probe'] }); }
+      catch { available = false; }
+    }
+    if (!available) {
+      const token = String(++selectionSerial);
+      tabSelections.set(tab.id, { token, target: { ...target }, expiresAt: Date.now() + 15000 });
+      return { ok: true, confirmation: { token }, message: `Browser tab ${target.index + 1} can be selected, but the navigator cannot continue there ${access ? 'because the browser refuses access' : 'without website access'}. It will stop here. Use the toolbar on a supported website to continue; protected browser pages cannot be controlled. Say confirm to switch anyway, or cancel to stay.` };
+    }
+    await chrome.tabs.update(target.id, { active: true });
+    leave(tab);
+    const started = await run(target.id, 'start');
+    // Navigation can race the probe. A failure is also available in extension-owned UI after departure.
+    await chrome.storage.session.set({ browserTabNotice: { tabId: target.id, at: Date.now(), message: started === 'on' ? '' : 'Tab switched, but the navigator could not continue. Open a supported website and use Turn on or Retry in this popup.' } });
+    return { ok: true, message: `Switched to browser tab ${target.index + 1} of ${tabs.length}.${started === 'on' ? '' : ' Open the navigator toolbar popup for recovery.'}` };
+  }
   if (action?.type === 'tab' && ['next', 'previous'].includes(action.move)) {
     const tabs = await chrome.tabs.query({ windowId: tab.windowId });
     if (tabs.length < 2) return { ok: false, message: 'This is the only tab in the window. Nothing was changed.' };
@@ -183,6 +248,7 @@ chrome.tabs.onActivated?.addListener(({ tabId }) => {
 
 chrome.tabs.onRemoved.addListener(tabId => {
   carried.delete(tabId);
+  tabSelections.delete(tabId);
   const intent = {}; intents.set(tabId, intent);
   enqueue(tabId, intent, async () => {
     await setEnabled(tabId, false);
@@ -286,7 +352,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return true;
   }
   if (message?.type === 'gaze:browser' && sender.tab?.id !== undefined && sender.frameId === 0) {
-    browserCommand(sender.tab, message.action).then(respond, error => respond({ ok: false, message: `The browser refused: ${error.message}. Nothing else was changed.` }));
+    browserCommand(sender.tab, message.action, message.userInput === true).then(respond, error => respond({ ok: false, message: `The browser refused: ${error.message}. Nothing else was changed.` }));
     return true;
   }
   if (message?.type === 'gaze:assist-progress' && !sender.tab) {
@@ -310,7 +376,10 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return true;
   }
   if (message?.type === 'gaze:page-status') {
-    pageStatus(message.tabId).then(respond);
+    Promise.all([pageStatus(message.tabId), chrome.storage.session.get('browserTabNotice')]).then(([status, saved]) => {
+      const notice = saved.browserTabNotice;
+      respond({ ...status, ...(notice?.tabId === message.tabId && Date.now() - notice.at < 120000 && notice.message ? { browserNotice: notice.message } : {}) });
+    }, () => respond({ on: false, phase: 'unavailable', message: 'Could not check this page. Try again.' }));
     return true;
   }
   return false;

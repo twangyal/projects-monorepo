@@ -11,6 +11,8 @@ test('on a page without the extension, reload works and tabs and zoom say they n
   await expect(status(page)).toContainText('Tabs and zoom need the Gaze Navigator extension. Nothing was changed.');
   await say(page, 'next tab');
   await expect(status(page)).toContainText('need the Gaze Navigator extension');
+  await say(page, 'switch to browser tab three');
+  await expect(status(page)).toContainText('need the Gaze Navigator extension');
   await page.evaluate(() => { window.beforeReload = true; });
   const reloaded = page.waitForEvent('load');
   await say(page, 'reload the page');

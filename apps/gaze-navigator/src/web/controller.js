@@ -47,6 +47,7 @@ export function createController({ window, actions = pageActions, interpret = in
   // whether the instruction being handled was spoken (a page could type into the panel, but cannot speak).
   let learnFrom = null;
   let spokenNow = false;
+  let userInputNow = false;
   let turn = 0;
   // The control the last page action used, which "it" can refer back to.
   let previous = null;
@@ -125,8 +126,15 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function runBrowser(action) {
-    const followUp = Promise.resolve(commands.browser(action))
+    pending = null;
+    const executionTurn = turn;
+    const followUp = Promise.resolve(commands.browser(action, { userInput: userInputNow || spokenNow }))
       .then(result => {
+        if (executionTurn !== turn || paused) return null;
+        if (result?.confirmation?.token) {
+          pending = { kind: 'confirm', action: { ...action, selectionToken: result.confirmation.token }, context: {}, expiresAt: now() + confirmMs };
+          return reply(result.message, 'question');
+        }
         // "Again" zooms another step.
         if (result?.ok && action.type === 'zoom' && action.step !== 'reset') last = { action, context: {}, at: now() };
         return reply(result?.message ?? 'Done.', result?.ok ? 'success' : 'error');
@@ -482,7 +490,7 @@ export function createController({ window, actions = pageActions, interpret = in
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 
-  function handle(utterance, context, { alternatives = [], spoken = false } = {}) {
+  function handle(utterance, context, { alternatives = [], spoken = false, userInput = false } = {}) {
     const current = ++turn;
     if (dictation) {
       const control = dictationControl(utterance);
@@ -532,6 +540,7 @@ export function createController({ window, actions = pageActions, interpret = in
       }
     }
     spokenNow = spoken;
+    userInputNow = userInput === true;
     learnFrom = spoken && !taught ? utterance : null;
     const response = decide(taught ?? heardAs ?? utterance, context, action, current);
     // Text edit and personal-detail replies omit private values; do not reintroduce them through an alternative.

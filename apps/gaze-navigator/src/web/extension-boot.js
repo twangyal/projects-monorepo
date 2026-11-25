@@ -75,6 +75,6 @@ export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
   // Iframes from other sites are reached through the extension's frame agents.
   const embeddedFrames = createEmbeddedFrames({ window, runtime: chrome.runtime });
   // Reloading, websites, tabs and zoom are carried out by the extension's background for this tab.
-  const browser = { run: async action => (await chrome.runtime.sendMessage({ type: 'gaze:browser', action })) ?? { ok: false, message: 'The browser did not respond. Nothing else was changed.' } };
+  const browser = { run: async (action, origin) => (await chrome.runtime.sendMessage({ type: 'gaze:browser', action, userInput: origin?.userInput === true })) ?? { ok: false, message: 'The browser did not respond. Nothing else was changed.' } };
   return startWebNavigator({ window, store, createCamera, createSpeech, loadAssistant, embeddedFrames, browser });
 }
