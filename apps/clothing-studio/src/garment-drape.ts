@@ -1,5 +1,5 @@
 import { grainAngleOf, grainDirection } from './grain.ts';
-import { DRESS_LENGTH, RIB_PARTS, isBottoms, layerOrder, material, sleeveAngleOf, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
+import { DRESS_LENGTH, FRONT_INTERFACING, optionsOf, RIB_PARTS, isBottoms, layerOrder, material, sleeveAngleOf, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtFit, skirtHeight } from './product-skirt.ts';
 
 /**
@@ -44,9 +44,16 @@ const POISSON = 0.25;
 /** Bending rigidity in dyn·cm, and membrane stiffness along the grain, across it and in shear in dyn/cm, for a library
  * material; heavier cloth of the same construction is thicker, and rigidity grows with thickness, so it scales with the
  * square of the weight ratio. */
-export function fabricProperties(fabric: Material): { bending: number; tensile: number; weft: number; shear: number } {
+export function fabricProperties(fabric: Material, support?: Material): { bending: number; tensile: number; weft: number; shear: number } {
   const base = FABRIC[fabric.texture], ratio = fabric.gsm / base.gsm;
-  return { bending: base.bending * base.drape * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
+  const shell = { bending: base.bending * base.drape * 10 * ratio * ratio, tensile: base.tensile * 1000 * ratio, weft: base.tensile * base.weft * 1000 * ratio, shear: base.shear * 1000 * ratio };
+  if (!support) return shell;
+  const added = fabricProperties(support);
+  // Perfect-bond proxy: parallel membrane layers, and added effective bending thickness.
+  // The cube-root rule has the homogeneous-sheet limit B(2t)=8B(t), but assumes comparable
+  // effective moduli; no adhesive, slip, hysteresis or measured composite calibration.
+  return { bending: (Math.cbrt(shell.bending) + Math.cbrt(added.bending)) ** 3,
+    tensile: shell.tensile + added.tensile, weft: shell.weft + added.weft, shear: shell.shear + added.shear };
 }
 /**
  * Membrane stiffness along a flat direction (dx, dy), with grainAngle clockwise from upward pattern y: the
@@ -542,14 +549,15 @@ export function bendingStencil(p0: [number, number], p1: [number, number], p2: [
 
 /** Sews the product's parts into one cloth: coincident vertices become one particle. */
 export function buildCloth(product: Product, meshes: PartMesh[]): Cloth {
-  return clothFromMeshes(meshes, part => material(product.parts[part].material), part => grainAngleOf(product.parts[part]));
+  return clothFromMeshes(meshes, part => material(product.parts[part].material), part => grainAngleOf(product.parts[part]),
+    part => part === 'front' && optionsOf(product).coat && optionsOf(product).interfacing ? FRONT_INTERFACING : undefined);
 }
 
 /**
  * One cloth from part meshes, each part of the material `materialOf` names: coincident vertices become one particle.
  * Rest shapes are flat fabric coordinates: each vertex's UVs, its position on its flat pattern piece.
  */
-export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material, grainOf: (part: PartId) => number = () => 0): Cloth {
+export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) => Material, grainOf: (part: PartId) => number = () => 0, supportOf: (part: PartId) => Material | undefined = () => undefined): Cloth {
   const particles = new Map<string, number>(), position: number[] = [], vertices = new Map<PartId, Int32Array>();
   const key = (x: number, y: number, z: number) => `${Math.round(x * 1000)},${Math.round(y * 1000)},${Math.round(z * 1000)}`;
   const simulated = meshes.filter(mesh => !CARRIED.has(mesh.part));
@@ -600,7 +608,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   // the flat positions of that triangle's corners.
   const edges = new Map<string, { i: number; j: number; rest: number; tensile: number; bend: number; area: number; count: number; opposite: Opposite[] }>();
   for (const mesh of simulated) {
-    const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), properties = fabricProperties(fabric), modelled = MODELLED.has(mesh.part) || !!mesh.modelled;
+    const ids = vertices.get(mesh.part)!, fabric = materialOf(mesh.part), support = supportOf(mesh.part), properties = fabricProperties(fabric, support), gsm = fabric.gsm + (support?.gsm ?? 0), modelled = MODELLED.has(mesh.part) || !!mesh.modelled;
     // The hood is lined, so it bends four times as stiffly.
     const bend = properties.bending * (mesh.part === 'hood' ? 4 : 1);
     for (let t = 0; t < mesh.indices.length; t += 3) {
@@ -611,7 +619,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
       const vx = p(tri[2]!, 0) - p(tri[0]!, 0), vy = p(tri[2]!, 1) - p(tri[0]!, 1), vz = p(tri[2]!, 2) - p(tri[0]!, 2);
       const area = modelled ? Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2
         : Math.abs((flats[1]![0] - flats[0]![0]) * (flats[2]![1] - flats[0]![1]) - (flats[1]![1] - flats[0]![1]) * (flats[2]![0] - flats[0]![0])) / 2;
-      for (const vertex of tri) mass[vertex] += area * fabric.gsm / 10000 / 3;
+      for (const vertex of tri) mass[vertex] += area * gsm / 10000 / 3;
       for (let e = 0; e < 3; e++) {
         const i = tri[e]!, j = tri[(e + 1) % 3]!, opposite = tri[(e + 2) % 3]!, k = i < j ? `${i},${j}` : `${j},${i}`;
         const fi = flats[e]!, fj = flats[(e + 1) % 3]!;

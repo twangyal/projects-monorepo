@@ -95,8 +95,16 @@ export interface StyleReading { style: PartStyle; understood: string[]; ignored:
  */
 export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapplied = false }: { allowUnapplied?: boolean } = {}): StyleReading {
   // Accents are folded ("piqué" reads as "pique"), because regular-expression word boundaries are ASCII.
-  const text = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim().slice(0, 200);
+  let text = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim().slice(0, 200);
   if (!text) throw new Error('Describe a fabric, colours or a print, for example "navy breton stripe on heavyweight ecru jersey".');
+  // In the part-only entry point, support is still an internal cut, not an alias for the selected outer part.
+  // Leave other clauses available ("navy with striped front interfacing") without applying the support's style.
+  const unsupported: string[] = [];
+  text = text.split(/(,|;|\band\b|\bwith\b|\bbut\b|\bplus\b)/).map(clause => {
+    if (!/\binterfacing\b|\bfused fronts?\b/.test(clause)) return clause;
+    unsupported.push(`${clause.trim()} (front interfacing is internal and cannot be styled)`);
+    return ' '.repeat(clause.length);
+  }).join('');
   const understood: string[] = [], used: [number, number][] = [];
   const claim = (match: RegExpExecArray | null) => { if (match) used.push([match.index, match.index + match[0].length]); return match; };
 
@@ -159,7 +167,7 @@ export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapp
 
   // Only consume colours assigned to a supported role. A known colour next to an unsupported
   // construction detail is still unapplied; it must not recolour the fabric or print by accident.
-  const candidates = colors.filter(c => !/^\s+(topstitch(?:ing)?|stitch(?:es|ing)?|seams?|buttons?|zips?|zippers?|piping|embroidery|lining)\b/.test(text.slice(c.end)));
+  const candidates = colors.filter(c => !/^\s+(topstitch(?:ing)?|stitch(?:es|ing)?|seams?|buttons?|zips?|zippers?|piping|embroidery|lining|(?:front\s+)?interfacing)\b/.test(text.slice(c.end)));
   let groundColor: typeof colors[number] | undefined, inkColor: typeof colors[number] | undefined;
   const on = /\bon (?:an? )?(?:[a-z]+ )?$/;
   if (motif && candidates.length) {
@@ -188,10 +196,13 @@ export function readStylePrompt(prompt: string, current: PartStyle, { allowUnapp
       if (nextDirection) style.print.direction = nextDirection;
     }
   }
-  if (!understood.length && !allowUnapplied) throw new Error(`No fabric, colour or print was recognised in “${prompt.trim().slice(0, 60)}”. Try words like "linen", "navy", "breton stripe" or "small floral".`);
+  if (!understood.length && !allowUnapplied) {
+    if (unsupported.length) throw new Error(unsupported.join('; '));
+    throw new Error(`No fabric, colour or print was recognised in “${prompt.trim().slice(0, 60)}”. Try words like "linen", "navy", "breton stripe" or "small floral".`);
+  }
 
   // Report every word that was not part of something understood.
-  const ignored: string[] = [];
+  const ignored: string[] = [...unsupported];
   for (let match, pattern = /[a-z0-9#-]+/g; (match = pattern.exec(text));) {
     const inside = used.some(([start, end]) => match!.index >= start && match!.index < end);
     if (!inside && !FILLER.has(match[0])) ignored.push(match[0]);

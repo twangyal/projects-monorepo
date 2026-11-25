@@ -13,6 +13,7 @@ export const MAX_TEXT = 40;
 
 const QUOTED = /["“”„«»]([^"“”„«»]+)["“”„«»]/;
 const SIDE = /\b(on|across|down|along)\s+(?:the\s+)?(?:(left|right)\s+)?(back|front|chest|sleeve)\b/i;
+const INTERNAL_SIDE = /\b(?:on|across|down|along)\s+(?:the\s+)?(?:(?:front\s+)?(?:fusible\s+)?interfacing|fusible\s+front\s+interfacing)\b/i;
 const LETTERS = /\b(?:in\s+)?([a-z][a-z -]{1,30}?)\s+(?:letters|lettering|text|type|writing|print|ink)\b/i;
 const COLOURED = /\bin\s+([a-z][a-z -]{1,30}?)(?=\s*(?:[,.;]|$|\bon\b|\bacross\b))/i;
 
@@ -33,7 +34,7 @@ function colourOf(words: string): string | null {
  * The words in quotes in a description, where they go and in what colour: `"Stay Wild" on the back in white letters`.
  * `rest` is the description without them, for reading the garment itself. Null when nothing is quoted.
  */
-export function readSlogan(prompt: string): { request: SloganRequest; rest: string } | null {
+export function readSlogan(prompt: string): { request: SloganRequest; rest: string; unsupportedPlacement?: string } | null {
   const quote = QUOTED.exec(prompt);
   if (!quote) return null;
   const text = quote[1]!.trim().replace(/\s+/g, ' ');
@@ -50,7 +51,10 @@ export function readSlogan(prompt: string): { request: SloganRequest; rest: stri
     const from = Math.max(0, quote.index - 40), before = pattern.exec(rest.slice(from, quote.index));
     return before ? { match: before, at: from + before.index } : null;
   };
-  const placed = near(SIDE);
+  // An explicit internal destination must not fall through to the default front-shell placement.
+  const internal = near(INTERNAL_SIDE);
+  const placed = internal ? null : near(SIDE);
+  if (internal) blank(internal.at, internal.match[0].length);
   if (placed) blank(placed.at, placed.match[0].length);
   // On a sleeve: the left one unless the right is named, across the arm, or running down it for "down" or "along".
   const where = placed?.match[3]?.toLowerCase(), along = where === 'sleeve' && /^(?:down|along)$/i.test(placed!.match[1]!);
@@ -62,7 +66,7 @@ export function readSlogan(prompt: string): { request: SloganRequest; rest: stri
   }
   // "With", "saying" or "printed" left before the quote ("with the words …") go with it.
   for (let pass = 0; pass < 3; pass++) rest = rest.replace(/\b(?:with|saying|that says|reading|printed(?: with)?|the words?|slogan|text)(?=\s{2,}|\s*$)/gi, '  ');
-  return { request: { text, side, color, font: 'sans', ...(along ? { rotation: 90 } : {}) }, rest };
+  return { request: { text, side, color, font: 'sans', ...(along ? { rotation: 90 } : {}) }, rest, ...(internal ? { unsupportedPlacement: internal.match[0] } : {}) };
 }
 
 const CSS_FONTS: Record<TextFont, string> = { sans: '700 160px sans-serif', serif: '700 160px serif', mono: '700 150px monospace' };

@@ -78,6 +78,8 @@ const PART_WORDS: [RegExp, (parts: ReadonlySet<PartId>) => PartId[]][] = [
   [/\b(collars?|neck ?bands?|neck ribs?|necklines?|neck)\b/, parts => [parts.has('collar') ? 'collar' : 'neckband']],
   // A coat's lapels, before the collar.
   [/\blapels?\b/, parts => (parts.has('lapel') ? ['lapel'] : [])],
+  // Interfacing is an internal cut, never a styled garment part.
+  [/\binterfacing\b/, () => []],
   // A coat's lining.
   [/\blinings?\b/, parts => (parts.has('lining') ? ['lining'] : [])],
   // A shirt's back yoke, before "back" alone takes the word.
@@ -308,6 +310,20 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
       while (take(/\blapels?\b/));
     }
   }
+  const noInterfacing = take(/\b(?:(?:no|without)(?: a| any)? (?:(?:front )?(?:fusible )?interfacing|fusible front interfacing|fused fronts?)|unfused fronts?)\b/);
+  const wantsInterfacing = noInterfacing ? null : take(/\b(?:(?:front )?(?:fusible )?interfacing|fusible front interfacing|fused fronts?)\b/);
+  if (noInterfacing && optionsOf(product).interfacing) {
+    product = withOptions(product, { ...optionsOf(product), interfacing: false });
+    garment.push('front interfacing removed');
+  } else if (!noInterfacing && wantsInterfacing) {
+    if (optionsOf(product).coat) {
+      product = withOptions(product, { ...optionsOf(product), interfacing: true });
+      garment.push('front interfacing: 75 gsm cotton woven fusible support');
+    } else notApplied.push('front interfacing (it goes in a coat or blazer)');
+  }
+  // Negative construction phrases carry no style scope: "red blazer without front interfacing" still styles the coat.
+  const supportMention = wantsInterfacing;
+  if (supportMention) text = text.slice(0, supportMention.index) + 'interfacing'.padEnd(supportMention[0].length) + text.slice(supportMention.index + supportMention[0].length);
   // A coat's lining: added by naming it ("lined", "a red lining", which also styles it), taken off with "unlined" or
   // "no lining". It goes in a coat or blazer only.
   const noLining = !!take(/\b(?:unlined|(?:no|without)(?: a)? linings?)\b/), wantsLining = !noLining && /\b(?:lined|linings?)\b/.test(text);
@@ -625,6 +641,10 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     parts.push(...measured.flatMap(item => item.parts));
     // A part word for a part this garment does not have ("skirt" on a dress not cut at the waist) is reported with its
     // words rather than dropped.
+    if (named.includes('interfacing')) {
+      if (words.trim()) notApplied.push(`${clause.replace(/\s+/g, ' ').trim()} (front interfacing is internal and cannot be styled)`);
+      return [];
+    }
     if (named.length && !parts.length) {
       const dressSkirt = named.some(word => /skirt|bodice/.test(word)) && product.base === 'tee';
       notApplied.push(`${clause.replace(/\s+/g, ' ').trim()} (${dressSkirt ? 'a dress has a separate skirt and bodice when cut at the waist: say “waist seam”' : `not on this ${garmentName(product).toLowerCase()}`})`);
@@ -674,7 +694,9 @@ export function readDesignPrompt(prompt: string, current: Product): DesignReadin
     if (understood.length) scopes.push({ label: clause.parts.map(id => partName(product, id)).join(', '), understood });
   }
   let printed: TextRequest | undefined;
-  if (slogan && isSleeveArtwork(slogan.request.side) && (isBottoms(product) || !partsOf(product).includes(slogan.request.side))) {
+  if (slogan?.unsupportedPlacement) {
+    notApplied.push(`text “${slogan.request.text}” ${slogan.unsupportedPlacement} (front interfacing is internal and cannot be styled)`);
+  } else if (slogan && isSleeveArtwork(slogan.request.side) && (isBottoms(product) || !partsOf(product).includes(slogan.request.side))) {
     // Text for a sleeve on a garment without sleeves says why it was left off.
     notApplied.push(`text “${slogan.request.text}” on ${textPlace(slogan.request)} (${isBottoms(product) ? `${garmentName(product).toLowerCase()} have` : 'a sleeveless top has'} no sleeves)`);
   } else if (slogan) {

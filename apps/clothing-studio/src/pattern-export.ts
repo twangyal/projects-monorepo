@@ -2,7 +2,7 @@
 // allowance, a grainline, artwork placements and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG
 // (cm).
 import { artworkMarks } from './artwork-pattern.ts';
-import { garmentName, patternKey, patternLabel, patternFabric, patternPieces, type PatternPiece, type Product } from './product.ts';
+import { garmentName, patternKey, patternLabel, patternFabric, isUnstyledPiece, patternPieces, type PatternPiece, type Product } from './product.ts';
 
 import { grainAngleOf, grainLine } from './grain.ts';
 
@@ -69,7 +69,7 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, ...(piece.foldLine ? {foldLine:piece.foldLine.map(shift) as [Pt,Pt]} : {}),
       ...(piece.pleats ? { pleats: piece.pleats.map(line => ({ fold: line.fold.map(shift) as [Pt, Pt], placement: line.placement.map(shift) as [Pt, Pt] })) } : {}),
       ...(piece.darts ? { darts: piece.darts.map(dart => dart.map(shift) as [Pt, Pt, Pt]) } : {}),
-      artwork: marks.filter(mark => mark.part === piece.part).map(mark => ({ label: mark.label, lines: mark.lines.map(line => line.map(shift)), at: shift(mark.at), turned: mark.turned })),
+      artwork: marks.filter(mark => !isUnstyledPiece(piece) && mark.part === piece.part).map(mark => ({ label: mark.label, lines: mark.lines.map(line => line.map(shift)), at: shift(mark.at), turned: mark.turned })),
       at: { x, y: allowance } });
     x += Math.max(...cutting.map(p => p.x)) - minX + GAP_CM;
   }
