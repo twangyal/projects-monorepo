@@ -72,6 +72,7 @@ test('the real outfit worker and GLB export keep an interfaced coat as one bonde
   const glb = await download(page, '#product-glb');
   const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString());
   expect(json.nodes.some((node: { name?: string }) => /Front body/.test(node.name ?? ''))).toBe(true);
-  expect(json.nodes.some((node: { name?: string }) => /interfacing/i.test(node.name ?? ''))).toBe(false);
+  // Plain visual backing follows the single bonded front; it is not another simulated garment.
+  expect(json.nodes.filter((node: { extras?: { fusedSupport?: string } }) => node.extras?.fusedSupport).map((node: { extras: { fusedSupport: string } }) => node.extras.fusedSupport).sort()).toEqual(['front', 'lapel']);
   expect((await backup(page)).product.options.interfacing).toBe(true);
 });

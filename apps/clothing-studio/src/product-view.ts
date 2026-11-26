@@ -83,6 +83,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to the garment</button></div>
         <p id="describe-result" class="fine-print" role="status"></p></div>
       <label class="field">Fabric<select id="part-material">${MATERIALS.map(m => `<option value="${m.id}">${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>
+      <p id="fabric-optics-help" class="fine-print">Chiffon has an illustrative sheer preset in 3D, PNG, studio renders and GLB. Linings and unprinted fused front support remain separate inner surfaces. This is not measured optical transmission; overlapping folds may sort imperfectly. Sheer cloth casts no solid studio shadow, and these scenes omit screen-space fold shading. Flat patterns remain opaque.</p>
       <label class="field">Fabric grain angle (°)<input id="part-grain" type="number" min="-90" max="90" step="any" aria-describedby="part-grain-help"></label>
       <p id="part-grain-help" class="fine-print">0° follows the upward pattern vertical; 45° or −45° cuts on the bias; 90° cuts across. Positive angles turn clockwise. Changes cutting arrows and directional stretch, not the print or finished measurements. Fabric properties remain approximate; modelled trims keep their existing response.</p>
       ${drapeTestMarkup}

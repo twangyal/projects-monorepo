@@ -15,7 +15,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { STUDIO_HEIGHT, STUDIO_TURN, STUDIO_WIDTH, fabricLook, studioDistance, type StudioBackdrop, type StudioView } from './studio-render.ts';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { ARTWORK_PART_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_UV_SHIFT, lapelShape, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, type Material, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
+import { ARTWORK_PART_NAMES, JACKET_BUTTON_GAP_CM, LAPEL_UV_SHIFT, lapelShape, BELT_LOOP_CM, FLY_WIDTH_CM, OPEN_ZIP_GAP, isSleeveArtwork, sleeveArtworkFrame, sleeveArtworkUv, backPocketOf, frontPocketEdge, frontPocketOf, bottomsArtworkFrame, garmentHeight, isBottoms, material, optionsOf, type Material, FRONT_INTERFACING, partName, teeDimensions, teeMesh, topMeasurements, trouserDimensions, trouserYoke, type PartId, type PartMesh, type Product, zipAllowed, placketOf } from './product.ts';
 /** A zip's width on the garment, tape included, cm. */
 const ZIP_WIDTH = 1.4;
 
@@ -56,8 +56,9 @@ class ProductModel {
   protected reframe() { /* No camera in a model-only export. */ }
   protected requestRender() { /* No renderer in a model-only export. */ }
   /** A fabric's surface. The studio renderer draws it with the soft sheen of its fibres (see StudioScene). */
-  protected fabricSurface(fabric: Material, map: THREE.Texture, side: THREE.Side, highlighted = false): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({ map, roughness: 1 - fabric.sheen * 3, metalness: 0, side,
+  protected fabricSurface(fabric: Material, map: THREE.Texture | null, side: THREE.Side, highlighted = false): THREE.MeshStandardMaterial {
+    const opacity=fabric.opacity??1;
+    return new THREE.MeshStandardMaterial({ map, opacity, transparent:opacity<1, depthWrite:opacity===1, roughness: 1 - fabric.sheen * 3, metalness: 0, side,
       emissive: new THREE.Color(highlighted ? 0x553311 : 0x000000), emissiveIntensity: highlighted ? 0.35 : 0 });
   }
 
@@ -105,10 +106,11 @@ class ProductModel {
       for (const part of rest) {
         const positions = parts.find(item => item.part === part.part)?.positions;
         if (!positions || positions.length !== part.positions.length) continue;
-        const mesh = this.partMesh(garment, part, positions, false), lining = this.liningMesh(garment, part, positions);
-        mesh.name = `${garment.name}: ${mesh.name}`; mesh.userData = {};
+        const mesh = this.partMesh(garment, part, positions, false), lining = this.liningMesh(garment, part, positions), support=this.supportMesh(garment,part,positions);
+        mesh.name = `${garment.name}: ${mesh.name}`; delete mesh.userData.part;
         this.worn.add(mesh); meshes.set(part.part, mesh);
         if (lining) { lining.name = `${garment.name}: ${lining.name}`; this.worn.add(lining); }
+        if (support) { support.name = `${garment.name}: ${support.name}`; this.worn.add(support); }
       }
       return { garment, rest, meshes };
     });
@@ -122,6 +124,8 @@ class ProductModel {
       this.group.add(mesh); this.parts.set(part.part, mesh);
       const lining = this.liningMesh(product, part, shaped ? draped.positions : part.positions);
       if (lining) this.group.add(lining);
+      const support=this.supportMesh(product,part,shaped?draped.positions:part.positions);
+      if(support)this.group.add(support);
     }
     this.group.updateMatrixWorld(true); this.worn.updateMatrixWorld(true);
     for (const { garment, rest, meshes } of wornMeshes) for (const art of garment.artwork) {
@@ -295,7 +299,7 @@ class ProductModel {
     geometry.setIndex(indices); geometry.computeVertexNormals();
     const layer = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide, roughness: 0.9 }));
     layer.name = holder === this.worn ? `${product.name}: ${partName(product, part)} stitching` : `${partName(product, part)} stitching`;
-    holder.add(layer);
+    this.decals.add(layer); holder.add(layer);
   }
 
   /** `count` buttons evenly down a placket `widthCm` by `lengthCm`, with a stitched edge, on a transparent ground. */
@@ -361,8 +365,8 @@ class ProductModel {
     // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
     geometry.setIndex(part.indices); geometry.computeVertexNormals();
-    // A lined part shows its fabric outside only; its lining is drawn inside (see liningMesh).
-    const surface = this.fabricSurface(material(style.material), texture, this.lined(product, part) ? THREE.FrontSide : THREE.DoubleSide, highlighted);
+    // Both faces remain visible through a sheer lining or from inside an unlined garment.
+    const surface = this.fabricSurface(material(style.material), texture, THREE.DoubleSide, highlighted);
     const mesh = new THREE.Mesh(geometry, surface);
     mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
     return mesh;
@@ -373,16 +377,33 @@ class ProductModel {
     return !!optionsOf(product).lining && !!product.parts.lining && LINED_PARTS.has(part.part);
   }
 
-  /** A lined part's lining, at `positions`: the same surface seen from inside, in the lining's fabric (the garment's
-   * faces turn outward, so their backs face the body). Null for a part that is not lined. */
+  /** An inner visual surface, offset along the outer mesh's normals in garment cm. This is not a second drape. */
+  private innerGeometry(part:PartMesh,positions:ArrayLike<number>,offset:number):THREE.BufferGeometry {
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(part.uvs,2));
+    geometry.setIndex(part.indices);geometry.computeVertexNormals();
+    const points=geometry.getAttribute('position'),normals=geometry.getAttribute('normal');
+    for(let i=0;i<points.count;i++)points.setXYZ(i,points.getX(i)-normals.getX(i)*offset,points.getY(i)-normals.getY(i)*offset,points.getZ(i)-normals.getZ(i)*offset);
+    return geometry;
+  }
+
+  /** The independently styled lining lies inside its shell, behind fused support when present. */
   private liningMesh(product: Product, part: PartMesh, positions: ArrayLike<number>): THREE.Mesh | null {
     if (!this.lined(product, part)) return null;
-    const style = product.parts.lining!, { texture, tileCm } = this.texture(style, product.motifs), geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
-    geometry.setIndex(part.indices); geometry.computeVertexNormals();
-    const mesh = new THREE.Mesh(geometry, this.fabricSurface(material(style.material), texture, THREE.BackSide));
+    const style = product.parts.lining!, { texture, tileCm } = this.texture(style, product.motifs), geometry=this.innerGeometry(part,positions,0.08);
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(part.uvs.map(value=>value/tileCm),2));
+    const mesh = new THREE.Mesh(geometry, this.fabricSurface(material(style.material), texture, THREE.DoubleSide));
     mesh.name = `${partName(product, part.part)} lining`; mesh.userData.lining = part.part;
+    return mesh;
+  }
+
+  /** The full-front fused cut is unprinted cotton backing, carried with the front and its lapels. */
+  private supportMesh(product:Product,part:PartMesh,positions:ArrayLike<number>):THREE.Mesh|null {
+    if(!optionsOf(product).coat||!optionsOf(product).interfacing||!['front','lapel'].includes(part.part))return null;
+    const surface=this.fabricSurface(FRONT_INTERFACING,null,THREE.DoubleSide);surface.color.set(0xf4f0e4);
+    const mesh=new THREE.Mesh(this.innerGeometry(part,positions,0.04),surface);
+    mesh.name=`${partName(product,part.part)} fused support`;mesh.userData.fusedSupport=part.part;
     return mesh;
   }
 
@@ -426,12 +447,21 @@ class ProductModel {
     if (rest) { restGeometry = new THREE.BufferGeometry(); restGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rest.positions,3)); restGeometry.setIndex(rest.indices); restGeometry.computeVertexNormals(); supporting = new THREE.Mesh(restGeometry,target.material); supporting.updateMatrixWorld(true); }
     const ray = new THREE.Raycaster(new THREE.Vector3(at.x, at.y, at.front ? 200 : -200), new THREE.Vector3(0, 0, at.front ? -1 : 1));
     const hit = ray.intersectObject(supporting)[0];
-    if (!hit) { restGeometry?.dispose(); return; }
+    if (!hit && !part) { restGeometry?.dispose(); return; }
+    // Artwork can cover cloth on either side of an opening even when its centre falls in empty space.
+    // Keep its authored x/y/rotation; the projector clips to this part's real triangles.
+    let centre=hit?.point,depth=30;
+    if(!centre){
+      supporting.geometry.computeBoundingBox();const box=supporting.geometry.boundingBox;
+      if(!box||box.isEmpty()){restGeometry?.dispose();return;}
+      centre=new THREE.Vector3(at.x,at.y,(box.min.z+box.max.z)/2);depth=box.max.z-box.min.z+0.02;
+    }
     const orientation = new THREE.Euler(0, at.front ? 0 : Math.PI, -(at.rotation ?? 0) * Math.PI / 180);
     let geometry: THREE.BufferGeometry;
-    try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(at.width, at.height, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
+    try { geometry = new DecalGeometry(supporting, centre, orientation, new THREE.Vector3(at.width, at.height, depth)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
     finally { restGeometry?.dispose(); }
-    const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
+    if(!geometry.getAttribute('position').count){geometry.dispose();return;}
+    const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, side:(target.material as THREE.MeshStandardMaterial).opacity<1?THREE.DoubleSide:THREE.FrontSide, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     decal.name = name; if (part) decal.userData.part = part;
     this.decals.add(decal); holder.add(decal);
   }
@@ -458,10 +488,10 @@ class ProductModel {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', target.geometry.getAttribute('position').clone());
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2)); geometry.setIndex(faces); geometry.computeVertexNormals();
-    // Printed on the outside only; sleeves are wound with their faces outward.
-    const print = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
+    // Ink on sheer cloth is also visible from inside; opaque cloth keeps its exterior-only print.
+    const print = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, side:(target.material as THREE.MeshStandardMaterial).opacity<1?THREE.DoubleSide:THREE.FrontSide, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     print.name = name; print.userData.part = art.part;
-    holder.add(print);
+    this.decals.add(print); holder.add(print);
   }
 
   /** The artwork's image inside a clear margin, and where the image lies in the texture (0 to 1 each way). */
@@ -682,22 +712,26 @@ export class StudioScene extends ProductModel {
     const fill = new THREE.DirectionalLight(0xfff3e6, 0.25); fill.position.set(220, 40, 160); this.scene.add(fill);
   }
 
-  protected override fabricSurface(fabric: Material, map: THREE.Texture, side: THREE.Side): THREE.MeshStandardMaterial {
+  protected override fabricSurface(fabric: Material, map: THREE.Texture | null, side: THREE.Side): THREE.MeshStandardMaterial {
     const look = fabricLook(fabric);
     // The sheen takes the fabric's own colour, so a dark cloth is not greyed by it.
-    return new THREE.MeshPhysicalMaterial({ map, side, metalness: 0, roughness: look.roughness, sheen: 1, sheenColor: new THREE.Color().setScalar(look.sheen), sheenColorMap: map, sheenRoughness: look.sheenRoughness });
+    const opacity=fabric.opacity??1;
+    return new THREE.MeshPhysicalMaterial({ map, side, opacity, transparent:opacity<1, depthWrite:opacity===1, metalness: 0, roughness: look.roughness, sheen: 1, sheenColor: new THREE.Color().setScalar(look.sheen), sheenColorMap: map, sheenRoughness: look.sheenRoughness });
   }
 
   /** The garment as photographed from `view`, on `backdrop`, as a PNG of STUDIO_WIDTH × STUDIO_HEIGHT. */
   async png(view: StudioView, backdrop: StudioBackdrop): Promise<Blob> {
     this.turntable.rotation.y = STUDIO_TURN[view] * Math.PI / 180;
     this.turntable.updateMatrixWorld(true);
+    let sheer=false;
     const box = new THREE.Box3(), anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     for (const holder of [this.group, this.worn]) holder.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       box.expandByObject(object);
-      object.receiveShadow = true; object.castShadow = !this.decals.has(object);
-      const map = (object.material as THREE.MeshStandardMaterial).map;
+      const surface=object.material as THREE.MeshStandardMaterial;
+      sheer ||= surface.opacity<1;
+      object.receiveShadow = true; object.castShadow = !this.decals.has(object)&&surface.opacity===1;
+      const map = surface.map;
       if (map) map.anisotropy = anisotropy;
     });
     if (box.isEmpty()) throw new Error('There is no garment to render.');
@@ -720,7 +754,8 @@ export class StudioScene extends ProductModel {
       occlusion.updateGtaoMaterial({ radius: 8, distanceExponent: 1.5, thickness: 4, distanceFallOff: 1, scale: 1.2, samples: 16, screenSpaceRadius: false });
       occlusion.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
       occlusion.blendIntensity = 0.8;
-      composer.addPass(new RenderPass(this.scene, this.camera)); composer.addPass(occlusion); composer.addPass(new OutputPass());
+      // The normal/depth override treats sheer cloth as solid and would paint opaque halos.
+      composer.addPass(new RenderPass(this.scene, this.camera)); if(!sheer)composer.addPass(occlusion); composer.addPass(new OutputPass());
       composer.render();
     } finally { occlusion.dispose(); composer.dispose(); target.dispose(); }
     // The backdrop is painted behind the render, so its colour is exact rather than tone mapped.
