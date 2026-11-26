@@ -240,6 +240,9 @@ function captureRecoveryContext(): RecoveryContext | null {
   return {owner,projectId:working.id,duration:working.duration,source:automaticReviewSource,identity:automaticReviewSourceIdentity,
     original:automaticReviewOriginal,revision:`${editGeneration}:${automaticReviewRevision}`,draft:structuredClone(automaticReviewDraft),checked:[...automaticChecked],allowed:srtCurrent(owner)&&srtAllowed()};
 }
+const freshPublishedUploads=new Set<string>();
+let automaticPublishedOwner='',publishedEditorIntent=0;
+function publishedUploadOwner():string {return working?`${working.id}:${loadedProjectGeneration}:${editGeneration}:${srtEpoch}:${timingEpoch}:${publishedEditorIntent}:${mediaGeneration}`:'';}
 const lyricsLookup=mountLyricsLookup({
   stateChanged:()=>{if(working)singerAssignmentControls();},
   reveal:()=>workspace.reveal(element('lyrics-lookup')),
@@ -251,17 +254,17 @@ const lyricsLookup=mountLyricsLookup({
   },
   context:()=>working?{key:`${working.id}:${loadedProjectGeneration}:${editGeneration}`,projectId:working.id,duration:working.duration,
     busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
-    pastedDirty:draftDirty,alignmentState:transcriptState}:null,
+    pastedDirty:draftDirty,alignmentState:transcriptState,automaticTimedEligible:!!automaticPublishedOwner&&automaticPublishedOwner===publishedUploadOwner()&&!dirty&&!draftDirty&&!practice.active}:null,
   reviewTimedLyrics: openPublishedTimingReview,
-  useTimedLyrics:cues=>{
+  useTimedLyrics:(cues,automatic=false)=>{
     if (!working || !lyricHistory) return;
     retirePractice('Replacing lyric cues stopped practice.');
     timeline.cancelGesture();
     lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
     retireSrt('Lyric cues replaced in memory.');
     retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-    working.cues = cues; renderCues(); changed(); workspace.show('lyrics');
-    message(`Timed ${cues.length} lines from the published line timings. Play the preview to check them; Undo restores your previous lines. Save lyrics when ready.`);
+    working.cues = cues; renderCues(); changed(); if(!automatic)workspace.show('lyrics');
+    message(`${automatic?'Published line timings applied automatically. ':''}Timed ${cues.length} lines from the published line timings. Play the preview to check them; Undo restores your previous lines. Save lyrics when ready.`);
   },
   useLyrics:text=>{
     const field=element<HTMLTextAreaElement>('lyric-draft');field.value=text;draftDirty=true;
@@ -920,6 +923,7 @@ function nextDoubt(): void {
   stopWordTapping('Checking a doubtful word stopped word timing. Nothing was changed by it.');
   endFix();
   const cue = working!.cues[item.cue]!;
+  publishedEditorIntent++;
   checking = { cue, word: item.word, text: item.text, start: item.start, until: cue.end + 0.3, paused: false };
   audio.currentTime = Math.max(0, item.start - DOUBT_LEAD);
   fixStatus(`${next ? '' : 'Back to the first. '}Doubtful word ${list.indexOf(item) + 1} of ${list.length}: “${item.text}”, line ${item.cue + 1}. It pauses after the line; if the word is wrong, press Fix this line.`);
@@ -2694,6 +2698,7 @@ async function openProject(id: string) {
   history.replaceState(null, '', `?project=${project.id}`);
   renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); controls(); track(currentTrack); void loadTranscript();
   workspace.clipOpened();
+  return true;
   } finally { if (generation === projectGeneration) { loading = false; controls(); } }
 }
 function mayLeave(): boolean {
@@ -2912,6 +2917,7 @@ async function pollJob(id: string, epoch = pollEpoch) {
     if (!ownsPoll(id, epoch)) return;
     if (job.status === 'running') { showJob(job); pollTimer = setTimeout(() => void pollJob(id, epoch), 600); return; }
     terminal = true;
+    const newlyUploaded=freshPublishedUploads.delete(job.projectId);
     if (job.status === 'complete') {
       if (job.kind === 'archive-import') completedImportId = job.projectId;
       if (!await refreshProjects(() => ownsPoll(id, epoch))) return;
@@ -2941,8 +2947,9 @@ async function pollJob(id: string, epoch = pollEpoch) {
       } else if (job.kind === 'separate') {
         if (job.song) rememberSongTags(job.projectId, job.song);
         if (ownedJob && (followJobProject || (!(dirty || draftDirty) && !working))) {
-          await openProject(job.projectId);
+          const opened=await openProject(job.projectId);
           if (!ownsPoll(id, epoch)) return;
+          if(opened&&followJobProject&&newlyUploaded&&!job.retainedOnCancel&&working?.id===job.projectId&&working.revision===0)automaticPublishedOwner=publishedUploadOwner();
           message(job.retainedOnCancel
             ? 'Recognition cancelled. Your stems were saved. You can listen now and use Transcribe lyrics when ready.'
             : job.recognitionFailed
@@ -3055,6 +3062,7 @@ async function upload(file: File, model: string, follow: boolean): Promise<{ sta
   requestingJob = true; controls();
   try {
     const result = await request<{ job: Job }>('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Name': encodeURIComponent(file.name), ...(model === 'auto' ? {} : { 'X-Lyrics-Model': model }) }, body: file });
+    if(follow)freshPublishedUploads.add(result.job.projectId);
     message(''); if (!follow) queuedJobs.add(result.job.id); startPolling(result.job, follow); return { started: true };
   } catch (error) {
     const text = error instanceof Error ? error.message : 'Could not import this clip.';
@@ -3476,6 +3484,13 @@ element('timing-begin').addEventListener('click', () => {
   timingText('timing-status', 'Timing only the existing lyric lines. Unapplied pasted words are kept and are not included.');
   controls(); if (!element<HTMLButtonElement>('timing-mark').disabled) element('timing-mark').focus({ preventScroll: true });
 });
+function publishedEditorInteraction(event:Event):void {
+  const node=event.target;
+  if(!(node instanceof Element)||!node.closest('.tool-panel')||node.closest('#lyrics-lookup'))return;
+  if(event.type==='focusin'&&!(node instanceof HTMLInputElement||node instanceof HTMLTextAreaElement||node instanceof HTMLSelectElement||node.matches('[contenteditable="true"]')))return;
+  publishedEditorIntent++;
+}
+for(const event of ['pointerdown','keydown','input','change','focusin'])app.addEventListener(event,publishedEditorInteraction,true);
 app.addEventListener('input', event => {
   const node = event.target;
   if ((node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)

@@ -1,4 +1,5 @@
 import {draftLines,validateCues} from './lyrics.ts';
+import {cueWords} from './word-timing.ts';
 export interface LyricsQuery { title:string; artist:string; duration:number }
 export interface LyricsCue {start:number;end:number;text:string}
 /** `cues` are the provider's own line timings, when it has synced lyrics that fit this clip. */
@@ -51,6 +52,18 @@ export function parseSyncedLyrics(lrc:string,duration:number,{maxHold=MAX_HOLD,m
   try{return validateCues(cues,duration);}catch{return null;}
 }
 const comparable=(text:string)=>text.normalize('NFC').toLowerCase().replace(/\s+/gu,' ').trim();
+// Ignore line breaks and punctuation, while preserving words and the order of spaceless scripts.
+const publishedWords=(text:string)=>cueWords(text.normalize('NFC').toLowerCase().replace(/[’‘]/gu,"'").replace(/[^\p{L}\p{N}\p{M}\s']/gu,' ')).map(word=>word.replace(/^'+|'+$/gu,'')).filter(Boolean);
+/** Automatic replacement is stricter than a catalogue match offered for human review. */
+export function automaticPublishedTiming(record:LyricsRecord,query:LyricsQuery):boolean {
+  try {
+    const input=lookupQuery(query),plain=publishedWords(record.text),timed=publishedWords(record.cues?.map(cue=>cue.text).join(' ')??'');
+    return plain.length>0 && plain.length===timed.length && plain.every((word,index)=>word===timed[index]) && !!record.cues?.length && !record.timingNotice
+      && comparable(record.title)===comparable(input.title) && comparable(record.artist)===comparable(input.artist)
+      && Number.isFinite(record.duration) && Math.abs(record.duration-input.duration)<=1
+      && validateCues(record.cues,input.duration).length===record.cues.length;
+  } catch { return false; }
+}
 // Editions and credits that tags and catalogues add to the same song: "Song - Remastered 2011", "Song (Live)", "feat. X".
 const EDITION=/\s+-\s+(?:[^-]*\b(?:remaster(?:ed)?|live|version|edit|mix|mono|stereo|demo|acoustic|bonus|single|radio|deluxe|instrumental)\b[^-]*|\d{4})$/u;
 const plainWords=(text:string)=>text.replace(/[^\p{L}\p{N}]+/gu,' ').trim();
@@ -109,7 +122,7 @@ export function retryAfterSeconds(value:string|null,now=Date.now()):number {
   return Math.min(3600,Math.max(1,Number.isFinite(seconds)?Math.ceil(seconds):60));
 }
 /** A deliberate metadata-only browser request. No audio, credentials, redirects or referrer. */
-export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:typeof fetch=fetch,timeoutMs=8000):Promise<LyricsRecord> {
+export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:typeof fetch=fetch,timeoutMs=8000,requestAllowed:()=>boolean=()=>true):Promise<LyricsRecord> {
   const query=lookupQuery(input),controller=new AbortController();
   if(Date.now()<waitUntil)throw new Error(waitMessage(waitUntil));
   const url=new URL('https://lrclib.net/api/get');url.search=new URLSearchParams({track_name:query.title,artist_name:query.artist,duration:String(query.duration)}).toString();
@@ -123,6 +136,7 @@ export async function lookupLyrics(input:LyricsQuery,signal:AbortSignal,fetcher:
   try {
     if(signal.aborted){controller.abort();return await aborted;}
     const getJson=async(url:URL,limit:number):Promise<unknown>=>{
+      if(controller.signal.aborted||!requestAllowed())throw new Error('Lyrics lookup cancelled.');
       const response=await fetcher(url,{method:'GET',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json','Lrclib-Client':LRCLIB_CLIENT}});
       if(controller.signal.aborted)throw new Error('Lyrics lookup cancelled.');
       if(response.status===429){waitUntil=Date.now()+retryAfterSeconds(response.headers.get('retry-after'))*1000;throw new Error(waitMessage(waitUntil));}
