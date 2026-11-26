@@ -80,12 +80,23 @@ export function parseTranscript(value: unknown, duration: number): Transcript {
 
 export function parseAlignment(value: unknown, duration: number, lines: readonly string[]): AlignedCue[] {
   const reply = record(value);
-  if (Object.keys(reply).join(',') !== 'cues') throw new Error('The studio returned an unreadable lyric reply.');
+  if (Object.keys(reply).sort().join(',') !== ('method' in reply ? 'cues,method' : 'cues') || 'method' in reply && !['letters','recognized-words','mixed','estimated'].includes(reply.method as string)) throw new Error('The studio returned an unreadable lyric reply.');
   const result = cues(reply.cues, duration, 'matched').map(({ start, end, text, score }) => ({ start, end, text, matched: score }));
   if (result.length !== lines.length || result.some((cue, index) => cue.text !== lines[index])) {
     throw new Error('The studio changed the supplied lyric lines. Your pasted words are kept.');
   }
   return result;
+}
+
+/** Only non-estimated, unflagged local timing may be used without stopping for review.
+ * Scores are alignment heuristics, not calibrated accuracy probabilities. */
+export function automaticAlignment(value:unknown,duration:number,lines:readonly string[]):AlignedCue[]|null {
+  try {
+    const reply=record(value),aligned=parseAlignment(value,duration,lines);
+    if(!['letters','recognized-words','mixed'].includes(reply.method as string)||!aligned.length
+      ||aligned.some(cue=>cue.matched<0.8||cue.end-cue.start>8||cue.end<=cue.start))return null;
+    return aligned;
+  }catch{return null;}
 }
 
 /** “lines 3, 7 and 12” for aligned lines placed unsurely (heard faintly, or stretched over a pause), or an empty string. */

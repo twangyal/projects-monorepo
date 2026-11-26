@@ -64,6 +64,16 @@ export function automaticPublishedTiming(record:LyricsRecord,query:LyricsQuery):
       && validateCues(record.cues,input.duration).length===record.cues.length;
   } catch { return false; }
 }
+/** Plain-only exact editions may be aligned locally under their own session consent. */
+export function automaticPlainLyrics(record:LyricsRecord,query:LyricsQuery):boolean {
+  try {
+    const input=lookupQuery(query),lines=draftLines(record.text);
+    return !record.cues && !record.timingNotice && !!publishedWords(record.text).length
+      && comparable(record.title)===comparable(input.title) && comparable(record.artist)===comparable(input.artist)
+      && Number.isFinite(record.duration) && Math.abs(record.duration-input.duration)<=1
+      && validateCues(lines.map((text,index)=>({start:index,end:index+1,text})),Math.max(1,lines.length)).length===lines.length;
+  }catch{return false;}
+}
 // Editions and credits that tags and catalogues add to the same song: "Song - Remastered 2011", "Song (Live)", "feat. X".
 const EDITION=/\s+-\s+(?:[^-]*\b(?:remaster(?:ed)?|live|version|edit|mix|mono|stereo|demo|acoustic|bonus|single|radio|deluxe|instrumental)\b[^-]*|\d{4})$/u;
 const plainWords=(text:string)=>text.replace(/[^\p{L}\p{N}]+/gu,' ').trim();
@@ -108,7 +118,8 @@ export function parseLyricsRecord(value:unknown,input:LyricsQuery):LyricsRecord 
     validateCues(lines.map((text,i)=>({start:i,end:i+1,text})),Math.max(lines.length,1));
   }else if(cues)lines=cues.map(cue=>cue.text);
   else throw new Error('No usable lyrics are available for this song. Local recognition and pasting still work.');
-  const timingNotice=!cues&&typeof r.syncedLyrics==='string'&&r.syncedLyrics.trim()?'Published timing could not be used. Plain words can still be aligned locally.':'';
+  const invalidTimingType=r.syncedLyrics!=null&&typeof r.syncedLyrics!=='string';
+  const timingNotice=!cues&&(invalidTimingType||typeof r.syncedLyrics==='string'&&r.syncedLyrics.trim())?'Published timing could not be used. Plain words can still be aligned locally.':'';
   return {id:Number(r.id),title,artist,album,duration:r.duration,text:lines.join('\n'),source:`https://lrclib.net/api/get/${r.id}`,...(cues?{cues}:{}),timingNotice};
 }
 /** LRCLIB asks every client to name itself (app, version and a project link); browsers send it as Lrclib-Client. */

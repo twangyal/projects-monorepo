@@ -72,9 +72,11 @@ def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
     passage = Path(vocals).name == 'passage.wav' and abs(duration - 5) < 1e-6
-    if not passage and min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - REPEATS_FIXTURE_SECONDS), abs(duration - 18.0), abs(duration - 19.0)) > 1e-6:
+    if not passage and min(abs(duration - LYRICS_FIXTURE_SECONDS), abs(duration - REPEATS_FIXTURE_SECONDS), abs(duration - 18.0), abs(duration - 19.0), abs(duration - 20.0)) > 1e-6:
         raise RuntimeError('No fixture lyrics for this clip.')
     words = REPEAT_WORDS if abs(duration - REPEATS_FIXTURE_SECONDS) < 1e-6 else FIXTURE_WORDS
+    if abs(duration - 20.0) < 1e-6:
+        words = [('Hello', 1.0, 4.0), ('World', 3.0, 3.5), ('Goodbye', 9.0, 9.5)]
     if passage:
         words = [('Better', 1.0, 1.4), ('words', 1.5, 1.9), ('here', 2.2, 2.6)]
     transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s > 9 else 0.95) for t, s, e in words], seconds=0.3)

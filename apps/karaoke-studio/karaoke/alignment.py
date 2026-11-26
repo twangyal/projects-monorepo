@@ -407,8 +407,8 @@ def force_align(lines: list[str], log_probs, duration: float, language: str | No
 HEARD_SHARE = 0.34
 
 
-def place_lines(lines: list[str], words: list, log_probs, duration: float, language: str | None = None) -> list[dict]:
-    """Cues for supplied ``lines``: laid on the letters measured in the singing (``force_align``), or matched to the
+def placement(lines: list[str], words: list, log_probs, duration: float, language: str | None = None) -> dict:
+    """Cues and actual timing method for supplied ``lines``: laid on the letters measured in the singing (``force_align``), or matched to the
     recognized ``words`` when the letters cannot place them (no measurements, or a script that is not read).
 
     A line in an Indian script whose words were heard (``HEARD_SHARE``) takes the recognized words' time: the letters
@@ -419,17 +419,25 @@ def place_lines(lines: list[str], words: list, log_probs, duration: float, langu
     matched = align_lines(lines, words, duration)
     forced = force_align(lines, log_probs, duration, language) if log_probs is not None else None
     if forced is None or len(forced) != len(matched):
-        return forced if forced is not None else matched
+        return dict(cues=forced if forced is not None else matched, method='letters' if forced is not None else 'recognized-words' if words else 'estimated')
     placed: list[dict] = []
+    methods: set[str] = set()
     for heard, laid in zip(matched, forced, strict=True):
-        cue = dict(heard if _INDIC.search(heard['text']) and heard.get('matched', 0.0) >= HEARD_SHARE else laid)
+        use_heard = bool(_INDIC.search(heard['text']) and heard.get('matched', 0.0) >= HEARD_SHARE)
+        methods.add('recognized-words' if use_heard else 'letters')
+        cue = dict(heard if use_heard else laid)
         # The two ways agree on the order; where they meet, the earlier line keeps its time.
         if placed and cue['start'] < placed[-1]['end']:
             cue['start'] = placed[-1]['end']
             cue['end'] = max(cue['end'], min(cue['start'] + 0.3, duration))
         if cue['end'] > cue['start']:
             placed.append(cue)
-    return placed
+    return dict(cues=placed, method='mixed' if len(methods) > 1 else next(iter(methods), 'estimated'))
+
+
+def place_lines(lines: list[str], words: list, log_probs, duration: float, language: str | None = None) -> list[dict]:
+    """Place supplied lines; callers needing provenance use ``placement``."""
+    return placement(lines, words, log_probs, duration, language)['cues']
 
 
 def force_words(text: str, log_probs, start: float, end: float, margin: float = 0.25, language: str | None = None, *,

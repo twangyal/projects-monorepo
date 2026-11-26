@@ -7,7 +7,7 @@ import numpy as np
 
 from karaoke.alignment import (
     BLANK, CLASSES, FRAME, LETTERS, SPACE, _path, alignable, fold, force_align, max_bytes, place_lines, read_emissions, word_letters,
-    write_emissions,
+    write_emissions, placement,
 )
 from karaoke.lyrics_auto import LEAD_IN, align_lines
 from karaoke.transcription import ENGLISH
@@ -221,6 +221,7 @@ class ForcedAlignmentTests(unittest.TestCase):
                  for line, at in ((lines[1], 8.0), (lines[2], 15.0)) for k, word in enumerate(line.split())]
         cues, matched, laid = place_lines(lines, heard, letters, 22), align_lines(lines, heard, 22), force_align(lines, letters, 22)
         self.assertEqual(cues, [laid[0], matched[1], laid[2]])
+        self.assertEqual(placement(lines, heard, letters, 22)['method'], 'mixed')
         self.assertAlmostEqual(laid[1]['start'] + LEAD_IN, 7.0, delta=0.05)
         self.assertGreater(cues[1]['start'], 7.5)
         # Without measured letters every line is matched to the recognized words.
@@ -506,3 +507,34 @@ class WordHighlightTests(unittest.TestCase):
             self.assertAlmostEqual(word['start'], want, delta=0.03)
         # In an older transcript without a language the characters are spread as before.
         self.assertEqual(word_timings([cue], [], 10, log_probs, None), word_timings([cue], [], 10))
+
+
+class PlacementProvenanceTests(unittest.TestCase):
+    def test_actual_word_fallback_and_estimates_are_distinguished(self):
+        lines = ['Hello world']
+        words = [dict(text='Hello', start=1., end=1.4, confidence=.9), dict(text='world', start=1.5, end=2., confidence=.9)]
+        heard = placement(lines, words, None, 10)
+        self.assertEqual(heard['method'], 'recognized-words')
+        forced = placement(lines, words, sung([('Hello world', 1)], 10), 10)
+        self.assertEqual(forced['method'], 'letters')
+        self.assertAlmostEqual(forced['cues'][0]['start'], .85, delta=.03)
+        self.assertEqual(heard['cues'], place_lines(lines, words, None, 10))
+        self.assertEqual(placement(lines, [], None, 10)['method'], 'estimated')
+        # Measurements alone do not establish forced placement: unsupported symbols fall back.
+        self.assertEqual(placement(['123'], [], np.zeros((30, CLASSES)), 10)['method'], 'estimated')
+
+    def test_discarded_overlapping_anchor_is_uncertain_even_when_its_word_matches(self):
+        words = [dict(text='Hello', start=1., end=4., confidence=.9),
+                 dict(text='World', start=3., end=3.5, confidence=.9),
+                 dict(text='Goodbye', start=9., end=9.5, confidence=.9)]
+        reply = placement(['Hello', 'World', 'Goodbye'], words, None, 12)
+        self.assertLess(reply['cues'][1]['matched'], .8)
+        self.assertEqual(reply['cues'][0]['matched'], 1)
+        anchored = placement(['Hello', 'World', 'Goodbye'], [{**w, 'end': 2.} if i == 0 else w for i, w in enumerate(words)], None, 12)
+        self.assertEqual([cue['matched'] for cue in anchored['cues']], [1., 1., 1.])
+
+    def test_adjacent_anchors_keep_timing_confidence_despite_float_roundoff(self):
+        words = [dict(text='Hello', start=1., end=4.4+.4, confidence=.9),
+                 dict(text='World', start=4.8, end=5.2, confidence=.9)]
+        reply = placement(['Hello', 'World'], words, None, 12)
+        self.assertEqual([cue['matched'] for cue in reply['cues']], [1., 1.])

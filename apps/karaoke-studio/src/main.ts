@@ -256,7 +256,7 @@ const lyricsLookup=mountLyricsLookup({
     busy:!!currentJob||loading||requestingJob||saving||archiveChecking||aligning||!!timingOwner||!!srtOwner,
     pastedDirty:draftDirty,alignmentState:transcriptState,automaticTimedEligible:!!automaticPublishedOwner&&automaticPublishedOwner===publishedUploadOwner()&&!dirty&&!draftDirty&&!practice.active}:null,
   reviewTimedLyrics: openPublishedTimingReview,
-  useTimedLyrics:(cues,automatic=false)=>{
+  useTimedLyrics:(cues,automatic=false,locallyAligned=false)=>{
     if (!working || !lyricHistory) return;
     retirePractice('Replacing lyric cues stopped practice.');
     timeline.cancelGesture();
@@ -264,8 +264,9 @@ const lyricsLookup=mountLyricsLookup({
     retireSrt('Lyric cues replaced in memory.');
     retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
     working.cues = cues; renderCues(); changed(); if(!automatic)workspace.show('lyrics');
-    message(`${automatic?'Published line timings applied automatically. ':''}Timed ${cues.length} lines from the published line timings. Play the preview to check them; Undo restores your previous lines. Save lyrics when ready.`);
+    message(`${automatic?'Published words applied automatically. ':''}Timed ${cues.length} lines ${locallyAligned?'by local alignment':'from the published line timings'}. Play the preview to check them; Undo restores your previous lines. Save lyrics when ready.`);
   },
+  alignLyrics:(lines,signal)=>{if(!working)throw new Error('Choose a clip.');return request<unknown>(`/api/projects/${working.id}/align`,{...json('POST',{lines}),signal});},
   useLyrics:text=>{
     const field=element<HTMLTextAreaElement>('lyric-draft');field.value=text;draftDirty=true;
     // Alignment records the replacement together; avoid an extra paste-only history step.

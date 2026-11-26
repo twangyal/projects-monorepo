@@ -34,7 +34,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager, JobPublication
 from .melody import melody as find_melody
-from .alignment import ALIGNMENT_FILE, alignable, max_bytes, place_lines, read_emissions
+from .alignment import ALIGNMENT_FILE, alignable, max_bytes, placement, read_emissions
 from .lyrics_auto import word_timings, words_to_cues
 from .pronunciation import pronunciation as line_pronunciation
 from .ass import render_ass
@@ -1689,7 +1689,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
                 # Lyrics in a script the aligner reads are laid on the letters measured in the singing; others, or a clip
                 # measured without the aligner, are matched to the recognized words (see place_lines).
-                self._json({"cues": place_lines(value["lines"], transcript["words"], letters, project["duration"], transcript.get("language"))})
+                self._json(placement(value["lines"], transcript["words"], letters, project["duration"], transcript.get("language")))
                 return
             if read and stem:
                 self._file(directory / _AUDIO_FILES[stem], "audio/wav")

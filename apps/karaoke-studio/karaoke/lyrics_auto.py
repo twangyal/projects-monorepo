@@ -239,7 +239,7 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
 
     Each line's words are matched to the recognized sequence; a line takes the time of its matched
     words. Lines nobody was heard singing are placed proportionally between their neighbours, and
-    ``matched`` reports the share of the line's words that were found.
+    ``matched`` reports the share of the line's words that were found, or zero when its anchor was discarded and the timing was estimated.
     """
     words = clean_words(words, duration)
     # Supplied text is kept exactly (outer whitespace aside); only its timing is computed.
@@ -271,10 +271,14 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
     for index, span in enumerate(spans):
         if span is None:
             continue
-        if span[0] < last:
+        # Treat arithmetic dust at an adjacent boundary as equality, not a backward anchor.
+        if span[0] < last - 1e-9:
             spans[index] = None
         else:
             last = span[1]
+    # Lexical matches cannot vouch for timing once their anchor was discarded.
+    # Mark every interpolated line uncertain, even if all its words were recognized.
+    shares = [share if span is not None else 0.0 for share, span in zip(shares, spans, strict=True)]
     # Fill unknown lines between anchors in proportion to their length.
     filled: list[tuple[float, float]] = []
     index = 0
