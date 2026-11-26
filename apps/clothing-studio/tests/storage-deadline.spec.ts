@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 async function stored(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open('clothing-studio', 1);
+      const r = indexedDB.open('clothing-studio', 2);
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
     });
     try { return await new Promise<unknown>((resolve, reject) => {
@@ -81,7 +81,7 @@ test('a blocked native startup read expires without erasing the saved concept', 
   const prior = await seed(page), blocker = await context.newPage();
   await blocker.goto('/'); await expect(blocker.locator('#save-state')).toHaveText('Locally saved');
   await blocker.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 2); r.onsuccess = () => resolve(r.result); });
     const tx = db.transaction('project', 'readwrite'); let active = true;
     Object.assign(window, { releaseBlocker: () => { active = false; } });
     await new Promise<void>(resolve => {

@@ -53,7 +53,7 @@ async function backup(page: Page): Promise<Project> {
 async function stored(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('clothing-studio', 1);
+      const request = indexedDB.open('clothing-studio', 2);
       request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
     });
     try {

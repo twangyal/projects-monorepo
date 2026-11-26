@@ -1,7 +1,7 @@
 import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 async function stored(page:Page, value?:unknown):Promise<unknown>{return page.evaluate(async({value,write})=>{
-  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio', 2);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
   try{return await new Promise<unknown>((resolve,reject)=>{const t=db.transaction('project',write?'readwrite':'readonly'),s=t.objectStore('project');if(write){s.put(value,'current');t.oncomplete=()=>resolve(value);}else{const r=s.get('current');r.onsuccess=()=>resolve(r.result);}t.onerror=()=>reject(t.error);t.onabort=()=>reject(t.error);});}finally{db.close();}
 },{value,write:value!==undefined});}
 async function title(page:Page,value:string){await page.getByLabel('Concept name').fill(value);await page.getByLabel('Concept name').press('Tab');}
@@ -24,7 +24,7 @@ test('schema creation failure leaves recovery usable without an uncaught page er
 
 test('edits during a pending explicit replacement save the latest concept afterward',async({page})=>{
   await page.goto('/');await expect(page.locator('#save-state')).not.toContainText('Checking');await stored(page,{schemaVersion:99});await page.reload();await expect(page.locator('#message')).toContainText('Could not restore');await title(page,'First confirmed replacement');
-  await page.evaluate(()=>{const original=indexedDB.open.bind(indexedDB);let hold=true;indexedDB.open=(name,version)=>{const r=original(name,version);if(name!=='clothing-studio'||!hold)return r;hold=false;let callback:IDBOpenDBRequest['onsuccess']=null;Object.defineProperty(r,'onsuccess',{get:()=>callback,set:(listener:IDBOpenDBRequest['onsuccess'])=>{callback=listener;r.addEventListener('success',e=>{(window as unknown as Window&{releaseSave:()=>void}).releaseSave=()=>callback?.call(r,e);},{once:true});}});return r;};});
+  await page.evaluate(()=>{const original=indexedDB.open.bind(indexedDB);let opens=0;indexedDB.open=(name,version)=>{const r=original(name,version);if(name!=='clothing-studio'||++opens!==2)return r;let callback:IDBOpenDBRequest['onsuccess']=null;Object.defineProperty(r,'onsuccess',{get:()=>callback,set:(listener:IDBOpenDBRequest['onsuccess'])=>{callback=listener;r.addEventListener('success',e=>{(window as unknown as Window&{releaseSave:()=>void}).releaseSave=()=>callback?.call(r,e);},{once:true});}});return r;};});
   page.once('dialog',d=>d.accept());await page.locator('#replace-saved').click();await expect.poll(()=>page.evaluate(()=>typeof (window as unknown as Window&{releaseSave?:()=>void}).releaseSave)).toBe('function');await title(page,'Latest edit survives replacement');
   await page.evaluate(()=>(window as unknown as Window&{releaseSave:()=>void}).releaseSave());await expect(page.locator('#save-state')).toHaveText('Locally saved');expect((await stored(page) as {title:string}).title).toBe('Latest edit survives replacement');await page.reload();await expect(page.getByLabel('Concept name')).toHaveValue('Latest edit survives replacement');
 });
@@ -35,11 +35,12 @@ for (const surface of ['sketch-surface', 'preview-surface']) test(`replacement s
   await expect(page.locator('#message')).toContainText('Could not restore');
   await title(page, 'Confirmed replacement');
   await page.evaluate(() => {
-    const original = indexedDB.open.bind(indexedDB); let first = true;
+    const original = indexedDB.open.bind(indexedDB); let opens = 0;
     indexedDB.open = (name, version) => {
       const request = original(name, version);
-      if (name !== 'clothing-studio' || !first) return request;
-      first = false; let callback: IDBOpenDBRequest['onsuccess'] = null;
+      if (name !== 'clothing-studio' || ++opens !== 2) return request;
+      // The first connection reads the revision before confirmation; hold the actual write.
+      let callback: IDBOpenDBRequest['onsuccess'] = null;
       Object.defineProperty(request, 'onsuccess', { get: () => callback, set: listener => {
         callback = listener; request.addEventListener('success', event => {
           Object.assign(window, { releaseGestureSave: () => callback?.call(request, event) });
@@ -73,7 +74,7 @@ test('an existing undefined record is protected through edits until confirmed re
   await page.goto('/'); await expect(page.locator('#save-state')).not.toContainText('Checking');
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('clothing-studio', 1); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+      const request = indexedDB.open('clothing-studio', 2); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
     });
     try { await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('project', 'readwrite'); tx.objectStore('project').put(undefined, 'current');
@@ -85,7 +86,7 @@ test('an existing undefined record is protected through edits until confirmed re
   await page.waitForTimeout(400);
   expect(await stored(page)).toBeUndefined();
   expect(await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 2); r.onsuccess = () => resolve(r.result); });
     try { return await new Promise<number>(resolve => { const r = db.transaction('project').objectStore('project').count('current'); r.onsuccess = () => resolve(r.result); }); }
     finally { db.close(); }
   })).toBe(1);

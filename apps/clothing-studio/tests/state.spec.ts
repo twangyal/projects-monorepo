@@ -39,7 +39,7 @@ async function finishRestore(page: Page) {
 }
 
 
-async function savedTitle(page:Page):Promise<string>{return page.evaluate(async()=>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise<string>((resolve,reject)=>{const r=db.transaction('project','readonly').objectStore('project').get('current');r.onsuccess=()=>resolve(r.result.title);r.onerror=()=>reject(r.error);});}finally{db.close();}});}
+async function savedTitle(page:Page):Promise<string>{return page.evaluate(async()=>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio', 2);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise<string>((resolve,reject)=>{const r=db.transaction('project','readonly').objectStore('project').get('current');r.onsuccess=()=>resolve(r.result.title);r.onerror=()=>reject(r.error);});}finally{db.close();}});}
 
 test('a slow startup restore cannot overwrite text typed before blur', async ({ page }) => {
   await page.goto('/');

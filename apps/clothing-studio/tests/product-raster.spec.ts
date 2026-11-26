@@ -26,9 +26,9 @@ for (const kind of ['motifs','artwork'] as const) test(`undecodable ${kind} back
   broken.product[kind] = [kind === 'motifs' ? {...asset,id:'m1'} : {...asset,part:'front',xCm:0,yCm:10,widthCm:10}];
   await page.locator('#project-file').setInputFiles({name:'corrupt.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(broken))});
   await expect(page.locator('#message')).toContainText('could not be decoded'); expect(await backup(page)).toEqual(before);
-  await page.evaluate(async record => {const db = await new Promise<IDBDatabase>(resolve => {const r = indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);}); await new Promise<void>(resolve=> {const tx=db.transaction('project','readwrite');tx.objectStore('project').put(record,'current');tx.oncomplete=()=>resolve();});db.close();},broken);
+  await page.evaluate(async record => {const db = await new Promise<IDBDatabase>(resolve => {const r = indexedDB.open('clothing-studio', 2);r.onsuccess=()=>resolve(r.result);}); await new Promise<void>(resolve=> {const tx=db.transaction('project','readwrite');tx.objectStore('project').put(record,'current');tx.oncomplete=()=>resolve();});db.close();},broken);
   await page.reload(); await expect(page.locator('#save-state')).toContainText('previous concept protected');
   expect((await backup(page)).product).toBeUndefined();
-  const stored = await page.evaluate(async () => {const db = await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);});const record=await new Promise(resolve=>{const r=db.transaction('project').objectStore('project').get('current');r.onsuccess=()=>resolve(r.result);});db.close();return record;});
+  const stored = await page.evaluate(async () => {const db = await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('clothing-studio', 2);r.onsuccess=()=>resolve(r.result);});const record=await new Promise(resolve=>{const r=db.transaction('project').objectStore('project').get('current');r.onsuccess=()=>resolve(r.result);});db.close();return record;});
   expect(stored).toEqual(broken);
 });

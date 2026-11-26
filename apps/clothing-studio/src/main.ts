@@ -22,7 +22,7 @@ import {
 import { garmentSvg, previewSize, previewSvg, exportPng, exportGarmentSvg } from './graphics.ts';
 import { importPhoto } from './media.ts';
 import { validateProjectImages } from './project-media.ts';
-import { loadProject, saveProject } from './storage.ts';
+import { loadProject, saveProject, savedProjectRevision, ProjectConflictError } from './storage.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
@@ -106,11 +106,15 @@ function renderViews() {
   element('photo-name').textContent = project.photo?.name || 'Sample silhouette';
 }
 
-function updateControls() {
+function updateSaveControls() {
   element('replace-saved').hidden = saveProtection !== 'protected';
   // A backup taken before the saved concept has loaded would hold only the blank starting concept.
   element<HTMLButtonElement>('backup').disabled = saveProtection === 'loading';
   element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
+  element<HTMLButtonElement>('concept-product').disabled = loadBusy || saveProtection === 'loading' || exportBusy || replacingSaved || !!gesture;
+}
+function updateControls() {
+  updateSaveControls();
   // Active text inputs can temporarily be empty, and retain native selection
   // and undo state while other asynchronous work updates the workspace.
   if (document.activeElement !== input('title') || !startupTouched) input('title').value = project.title;
@@ -125,7 +129,6 @@ function updateControls() {
   element<HTMLButtonElement>('undo').disabled = !history.canUndo;
   element<HTMLButtonElement>('redo').disabled = !history.canRedo;
   element<HTMLButtonElement>('clear-sketch').disabled = project.strokes.length === 0;
-  element<HTMLButtonElement>('concept-product').disabled = loadBusy || saveProtection === 'loading' || exportBusy || replacingSaved || !!gesture;
   renderConceptSummary();
 }
 
@@ -142,9 +145,10 @@ function scheduleSave() {
   // placement gesture is active. Persist committed work, never its preview.
   const snapshot = history.current, version = editVersion;
   saveTimer = setTimeout(() => {
-    saves = saves.then(() => saveProject(snapshot)).then(() => {
+    saves = saves.then(() => { if(saveProtection!=='ready')throw new ProjectConflictError(); return saveProject(snapshot); }).then(() => {
       if (version === editVersion) { unsaved = false; element('save-state').textContent = 'Locally saved'; }
-    }).catch(() => {
+    }).catch(error => {
+      if(error instanceof ProjectConflictError){protectSaved(error.message);return;}
       if (version === editVersion) {
         element('save-state').textContent = 'Not saved locally';
         message('Local saving is unavailable. Your active concept is intact; export a project backup to keep it.', true);
@@ -369,17 +373,20 @@ for (const [id, kind] of [['garment-png', 'garment'], ['preview-png', 'preview']
 
 element('replace-saved').addEventListener('click', async () => {
   if (saveProtection !== 'protected' || replacingSaved || loadBusy || exportBusy || gesture) return;
-  if (!window.confirm('Replace the preserved browser concept with your current concept? Export your current project backup first. This replaces the old saved concept.')) return;
-  const snapshot = validateProject(project), version = editVersion;
-  replacingSaved = true; updateControls();
-  const saving = saves.then(() => saveProject(snapshot)); saves = saving.catch(() => {});
+  const snapshot = validateProject(project), version = editVersion, intent = loadGeneration;
+  replacingSaved = true; updateSaveControls();
   try {
+    await saves;
+    const revision=await savedProjectRevision();
+    if(version!==editVersion||intent!==loadGeneration||loadBusy||gesture){message('Newer current edits were kept. Choose Replace saved concept again if needed.',true);return;}
+    if (!window.confirm('Replace the most recent saved browser concept with your current concept? Export your current project backup first. This replaces the saved concept, including another tab’s work.')) return;
+    const saving = saves.then(() => saveProject(snapshot,revision)); saves = saving.catch(() => {});
     await saving; saveProtection = 'ready';
     if (version === editVersion) { unsaved = false; element('save-state').textContent = 'Locally saved'; }
     else scheduleSave();
     message('Saved concept explicitly replaced. Automatic saving is enabled.');
   } catch { unsaved = true; element('save-state').textContent = 'Not saved locally · previous concept protected'; message('Could not replace the saved concept. Previous browser data remains protected; export your current project backup.', true); }
-  finally { replacingSaved = false; updateControls(); }
+  finally { replacingSaved = false; updateSaveControls(); }
 });
 
 function productDraftGuard(): boolean {
@@ -476,5 +483,6 @@ void loadProject().then(saved => {
   protectSaved('Could not restore the local project. Previous browser data remains protected. Work in memory and export your current project backup before explicitly replacing it.');
 });
 function protectSaved(text: string) {
-  saveProtection = 'protected'; element('save-state').textContent = 'Not saved locally · previous concept protected'; updateControls(); message(text, true);
+  clearTimeout(saveTimer); saveTimer = undefined;
+  saveProtection = 'protected'; element('save-state').textContent = 'Not saved locally · previous concept protected'; updateSaveControls(); message(text, true);
 }

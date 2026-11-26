@@ -5,7 +5,7 @@ declare global { interface Window { assetOracle: AssetOracle } }
 async function backup(page: Page) { const wait = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export project backup', exact: true }).click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }
 async function stored(page: Page) {
   return page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 2); r.onsuccess = () => resolve(r.result); });
     try { return await new Promise<unknown>(resolve => { const r = db.transaction('project').objectStore('project').get('current'); r.onsuccess = () => resolve(r.result); }); }
     finally { db.close(); }
   });

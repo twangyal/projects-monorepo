@@ -56,7 +56,7 @@ async function backup(page: Page): Promise<Project> {
 }
 async function stored(page: Page) {
   return page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 2); r.onsuccess = () => resolve(r.result); });
     try { return await new Promise(resolve => { const r = db.transaction('project').objectStore('project').get('current'); r.onsuccess = () => resolve(r.result); }); }
     finally { db.close(); }
   });
