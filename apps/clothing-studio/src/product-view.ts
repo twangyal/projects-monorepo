@@ -1,3 +1,4 @@
+import {previewMeshQuality,type MeshQuality} from './garment-mesh.ts';
 import { grainAngleOf, grainLine } from './grain.ts';
 import { buildOutfitBundle } from './outfit-bundle.ts';
 import { replaceOutfitProduct, switchOutfitEditing, type OutfitLayer } from './outfit-edit.ts';
@@ -66,6 +67,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="view-buttons" role="group" aria-label="Camera view">${['front', 'back', 'left', 'right'].map(v => `<button data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
       <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
         <details id="top-body-shape"><summary>Bust, waist, hip, depth, height, arms and neck (optional)</summary><div class="measure-grid"><label class="field">Underbust girth (cm, optional)<input id="garment-drape-underbust" type="number" min="${BODY_UNDERBUST[0]}" max="${BODY_UNDERBUST[1]}" step="0.1" aria-describedby="underbust-help"></label><p id="underbust-help" class="fine-print">For a body with a bust: measure just under the bust, and give the chest round the fullest part of the bust. Blank gives a body without a bust.</p><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Waist-to-hip depth (cm, optional)<input id="garment-drape-hip-depth" type="number" min="${BODY_HIP_DEPTH[0]}" max="${BODY_HIP_DEPTH[1]}" step="0.1"></label><label class="field">Body height (cm, optional)<input id="garment-drape-height" type="number" min="${BODY_HEIGHT[0]}" max="${BODY_HEIGHT[1]}" step="0.5"></label><label class="field">Upper-arm girth (cm, optional)<input id="garment-drape-arm-girth" type="number" min="${BODY_UPPER_ARM_GIRTH[0]}" max="${BODY_UPPER_ARM_GIRTH[1]}" step="0.1" aria-describedby="arm-girth-help"></label><p id="arm-girth-help" class="fine-print">Measure around the fullest upper arm. An entered girth is kept even if the sleeve is tight. With measured shoulders, automatic upper arms follow chest-based proportions; otherwise they may narrow to the sleeve. Forearms, wrists, shoulder slope and pose remain assumed. Fit is not validated.</p><label class="field">Neck girth (cm, optional)<input id="garment-drape-neck-girth" type="number" min="${BODY_NECK_GIRTH[0]}" max="${BODY_NECK_GIRTH[1]}" step="0.1" aria-describedby="neck-girth-help"></label><p id="neck-girth-help" class="fine-print">Measure around the base of the neck. This sets the circular neck on the top or shared outfit body without changing the garment neckline. Blank uses chest-based proportions; neck position, head and shoulder slope remain assumed. Fit is not validated.</p><label class="field">Body shoulder width (cm, optional)<input id="garment-drape-shoulder-width" type="number" min="${BODY_SHOULDER_WIDTH[0]}" max="${BODY_SHOULDER_WIDTH[1]}" step="0.1" aria-describedby="shoulder-width-help"></label><p id="shoulder-width-help" class="fine-print">Measure straight across the shoulder points, not along the body curve. This sets shoulder breadth and arm placement independently of the garment; blank uses automatic proportions. Shoulder slope and the sleeve-aligned pose remain approximate.</p><label class="field">Shoulder to waist (vertical cm, optional)<input id="garment-drape-torso-length" type="number" min="${BODY_TORSO_LENGTH[0]}" max="${BODY_TORSO_LENGTH[1]}" step="0.1" aria-describedby="torso-length-help"></label><p id="torso-length-help" class="fine-print">Measure vertically from shoulder-point level to the natural waist, not along the body curve. This positions a top or shared outfit body's waist independently of girths and height; the hip follows it. With a height, a longer torso shortens the estimated legs to keep the same approximate overall height. Blank keeps existing proportions. Shoulder placement, pose and physical fit remain unvalidated.</p><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Height sets torso heights, arm length and trouser leg length as typical proportions; without it they follow the chest. Waist-to-hip depth is the vertical distance from the waist to the fullest hip; blank keeps the current proportions. For trousers, the hip must lie above the displayed crotch. Shoulders remain assumed. Applied body settings are saved with this design. Unapplied fields stay as drafts. These measurements do not establish physical fit.</p></details>${bodyPhotoMarkup}
+        <label class="field">Drape mesh<select id="garment-drape-quality" aria-describedby="garment-drape-quality-help"><option value="standard">Standard</option><option value="fine">Fine (smaller folds)</option></select></label><p id="garment-drape-quality-help" class="fine-print">Fine halves the triangle edge spacing and doubles solver substeps, costing roughly eight times the work. It refines every garment in the outfit and is used in captured 3D exports. This session-only preview choice does not change your cuts or saved design. Materials and contact remain approximate; finer detail does not validate physical fit. Matched fabric comparisons use their own Standard mesh.</p>
         <label class="field">Drape time<select id="garment-drape-frames" aria-describedby="garment-drape-time-help"><option value="${GARMENT_FRAMES}">Standard (3 s)</option><option value="${LONG_GARMENT_FRAMES}">Longer (12 s)</option></select></label>
         <p id="garment-drape-time-help" class="fine-print">Times are simulated, per garment. Longer restarts the drape and takes more time to run. The result can still show motion or excessive stretch.</p>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
@@ -200,7 +202,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // recolouring keeps the drape and a change of measurements, fit, modules or fabric drapes again. The body is a view
   // setting stored with the design; legacy projects keep proportional defaults.
   let draping = false, bodyChest: number | null = null, bodyWaist: number | null = null, bodyHip: number | null = null, bodyDepth: number | null = null, bodyHeight: number | null = null, bodyHipDepth: number | null = null, bodyArmGirth: number | null = null, bodyNeckGirth: number | null = null, bodyUnderbust: number | null = null, bodyTorsoLength: number | null = null, bodyShoulderWidth: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
-  let drapeFrames = GARMENT_FRAMES;
+  let drapeFrames = GARMENT_FRAMES,meshQuality:MeshQuality='standard';
   let drapeWorker: Worker | null = null, drapeTimer = 0, drapeKey = '', failedDrapeKey = '';
   let departed = false, shownBody = '';
   // The size shown in 3D (null: the sample). A view setting for this session: the design itself stays the sample.
@@ -254,7 +256,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const body = garmentBody(design, chestFor(design), drapeShapeFor(design));
     return {chest:chestFor(design),waist:body.waist,hip:body.hip,...(bodyHipDepth===null?{}:{hipDepth:bodyHipDepth}),...(bodyHeight===null?{}:{height:bodyHeight}),...(bodyShoulderWidth===null?{}:{shoulderWidth:bodyShoulderWidth}),...(bodyTorsoLength===null?{}:{torsoLength:bodyTorsoLength})};
   };
-  const drapeKeyOf = (design: Product) => { const { product: shownProduct, companion, also } = outfitViewed(design); return JSON.stringify([shapeKey(shownProduct), companion ? shapeKey(companion) : null, also ? shapeKey(also) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design), drapeFrames, appliedBodyReference(design)?.map(shapeKey) ?? null]); };
+  const drapeKeyOf = (design: Product) => { const { product: shownProduct, companion, also } = outfitViewed(design); return JSON.stringify([shapeKey(shownProduct), companion ? shapeKey(companion) : null, also ? shapeKey(also) : null, tuckedFor(design), chestFor(design), drapeShapeFor(design), drapeFrames, meshQuality, appliedBodyReference(design)?.map(shapeKey) ?? null]); };
   const currentDrape = (design: Product) => (draping && drape?.key === drapeKeyOf(design) ? drape.result : null);
   function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
   function startDrape(design: Product) {
@@ -279,7 +281,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       };
       worker.onerror = () => { if (worker === drapeWorker) { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run. Choose Drape again to retry, or Show styling shell.'; } };
       const { product: shownProduct, companion, also } = outfitViewed(design), bodyReference = appliedBodyReference(design);
-      try { worker.postMessage({ product: shownProduct, ...(bodyReference ? { bodyReference } : {}), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), ...(also ? { also } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design), frames: drapeFrames }); }
+      try { worker.postMessage({ product: shownProduct, ...(bodyReference ? { bodyReference } : {}), ...(companion ? { companion, tucked: tuckedFor(design) } : {}), ...(also ? { also } : {}), bodyChest: chestFor(design), bodyShape:drapeShapeFor(design), frames: drapeFrames, meshQuality }); }
       catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not receive this design. Choose Drape again to retry.'; }
     }, 250);
   }
@@ -306,7 +308,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       : isBottoms(design) ? ` Worn under the ${companion.name}: the top drapes over these bottoms on the same body.`
       : ` Worn over the ${companion.name}: the bottoms drape first on the same body and do not carry this garment's weight.`;
     const size = wholeOutfitSize ? `Whole outfit size ${shownSize ?? sampleOf(design)}, each garment graded from its own sample. ` : viewed(design) === design ? '' : `Size ${shownSize}, graded from ${sampleOf(design)}. `;
-    return size + drapeDescription(viewed(design), result) + worn + fitSentence(result, tucked && !isBottoms(design)) + ` ${result.settings.frames * result.settings.frameSeconds} simulated seconds${companion ? ' per garment' : ''}.`;
+    return size + drapeDescription(viewed(design), result) + worn + fitSentence(result, tucked && !isBottoms(design)) + ` ${result.settings.frames * result.settings.frameSeconds} simulated seconds${companion ? ' per garment' : ''}.${result.settings.meshQuality==='fine'?' Fine mesh.':''}`;
   }
   function drapeDescription(design: Product, result: GarmentDrapeResult): string {
     const { ease, contact, residualSpeed, maxStrain } = result.metrics;
@@ -484,6 +486,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     drapeFrames = previewDrapeFrames(Number(drapeTime.value));
     stopDrape(); drape = null; failedDrapeKey = ''; shown = '';
     render(options.current());
+  });
+  const drapeQuality=$('garment-drape-quality') as HTMLSelectElement;
+  drapeQuality.addEventListener('change',()=>{
+    if(hasDrafts()){drapeQuality.value=meshQuality;options.notice('Apply or discard product drafts before changing drape mesh quality.',true);return;}
+    meshQuality=previewMeshQuality(drapeQuality.value);
+    stopDrape();drape=null;failedDrapeKey='';shown='';render(options.current());
   });
   $('garment-drape-on').addEventListener('click', () => setDraping(true));
   $('garment-drape-off').addEventListener('click', () => setDraping(false));
@@ -1692,7 +1700,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (bottomsWorn) try { auto = outfitShape(bottomsWorn, chestFor(design)); } catch { /* The drape reports the problem. */ }
     ($('garment-drape-waist') as HTMLInputElement).placeholder=`Auto: ${Number(auto.waist.toFixed(2))}`;
     ($('garment-drape-hip') as HTMLInputElement).placeholder=`Auto: ${Number(auto.hip.toFixed(2))}`;
-    drapeTime.value = String(drapeFrames);
+    drapeTime.value = String(drapeFrames); drapeQuality.value=meshQuality;
     $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
     if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
     else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
@@ -1710,5 +1718,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); drapeFrames = GARMENT_FRAMES; draping = false; drape = null; shownSize = null; wholeOutfitSize = false; $('garment-size-status').textContent = ''; patternSize = null; ($('outfit-export-size') as HTMLSelectElement).value = ''; ($('export-outfit') as HTMLInputElement).checked = false; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; bodyHipDepth=null; bodyArmGirth=null;bodyNeckGirth=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); drapeFrames = GARMENT_FRAMES; meshQuality='standard'; draping = false; drape = null; shownSize = null; wholeOutfitSize = false; $('garment-size-status').textContent = ''; patternSize = null; ($('outfit-export-size') as HTMLSelectElement).value = ''; ($('export-outfit') as HTMLInputElement).checked = false; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; bodyHeight=null; bodyHipDepth=null; bodyArmGirth=null;bodyNeckGirth=null; shownBody=''; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

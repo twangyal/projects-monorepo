@@ -1,3 +1,4 @@
+import {previewMeshQuality,refineGarmentMeshes,type MeshQuality} from './garment-mesh.ts';
 import { validateSkirtMeasures, skirtBandHeight, skirtDraft, skirtPieces, skirtMesh, skirtHeight, type SkirtMeasures } from './product-skirt.ts';
 import { validateRasterHeader } from './media.ts';
 import { material, type Material } from './materials.ts';
@@ -2337,6 +2338,8 @@ function chestPocketOutline(width: number, height: number, x: number, y: number)
 // 3D mesh ---------------------------------------------------------------------------------------
 
 export interface PartMesh { part: PartId; positions: number[]; uvs: number[]; indices: number[];
+  /** Per triangle edge, explicit structural lengths for refined modelled bands; independent of paint UVs. */ restEdges?: number[];
+  /** Keep refined pleat underlays inside the actual visible layer faces, after sewing duplicate vertices. */ layerSurface?: boolean;
   /** Per triangle, +1 or -1: reflect print-UV x back into that cut piece's grain basis. Rest geometry stays in UVs. */ grainMirrors?: number[];
   /** Shaped in 3D rather than cut flat: the drape keeps the shape it is given (a neck rib or stand collar). */ modelled?: boolean;
   /** Pressed folds (pleats): pairs of vertices along a fold line, whose crease the drape keeps. */ creases?: number[];
@@ -2374,7 +2377,11 @@ function densify(points: Pt[], step = MESH_STEP): Pt[] {
 }
 
 /** The product's 3D parts: tops sewn from their pattern pieces (topMesh), skirts and trousers from their panels. */
-export function teeMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
+export function teeMesh(product: Product, Delaunator: DelaunatorLike, quality:MeshQuality='standard'): PartMesh[] {
+  const mode=previewMeshQuality(quality),meshes=baseMesh(product,Delaunator);
+  return mode==='fine'?refineGarmentMeshes(meshes):meshes;
+}
+function baseMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
   if (product.base === 'skirt') return skirtMesh(product);
   if (isBottoms(product)) return trouserMesh(product);
   return topMesh(product, Delaunator);

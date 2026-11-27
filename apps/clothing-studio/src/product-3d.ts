@@ -92,7 +92,7 @@ class ProductModel {
     // Joggers' cuffs hang below their leg panels' hems.
     this.low = product.base === 'trousers' ? -trouserDimensions(product).cuffHeight : 0;
     // The other garments of an outfit drape, each with its settled parts.
-    const worn = ([[companion, drape?.companion], [also, drape?.also]] as const).flatMap(([garment, settled]) => (garment && settled ? [{ garment, parts: settled.parts }] : []));
+    const worn = ([[companion, drape?.companion], [also, drape?.also]] as const).flatMap(([garment, settled]) => (garment && settled ? [{ garment, parts: settled.parts, quality:settled.settings.meshQuality }] : []));
     if (worn.length) {
       // An outfit spans all its garments, with the head above the top's collar.
       let low = Infinity, high = -Infinity;
@@ -101,8 +101,8 @@ class ProductModel {
     }
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous[0]!) > 0.5 || Math.abs(this.low - previous[1]!) > 0.5) this.reframe();
-    const wornMeshes = worn.map(({ garment, parts }) => {
-      const rest = teeMesh(garment, Delaunator), meshes = new Map<PartId, THREE.Mesh>();
+    const wornMeshes = worn.map(({ garment, parts, quality }) => {
+      const rest = teeMesh(garment, Delaunator, quality), meshes = new Map<PartId, THREE.Mesh>();
       for (const part of rest) {
         const positions = parts.find(item => item.part === part.part)?.positions;
         if (!positions || positions.length !== part.positions.length) continue;
@@ -114,7 +114,7 @@ class ProductModel {
       }
       return { garment, rest, meshes };
     });
-    const restParts = teeMesh(product, Delaunator);
+    const restParts = teeMesh(product, Delaunator, drape?.settings.meshQuality);
     for (const part of restParts) {
       const draped = drape?.parts.find(item => item.part === part.part);
       const shaped = !!draped && draped.positions.length === part.positions.length;

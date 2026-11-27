@@ -1,3 +1,4 @@
+import type {MeshQuality} from './garment-mesh.ts';
 import { grainAngleOf, grainDirection } from './grain.ts';
 import { DRESS_LENGTH, FRONT_INTERFACING, optionsOf, RIB_PARTS, isBottoms, layerOrder, material, sleeveAngleOf, teeDimensions, topMeasurements, trouserDimensions, type Material, type PartId, type PartMesh, type Product } from './product.ts';
 import { skirtDraft, skirtFit, skirtHeight } from './product-skirt.ts';
@@ -526,6 +527,38 @@ export interface Cloth {
   bendParticles: Int32Array; bendWeights: Float32Array; bendStiffness: Float32Array;
   /** Pleat layers kept in order: each `inner` particle stays `gap` cm nearer the body's axis than its `outer` one. */
   layered: { inner: Int32Array; outer: Int32Array; gap: Float32Array };
+  /** Refined pleat ordering against visible triangles, using sewn particle identity rather than render indices. */
+  layerSurface?: { triangles:Int32Array; inner:Int32Array; gap:Float32Array };
+}
+
+/** Radial pleat ordering on the final substep of a frame. This is a local layer constraint,
+ * not general self-collision: visible triangles stay fixed while underlays move just inside them.
+ * Height slabs are rebuilt from the current cloth, so different diagonals and crease aliases work. */
+function projectLayerSurface(cloth:Cloth,positions:Float32Array,inverseMass:Float32Array):void {
+  const surface=cloth.layerSurface;if(!surface)return;
+  const {triangles,inner,gap}=surface;let low=Infinity,high=-Infinity;
+  for(const v of triangles){low=Math.min(low,positions[v*3+1]!);high=Math.max(high,positions[v*3+1]!);}
+  if(!Number.isFinite(low)||!Number.isFinite(high)||!Number.isFinite(high-low))throw new Error('Fine pleat ordering could not stay stable. Choose Standard or adjust the garment.');
+  const width=Math.max(1,(high-low)/256),slabs=new Map<number,number[]>();
+  for(let t=0;t<triangles.length;t+=3){
+    const ys=[positions[triangles[t]!*3+1]!,positions[triangles[t+1]!*3+1]!,positions[triangles[t+2]!*3+1]!];
+    const first=Math.floor((Math.min(...ys)-low)/width),last=Math.floor((Math.max(...ys)-low)/width);
+    for(let band=first;band<=last;band++){const list=slabs.get(band);if(list)list.push(t);else slabs.set(band,[t]);}
+  }
+  const hit=(t:number,ex:number,y:number,ez:number):number=>{
+    const a=triangles[t]!*3,b=triangles[t+1]!*3,c=triangles[t+2]!*3,ax=positions[a]!,ay=positions[a+1]!,az=positions[a+2]!;
+    const ux=positions[b]!-ax,uy=positions[b+1]!-ay,uz=positions[b+2]!-az,vx=positions[c]!-ax,vy=positions[c+1]!-ay,vz=positions[c+2]!-az;
+    const hx=-ez*vy,hy=ez*vx-ex*vz,hz=ex*vy,det=ux*hx+uy*hy+uz*hz;if(Math.abs(det)<1e-12)return 0;
+    const sx=-ax,sy=y-ay,sz=-az,u=(sx*hx+sy*hy+sz*hz)/det;if(u< -1e-8||u>1+1e-8)return 0;
+    const qx=sy*uz-sz*uy,qy=sz*ux-sx*uz,qz=sx*uy-sy*ux,v=(ex*qx+ez*qz)/det;if(v< -1e-8||u+v>1+1e-8)return 0;
+    const distance=(vx*qx+vy*qy+vz*qz)/det;return distance>1e-6?distance:0;
+  };
+  for(let n=0;n<inner.length;n++){
+    const v=inner[n]!,k=v*3;if(!inverseMass[v])continue;
+    const x=positions[k]!,y=positions[k+1]!,z=positions[k+2]!,radius=Math.hypot(x,z);if(!(radius>1e-6))continue;
+    let outside=0;for(const t of slabs.get(Math.floor((y-low)/width))??[])outside=Math.max(outside,hit(t,x/radius,y,z/radius));
+    if(outside>0&&radius>outside-gap[n]!){const scale=Math.max(0,outside-gap[n]!)/radius;positions[k]*=scale;positions[k+2]*=scale;}
+  }
 }
 
 /**
@@ -576,7 +609,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
   const spatial = (i: number, j: number) => Math.hypot(p(i, 0) - p(j, 0), p(i, 1) - p(j, 1), p(i, 2) - p(j, 2));
   // The neck rib (or a stand collar) runs along the neckline: its lengths along the neck are the flat neckline's, so it
   // does not pull the neckline to its modelled 3D length. Its vertices alternate neck edge, rib edge (see neckRib).
-  const band = simulated.find(mesh => mesh.part === 'neckband' || mesh.modelled);
+  const band = simulated.find(mesh => (mesh.part === 'neckband' || mesh.modelled) && !mesh.restEdges);
   const ribAlong = new Map<number, number>(), ribIds = band && vertices.get(band.part);
   if (ribIds) {
     let along = 0;
@@ -624,7 +657,7 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
         const i = tri[e]!, j = tri[(e + 1) % 3]!, opposite = tri[(e + 2) % 3]!, k = i < j ? `${i},${j}` : `${j},${i}`;
         const fi = flats[e]!, fj = flats[(e + 1) % 3]!;
         let edge = edges.get(k);
-        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: modelled ? modelledRest(mesh.part, i, j) : Math.hypot(fi[0] - fj[0], fi[1] - fj[1]), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
+        if (!edge) { edge = { i: Math.min(i, j), j: Math.max(i, j), rest: mesh.restEdges?.[t+e] ?? (modelled ? modelledRest(mesh.part, i, j) : Math.hypot(fi[0] - fj[0], fi[1] - fj[1])), tensile: 0, bend: 0, area: 0, count: 0, opposite: [] }; edges.set(k, edge); }
         // Each edge stretches with the fabric's stiffness along its flat direction; modelled parts have no flat grain.
         edge.tensile += modelled ? properties.tensile : directionalStiffness(properties, (fj[0] - fi[0]) * (mesh.grainMirrors?.[t / 3] ?? 1), fj[1] - fi[1], grainOf(mesh.part)); edge.bend += bend; edge.area += area; edge.count++;
         // Flat corners in the edge's own (low id, high id) order.
@@ -726,9 +759,20 @@ export function clothFromMeshes(meshes: PartMesh[], materialOf: (part: PartId) =
       if (ids[i] !== ids[o]) { inner.push(ids[i]!); outer.push(ids[o]!); gap.push(((layers[i] ?? 0) - (layers[o] ?? 0)) * PLEAT_LAYER); }
     }
   }
+  const surfaceTriangles:number[]=[],surfaceLevels=new Map<number,number>();
+  for(const mesh of simulated){
+    if(!mesh.layerSurface||!mesh.layers)continue;
+    const ids=vertices.get(mesh.part)!;
+    mesh.layers.forEach((level,v)=>{if(level>0)surfaceLevels.set(ids[v]!,Math.max(surfaceLevels.get(ids[v]!)??0,level));});
+    for(let t=0;t<mesh.indices.length;t+=3){
+      const a=mesh.indices[t]!,b=mesh.indices[t+1]!,c=mesh.indices[t+2]!;
+      if(mesh.layers[a]===0&&mesh.layers[b]===0&&mesh.layers[c]===0&&ids[a]!==ids[b]&&ids[b]!==ids[c]&&ids[a]!==ids[c])surfaceTriangles.push(ids[a]!,ids[b]!,ids[c]!);
+    }
+  }
+  const layerSurface=surfaceTriangles.length&&surfaceLevels.size?{triangles:Int32Array.from(surfaceTriangles),inner:Int32Array.from(surfaceLevels.keys()),gap:Float32Array.from(surfaceLevels.values(),level=>level*PLEAT_LAYER)}:undefined;
   return { offset, positions: Float32Array.from(position), inverseMass, a: Int32Array.from(a), b: Int32Array.from(b), rest: Float32Array.from(rest), compliance: Float32Array.from(compliance), structural: Uint8Array.from(structural), vertices, carried,
     bendParticles: Int32Array.from(bendParticles), bendWeights: Float32Array.from(bendWeights), bendStiffness: Float32Array.from(bendStiffness),
-    layered: { inner: Int32Array.from(inner), outer: Int32Array.from(outer), gap: Float32Array.from(gap) } };
+    layered: { inner: Int32Array.from(inner), outer: Int32Array.from(outer), gap: Float32Array.from(gap) },...(layerSurface?{layerSurface}:{}) };
 }
 
 export interface GarmentDrapeMetrics {
@@ -746,7 +790,7 @@ export interface GarmentDrapeMetrics {
    * the floor, and (for a body of given height) how far the sleeves reach past the wrists (negative: short of them). */
   fit?: { hemBelowHip?: number; hemAboveFloor?: number; sleeveBeyondWrist?: number };
 }
-export interface DrapeSettings { frames: number; substeps: number; frameSeconds: number }
+export interface DrapeSettings { frames: number; substeps: number; frameSeconds: number; meshQuality?:MeshQuality }
 type DrapedPiece = { parts: { part: PartId; positions: Float32Array }[]; metrics: GarmentDrapeMetrics; settings: DrapeSettings };
 export interface GarmentDrapeResult extends DrapedPiece { body: BodyProxy;
   /** In an outfit, the garment worn with this one, draped on the same body in this garment's place. */
@@ -1232,6 +1276,7 @@ export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest:
           const radius = Math.hypot(positions[k]!, positions[k + 2]!);
           if (radius > 1e-6 && radius < reach) { positions[k] *= reach / radius; positions[k + 2] *= reach / radius; }
         }
+        if(step===substeps-1&&cloth.layerSurface)projectLayerSurface(cloth,positions,inverseMass);
       });
     }
     // Once pressed in, the tucked fabric is held by the waistband: squeezed into a thin layer, it has no room to fold
